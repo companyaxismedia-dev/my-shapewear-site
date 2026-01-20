@@ -1,11 +1,21 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 import { ShieldCheck, MessageCircle, QrCode } from "lucide-react";
 
 export default function Checkout() {
-  const { cartItems } = useCart();
+  /* ---------------- SAFE CART CONTEXT ---------------- */
+  const { cartItems = [] } = useCart(); // ⭐ prerender safe
 
+  /* ---------------- MOUNT FIX (VERY IMPORTANT) ---------------- */
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  if (!mounted) return null;
+
+  /* ---------------- PRODUCT ---------------- */
   const product =
     cartItems.length > 0
       ? cartItems[0]
@@ -14,6 +24,7 @@ export default function Checkout() {
   const totalPayable = product.price;
   const myWhatsApp = "919871147666";
 
+  /* ---------------- FORM ---------------- */
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -22,13 +33,6 @@ export default function Checkout() {
     city: "",
     pincode: "",
   });
-
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,53 +44,75 @@ export default function Checkout() {
     formData.area &&
     formData.pincode;
 
-  /* WhatsApp Order */
+  /* ---------------- LOAD RAZORPAY ---------------- */
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+  /* ---------------- WHATSAPP ORDER ---------------- */
   const handleWhatsAppOrder = () => {
     if (!isValid) return alert("Please fill complete address details!");
 
     const msg = `
-*New Order*
+*NEW ORDER - BOOTY BLOOM*
+
 Product: ${product.name}
 Name: ${formData.name}
 Phone: ${formData.phone}
+
 Address:
 ${formData.houseNo}, ${formData.area}
 ${formData.city} - ${formData.pincode}
+
 Total: ₹${totalPayable}
     `;
-    window.open(`https://wa.me/${myWhatsApp}?text=${encodeURIComponent(msg)}`, "_blank");
+
+    window.open(
+      `https://wa.me/${myWhatsApp}?text=${encodeURIComponent(msg)}`,
+      "_blank"
+    );
   };
 
-  /* Razorpay */
+  /* ---------------- RAZORPAY PAYMENT ---------------- */
   const handlePayment = async () => {
     if (!isValid) return alert("Please fill complete address details!");
 
     try {
-      const res = await fetch("http://localhost:5000/api/payment/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: totalPayable }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/payment/checkout`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: totalPayable }),
+        }
+      );
 
       const orderData = await res.json();
 
       const options = {
-        key: "rzp_live_S5jkUVvVI8UcY2",
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
         amount: totalPayable * 100,
         currency: "INR",
         name: "BOOTY BLOOM",
         order_id: orderData.order.id,
         handler: async (response) => {
-          await fetch("http://localhost:5000/api/payment/verify-and-save", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              customerData: formData,
-              paymentId: response.razorpay_payment_id,
-              amount: totalPayable,
-              items: [product],
-            }),
-          });
+          await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/payment/verify-and-save`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                customerData: formData,
+                paymentId: response.razorpay_payment_id,
+                amount: totalPayable,
+                items: [product],
+              }),
+            }
+          );
+
           window.location.href = "/success";
         },
         prefill: {
@@ -102,59 +128,31 @@ Total: ₹${totalPayable}
     }
   };
 
+  /* ---------------- UI ---------------- */
   return (
     <section className="min-h-screen bg-[#f1f3f6] py-6 sm:py-10 px-3 sm:px-4">
       <div className="max-w-[1100px] mx-auto flex flex-col lg:flex-row gap-6">
 
         {/* LEFT */}
         <div className="lg:w-2/3 space-y-5">
-          {/* Address */}
+
+          {/* ADDRESS */}
           <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm">
             <h2 className="text-gray-600 font-black uppercase text-sm mb-4">
               Delivery Address
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                name="name"
-                placeholder="Full Name *"
-                onChange={handleChange}
-                className="border p-3 rounded-lg"
-              />
-              <input
-                name="phone"
-                placeholder="WhatsApp Number *"
-                onChange={handleChange}
-                className="border p-3 rounded-lg"
-              />
-              <input
-                name="houseNo"
-                placeholder="House / Flat No *"
-                onChange={handleChange}
-                className="border p-3 rounded-lg sm:col-span-2"
-              />
-              <input
-                name="area"
-                placeholder="Area / Landmark *"
-                onChange={handleChange}
-                className="border p-3 rounded-lg sm:col-span-2"
-              />
-              <input
-                name="city"
-                placeholder="City"
-                onChange={handleChange}
-                className="border p-3 rounded-lg"
-              />
-              <input
-                name="pincode"
-                placeholder="Pincode *"
-                onChange={handleChange}
-                className="border p-3 rounded-lg"
-              />
+              <input name="name" placeholder="Full Name *" onChange={handleChange} className="border p-3 rounded-lg" />
+              <input name="phone" placeholder="WhatsApp Number *" onChange={handleChange} className="border p-3 rounded-lg" />
+              <input name="houseNo" placeholder="House / Flat No *" onChange={handleChange} className="border p-3 rounded-lg sm:col-span-2" />
+              <input name="area" placeholder="Area / Landmark *" onChange={handleChange} className="border p-3 rounded-lg sm:col-span-2" />
+              <input name="city" placeholder="City" onChange={handleChange} className="border p-3 rounded-lg" />
+              <input name="pincode" placeholder="Pincode *" onChange={handleChange} className="border p-3 rounded-lg" />
             </div>
           </div>
 
-          {/* QR Payment */}
+          {/* QR PAYMENT */}
           <div className="bg-[#001e3c] text-white p-5 rounded-xl border-l-4 border-yellow-400">
             <h3 className="font-bold uppercase text-sm flex items-center gap-2 mb-4">
               <QrCode size={18} className="text-yellow-400" />
@@ -185,7 +183,7 @@ Total: ₹${totalPayable}
             </div>
           </div>
 
-          {/* Razorpay */}
+          {/* RAZORPAY */}
           <button
             onClick={handlePayment}
             className="w-full bg-[#fb641b] text-white py-4 rounded-xl font-black uppercase shadow-md"
@@ -213,7 +211,10 @@ Total: ₹${totalPayable}
             </div>
           </div>
         </div>
+
       </div>
     </section>
   );
 }
+
+           
