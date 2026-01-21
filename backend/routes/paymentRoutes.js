@@ -2,31 +2,54 @@ const express = require("express");
 const router = express.Router();
 const Order = require("../models/Order");
 
+// Live Website Domain (Tracking link ke liye kaam aayega)
+const DOMAIN = "https://www.bootybloom.online";
+
 router.post("/verify-and-save", async (req, res) => {
-  const { customerData, paymentId, amount, items } = req.body;
+  const { customerData, paymentId, amount, items, paymentType } = req.body;
 
   try {
     const newOrder = new Order({
-      // Schema ke 'userInfo' object se match karne ke liye:
+      // Schema ke 'userInfo' se matching
       userInfo: {
         name: customerData.name,
         phone: customerData.phone,
         address: customerData.address,
-        city: customerData.city
+        city: customerData.city || "N/A",
+        pincode: customerData.pincode || "N/A"
       },
-      // Schema ke 'products' array se match karne ke liye:
-      products: items, 
+      // Schema ke 'products' se matching
+      products: items.map(item => ({
+        name: item.name,
+        price: item.price,
+        size: item.size,
+        quantity: item.quantity || 1
+      })), 
       totalAmount: amount,
-      paymentId: paymentId,
-      paymentType: "Online", // Default Online
-      status: "Order Placed", // Taaki Pehla Green Tick dikhe
-      trackingId: "" // Shuruat mein khali rahega
+      paymentId: paymentId || "N/A",
+      // Agar frontend se paymentType aa raha hai toh wo, nahi toh "Online"
+      paymentType: paymentType || "Online Paid", 
+      status: "Order Placed", 
+      trackingId: "",
+      createdAt: new Date()
     });
 
     const savedOrder = await newOrder.save();
-    res.status(201).json({ success: true, orderId: savedOrder._id });
+
+    // Response mein success ke saath Order ID bhej rahe hain
+    res.status(201).json({ 
+      success: true, 
+      message: "Order saved successfully",
+      orderId: savedOrder._id,
+      trackingUrl: `${DOMAIN}/track?id=${savedOrder._id}` // User ke liye direct link
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Order Save Error:", error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "Database mein order save nahi ho paya." 
+    });
   }
 });
 

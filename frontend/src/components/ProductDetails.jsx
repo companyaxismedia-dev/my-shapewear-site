@@ -12,6 +12,7 @@ import {
   Truck,
   ShieldCheck,
   Sparkles,
+  Users,
   Award
 } from "lucide-react";
 
@@ -36,8 +37,8 @@ export default function ProductDetails({ product = defaultProduct }) {
   const [mainImage, setMainImage] = useState(product.mainImage);
   const [selectedSize, setSelectedSize] = useState("M");
   const [orderStatus, setOrderStatus] = useState("idle");
-  const [lastOrderId, setLastOrderId] = useState("");
-  const [isClient, setIsClient] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState(""); 
+  const [isMounted, setIsMounted] = useState(false); // 🔥 Added for Hydration fix
 
   const [formData, setFormData] = useState({
     name: "",
@@ -50,10 +51,10 @@ export default function ProductDetails({ product = defaultProduct }) {
   });
 
   const myWhatsApp = "919217521109";
+  const LIVE_API_URL = "https://www.bootybloom.online/api/orders";
 
-  // Hydration fix & Razorpay Script Load
   useEffect(() => {
-    setIsClient(true);
+    setIsMounted(true); // 🔥 Fix: Set mounted to true after first render
     const s = document.createElement("script");
     s.src = "https://checkout.razorpay.com/v1/checkout.js";
     document.body.appendChild(s);
@@ -69,7 +70,6 @@ export default function ProductDetails({ product = defaultProduct }) {
     formData.area.trim() !== "" &&
     formData.pincode.trim() !== "";
 
-  // --- SAVE ORDER FUNCTION ---
   const saveOrder = async (payMethod, payId = "N/A") => {
     try {
       const fullAddress = `${formData.houseNo}, ${formData.area}, ${formData.city}, ${formData.pincode}, ${formData.state || 'N/A'}`;
@@ -96,7 +96,7 @@ export default function ProductDetails({ product = defaultProduct }) {
         paymentType: payMethod === "ONLINE" ? "Online Paid" : "WhatsApp Order"
       };
 
-      const response = await fetch("http://localhost:5000/api/orders", {
+      const response = await fetch(LIVE_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
@@ -109,7 +109,10 @@ export default function ProductDetails({ product = defaultProduct }) {
         newId = data.order._id.slice(-6).toUpperCase();
       } else if (data._id) {
         newId = data._id.slice(-6).toUpperCase();
+      } else if (data.orderId) {
+        newId = data.orderId.slice(-6).toUpperCase();
       }
+
       setLastOrderId(newId);
       return newId; 
     } catch (err) {
@@ -118,7 +121,6 @@ export default function ProductDetails({ product = defaultProduct }) {
     }
   };
 
-  // SUCCESS SCREEN
   if (orderStatus === "success") {
     return (
       <div className="max-w-md mx-auto py-16 px-4 text-center">
@@ -147,25 +149,22 @@ export default function ProductDetails({ product = defaultProduct }) {
 
   return (
     <section className="relative overflow-hidden min-h-screen py-10">
-      {/* BACKGROUND PARTICLES - Only rendered on client to avoid Math.random hydration error */}
-      {isClient && (
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          {[...Array(15)].map((_, i) => (
-            <motion.div
-              key={i}
-              initial={{ y: "110vh", x: `${Math.random() * 100}vw`, opacity: 0 }}
-              animate={{ y: "-10vh", opacity: [0, 0.5, 0] }}
-              transition={{ duration: Math.random() * 10 + 10, repeat: Infinity, delay: i * 2 }}
-              className="absolute text-pink-400/20 text-2xl"
-            >
-              {i % 2 === 0 ? "♥" : "●"}
-            </motion.div>
-          ))}
-        </div>
-      )}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        {/* 🔥 Hydration Fix: Wrap random animation in isMounted check */}
+        {isMounted && [...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ y: "110vh", x: `${Math.random() * 100}vw`, opacity: 0 }}
+            animate={{ y: "-10vh", opacity: [0, 0.5, 0] }}
+            transition={{ duration: Math.random() * 10 + 10, repeat: Infinity, delay: i * 2 }}
+            className="absolute text-pink-400/20 text-2xl"
+          >
+            {i % 2 === 0 ? "♥" : "●"}
+          </motion.div>
+        ))}
+      </div>
 
       <div id="main-product-section" className="relative z-10 max-w-[1200px] mx-auto px-3 sm:px-4">
-        {/* BANNER */}
         <motion.div 
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -227,9 +226,17 @@ export default function ProductDetails({ product = defaultProduct }) {
                         className="absolute top-1/2 left-0 h-[3px] bg-red-500 -rotate-12 origin-left"
                       />
                     </div>
+                    <motion.div
+                      initial={{ scale: 0, rotate: -20 }}
+                      animate={{ scale: 1, rotate: 5 }}
+                      transition={{ type: "spring", stiffness: 260, damping: 20, delay: 1 }}
+                      className="bg-yellow-400 text-[#041f41] font-black px-3 py-1 rounded-lg text-sm shadow-md border-2 border-white"
+                    >
+                      50% OFF
+                    </motion.div>
                   </div>
-                  <div className="mt-2">
-                    <p className="text-blue-600 font-black italic flex items-center gap-1 uppercase text-lg">
+                  <div className="mt-2 flex flex-col">
+                    <p className="text-blue-600 font-black italic flex items-center gap-1 leading-none uppercase text-lg">
                       <Zap size={20} fill="currentColor" className="text-yellow-500" /> BUY 1 GET 1 FREE
                     </p>
                   </div>
@@ -243,7 +250,7 @@ export default function ProductDetails({ product = defaultProduct }) {
                         key={s}
                         onClick={() => setSelectedSize(s)}
                         className={`w-14 h-14 rounded-2xl border-2 font-black transition-all ${
-                          selectedSize === s ? "bg-[#041f41] text-white border-[#041f41] shadow-lg scale-110" : "border-gray-200 text-gray-400"
+                          selectedSize === s ? "bg-[#041f41] text-white border-[#041f41] shadow-lg scale-110" : "border-gray-200 text-gray-400 hover:border-gray-400"
                         }`}
                       >
                         {s}
@@ -254,29 +261,29 @@ export default function ProductDetails({ product = defaultProduct }) {
               </div>
             </div>
 
-            {/* RIGHT : FORM & CHECKOUT */}
+            {/* RIGHT : FORM & TRUST CARD */}
             <div className="space-y-6">
               <div className="bg-gray-50 border-2 border-white rounded-[2.5rem] p-6 sm:p-8 shadow-xl">
                 <h2 className="font-black text-2xl mb-6 flex items-center gap-3 text-[#041f41]">
                   <div className="bg-blue-600 text-white p-2 rounded-xl"><Smartphone size={24} /></div>
-                  Shipping Details
+                  Direct Shipping Info
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input name="name" value={formData.name} placeholder="Full Name *" onChange={handleChange} className="p-4 bg-white border border-gray-100 rounded-2xl outline-none" />
-                  <input name="phone" value={formData.phone} placeholder="WhatsApp Number *" onChange={handleChange} className="p-4 bg-white border border-gray-100 rounded-2xl outline-none" />
-                  <input name="houseNo" value={formData.houseNo} placeholder="House / Flat No *" onChange={handleChange} className="sm:col-span-2 p-4 bg-white border border-gray-100 rounded-2xl outline-none" />
-                  <input name="area" value={formData.area} placeholder="Area / Road Name *" onChange={handleChange} className="sm:col-span-2 p-4 bg-white border border-gray-100 rounded-2xl outline-none" />
-                  <input name="city" value={formData.city} placeholder="City" onChange={handleChange} className="p-4 bg-white border border-gray-100 rounded-2xl outline-none" />
-                  <input name="pincode" value={formData.pincode} placeholder="Pincode *" onChange={handleChange} className="p-4 bg-white border border-gray-100 rounded-2xl outline-none" />
+                  <input name="name" value={formData.name} placeholder="Full Name *" onChange={handleChange} className="p-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-medium shadow-sm" />
+                  <input name="phone" value={formData.phone} placeholder="WhatsApp Number *" onChange={handleChange} className="p-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-medium shadow-sm" />
+                  <input name="houseNo" value={formData.houseNo} placeholder="House / Flat / Shop No *" onChange={handleChange} className="sm:col-span-2 p-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-medium shadow-sm" />
+                  <input name="area" value={formData.area} placeholder="Area / Landmark / Road *" onChange={handleChange} className="sm:col-span-2 p-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-medium shadow-sm" />
+                  <input name="city" value={formData.city} placeholder="City" onChange={handleChange} className="p-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-medium shadow-sm" />
+                  <input name="pincode" value={formData.pincode} placeholder="Pincode *" onChange={handleChange} className="p-4 bg-white border border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-medium shadow-sm" />
                 </div>
 
-                {/* WHATSAPP CONFIRM BUTTON */}
+                {/* --- WHATSAPP BUTTON --- */}
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={async () => {
-                    if (!isValid) return alert("Sahi address bhariye.");
+                    if (!isValid) return alert("Please fill all required address fields");
                     
                     const message = `*🚀 NEW ORDER ALERT!*
 ------------------------------
@@ -292,22 +299,19 @@ export default function ProductDetails({ product = defaultProduct }) {
 
 *Payment:* COD (WhatsApp Order)`;
 
-                    // Open WhatsApp first for better UX
                     window.open(`https://wa.me/${myWhatsApp}?text=${encodeURIComponent(message)}`, "_blank");
 
-                    // Save to DB in background
                     await saveOrder("WHATSAPP");
                     setOrderStatus("success");
                   }}
-                  className="w-full mt-8 bg-[#25d366] text-white py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 shadow-lg"
+                  className="w-full mt-8 bg-[#25d366] text-white py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(37,211,102,0.3)]"
                 >
                   <MessageCircle size={24} /> Confirm on WhatsApp
                 </motion.button>
 
-                {/* ONLINE PAYMENT BUTTON */}
                 <button
                   onClick={() => {
-                    if (!isValid) return alert("Pehle address bhariye.");
+                    if (!isValid) return alert("Please fill all required address fields");
                     const options = {
                       key: "rzp_live_S5jkUVvVI8UcY2",
                       amount: product.price * 100,
@@ -332,22 +336,40 @@ export default function ProductDetails({ product = defaultProduct }) {
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                   <Award size={80} className="text-blue-900" />
                 </div>
+                
                 <div className="flex items-center gap-2 mb-4">
                   <div className="flex text-orange-400">
                     <Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" /><Star size={16} fill="currentColor" />
                   </div>
                   <span className="text-sm font-bold text-gray-500">(15,400+ Happy Customers)</span>
                 </div>
-                <h3 className="text-xl font-black text-[#041f41] mb-4 italic uppercase">Why Trust Us?</h3>
+
+                <h3 className="text-xl font-black text-[#041f41] mb-4 uppercase italic tracking-tight">
+                  Why 50,000+ Women Trust Our Shapewear?
+                </h3>
+
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <ShieldCheck size={18} className="text-blue-700" />
-                    <p className="text-sm font-bold text-gray-700">Medical-Grade Fabric: <span className="font-normal">Soft & Skin friendly.</span></p>
+                    <div className="mt-1 bg-blue-100 p-1 rounded-full"><ShieldCheck size={16} className="text-blue-700" /></div>
+                    <p className="text-sm font-bold text-gray-700">Medical-Grade Fabric: <span className="font-normal text-gray-500">Soft & Skin friendly.</span></p>
                   </div>
                   <div className="flex items-start gap-3">
-                    <Sparkles size={18} className="text-pink-600" />
-                    <p className="text-sm font-bold text-gray-700">Instant BBL Effect: <span className="font-normal">Get perfect curves in seconds.</span></p>
+                    <div className="mt-1 bg-pink-100 p-1 rounded-full"><Sparkles size={16} className="text-pink-600" /></div>
+                    <p className="text-sm font-bold text-gray-700">Instant BBL Effect: <span className="font-normal text-gray-500">Get perfect curves in seconds.</span></p>
                   </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+                  <div className="flex -space-x-2">
+                    {[1,2,3,4].map(i => (
+                      <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
+                        <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="user" />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest animate-pulse">
+                    ● 42 People looking at this right now
+                  </p>
                 </div>
               </div>
 

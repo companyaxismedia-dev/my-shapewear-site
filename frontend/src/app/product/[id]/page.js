@@ -20,7 +20,7 @@ import {
 const defaultProduct = {
   id: "PROD_001",
   name: "SEAMLESS BOOTY PADS PANTIES",
-  price: 1299,
+  price: 1, // Testing ke liye 1 rakha hai, aap change kar sakte hain
   mainImage: "/image/Women-HIP-PAD-PANTY/hip-pad-1.webp",
   images: [
     "/image/Women-HIP-PAD-PANTY/hip-pad.webp",
@@ -47,18 +47,20 @@ export default function ProductDetails({ product = defaultProduct }) {
     pincode: ""
   });
 
-  const myWhatsApp = "919871147666";
+  const myWhatsApp = "919217521109";
+  // Live API URL (Aapka domain name yahan aayega)
+  const API_URL = "https://www.bootybloom.online/api/orders";
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const isValid =
-    formData.name &&
-    formData.phone &&
-    formData.houseNo &&
-    formData.area &&
-    formData.pincode &&
-    selectedSize;
+    formData.name.trim() !== "" &&
+    formData.phone.trim() !== "" &&
+    formData.houseNo.trim() !== "" &&
+    formData.area.trim() !== "" &&
+    formData.pincode.trim() !== "" &&
+    selectedSize !== "";
 
   const handleOrderSubmit = async () => {
     if (!selectedSize) return alert("Please select your Size first!");
@@ -66,38 +68,57 @@ export default function ProductDetails({ product = defaultProduct }) {
 
     setOrderStatus("loading");
 
+    // Unified Payload for your Backend Schema
     const orderPayload = {
-      products: [{
+      customerData: {
+        name: formData.name,
+        phone: formData.phone,
+        address: `${formData.houseNo}, ${formData.area}, ${formData.city} - ${formData.pincode}`,
+        houseNo: formData.houseNo,
+        area: formData.area,
+        city: formData.city,
+        pincode: formData.pincode
+      },
+      items: [{
         name: product.name,
         price: product.price,
         size: selectedSize,
         quantity: 1
       }],
-      totalAmount: product.price,
-      userInfo: {
-        name: formData.name,
-        phone: formData.phone,
-        address: `${formData.houseNo}, ${formData.area}, ${formData.city} - ${formData.pincode}`
-      },
+      amount: product.price,
+      paymentType: "WhatsApp Order / COD",
       status: "Pending"
     };
 
     try {
-      // 1. SAVE TO DATABASE (Your API)
-      const response = await fetch("http://localhost:5000/api/orders", {
+      // 1. SAVE TO DATABASE
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderPayload),
       });
 
       if (response.ok) {
-        // 2. OPEN WHATSAPP FOR CLIENT
-        const whatsappMsg = `*NEW ORDER CONFIRMED*%0A------------------%0A*Product:* ${product.name}%0A*Size:* ${selectedSize}%0A*Price:* ₹${product.price}%0A------------------%0A*Delivery To:*%0A${formData.name}%0A${formData.houseNo}, ${formData.area}%0A${formData.city} - ${formData.pincode}%0APhone: ${formData.phone}`;
+        // 2. OPEN WHATSAPP
+        const whatsappMsg = `*🚀 NEW ORDER CONFIRMED*
+------------------------------
+*Product:* ${product.name}
+*Size:* ${selectedSize}
+*Price:* ₹${product.price}
+------------------------------
+*Delivery Details:*
+*Name:* ${formData.name}
+*Address:* ${formData.houseNo}, ${formData.area}
+*City:* ${formData.city} - ${formData.pincode}
+*Phone:* ${formData.phone}
+
+*Payment:* Cash on Delivery`;
         
-        window.open(`https://wa.me/${myWhatsApp}?text=${whatsappMsg}`, "_blank");
+        window.open(`https://wa.me/${myWhatsApp}?text=${encodeURIComponent(whatsappMsg)}`, "_blank");
         setOrderStatus("success");
       } else {
-        alert("Something went wrong. Please try again.");
+        const errorData = await response.json();
+        alert(errorData.message || "Something went wrong. Please try again.");
         setOrderStatus("idle");
       }
     } catch (error) {
@@ -211,12 +232,12 @@ export default function ProductDetails({ product = defaultProduct }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input name="name" onChange={handleChange} placeholder="Aapka Pura Naam" className="input-style md:col-span-2" />
-              <input name="phone" onChange={handleChange} placeholder="WhatsApp Number" className="input-style md:col-span-2" />
-              <input name="houseNo" onChange={handleChange} placeholder="House / Flat No." className="input-style" />
-              <input name="area" onChange={handleChange} placeholder="Area / Landmark" className="input-style" />
-              <input name="city" onChange={handleChange} placeholder="City" className="input-style" />
-              <input name="pincode" onChange={handleChange} placeholder="Pincode" className="input-style" />
+              <input name="name" onChange={handleChange} value={formData.name} placeholder="Aapka Pura Naam" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all md:col-span-2" />
+              <input name="phone" onChange={handleChange} value={formData.phone} placeholder="WhatsApp Number" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all md:col-span-2" />
+              <input name="houseNo" onChange={handleChange} value={formData.houseNo} placeholder="House / Flat No." className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all" />
+              <input name="area" onChange={handleChange} value={formData.area} placeholder="Area / Landmark" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all" />
+              <input name="city" onChange={handleChange} value={formData.city} placeholder="City" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all" />
+              <input name="pincode" onChange={handleChange} value={formData.pincode} placeholder="Pincode" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all" />
             </div>
 
             <button
@@ -253,9 +274,6 @@ export default function ProductDetails({ product = defaultProduct }) {
       </div>
 
       <style jsx>{`
-        .input-style {
-          @apply p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all;
-        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
     </section>
