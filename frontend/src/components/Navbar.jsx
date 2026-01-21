@@ -1,105 +1,108 @@
 "use client";
-import Image from "next/image"; // Link ko Image se replace kiya
+import React from 'react';
 import LinkNav from "next/link";
-import { Search, ShoppingCart, User, MapPin, ChevronDown, Heart, Grid } from "lucide-react";
+import { Search, ShoppingCart, User, Heart, Menu, HelpCircle, Package } from "lucide-react";
 
 export default function Navbar() {
   return (
-    <header className="w-full border-b border-gray-200 font-sans">
-      {/* Primary Blue Navbar */}
-      <div className="bg-[#0071dc] px-4 md:px-10 py-3 flex items-center gap-4 md:gap-8">
-        
-        {/* Updated Logo Section using your logo.webp.jpeg */}
-        <LinkNav href="/" className="flex items-center gap-2 group shrink-0">
-          <div className="relative w-10 h-10 md:w-12 md:h-12 overflow-hidden rounded-full border-2 border-[#ffc220] bg-white transition group-hover:scale-105">
-            <Image 
-              src="/image/logo.webp.jpeg" // Aapki upload ki hui file ka path
-              alt="Booty Bloom Logo"
-              fill
-              className="object-cover"
+    <>
+      {/* 1. Google Font Import */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+        .clovia-font {
+          font-family: 'Great Vibes', cursive;
+        }
+      `}</style>
+
+      <header className="w-full font-sans shadow-sm">
+        {/* Top Utilities Bar */}
+        <div className="bg-white px-4 md:px-10 py-2 flex justify-between items-center text-[10px] md:text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b">
+          <div className="flex gap-4">
+            <span>Free Returns</span>
+            <span>100% Privacy</span>
+            <span>Cash on Delivery</span>
+          </div>
+          <div className="hidden md:flex gap-4 items-center">
+            {/* ADDED: Top Bar Track Link */}
+            <LinkNav href="/track" className="flex items-center gap-1 text-pink-600 hover:text-black transition">
+              <Package size={13} /> Track Order
+            </LinkNav>
+            <span>Download the App</span>
+            <span>Our Stores</span>
+          </div>
+        </div>
+
+        {/* Main Logo & Search Section */}
+        <div className="bg-white px-4 md:px-10 py-4 flex items-center justify-between gap-4">
+          <button className="lg:hidden text-black">
+            <Menu size={24} />
+          </button>
+
+          {/* Styled Booty Bloom Logo */}
+          <LinkNav href="/" className="flex flex-col items-center group">
+            <div className="flex items-baseline">
+              <span className="clovia-font text-4xl md:text-5xl text-black transition-colors group-hover:text-pink-600">
+                Booty Bloom
+              </span>
+              <span className="text-pink-600 font-bold text-sm ml-1">.online</span>
+            </div>
+          </LinkNav>
+
+          {/* Minimalist Search with Updated Placeholder */}
+          <div className="hidden md:flex flex-grow max-w-xl relative mx-10">
+            <input 
+              type="text" 
+              placeholder="Search products or enter phone to track order..." 
+              className="w-full bg-gray-50 py-2.5 px-10 rounded-full text-sm border border-gray-100 focus:outline-none focus:border-pink-200 transition"
             />
+            <Search className="absolute left-3 top-3 text-gray-400" size={16} />
           </div>
-          <span className="text-white text-xl md:text-2xl font-bold tracking-tight hidden sm:block">
-            BOOTY BLOOM
-          </span>
-        </LinkNav>
 
-        {/* Pickup & Delivery Selector */}
-        <button className="hidden xl:flex items-center gap-2 text-white hover:bg-[#004f9a] px-3 py-2 rounded-full transition shrink-0">
-          <div className="w-8 h-8 bg-[#004f9a] rounded-full flex items-center justify-center">
-             <MapPin size={16} />
-          </div>
-          <div className="flex flex-col items-start leading-none">
-            <span className="text-[12px] font-bold">How do you want your items?</span>
-            <span className="text-[11px] opacity-90">Sacramento, 95829 • Sacramento Supercenter</span>
-          </div>
-          <ChevronDown size={14} />
-        </button>
-
-        {/* Big Search Bar */}
-        <div className="flex-grow relative max-w-4xl">
-          <input 
-            type="text" 
-            placeholder="Search everything at VitalStore online and in store" 
-            className="w-full py-2.5 px-5 rounded-full text-black focus:outline-none placeholder:text-gray-600 text-sm"
-          />
-          <div className="absolute right-1 top-1 bg-[#041f41] p-2 rounded-full text-white cursor-pointer hover:bg-black transition">
-            <Search size={18} />
-          </div>
-        </div>
-
-        {/* Right Section: My Items, Account & Cart */}
-        <div className="flex items-center gap-2 md:gap-6 text-white whitespace-nowrap">
-          <LinkNav href="/reorder" className="hidden lg:flex items-center gap-2 hover:bg-[#004f9a] px-3 py-2 rounded-full">
-            <Heart size={18} />
-            <div className="flex flex-col items-start leading-none">
-                <span className="text-[12px]">Reorder</span>
-                <span className="text-sm font-bold">My Items</span>
-            </div>
-          </LinkNav>
-          
-          <LinkNav href="/login" className="flex items-center gap-2 hover:bg-[#004f9a] px-3 py-2 rounded-full">
-            <User size={18} />
-            <div className="flex flex-col items-start leading-none">
-                <span className="text-[12px]">Sign In</span>
-                <span className="text-sm font-bold">Account</span>
-            </div>
-          </LinkNav>
-
-          <LinkNav href="/cart" className="relative flex flex-col items-center group px-2">
-            <ShoppingCart size={24} />
-            <span className="absolute -top-1 right-0 bg-[#ffc220] text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#0071dc]">
-              0
-            </span>
-            <span className="text-[10px] font-bold mt-0.5">$0.00</span>
-          </LinkNav>
-        </div>
-      </div>
-
-      {/* Secondary White Sub-Nav */}
-      <div className="bg-white px-4 md:px-10 py-1.5 flex items-center justify-between shadow-sm overflow-hidden">
-        <div className="flex items-center gap-1 text-sm font-bold text-[#2e2f32]">
-            <button className="flex items-center gap-1 hover:bg-gray-100 px-3 py-1.5 rounded-full">
-                <Grid size={16} /> Departments <ChevronDown size={14} />
-            </button>
-            <button className="flex items-center gap-1 hover:bg-gray-100 px-3 py-1.5 rounded-full border-r pr-4 border-gray-300">
-                <Grid size={16} /> Services <ChevronDown size={14} />
-            </button>
+          {/* Icons */}
+          <div className="flex items-center gap-5 text-gray-700">
+            <LinkNav href="/help" className="hidden md:block hover:text-pink-600 transition" title="Help">
+              <HelpCircle size={22} strokeWidth={1.2} />
+            </LinkNav>
             
-            {/* Nav Links */}
-            <div className="hidden md:flex items-center gap-4 ml-2 overflow-x-auto no-scrollbar whitespace-nowrap">
-              <LinkNav href="/deals" className="hover:underline">Get it Fast</LinkNav>
-              <LinkNav href="/deals" className="hover:underline">Rollbacks & More</LinkNav>
-              <LinkNav href="/deals" className="hover:underline">Valentine's Day</LinkNav>
-              <LinkNav href="/deals" className="hover:underline">New Arrivals</LinkNav>
-              <LinkNav href="/deals" className="hover:underline">bettergoods</LinkNav>
-            </div>
+            <LinkNav href="/login" className="hover:text-pink-600 transition">
+              <User size={22} strokeWidth={1.2} />
+            </LinkNav>
+            <LinkNav href="/wishlist" className="relative hover:text-pink-600 transition">
+              <Heart size={22} strokeWidth={1.2} />
+              <span className="absolute -top-1 -right-1 bg-black text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
+            </LinkNav>
+            <LinkNav href="/cart" className="relative hover:text-pink-600 transition">
+              <ShoppingCart size={22} strokeWidth={1.2} />
+              <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
+            </LinkNav>
+          </div>
         </div>
-        
-        <div className="hidden lg:flex items-center gap-4 text-sm font-bold">
-            <LinkNav href="/help" className="hover:underline">Help</LinkNav>
+
+        {/* Black Navigation Menu */}
+        <nav className="bg-black text-white px-4 md:px-10">
+          <div className="flex items-center justify-center gap-6 md:gap-10 py-3 text-[11px] md:text-[13px] font-semibold uppercase tracking-[0.15em] whitespace-nowrap overflow-x-auto no-scrollbar">
+            <LinkNav href="/bras" className="hover:text-pink-400 transition">Bras</LinkNav>
+            <LinkNav href="/panties" className="hover:text-pink-400 transition">Panties</LinkNav>
+            <LinkNav href="/nightwear" className="hover:text-pink-400 transition">Nightwear</LinkNav>
+            <LinkNav href="/active" className="hover:text-pink-400 transition">Active</LinkNav>
+            <LinkNav href="/shapewear" className="hover:text-pink-400 transition">Shapewear</LinkNav>
+            <LinkNav href="/exclusive" className="bg-pink-600 px-3 py-1 rounded-sm text-white">Exclusive</LinkNav>
+            
+            {/* ADDED: Menu Track Link */}
+            <LinkNav href="/track" className="hover:text-pink-400 transition flex items-center gap-1">
+              Track Order
+              <span className="h-1.5 w-1.5 bg-pink-500 rounded-full animate-pulse"></span>
+            </LinkNav>
+            
+            <LinkNav href="/help" className="hover:text-pink-400 transition">Help</LinkNav>
+          </div>
+        </nav>
+
+        {/* Promo Bar */}
+        <div className="bg-[#8b1030] text-white text-center py-2 text-[10px] md:text-xs font-bold tracking-[0.2em] uppercase">
+          Valentine Special: Buy 2 Get 1 Free on Best Sellers
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 }

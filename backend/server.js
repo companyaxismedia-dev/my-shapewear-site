@@ -4,48 +4,23 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 
 dotenv.config();
-
 const app = express();
 
-// ===============================
-// 🔹 Middlewares
-// ===============================
 app.use(cors());
 app.use(express.json());
 
-// ===============================
-// 🔹 MongoDB Connection (FIXED)
-// ===============================
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB Connected ✅");
-  })
-  .catch((error) => {
-    console.error("MongoDB Connection Error ❌", error.message);
-  });
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB Connected ✅"))
+  .catch((err) => console.error("MongoDB Error ❌", err.message));
 
-// ===============================
-// 🔹 Routes
-// ===============================
+// Routes
 app.use("/api/products", require("./routes/productRoutes"));
-app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/orders", require("./routes/orderRoutes")); // Isme tracking logic hoga
 app.use("/api/users", require("./routes/authRoutes"));
-// Routes ke neeche ise add karein
 app.use("/api/payment", require("./routes/paymentRoutes"));
 
-// ===============================
-// 🔹 Test Route
-// ===============================
-app.get("/", (req, res) => {
-  res.send("API is running successfully 🚀");
-});
+app.get("/", (req, res) => res.send("API is running 🚀"));
 
-// ===============================
-// 🔹 Server Start
-// ===============================
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server: http://localhost:${PORT}`));

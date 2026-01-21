@@ -9,11 +9,16 @@ import {
   Truck,
   HelpCircle,
   X,
-  MessageSquare
+  MessageSquare,
+  ShieldCheck,
+  Star,
+  Sparkles,
+  ChevronRight
 } from "lucide-react";
 
 /* PRODUCT DATA */
 const defaultProduct = {
+  id: "PROD_001",
   name: "SEAMLESS BOOTY PADS PANTIES",
   price: 1299,
   mainImage: "/image/Women-HIP-PAD-PANTY/hip-pad-1.webp",
@@ -23,13 +28,15 @@ const defaultProduct = {
     "/image/Women-HIP-PAD-PANTY/HIP-PAD-3.webp",
     "/image/Women-HIP-PAD-PANTY/MANIFIQUE-Padded-Underwear-3.webp",
     "/image/Women-HIP-PAD-PANTY/Seamless-Booty-Pads-Butt-Enhancer-Panties-7.webp"
-  ]
+  ],
+  sizes: ["S", "M", "L", "XL", "XXL"]
 };
 
 export default function ProductDetails({ product = defaultProduct }) {
   const [mainImage, setMainImage] = useState(product.mainImage);
-  const [orderStatus, setOrderStatus] = useState("idle");
+  const [orderStatus, setOrderStatus] = useState("idle"); // idle, loading, success
   const [showHelp, setShowHelp] = useState(false);
+  const [selectedSize, setSelectedSize] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -42,12 +49,6 @@ export default function ProductDetails({ product = defaultProduct }) {
 
   const myWhatsApp = "919871147666";
 
-  const helpQuestions = [
-    { q: "Order kab deliver hoga?" },
-    { q: "Delivery late ho gayi hai" },
-    { q: "Size exchange possible hai?" }
-  ];
-
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -56,42 +57,79 @@ export default function ProductDetails({ product = defaultProduct }) {
     formData.phone &&
     formData.houseNo &&
     formData.area &&
-    formData.pincode;
+    formData.pincode &&
+    selectedSize;
 
-  const handleWhatsAppOrder = () => {
-    if (!isValid) return alert("Complete address fill karein");
-    window.open(`https://wa.me/${myWhatsApp}`, "_blank");
-    setOrderStatus("success");
+  const handleOrderSubmit = async () => {
+    if (!selectedSize) return alert("Please select your Size first!");
+    if (!isValid) return alert("Please complete your delivery address details");
+
+    setOrderStatus("loading");
+
+    const orderPayload = {
+      products: [{
+        name: product.name,
+        price: product.price,
+        size: selectedSize,
+        quantity: 1
+      }],
+      totalAmount: product.price,
+      userInfo: {
+        name: formData.name,
+        phone: formData.phone,
+        address: `${formData.houseNo}, ${formData.area}, ${formData.city} - ${formData.pincode}`
+      },
+      status: "Pending"
+    };
+
+    try {
+      // 1. SAVE TO DATABASE (Your API)
+      const response = await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+
+      if (response.ok) {
+        // 2. OPEN WHATSAPP FOR CLIENT
+        const whatsappMsg = `*NEW ORDER CONFIRMED*%0A------------------%0A*Product:* ${product.name}%0A*Size:* ${selectedSize}%0A*Price:* ₹${product.price}%0A------------------%0A*Delivery To:*%0A${formData.name}%0A${formData.houseNo}, ${formData.area}%0A${formData.city} - ${formData.pincode}%0APhone: ${formData.phone}`;
+        
+        window.open(`https://wa.me/${myWhatsApp}?text=${whatsappMsg}`, "_blank");
+        setOrderStatus("success");
+      } else {
+        alert("Something went wrong. Please try again.");
+        setOrderStatus("idle");
+      }
+    } catch (error) {
+      console.error("Order Error:", error);
+      alert("Server error. Please check your connection.");
+      setOrderStatus("idle");
+    }
   };
 
-  /* SUCCESS */
+  /* SUCCESS SCREEN */
   if (orderStatus === "success") {
     return (
-      <div className="max-w-md mx-auto py-16 px-4 text-center">
-        <div className="bg-white p-8 rounded-3xl shadow-xl">
-          <CheckCircle2 size={70} className="text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-black text-[#041f41]">
-            Order Placed!
-          </h2>
-          <p className="text-gray-500 mt-2">
-            Aapka order confirm ho gaya hai
-          </p>
-
-          <div className="bg-blue-50 p-5 rounded-xl mt-6">
-            <div className="flex items-center gap-2 font-bold text-blue-700">
-              <Truck size={18} /> Estimated Delivery
+      <div className="max-w-md mx-auto py-20 px-4 text-center animate-in fade-in zoom-in duration-500">
+        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-t-8 border-green-500">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 size={50} className="text-green-600" />
+          </div>
+          <h2 className="text-3xl font-black text-[#041f41] italic uppercase">Aapka Order Mil Gaya!</h2>
+          <p className="text-gray-500 mt-3 font-medium">Humein aapka order receive ho gaya hai. Hum jald hi aapse contact karenge.</p>
+          
+          <div className="bg-blue-50 p-6 rounded-2xl mt-8 border-2 border-blue-100">
+            <div className="flex items-center justify-center gap-2 font-black text-blue-700 uppercase text-sm tracking-widest">
+              <Truck size={20} /> Fast Delivery
             </div>
-            <p className="text-xl font-black mt-2">
-              3 – 5 Working Days
-            </p>
+            <p className="text-2xl font-black mt-2 text-[#041f41]">3 – 5 Days</p>
           </div>
 
-          <button
-            onClick={() => setShowHelp(true)}
-            className="mt-6 bg-gray-100 px-6 py-3 rounded-xl font-bold"
+          <button 
+            onClick={() => window.location.href = "/"}
+            className="mt-8 w-full bg-[#041f41] text-white py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-black transition-all"
           >
-            <HelpCircle size={18} className="inline mr-2" />
-            Need Help?
+            Continue Shopping
           </button>
         </div>
       </div>
@@ -99,117 +137,132 @@ export default function ProductDetails({ product = defaultProduct }) {
   }
 
   return (
-    <section className="max-w-[1200px] mx-auto px-3 sm:px-4 py-10 relative">
-
-      {/* FLOATING HELP */}
-      <button
-        onClick={() => setShowHelp(true)}
-        className="fixed bottom-5 right-4 z-50 bg-blue-600 text-white p-4 rounded-full shadow-xl"
-      >
-        <MessageSquare size={22} />
+    <section className="max-w-[1250px] mx-auto px-4 py-8 relative">
+      {/* Floating Help Button */}
+      <button onClick={() => setShowHelp(true)} className="fixed bottom-6 right-6 z-50 bg-[#25d366] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform">
+        <MessageCircle size={28} />
       </button>
 
-      <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 lg:p-8">
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-          {/* IMAGES */}
-          <div className="space-y-4">
-            <div className="aspect-[4/5] bg-gray-50 rounded-2xl flex items-center justify-center">
-              <img src={mainImage} className="max-h-full p-4" />
-            </div>
-
-            <div className="flex gap-2 overflow-x-auto justify-center">
-              {product.images.map((img, i) => (
-                <img
-                  key={i}
-                  src={img}
-                  onClick={() => setMainImage(img)}
-                  className="w-16 h-20 rounded-lg border cursor-pointer"
-                />
-              ))}
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-black text-[#041f41] uppercase">
-              {product.name}
-            </h1>
-
-            <div className="bg-blue-50 p-4 rounded-xl">
-              <p className="text-3xl font-black text-blue-700">
-                ₹{product.price}
-              </p>
-              <p className="text-blue-600 font-bold italic flex gap-1">
-                <Zap size={14} /> BUY 1 GET 1 FREE
-              </p>
-            </div>
-          </div>
-
-          {/* FORM */}
-          <div className="space-y-5">
-            <div className="border rounded-2xl p-5">
-              <h2 className="font-black text-xl mb-4 flex gap-2">
-                <Smartphone size={22} /> Shipping Address
-              </h2>
-
-              <div className="grid gap-3">
-                <input name="name" placeholder="Full Name" onChange={handleChange} className="p-3 bg-gray-50 rounded-xl" />
-                <input name="phone" placeholder="WhatsApp Number" onChange={handleChange} className="p-3 bg-gray-50 rounded-xl" />
-                <input name="houseNo" placeholder="House / Flat No" onChange={handleChange} className="p-3 bg-gray-50 rounded-xl" />
-                <input name="area" placeholder="Area / Landmark" onChange={handleChange} className="p-3 bg-gray-50 rounded-xl" />
-                <div className="grid grid-cols-2 gap-3">
-                  <input name="city" placeholder="City" onChange={handleChange} className="p-3 bg-gray-50 rounded-xl" />
-                  <input name="pincode" placeholder="Pincode" onChange={handleChange} className="p-3 bg-gray-50 rounded-xl" />
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        
+        {/* LEFT: VISUALS */}
+        <div className="space-y-6">
+          <div className="sticky top-24">
+            <div className="relative rounded-[2.5rem] overflow-hidden border-4 border-white shadow-2xl bg-gray-50 aspect-[4/5]">
+              <div className="absolute top-5 left-5 z-10 bg-red-600 text-white px-5 py-2 rounded-full font-black text-xs shadow-lg animate-pulse uppercase tracking-tighter">
+                Limited Offer: Buy 1 Get 1 Free
               </div>
-
-              <button
-                onClick={handleWhatsAppOrder}
-                className="w-full mt-5 bg-[#25d366] text-white py-4 rounded-xl font-black flex justify-center gap-2"
-              >
-                <MessageCircle size={20} /> Order on WhatsApp
-              </button>
+              <img src={mainImage} className="w-full h-full object-contain" alt="Booty Bloom Product" />
             </div>
 
-            {/* QR */}
-            <div className="bg-[#041f41] text-white p-5 rounded-2xl">
-              <h3 className="font-bold flex gap-2 mb-3">
-                <QrCode size={18} /> Scan & Pay
-              </h3>
-              <p className="font-black text-yellow-400">
-                AXISMEDIA465@iob
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* HELP MODAL */}
-      {showHelp && (
-        <div className="fixed inset-0 bg-black/60 z-[100] flex items-end sm:items-center justify-center">
-          <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl">
-            <div className="bg-blue-600 p-4 text-white flex justify-between">
-              <p className="font-black">HELP CENTER</p>
-              <button onClick={() => setShowHelp(false)}>
-                <X />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-3">
-              {helpQuestions.map((q, i) => (
-                <button
-                  key={i}
-                  onClick={() =>
-                    window.open(`https://wa.me/${myWhatsApp}`, "_blank")
-                  }
-                  className="w-full text-left p-3 rounded-xl border"
+            <div className="flex gap-3 mt-6 overflow-x-auto no-scrollbar py-2">
+              {product.images.map((img, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => setMainImage(img)}
+                  className={`relative flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden border-2 transition-all ${mainImage === img ? 'border-blue-600 scale-105' : 'border-transparent opacity-60'}`}
                 >
-                  {q.q}
+                  <img src={img} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
           </div>
         </div>
-      )}
+
+        {/* RIGHT: INFO & FORM */}
+        <div className="space-y-8">
+          <div>
+            <div className="flex items-center gap-2 text-blue-600 font-black text-sm uppercase tracking-[0.2em] mb-2">
+               <Star size={16} fill="currentColor"/> Top Rated Seller
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-[#041f41] leading-[1.1] uppercase italic tracking-tighter mb-4">
+              {product.name}
+            </h1>
+            <div className="flex items-center gap-4">
+               <span className="text-5xl font-black text-blue-700 tracking-tighter">₹{product.price}</span>
+               <span className="text-xl text-gray-400 line-through font-bold">₹2,499</span>
+               <div className="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-black text-sm">SAVE 50%</div>
+            </div>
+          </div>
+
+          {/* SIZE SELECTION */}
+          <div className="space-y-4">
+            <label className="text-sm font-black uppercase tracking-widest text-gray-400 flex justify-between">
+              Select Your Size <span>Size Guide</span>
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {product.sizes.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setSelectedSize(size)}
+                  className={`w-14 h-14 rounded-2xl font-black transition-all flex items-center justify-center border-2 ${selectedSize === size ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200 scale-110' : 'bg-white border-gray-100 text-gray-600 hover:border-blue-300'}`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ORDER FORM */}
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl border border-gray-50 space-y-6">
+            <div className="flex items-center gap-4 mb-2">
+               <div className="bg-blue-100 text-blue-600 p-3 rounded-2xl"><MapPinIcon size={24}/></div>
+               <h2 className="text-2xl font-black text-[#041f41] uppercase tracking-tighter italic">Delivery Address</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input name="name" onChange={handleChange} placeholder="Aapka Pura Naam" className="input-style md:col-span-2" />
+              <input name="phone" onChange={handleChange} placeholder="WhatsApp Number" className="input-style md:col-span-2" />
+              <input name="houseNo" onChange={handleChange} placeholder="House / Flat No." className="input-style" />
+              <input name="area" onChange={handleChange} placeholder="Area / Landmark" className="input-style" />
+              <input name="city" onChange={handleChange} placeholder="City" className="input-style" />
+              <input name="pincode" onChange={handleChange} placeholder="Pincode" className="input-style" />
+            </div>
+
+            <button
+              disabled={orderStatus === "loading"}
+              onClick={handleOrderSubmit}
+              className="group w-full bg-[#25d366] hover:bg-black text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-4 shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+            >
+              {orderStatus === "loading" ? "Processing..." : (
+                <>CONFIRM ORDER <ChevronRight className="group-hover:translate-x-2 transition-transform"/></>
+              )}
+            </button>
+            
+            <p className="text-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+              🔒 100% Privacy & Cash on Delivery Available
+            </p>
+          </div>
+
+          {/* TRUST BADGES */}
+          <div className="grid grid-cols-3 gap-4 text-center">
+             <div className="p-4 bg-gray-50 rounded-3xl">
+                <ShieldCheck size={24} className="mx-auto text-blue-600 mb-2"/>
+                <p className="text-[10px] font-black uppercase tracking-tighter">Genuine Product</p>
+             </div>
+             <div className="p-4 bg-gray-50 rounded-3xl">
+                <Truck size={24} className="mx-auto text-pink-500 mb-2"/>
+                <p className="text-[10px] font-black uppercase tracking-tighter">Fast Shipping</p>
+             </div>
+             <div className="p-4 bg-gray-50 rounded-3xl">
+                <Sparkles size={24} className="mx-auto text-orange-400 mb-2"/>
+                <p className="text-[10px] font-black uppercase tracking-tighter">Premium Quality</p>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .input-style {
+          @apply p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
     </section>
   );
+}
+
+// Simple Helper Icon
+function MapPinIcon({size}) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
 }

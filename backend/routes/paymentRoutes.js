@@ -1,24 +1,26 @@
 const express = require("express");
 const router = express.Router();
-const Order = require("../models/Order"); // Aapka model
+const Order = require("../models/Order");
 
-// Payment Success hone ke baad Order Save karne ka route
 router.post("/verify-and-save", async (req, res) => {
   const { customerData, paymentId, amount, items } = req.body;
 
   try {
     const newOrder = new Order({
-      customerName: customerData.name,
-      phone: customerData.phone,
-      address: customerData.address,
-      city: customerData.city,
-      pincode: customerData.pincode,
-      state: customerData.state,
+      // Schema ke 'userInfo' object se match karne ke liye:
+      userInfo: {
+        name: customerData.name,
+        phone: customerData.phone,
+        address: customerData.address,
+        city: customerData.city
+      },
+      // Schema ke 'products' array se match karne ke liye:
+      products: items, 
       totalAmount: amount,
-      paymentMethod: "Razorpay",
       paymentId: paymentId,
-      status: "Paid",
-      items: items // [ {name: "Shapewear", size: "M"} ]
+      paymentType: "Online", // Default Online
+      status: "Order Placed", // Taaki Pehla Green Tick dikhe
+      trackingId: "" // Shuruat mein khali rahega
     });
 
     const savedOrder = await newOrder.save();

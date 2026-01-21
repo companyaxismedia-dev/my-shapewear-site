@@ -1,16 +1,21 @@
 const express = require('express');
 const router = express.Router();
-// 'next' wala import yahan se hata diya gaya hai
+const orderController = require('../controllers/orderController');
 
-router.post('/orders', async (req, res) => {
-  try {
-    const { userInfo, products, totalAmount, paymentId, paymentType } = req.body;
-    // Aapka MongoDB/Database logic yahan aayega
-    console.log(`New ${paymentType} Order:`, userInfo.name);
-    res.status(200).json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+// 1. Sabse pehle functions check karein ki wo controller mein hain ya nahi
+// Agar controller mein function ka naam alag hai to error aayega
+
+// Create Order (URL: POST /api/orders)
+router.post('/', orderController.createOrder); 
+
+// Get All Orders (URL: GET /api/orders)
+router.get('/', orderController.getOrders);
+
+// Track Order by Phone (URL: GET /api/orders/track?phone=...)
+// Note: Isse ID wale route se upar rakhein
+router.get('/track', orderController.trackOrderByPhone);
+
+// Update Tracking ID (URL: PUT /api/orders/:id)
+router.put('/:id', orderController.updateOrderTracking);
 
 module.exports = router;

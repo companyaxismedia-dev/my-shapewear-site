@@ -1,116 +1,189 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Hero() {
+  // --- HYDRATION FIX CODE ---
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  // --------------------------
+
+  const images = useMemo(() => [
+    "/image/Women-HIP-PAD-PANTY/hip-pad.webp",
+    "/image/Women-HIP-PAD-PANTY/HIP-PAD-3.webp",
+    "/image/Women-HIP-PAD-PANTY/hip-pad-1.webp",
+    "/image/Women-HIP-PAD-PANTY/hip-pad-2.webp"
+  ], []);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length === 0) return;
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [images.length]);
+
   return (
-    <div className="bg-[#f0f2f5] py-2 md:py-8 px-2 md:px-4">
-      <div className="max-w-[1400px] mx-auto bg-white rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-xl border border-gray-100">
-        <div className="flex flex-col lg:flex-row items-stretch min-h-[500px] md:min-h-[600px]">
-          
-          {/* Left Section: Text Content */}
-          <div className="lg:w-[45%] p-6 md:p-12 lg:p-20 flex flex-col justify-center text-center lg:text-left order-2 lg:order-1">
-            <div className="mb-4 md:mb-6">
-              <span className="bg-[#0071dc] text-white text-[10px] md:text-xs font-black px-4 py-1.5 rounded-full uppercase italic tracking-widest shadow-md inline-block">
-                ★ ROLLBACK
-              </span>
-            </div>
+    <section className="relative bg-[#f0f2f5] py-4 px-2 md:px-4 overflow-hidden min-h-screen flex flex-col justify-center">
+      
+      {/* --- BACKGROUND ANIMATION LAYER --- */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Moving Gradient Blobs */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            x: [0, 50, 0],
+            y: [0, 30, 0] 
+          }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-pink-200/40 rounded-full blur-[120px]"
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.3, 1],
+            x: [0, -40, 0],
+            y: [0, -60, 0] 
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] bg-blue-200/30 rounded-full blur-[120px]"
+        />
+
+        {/* Floating Particles (Hearts/Dots) - WRAPPED WITH MOUNTED CHECK */}
+        {mounted && [...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ y: "110vh", x: `${Math.random() * 100}vw`, opacity: 0 }}
+            animate={{ y: "-10vh", opacity: [0, 1, 0] }}
+            transition={{ 
+              duration: Math.random() * 10 + 10, 
+              repeat: Infinity, 
+              delay: i * 2,
+              ease: "linear" 
+            }}
+            className="absolute text-pink-400/20 text-4xl"
+          >
+            {i % 2 === 0 ? "♥" : "●"}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* --- CONTENT LAYER --- */}
+      <div className="relative z-10 max-w-[1400px] mx-auto w-full">
+        
+        {/* 1. TOP BIG OFFER BANNER */}
+        <motion.div 
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="mb-6 bg-gradient-to-r from-red-600 via-pink-600 to-red-600 text-white text-center py-4 rounded-2xl shadow-2xl border-b-4 border-black/10"
+        >
+          <motion.h2 
+            animate={{ scale: [1, 1.03, 1] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+            className="text-2xl md:text-5xl font-black italic tracking-tighter uppercase px-2"
+          >
+            🔥 Valentine Special: BUY 1 GET 1 FREE 🔥
+          </motion.h2>
+        </motion.div>
+
+        <div className="bg-white/80 backdrop-blur-md rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.1)] border border-white/50">
+          <div className="flex flex-col lg:flex-row items-stretch min-h-[600px] md:min-h-[750px]">
             
-            <h1 className="text-4xl md:text-7xl lg:text-8xl font-black text-[#041f41] leading-[1] md:leading-[0.9] mb-4 md:mb-6 uppercase italic tracking-tighter">
-              SCULPT & SAVE:<br />
-              <span className="text-[#0071dc]">UP TO 40% OFF</span><br />
-              SHAPEWEAR
-            </h1>
-            
-            <p className="text-gray-600 text-base md:text-xl mb-8 md:mb-10 max-w-lg mx-auto lg:mx-0 font-medium leading-relaxed">
-              Get the perfect fit for less. Premium control panties and hip enhancers now at low prices.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
-              <button 
-                onClick={() => document.getElementById('main-product-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="bg-[#0071dc] hover:bg-blue-700 text-white font-black py-4 md:py-5 px-8 md:px-12 rounded-xl md:rounded-2xl text-lg md:text-xl shadow-2xl transition-all active:scale-95 uppercase italic tracking-tight"
+            {/* Left Section: Content */}
+            <div className="lg:w-[45%] p-8 md:p-16 lg:p-20 flex flex-col justify-center text-center lg:text-left order-2 lg:order-1">
+              <motion.div 
+                initial={{ x: -30, opacity: 0 }}
+                whileInView={{ x: 0, opacity: 1 }}
+                className="mb-6"
               >
-                SHOP ALL DEALS
-              </button>
+                <span className="bg-[#0071dc] text-white text-xs font-black px-5 py-2.5 rounded-full uppercase italic tracking-widest shadow-lg inline-block">
+                  ★ BEST SELLER 2026
+                </span>
+              </motion.div>
               
-              <Link href="#featured-items" className="w-full sm:w-auto">
-                <button className="w-full bg-white border-2 border-[#0071dc] text-[#0071dc] font-black py-4 md:py-5 px-8 md:px-12 rounded-xl md:rounded-2xl text-lg md:text-xl hover:bg-blue-50 transition-all uppercase italic tracking-tight">
-                  VIEW ESSENTIALS
-                </button>
-              </Link>
-            </div>
-            
-            <p className="text-gray-400 text-[10px] md:text-xs mt-6 md:mt-8 italic font-semibold">
-              *Offer valid until supplies last. Prices as marked.
-            </p>
-          </div>
-
-          {/* Right Section: Layered Collage (Responsive Optimized) */}
-          <div className="lg:w-[55%] relative min-h-[400px] md:min-h-[500px] lg:min-h-full bg-[#f8f9fa] flex items-center justify-center overflow-hidden p-4 md:p-8 order-1 lg:order-2">
-            
-            {/* Background Decor */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-blue-100 rounded-full blur-3xl opacity-40"></div>
-
-            {/* --- MOBILE VIEW: Simple Grid/Stack (Hidden on Desktop) --- */}
-            <div className="lg:hidden grid grid-cols-2 gap-3 w-full relative z-10">
-               <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border-4 border-white shadow-lg rotate-[-2deg]">
-                  <Image src="/image/Women-HIP-PAD-PANTY/hip-pad.webp" alt="img" fill className="object-cover" />
-               </div>
-               <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border-4 border-white shadow-lg rotate-[2deg]">
-                  <Image src="/image/Women-HIP-PAD-PANTY/hip-pad-3.webp" alt="img" fill className="object-cover" />
-                  <div className="absolute top-2 right-2 bg-red-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded italic">HOT</div>
-               </div>
-               <div className="col-span-2 relative aspect-[16/9] rounded-2xl overflow-hidden border-4 border-white shadow-xl mt-2">
-                  <div className="flex h-full">
-                    <div className="w-1/2 relative border-r-2 border-white"><Image src="/image/Women-HIP-PAD-PANTY/hip-pad-1.webp" alt="B" fill className="object-cover" /></div>
-                    <div className="w-1/2 relative"><Image src="/image/Women-HIP-PAD-PANTY/hip-pad-2.webp" alt="A" fill className="object-cover" /></div>
-                  </div>
-               </div>
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-[#041f41] leading-[0.9] mb-8 uppercase italic tracking-tighter">
+                SCULPT & <span className="text-pink-600">SAVE</span><br />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0071dc] to-blue-400">40% OFF</span>
+              </h1>
+              
+              <p className="text-gray-600 text-lg md:text-2xl mb-12 max-w-lg mx-auto lg:mx-0 font-medium leading-relaxed">
+                Experience instant confidence with our premium collection. Perfect lift, perfect shape.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start">
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-black text-white font-black py-5 md:py-7 px-12 md:px-20 rounded-2xl text-xl md:text-2xl shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:bg-pink-600 transition-all uppercase italic tracking-wider"
+                >
+                  SHOP NOW
+                </motion.button>
+              </div>
             </div>
 
-            {/* --- DESKTOP VIEW: Layered Collage (Hidden on Mobile) --- */}
-            <div className="hidden lg:block absolute inset-0">
-                {/* Image 1: Top Left */}
-                <div className="absolute w-[42%] aspect-[3/4] top-[10%] left-[5%] -rotate-6 z-20 rounded-[2rem] overflow-hidden shadow-2xl border-[6px] border-white transition-all hover:rotate-0 hover:scale-105 duration-500">
-                  <Image src="/image/Women-HIP-PAD-PANTY/hip-pad.webp" alt="Shapewear" fill className="object-cover" />
-                </div>
+            {/* Right Section: SLIDER */}
+            <div className="lg:w-[55%] relative flex items-center justify-center overflow-hidden order-1 lg:order-2 bg-gradient-to-b from-transparent to-pink-50/30">
+              
+              <div className="relative w-full h-full p-6 md:p-16 flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentIndex}
+                    initial={{ opacity: 0, x: 100, rotate: 5 }}
+                    animate={{ opacity: 1, x: 0, rotate: 0 }}
+                    exit={{ opacity: 0, x: -100, rotate: -5 }}
+                    transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                    className="relative w-full aspect-[4/5] md:h-[680px] rounded-[3rem] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.2)] border-[12px] border-white"
+                  >
+                    <Image 
+                      src={images[currentIndex]} 
+                      alt="Latest Shapewear" 
+                      fill 
+                      className="object-cover"
+                      priority
+                    />
+                    
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    
+                    <div className="absolute bottom-10 left-10 right-10 bg-white/10 backdrop-blur-xl p-6 rounded-3xl border border-white/20 text-white">
+                      <p className="font-black text-2xl md:text-3xl italic uppercase tracking-tighter">Premium Quality</p>
+                      <p className="font-bold text-sm md:text-base opacity-90 mt-1 italic text-pink-200">✨ Confidence in every curve</p>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
 
-                {/* Image 2: Main Right */}
-                <div className="absolute w-[48%] aspect-[3/4] top-[15%] right-[5%] rotate-3 z-30 rounded-[2rem] overflow-hidden shadow-2xl border-[6px] border-white transition-all hover:rotate-0 hover:scale-105 duration-500">
-                  <Image src="/image/Women-HIP-PAD-PANTY/hip-pad-3.webp" alt="Shapewear Focus" fill className="object-cover" />
-                  <div className="absolute top-4 right-4 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded italic uppercase z-40">Hot Seller</div>
+                {/* Slider Dots */}
+                <div className="absolute bottom-10 flex gap-4 z-30">
+                  {images.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(index)}
+                      className={`h-3 transition-all duration-500 rounded-full ${
+                        index === currentIndex ? 'w-12 bg-pink-600' : 'w-3 bg-gray-400/50'
+                      }`}
+                    />
+                  ))}
                 </div>
+              </div>
 
-                {/* Before/After: Bottom Layer */}
-                <div className="absolute bottom-[8%] left-[10%] w-[60%] flex rounded-3xl overflow-hidden shadow-2xl z-40 border-[6px] border-white bg-white group transition-all hover:scale-105">
-                  <div className="w-1/2 aspect-square relative border-r-2 border-gray-100">
-                    <Image src="/image/Women-HIP-PAD-PANTY/hip-pad-1.webp" alt="Before" fill className="object-cover" />
-                    <div className="absolute bottom-3 left-3 bg-black/80 text-white text-[10px] font-black px-3 py-1 rounded-lg">BEFORE</div>
-                  </div>
-                  <div className="w-1/2 aspect-square relative">
-                    <Image src="/image/Women-HIP-PAD-PANTY/hip-pad-2.webp" alt="After" fill className="object-cover" />
-                    <div className="absolute bottom-3 right-3 bg-[#0071dc] text-white text-[10px] font-black px-3 py-1 rounded-lg shadow-lg">AFTER</div>
-                  </div>
-                </div>
-
-                {/* Info Pill */}
-                <div className="absolute top-[65%] right-[5%] bg-white/90 backdrop-blur-md border-2 border-pink-100 px-5 py-3 rounded-2xl shadow-xl z-50 max-w-[180px]">
-                   <h4 className="text-[12px] font-black uppercase text-pink-600 mb-1 italic">✨ PERFECT FIT</h4>
-                   <p className="text-[10px] text-gray-700 font-bold leading-tight italic">Beautiful curves, stylish look.</p>
-                </div>
-            </div>
-
-            {/* Floating Sale Badge (Always Visible) */}
-            <div className="absolute top-4 right-4 md:top-[5%] md:right-[10%] bg-red-600 text-white w-16 h-16 md:w-24 md:h-24 flex flex-col items-center justify-center rounded-full font-black uppercase italic rotate-12 z-[60] shadow-2xl border-4 border-white animate-bounce text-center leading-tight">
-              <span className="text-[10px] md:text-xs">SAVE</span>
-              <span className="text-lg md:text-2xl">40%</span>
+              {/* Rotating Sale Badge */}
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute top-10 right-10 bg-red-600 text-white w-28 h-28 md:w-40 md:h-40 flex flex-col items-center justify-center rounded-full font-black uppercase italic z-40 shadow-2xl border-8 border-white/30"
+              >
+                <span className="text-xs md:text-base">HOT SALE</span>
+                <span className="text-3xl md:text-5xl leading-none">50%</span>
+                <span className="text-xs md:text-base">OFF</span>
+              </motion.div>
             </div>
 
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
