@@ -14,6 +14,15 @@ import {
 } from "lucide-react";
 
 export default function Footer() {
+  // Razorpay dwara generate ki gayi policies ke links
+  const policyLinks = [
+    { name: 'Terms & Conditions', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/terms' },
+    { name: 'Privacy Policy', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/privacy' },
+    { name: 'Refund & Cancellation', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/refund' },
+    { name: 'Shipping Policy', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/shipping' },
+    { name: 'Size Chart', url: '#' },
+  ];
+
   return (
     <footer className="bg-[#041f41] text-white pt-24 pb-10 px-6 md:px-12 mt-20 rounded-t-[4rem] md:rounded-t-[7rem] relative overflow-hidden border-t-8 border-pink-600">
       
@@ -35,7 +44,6 @@ export default function Footer() {
         <div className="flex flex-col lg:flex-row justify-between items-center gap-12 mb-20">
           <div className="text-center lg:text-left space-y-2">
             <div className="inline-block">
-              {/* Navbar Styled Logo */}
               <h2 className="brand-logo-font text-6xl md:text-8xl text-white leading-none drop-shadow-lg">
                 Booty Bloom<span className="text-pink-600 text-2xl md:text-3xl font-sans font-black italic lowercase tracking-tighter ml-1">.online</span>
               </h2>
@@ -77,7 +85,7 @@ export default function Footer() {
                   { icon: <Facebook size={20} />, url: "https://www.facebook.com/profile.php?id=61586560657621" },
                   { icon: <Youtube size={20} />, url: "#" }
                 ].map((social, idx) => (
-                    <a key={idx} href={social.url} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-pink-600 border border-white/5 hover:border-pink-500 transition-all duration-300">
+                    <a key={idx} href={social.url} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-pink-600 border border-white/5 hover:border-pink-500 transition-all duration-300">
                         {social.icon}
                     </a>
                 ))}
@@ -97,14 +105,21 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Quick Help */}
+          {/* Quick Help - Yahan Razorpay Links add kiye gaye hain */}
           <div className="space-y-6">
             <h4 className="text-xs font-black uppercase tracking-[0.3em] text-pink-500">Quick Help</h4>
             <ul className="space-y-4">
-              {['Track Order', 'Return Policy', 'Privacy Policy', 'Size Chart'].map((link) => (
-                <li key={link} className="flex items-center gap-2 group cursor-pointer text-sm font-bold text-gray-300 hover:text-pink-500 transition-all">
+              {policyLinks.map((link) => (
+                <li key={link.name}>
+                  <a 
+                    href={link.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 group text-sm font-bold text-gray-300 hover:text-pink-500 transition-all"
+                  >
                     <ArrowRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all text-pink-500" />
-                    {link}
+                    {link.name}
+                  </a>
                 </li>
               ))}
             </ul>
@@ -114,11 +129,11 @@ export default function Footer() {
           <div className="space-y-6">
             <h4 className="text-xs font-black uppercase tracking-[0.3em] text-pink-500">Get In Touch</h4>
             <div className="space-y-5 font-bold text-sm">
-                <a href="tel:919871147666" className="flex items-center gap-4 group text-gray-300 hover:text-white transition-colors">
+                <a href="tel:919217521109" className="flex items-center gap-4 group text-gray-300 hover:text-white transition-colors">
                     <div className="p-2 bg-pink-600/10 rounded-lg group-hover:bg-pink-600 transition-all">
                       <Phone size={16} className="text-pink-500 group-hover:text-white" />
                     </div>
-                    <span>+91 92175 21109  ,  +91 98715 84001</span>
+                    <span>+91 92175 21109, +91 98715 84001</span>
                 </a>
                 <a href="mailto:bootybloom8@gmail.com" className="flex items-center gap-4 group text-gray-300 hover:text-white transition-colors">
                     <div className="p-2 bg-pink-600/10 rounded-lg group-hover:bg-pink-600 transition-all">
@@ -128,7 +143,6 @@ export default function Footer() {
                 </a>
             </div>
             
-            {/* Professional Security Badge */}
             <div className="mt-6 p-4 bg-gradient-to-br from-white/10 to-transparent rounded-[2rem] border border-white/10">
                 <div className="flex items-center gap-3 text-pink-500 mb-1">
                     <ShieldCheck size={20} strokeWidth={3} />
