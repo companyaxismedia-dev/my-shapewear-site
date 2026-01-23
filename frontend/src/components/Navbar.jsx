@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import LinkNav from "next/link";
-import { Search, ShoppingCart, User, Heart, Menu, HelpCircle, Package } from "lucide-react";
+import { Search, ShoppingCart, User, Heart, Menu, HelpCircle, Package, PhoneCall } from "lucide-react"; // PhoneCall icon add kiya
 
 export default function Navbar() {
   return (
@@ -88,10 +88,14 @@ export default function Navbar() {
             <LinkNav href="/shapewear" className="hover:text-pink-400 transition">Shapewear</LinkNav>
             <LinkNav href="/exclusive" className="bg-pink-600 px-3 py-1 rounded-sm text-white">Exclusive</LinkNav>
             
-            {/* ADDED: Menu Track Link */}
             <LinkNav href="/track" className="hover:text-pink-400 transition flex items-center gap-1">
               Track Order
               <span className="h-1.5 w-1.5 bg-pink-500 rounded-full animate-pulse"></span>
+            </LinkNav>
+
+            {/* UPDATED: Contact Page Link Added Here */}
+            <LinkNav href="/contact" className="hover:text-pink-400 transition flex items-center gap-1">
+              Contact
             </LinkNav>
             
             <LinkNav href="/help" className="hover:text-pink-400 transition">Help</LinkNav>

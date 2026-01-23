@@ -1,41 +1,36 @@
 "use client";
 import { useState } from "react";
 import {
-  Zap,
   MessageCircle,
-  Smartphone,
-  QrCode,
   CheckCircle2,
   Truck,
-  HelpCircle,
-  X,
-  MessageSquare,
   ShieldCheck,
   Star,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  BadgePercent
 } from "lucide-react";
 
-/* PRODUCT DATA */
+/* PRODUCT DATA (Ads ke liye updated prices) */
 const defaultProduct = {
   id: "PROD_001",
   name: "SEAMLESS BOOTY PADS PANTIES",
   price: 1299, // Testing ke liye 1 rakha hai, aap change kar sakte hain
+  price: 2499, // Original Price
+  offerPrice: 749, // Ads Offer Price
   mainImage: "/image/Women-HIP-PAD-PANTY/hip-pad-1.webp",
   images: [
     "/image/Women-HIP-PAD-PANTY/hip-pad.webp",
     "/image/Women-HIP-PAD-PANTY/hip-pad-2.webp",
     "/image/Women-HIP-PAD-PANTY/HIP-PAD-3.webp",
-    "/image/Women-HIP-PAD-PANTY/MANIFIQUE-Padded-Underwear-3.webp",
-    "/image/Women-HIP-PAD-PANTY/Seamless-Booty-Pads-Butt-Enhancer-Panties-7.webp"
+    "/image/Women-HIP-PAD-PANTY/MANIFIQUE-Padded-Underwear-3.webp"
   ],
   sizes: ["S", "M", "L", "XL", "XXL"]
 };
 
 export default function ProductDetails({ product = defaultProduct }) {
   const [mainImage, setMainImage] = useState(product.mainImage);
-  const [orderStatus, setOrderStatus] = useState("idle"); // idle, loading, success
-  const [showHelp, setShowHelp] = useState(false);
+  const [orderStatus, setOrderStatus] = useState("idle");
   const [selectedSize, setSelectedSize] = useState("");
 
   const [formData, setFormData] = useState({
@@ -48,50 +43,35 @@ export default function ProductDetails({ product = defaultProduct }) {
   });
 
   const myWhatsApp = "919217521109";
-  // Live API URL (Aapka domain name yahan aayega)
   const API_URL = "https://www.bootybloom.online/api/orders";
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const isValid =
-    formData.name.trim() !== "" &&
-    formData.phone.trim() !== "" &&
-    formData.houseNo.trim() !== "" &&
-    formData.area.trim() !== "" &&
-    formData.pincode.trim() !== "" &&
-    selectedSize !== "";
-
   const handleOrderSubmit = async () => {
-    if (!selectedSize) return alert("Please select your Size first!");
-    if (!isValid) return alert("Please complete your delivery address details");
+    if (!selectedSize) return alert("Pehle apni Size select karein!");
+    if (!formData.name || !formData.phone || !formData.area) return alert("Kripya Delivery Details bhariye");
 
     setOrderStatus("loading");
 
-    // Unified Payload for your Backend Schema
     const orderPayload = {
       customerData: {
         name: formData.name,
         phone: formData.phone,
         address: `${formData.houseNo}, ${formData.area}, ${formData.city} - ${formData.pincode}`,
-        houseNo: formData.houseNo,
-        area: formData.area,
-        city: formData.city,
-        pincode: formData.pincode
       },
       items: [{
         name: product.name,
-        price: product.price,
+        price: product.offerPrice,
         size: selectedSize,
         quantity: 1
       }],
-      amount: product.price,
+      amount: product.offerPrice,
       paymentType: "WhatsApp Order / COD",
       status: "Pending"
     };
 
     try {
-      // 1. SAVE TO DATABASE
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,188 +79,139 @@ export default function ProductDetails({ product = defaultProduct }) {
       });
 
       if (response.ok) {
-        // 2. OPEN WHATSAPP
-        const whatsappMsg = `*🚀 NEW ORDER CONFIRMED*
-------------------------------
-*Product:* ${product.name}
-*Size:* ${selectedSize}
-*Price:* ₹${product.price}
-------------------------------
-*Delivery Details:*
-*Name:* ${formData.name}
-*Address:* ${formData.houseNo}, ${formData.area}
-*City:* ${formData.city} - ${formData.pincode}
-*Phone:* ${formData.phone}
-
-*Payment:* Cash on Delivery`;
+        const whatsappMsg = `*🚀 NEW ORDER CONFIRMED*%0A------------------------------%0A*Product:* ${product.name}%0A*Size:* ${selectedSize}%0A*Price:* ₹${product.offerPrice}%0A------------------------------%0A*Delivery Details:*%0A*Name:* ${formData.name}%0A*Address:* ${formData.area}, ${formData.city}%0A*Phone:* ${formData.phone}%0A%0A*Payment:* Cash on Delivery`;
         
-        window.open(`https://wa.me/${myWhatsApp}?text=${encodeURIComponent(whatsappMsg)}`, "_blank");
+        window.open(`https://wa.me/${myWhatsApp}?text=${whatsappMsg}`, "_blank");
         setOrderStatus("success");
-      } else {
-        const errorData = await response.json();
-        alert(errorData.message || "Something went wrong. Please try again.");
-        setOrderStatus("idle");
       }
     } catch (error) {
-      console.error("Order Error:", error);
-      alert("Server error. Please check your connection.");
+      alert("Server error. Please try again.");
       setOrderStatus("idle");
     }
   };
 
-  /* SUCCESS SCREEN */
   if (orderStatus === "success") {
     return (
-      <div className="max-w-md mx-auto py-20 px-4 text-center animate-in fade-in zoom-in duration-500">
+      <div className="max-w-md mx-auto py-20 px-4 text-center">
         <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-t-8 border-green-500">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 size={50} className="text-green-600" />
-          </div>
-          <h2 className="text-3xl font-black text-[#041f41] italic uppercase">Aapka Order Mil Gaya!</h2>
-          <p className="text-gray-500 mt-3 font-medium">Humein aapka order receive ho gaya hai. Hum jald hi aapse contact karenge.</p>
-          
-          <div className="bg-blue-50 p-6 rounded-2xl mt-8 border-2 border-blue-100">
-            <div className="flex items-center justify-center gap-2 font-black text-blue-700 uppercase text-sm tracking-widest">
-              <Truck size={20} /> Fast Delivery
-            </div>
-            <p className="text-2xl font-black mt-2 text-[#041f41]">3 – 5 Days</p>
-          </div>
-
-          <button 
-            onClick={() => window.location.href = "/"}
-            className="mt-8 w-full bg-[#041f41] text-white py-4 rounded-2xl font-bold uppercase tracking-widest hover:bg-black transition-all"
-          >
-            Continue Shopping
-          </button>
+          <CheckCircle2 size={60} className="text-green-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-black italic uppercase italic">Order Mil Gaya!</h2>
+          <p className="text-gray-500 mt-2">Hum jald hi aapse WhatsApp par contact karenge.</p>
+          <button onClick={() => window.location.href = "/"} className="mt-8 w-full bg-black text-white py-4 rounded-2xl font-bold uppercase tracking-widest">Back to Home</button>
         </div>
       </div>
     );
   }
 
   return (
-    <section className="max-w-[1250px] mx-auto px-4 py-8 relative">
-      {/* Floating Help Button */}
-      <button onClick={() => setShowHelp(true)} className="fixed bottom-6 right-6 z-50 bg-[#25d366] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform">
-        <MessageCircle size={28} />
-      </button>
+    <section className="bg-gray-50 min-h-screen">
+      {/* ⚡ URGENCY BANNER FOR ADS */}
+      <div className="bg-red-600 text-white text-center py-2 text-[10px] md:text-xs font-black tracking-widest uppercase animate-pulse">
+        🔥 Valentine Special: BUY 1 GET 1 FREE - Limited Time Offer 🔥
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div className="max-w-[1100px] mx-auto bg-white shadow-xl grid grid-cols-1 lg:grid-cols-2">
         
-        {/* LEFT: VISUALS */}
-        <div className="space-y-6">
-          <div className="sticky top-24">
-            <div className="relative rounded-[2.5rem] overflow-hidden border-4 border-white shadow-2xl bg-gray-50 aspect-[4/5]">
-              <div className="absolute top-5 left-5 z-10 bg-red-600 text-white px-5 py-2 rounded-full font-black text-xs shadow-lg animate-pulse uppercase tracking-tighter">
-                Limited Offer: Buy 1 Get 1 Free
-              </div>
-              <img src={mainImage} className="w-full h-full object-contain" alt="Booty Bloom Product" />
+        {/* LEFT: PRODUCT SHOWCASE */}
+        <div className="p-4 lg:p-8">
+          <div className="relative rounded-[2rem] overflow-hidden bg-gray-100 aspect-[4/5] shadow-inner">
+            <img src={mainImage} className="w-full h-full object-contain mix-blend-multiply" alt="Product" />
+            <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+              <Star size={14} fill="#EAB308" className="text-yellow-500"/>
+              <span className="text-[10px] font-black tracking-tighter uppercase">4.9/5 (950+ Reviews)</span>
             </div>
-
-            <div className="flex gap-3 mt-6 overflow-x-auto no-scrollbar py-2">
-              {product.images.map((img, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => setMainImage(img)}
-                  className={`relative flex-shrink-0 w-20 h-24 rounded-2xl overflow-hidden border-2 transition-all ${mainImage === img ? 'border-blue-600 scale-105' : 'border-transparent opacity-60'}`}
-                >
-                  <img src={img} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+          </div>
+          <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar">
+            {product.images.map((img, i) => (
+              <button key={i} onClick={() => setMainImage(img)} className={`w-16 h-20 flex-shrink-0 rounded-xl border-2 transition-all ${mainImage === img ? 'border-blue-600 scale-105' : 'border-transparent opacity-50'}`}>
+                <img src={img} className="w-full h-full object-cover rounded-lg" />
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* RIGHT: INFO & FORM */}
-        <div className="space-y-8">
+        {/* RIGHT: PRICING & ORDER FORM */}
+        <div className="p-6 lg:p-10 space-y-6">
           <div>
-            <div className="flex items-center gap-2 text-blue-600 font-black text-sm uppercase tracking-[0.2em] mb-2">
-               <Star size={16} fill="currentColor"/> Top Rated Seller
+            <div className="text-blue-600 font-black text-[10px] uppercase tracking-widest mb-1 flex items-center gap-1">
+              <BadgePercent size={14}/> Special Festive Offer
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-[#041f41] leading-[1.1] uppercase italic tracking-tighter mb-4">
+            <h1 className="text-3xl font-black text-[#041f41] leading-tight italic uppercase tracking-tighter">
               {product.name}
             </h1>
-            <div className="flex items-center gap-4">
-               <span className="text-5xl font-black text-blue-700 tracking-tighter">₹{product.price}</span>
-               <span className="text-xl text-gray-400 line-through font-bold">₹2,499</span>
-               <div className="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-black text-sm">SAVE 50%</div>
+            <div className="flex items-center gap-4 mt-2">
+              <span className="text-4xl font-black text-blue-700 tracking-tighter">₹{product.offerPrice}</span>
+              <span className="text-lg text-gray-400 line-through font-bold">₹{product.price}</span>
+              <div className="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-black text-xs uppercase italic">Flat 70% OFF</div>
             </div>
           </div>
 
-          {/* SIZE SELECTION */}
-          <div className="space-y-4">
-            <label className="text-sm font-black uppercase tracking-widest text-gray-400 flex justify-between">
-              Select Your Size <span>Size Guide</span>
-            </label>
-            <div className="flex flex-wrap gap-3">
+          {/* SIZE SELECTOR */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select Your Perfect Size:</p>
+            <div className="flex flex-wrap gap-2">
               {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`w-14 h-14 rounded-2xl font-black transition-all flex items-center justify-center border-2 ${selectedSize === size ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200 scale-110' : 'bg-white border-gray-100 text-gray-600 hover:border-blue-300'}`}
-                >
+                <button key={size} onClick={() => setSelectedSize(size)} className={`w-12 h-12 rounded-xl font-black transition-all border-2 ${selectedSize === size ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-600'}`}>
                   {size}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* ORDER FORM */}
-          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl border border-gray-50 space-y-6">
-            <div className="flex items-center gap-4 mb-2">
-               <div className="bg-blue-100 text-blue-600 p-3 rounded-2xl"><MapPinIcon size={24}/></div>
-               <h2 className="text-2xl font-black text-[#041f41] uppercase tracking-tighter italic">Delivery Address</h2>
+          {/* ADS FRIENDLY FORM */}
+          <div className="bg-blue-50/50 p-6 rounded-[2.5rem] border-2 border-blue-100 space-y-4 shadow-sm">
+            <div className="flex items-center gap-2 text-blue-700 font-black uppercase text-sm italic mb-2">
+               <MapPinIcon size={18}/> Direct Shipping Info
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input name="name" onChange={handleChange} value={formData.name} placeholder="Aapka Pura Naam" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all md:col-span-2" />
-              <input name="phone" onChange={handleChange} value={formData.phone} placeholder="WhatsApp Number" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all md:col-span-2" />
-              <input name="houseNo" onChange={handleChange} value={formData.houseNo} placeholder="House / Flat No." className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all" />
-              <input name="area" onChange={handleChange} value={formData.area} placeholder="Area / Landmark" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all" />
-              <input name="city" onChange={handleChange} value={formData.city} placeholder="City" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all" />
-              <input name="pincode" onChange={handleChange} value={formData.pincode} placeholder="Pincode" className="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-[#041f41] transition-all" />
+            <div className="grid grid-cols-1 gap-3">
+              <input name="name" onChange={handleChange} placeholder="Full Name" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+              <input name="phone" onChange={handleChange} placeholder="WhatsApp Number" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+              <input name="area" onChange={handleChange} placeholder="Address (Area / Landmark)" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+              <div className="grid grid-cols-2 gap-3">
+                <input name="city" onChange={handleChange} placeholder="City" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+                <input name="pincode" onChange={handleChange} placeholder="Pincode" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+              </div>
             </div>
 
             <button
               disabled={orderStatus === "loading"}
               onClick={handleOrderSubmit}
-              className="group w-full bg-[#25d366] hover:bg-black text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-4 shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+              className="w-full bg-[#25d366] hover:bg-black text-white py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95"
             >
               {orderStatus === "loading" ? "Processing..." : (
-                <>CONFIRM ORDER <ChevronRight className="group-hover:translate-x-2 transition-transform"/></>
+                <> <MessageCircle fill="white" size={20}/> CONFIRM ON WHATSAPP <ChevronRight/></>
               )}
             </button>
-            
-            <p className="text-center text-xs font-bold text-gray-400 uppercase tracking-widest">
-              🔒 100% Privacy & Cash on Delivery Available
-            </p>
+            <div className="flex justify-center gap-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">
+              <span>🚚 FREE Delivery</span>
+              <span>📦 Cash on Delivery</span>
+              <span>🔒 100% Secure</span>
+            </div>
           </div>
 
           {/* TRUST BADGES */}
-          <div className="grid grid-cols-3 gap-4 text-center">
-             <div className="p-4 bg-gray-50 rounded-3xl">
-                <ShieldCheck size={24} className="mx-auto text-blue-600 mb-2"/>
-                <p className="text-[10px] font-black uppercase tracking-tighter">Genuine Product</p>
+          <div className="grid grid-cols-3 gap-3 border-t pt-6">
+             <div className="text-center">
+                <ShieldCheck size={20} className="mx-auto text-blue-600 mb-1"/>
+                <p className="text-[9px] font-black uppercase">Genuine</p>
              </div>
-             <div className="p-4 bg-gray-50 rounded-3xl">
-                <Truck size={24} className="mx-auto text-pink-500 mb-2"/>
-                <p className="text-[10px] font-black uppercase tracking-tighter">Fast Shipping</p>
+             <div className="text-center">
+                <Truck size={20} className="mx-auto text-pink-500 mb-1"/>
+                <p className="text-[9px] font-black uppercase">Fast Ship</p>
              </div>
-             <div className="p-4 bg-gray-50 rounded-3xl">
-                <Sparkles size={24} className="mx-auto text-orange-400 mb-2"/>
-                <p className="text-[10px] font-black uppercase tracking-tighter">Premium Quality</p>
+             <div className="text-center">
+                <Sparkles size={20} className="mx-auto text-orange-400 mb-1"/>
+                <p className="text-[9px] font-black uppercase">Premium</p>
              </div>
           </div>
         </div>
       </div>
 
-      <style jsx>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-      `}</style>
+      <style jsx>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
     </section>
   );
 }
 
-// Simple Helper Icon
 function MapPinIcon({size}) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
 }

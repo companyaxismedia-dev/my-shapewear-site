@@ -1,123 +1,63 @@
 "use client";
+import React from "react";
 import {
   Facebook,
   Instagram,
   Youtube,
-  ShieldCheck,
+  Twitter,
   Phone,
   Mail,
+  Heart,
+  ArrowRight,
+  ShieldCheck,
   Truck,
   RotateCcw,
   Lock,
-  Heart,
-  ArrowRight
 } from "lucide-react";
 
 export default function Footer() {
-  // Razorpay dwara generate ki gayi policies ke links
   const policyLinks = [
-    { name: 'Terms & Conditions', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/terms' },
-    { name: 'Privacy Policy', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/privacy' },
-    { name: 'Refund & Cancellation', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/refund' },
+    { name: 'About Us', url: '#' },
+    { name: 'Contact Us', url: '/contact' },
     { name: 'Shipping Policy', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/shipping' },
-    { name: 'Size Chart', url: '#' },
+    { name: 'Privacy Policy', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/privacy' },
+    { name: 'Terms & Conditions', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/terms' },
+    { name: 'Return & Exchange Policy', url: 'https://merchant.razorpay.com/policy/S6bduSXSlYoh32/refund' },
+  ];
+
+  const features = [
+    { icon: <Truck size={24} />, title: "Free Shipping", desc: "On all prepaid orders" },
+    { icon: <RotateCcw size={24} />, title: "Easy Returns", desc: "7 days exchange policy" },
+    { icon: <ShieldCheck size={24} />, title: "Premium Quality", desc: "Skin friendly fabrics" },
+    { icon: <Lock size={24} />, title: "Secure Payment", desc: "100% Razorpay safe" },
   ];
 
   return (
-    <footer className="bg-[#041f41] text-white pt-24 pb-10 px-6 md:px-12 mt-20 rounded-t-[4rem] md:rounded-t-[7rem] relative overflow-hidden border-t-8 border-pink-600">
-      
-      {/* Import Cursive Font for Brand Consistency */}
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
-        .brand-logo-font {
-          font-family: 'Great Vibes', cursive;
-        }
-      `}</style>
-
-      {/* Decorative Glows */}
-      <div className="absolute -top-24 -right-24 w-96 h-96 bg-pink-600/20 blur-[150px] rounded-full"></div>
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-600/10 blur-[150px] rounded-full"></div>
-      
-      <div className="max-w-7xl mx-auto relative z-10">
-
-        {/* TOP SECTION: LOGO & FEATURES */}
-        <div className="flex flex-col lg:flex-row justify-between items-center gap-12 mb-20">
-          <div className="text-center lg:text-left space-y-2">
-            <div className="inline-block">
-              <h2 className="brand-logo-font text-6xl md:text-8xl text-white leading-none drop-shadow-lg">
-                Booty Bloom<span className="text-pink-600 text-2xl md:text-3xl font-sans font-black italic lowercase tracking-tighter ml-1">.online</span>
-              </h2>
-            </div>
-            <p className="text-pink-100/60 font-medium text-lg max-w-md italic tracking-wide">
-              Confidence aur comfort ka naya naam...
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 w-full lg:w-auto">
-            {[
-                { icon: <Truck size={24} />, label: "Express Shipping" },
-                { icon: <RotateCcw size={24} />, label: "7 Day Exchange" },
-                { icon: <ShieldCheck size={24} />, label: "Premium Quality" },
-                { icon: <Lock size={24} />, label: "Discreet Pack" },
-            ].map((item, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 group">
-                    <div className="p-4 bg-white/5 rounded-[2.5rem] group-hover:bg-pink-600 group-hover:scale-110 transition-all duration-500 text-pink-500 group-hover:text-white border border-white/10 shadow-xl">
-                        {item.icon}
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-pink-400 transition-colors">{item.label}</span>
-                </div>
-            ))}
-          </div>
-        </div>
-
+    <footer className="bg-[#fff0f3] text-[#333] border-t-4 border-pink-500 pt-16 pb-8 font-sans">
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        
         {/* MAIN LINKS GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-20 border-y border-white/5 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           
-          {/* Brand Philosophy */}
           <div className="space-y-6">
-            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-pink-500">Hamari Pehchan</h4>
-            <p className="text-sm font-bold text-gray-400 leading-relaxed">
-              Hum banate hain premium shapewear jo aapki body ko de perfect shape aur aapko de nayi umeed. confidence ka naya ehsas.
-            </p>
-            <div className="flex gap-4">
-                {[
-                  { icon: <Instagram size={20} />, url: "https://www.instagram.com/bootybloom84/" },
-                  { icon: <Facebook size={20} />, url: "https://www.facebook.com/profile.php?id=61586560657621" },
-                  { icon: <Youtube size={20} />, url: "#" }
-                ].map((social, idx) => (
-                    <a key={idx} href={social.url} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 hover:bg-pink-600 border border-white/5 hover:border-pink-500 transition-all duration-300">
-                        {social.icon}
-                    </a>
-                ))}
-            </div>
-          </div>
-
-          {/* Collections */}
-          <div className="space-y-6">
-            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-pink-500">Collections</h4>
-            <ul className="space-y-4">
-              {['Saree Shapewear', 'New Arrivals', 'Best Sellers', 'Waist Trainers'].map((link) => (
-                <li key={link} className="flex items-center gap-2 group cursor-pointer text-sm font-bold text-gray-300 hover:text-pink-500 transition-all">
-                    <ArrowRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all text-pink-500" />
-                    {link}
+            <h4 className="text-pink-600 font-black text-sm uppercase tracking-widest border-b-2 border-pink-200 pb-2 inline-block">Category</h4>
+            <ul className="space-y-4 text-sm text-gray-700 font-bold">
+              {['Saree Shapewear', 'Bodysuits', 'Waist Trainers', 'New Arrivals'].map((item) => (
+                <li key={item} className="flex items-center gap-2 hover:text-pink-600 cursor-pointer transition-all group">
+                  <ArrowRight size={14} className="text-pink-400 group-hover:translate-x-1 transition-transform" />
+                  {item}
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Quick Help */}
           <div className="space-y-6">
-            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-pink-500">Quick Help</h4>
-            <ul className="space-y-4">
+            <h4 className="text-pink-600 font-black text-sm uppercase tracking-widest border-b-2 border-pink-200 pb-2 inline-block">Quick Help</h4>
+            <ul className="space-y-4 text-sm text-gray-700 font-bold">
               {policyLinks.map((link) => (
                 <li key={link.name}>
-                  <a 
-                    href={link.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 group text-sm font-bold text-gray-300 hover:text-pink-500 transition-all"
-                  >
-                    <ArrowRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all text-pink-500" />
+                  <a href={link.url} className="flex items-center gap-2 hover:text-pink-600 transition-all group">
+                    <ArrowRight size={14} className="text-pink-400 group-hover:translate-x-1 transition-transform" />
                     {link.name}
                   </a>
                 </li>
@@ -125,52 +65,83 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact Details */}
-          <div className="space-y-6">
-            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-pink-500">Get In Touch</h4>
-            <div className="space-y-5 font-bold text-sm">
-                <a href="tel:919217521109" className="flex items-center gap-4 group text-gray-300 hover:text-white transition-colors">
-                    <div className="p-2 bg-pink-600/10 rounded-lg group-hover:bg-pink-600 transition-all">
-                      <Phone size={16} className="text-pink-500 group-hover:text-white" />
-                    </div>
-                    <span>+91 92175 21109, +91 98715 84001</span>
-                </a>
-                <a href="mailto:bootybloom8@gmail.com" className="flex items-center gap-4 group text-gray-300 hover:text-white transition-colors">
-                    <div className="p-2 bg-pink-600/10 rounded-lg group-hover:bg-pink-600 transition-all">
-                      <Mail size={16} className="text-pink-500 group-hover:text-white" />
-                    </div>
-                    <span className="break-all">bootybloom8@gmail.com</span>
-                </a>
+          <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-pink-100">
+            <h4 className="text-pink-600 font-black text-sm uppercase mb-6 tracking-widest">Stay Connected</h4>
+            <p className="text-xs text-gray-500 mb-4 font-bold">Naye offers aur updates ke liye subscribe karein!</p>
+            <div className="flex flex-col sm:flex-row gap-2 mb-8">
+              <input 
+                type="email" 
+                placeholder="Email Address" 
+                className="flex-1 px-4 py-3 bg-pink-50 border border-pink-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium"
+              />
+              <button className="bg-pink-600 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all shadow-lg shadow-pink-200">
+                Join Now
+              </button>
             </div>
             
-            <div className="mt-6 p-4 bg-gradient-to-br from-white/10 to-transparent rounded-[2rem] border border-white/10">
-                <div className="flex items-center gap-3 text-pink-500 mb-1">
-                    <ShieldCheck size={20} strokeWidth={3} />
-                    <span className="text-[10px] font-black uppercase tracking-tighter">100% Secure Checkout</span>
-                </div>
-                <p className="text-[9px] text-gray-500 font-bold uppercase pl-8 leading-tight">Razorpay Secured • SSL Encrypted</p>
+            <div className="flex gap-4">
+              {[
+                { icon: <Facebook size={20} />, url: "https://www.facebook.com/profile.php?id=61586560657621" },
+                { icon: <Instagram size={20} />, url: "https://www.instagram.com/bootybloom84/" },
+                { icon: <Youtube size={20} />, url: "#" }
+              ].map((soc, i) => (
+                <a key={i} href={soc.url} className="w-10 h-10 flex items-center justify-center bg-pink-50 text-pink-600 rounded-full hover:bg-pink-600 hover:text-white transition-all border border-pink-100">
+                  {soc.icon}
+                </a>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* BOTTOM SECTION - UPDATED FOR RAZORPAY APPROVAL */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-4">
-          <div className="flex flex-col items-center md:items-start gap-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-              © 2026 Booty Bloom Online | Owned and Operated by Axis Media Digital
-            </p>
-            <p className="text-[9px] font-bold text-pink-600/60 uppercase tracking-widest flex items-center gap-2">
-                Made with <Heart size={10} className="fill-pink-600 text-pink-600 animate-pulse" /> in Bharat
-            </p>
+        {/* WHY CHOOSE US */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+          {features.map((feature, idx) => (
+            <div key={idx} className="bg-white/50 border border-pink-100 p-6 rounded-2xl flex flex-col items-center text-center group hover:bg-pink-600 transition-all duration-300">
+              <div className="text-pink-600 group-hover:text-white mb-3 transition-colors">
+                {feature.icon}
+              </div>
+              <h5 className="font-black text-[11px] uppercase tracking-tighter text-gray-800 group-hover:text-white">{feature.title}</h5>
+              <p className="text-[10px] font-medium text-gray-500 group-hover:text-pink-100 leading-tight">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* REGISTERED BUSINESS INFO (For Razorpay Approval) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center bg-white p-8 md:p-12 rounded-[3rem] shadow-xl shadow-pink-100/50 border border-pink-50">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center gap-3 text-pink-600 mb-2">
+              <ShieldCheck size={28} />
+              <h5 className="font-black text-lg uppercase tracking-tighter">Registered Business Information</h5>
+            </div>
+            <div className="space-y-2">
+              <p className="text-2xl font-black text-gray-900 leading-tight">
+                BOOTY BLOOM <span className="text-pink-500 font-medium text-lg block md:inline md:ml-2">(Owned by Axis Media Digital)</span>
+              </p>
+              <p className="text-gray-600 font-bold text-sm md:text-base italic">
+                Shop No-21, DDA CSC Market, Sector-10, Dwarka, New Delhi - 110075, India
+              </p>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-6 opacity-30 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-700 cursor-pointer">
-             <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="Paypal" className="h-4" />
-             <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-6" />
-             <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4" />
+
+          <div className="flex flex-col gap-6 border-t lg:border-t-0 lg:border-l border-pink-100 pt-6 lg:pt-0 lg:pl-10">
+            <div className="space-y-3">
+              <a href="tel:919811180043" className="flex items-center gap-3 text-md font-black text-gray-800 hover:text-pink-600 transition">
+                <div className="w-8 h-8 bg-pink-600 text-white rounded-full flex items-center justify-center shadow-md"><Phone size={14} /></div>
+                <span>+91 9811180043</span>
+              </a>
+              <a href="mailto:inboxdwarka@gmail.com" className="flex items-center gap-3 text-md font-black text-gray-800 hover:text-pink-600 transition">
+                <div className="w-8 h-8 bg-pink-600 text-white rounded-full flex items-center justify-center shadow-md"><Mail size={14} /></div>
+                <span className="break-all">inboxdwarka@gmail.com</span>
+              </a>
+            </div>
           </div>
         </div>
 
+        <div className="mt-12 text-center">
+          <div className="text-[11px] text-gray-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+            © 2026 Booty Bloom | Made with <Heart size={12} className="fill-pink-600 text-pink-600 animate-pulse" /> in Bharat
+          </div>
+        </div>
       </div>
     </footer>
   );
