@@ -105,7 +105,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Quick Help - Yahan Razorpay Links add kiye gaye hain */}
+          {/* Quick Help */}
           <div className="space-y-6">
             <h4 className="text-xs font-black uppercase tracking-[0.3em] text-pink-500">Quick Help</h4>
             <ul className="space-y-4">
@@ -153,11 +153,11 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* BOTTOM SECTION */}
+        {/* BOTTOM SECTION - UPDATED FOR RAZORPAY APPROVAL */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-8 pt-4">
           <div className="flex flex-col items-center md:items-start gap-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-gray-500">
-              © 2026 Booty Bloom Online
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+              © 2026 Booty Bloom Online | Owned and Operated by Axis Media Digital
             </p>
             <p className="text-[9px] font-bold text-pink-600/60 uppercase tracking-widest flex items-center gap-2">
                 Made with <Heart size={10} className="fill-pink-600 text-pink-600 animate-pulse" /> in Bharat
