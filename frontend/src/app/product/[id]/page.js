@@ -20,7 +20,7 @@ import {
 const defaultProduct = {
   id: "PROD_001",
   name: "SEAMLESS BOOTY PADS PANTIES",
-  price: 1, // Testing ke liye 1 rakha hai, aap change kar sakte hain
+  price: 1299, // Testing ke liye 1 rakha hai, aap change kar sakte hain
   mainImage: "/image/Women-HIP-PAD-PANTY/hip-pad-1.webp",
   images: [
     "/image/Women-HIP-PAD-PANTY/hip-pad.webp",
