@@ -21,7 +21,7 @@ const defaultProduct = {
   id: "seamless-booty-pads-panties",
   name: "SEAMLESS BOOTY PADS PANTIES",
   originalPrice: 2500,
-  price: 1,
+  price: 1299,
   mainImage: "/image/Women-HIP-PAD-PANTY/hip-pad-1.webp",
   images: [
     "/image/Women-HIP-PAD-PANTY/hip-pad.webp",
