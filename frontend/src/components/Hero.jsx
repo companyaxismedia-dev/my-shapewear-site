@@ -1,77 +1,127 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Navigation, Pagination, EffectFade } from "swiper/modules";
 
+// Swiper styles
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import "swiper/css/effect-fade";
+
+// Yahan aap dono images ke link dalenge
 const banners = [
-  "/hero-image/hero-1.png",
-  "/hero-image/hero-2.png",
-  "/hero-image/hero-3.png",
+  
+  {
+    desktop: "/hero-image/hero-01.png",
+    mobile: "/hero-image/hero-01-mob.png",
+  },
+  {
+    desktop: "/hero-image/hero-2.png",
+    mobile: "/hero-image/hero-2-mob.png",
+  },
+  {
+    desktop: "/hero-image/curvy.png",
+    mobile: "/hero-image/curvy-mob.png",
+  },
+  {
+    desktop: "/hero-image/hero-02.png",
+    mobile: "/hero-image/hero-02-mob.png",
+  },
+  {
+    desktop: "/hero-image/hero-03.png",
+    mobile: "/hero-image/hero-03-mob.png",
+    
+  },
+  {
+    desktop: "/hero-image/hero-image.png",
+    mobile: "/hero-image/hero-image-mob.png",
+    
+  },
+  {
+    desktop: "/hero-image/hero-1.png",
+    mobile: "/hero-image/hero-1-mob.png", // Agar mobile image na ho to same path bhi dal sakte hain
+  },
 ];
 
 export default function Hero() {
-  const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActive((prev) => (prev + 1) % banners.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
-
   return (
-    <section className="relative w-full overflow-hidden">
-
+    <section className="relative w-full group">
       {/* HERO SLIDER */}
-      <div
-        className="relative w-full"
-        style={{ height: "85vh" }}   // 🔥 MOST IMPORTANT
-      >
-        {banners.map((src, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-700 ${
-              index === active ? "opacity-100 z-10" : "opacity-0 z-0"
-            }`}
-          >
-            <img
-              src={src}
-              alt={`Hero ${index + 1}`}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ))}
-
-        {/* LEFT ARROW */}
-        <button
-          onClick={() =>
-            setActive((active - 1 + banners.length) % banners.length)
-          }
-          className="absolute left-5 top-1/2 -translate-y-1/2 z-20
-                     bg-black/50 text-white w-10 h-10 rounded-full"
+      <div className="w-full h-[60vh] md:h-[85vh]">
+        <Swiper
+          modules={[Autoplay, Navigation, Pagination, EffectFade]}
+          spaceBetween={0}
+          slidesPerView={1}
+          loop={banners.length > 1}
+          effect="fade"
+          speed={1000}
+          autoplay={{
+            delay: 4000,
+            disableOnInteraction: false,
+          }}
+          pagination={{ clickable: true, dynamicBullets: true }}
+          navigation={true}
+          className="mySwiper w-full h-full"
         >
-          ‹
-        </button>
-
-        {/* RIGHT ARROW */}
-        <button
-          onClick={() => setActive((active + 1) % banners.length)}
-          className="absolute right-5 top-1/2 -translate-y-1/2 z-20
-                     bg-black/50 text-white w-10 h-10 rounded-full"
-        >
-          ›
-        </button>
+          {banners.map((item, index) => (
+            <SwiperSlide key={index}>
+              <div className="w-full h-full relative">
+                {/* Desktop Image: Badi screen par dikhegi, mobile par hidden */}
+                <img
+                  src={item.desktop}
+                  alt={`Banner ${index + 1}`}
+                  className="hidden md:block w-full h-full object-cover"
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
+                
+                {/* Mobile Image: Sirf mobile par dikhegi, desktop par hidden */}
+                <img
+                  src={item.mobile}
+                  alt={`Mobile Banner ${index + 1}`}
+                  className="block md:hidden w-full h-full object-cover"
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
 
       {/* TRUST STRIP */}
-      <div className="w-full bg-[#001e3c] py-3">
-        <div className="max-w-7xl mx-auto flex justify-around text-xs font-bold text-white uppercase">
-          <span>🚚 Free Shipping</span>
-          <span className="hidden md:block">🔒 Secure Checkout</span>
-          <span className="hidden md:block">↩ 7 Days Return</span>
-          <span>💵 Cash on Delivery</span>
+      <div className="w-full bg-[#001e3c] py-4">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="flex items-center justify-center gap-2 text-white font-bold text-[10px] md:text-xs uppercase">
+              <span>🚚</span> FREE SHIPPING
+            </div>
+            <div className="flex items-center justify-center gap-2 text-white font-bold text-[10px] md:text-xs uppercase">
+              <span>🔒</span> SECURE CHECKOUT
+            </div>
+            <div className="flex items-center justify-center gap-2 text-white font-bold text-[10px] md:text-xs uppercase">
+              <span>↩</span> 7 DAYS RETURN
+            </div>
+            <div className="flex items-center justify-center gap-2 text-white font-bold text-[10px] md:text-xs uppercase">
+              <span>💵</span> COD AVAILABLE
+            </div>
+          </div>
         </div>
       </div>
 
+      <style jsx global>{`
+        .swiper-button-next, .swiper-button-prev {
+          color: white !important;
+          background: rgba(0,0,0,0.2);
+          width: 40px !important;
+          height: 40px !important;
+          border-radius: 50%;
+          transform: scale(0.7);
+        }
+        @media (max-width: 768px) {
+          .swiper-button-next, .swiper-button-prev { display: none; }
+          .swiper-pagination-bullet { width: 6px; height: 6px; }
+        }
+      `}</style>
     </section>
   );
 }

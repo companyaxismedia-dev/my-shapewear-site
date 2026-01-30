@@ -2,96 +2,84 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import ProductDetails from "@/components/ProductDetails";
-import ProductGrid from "@/components/ProductGrid";
-import ReviewSection from "@/components/ReviewSection";
-import StickyBuy from "@/components/StickyBuy";
+import OfferSection from "@/components/OfferSection";
+import HomeHero from "@/components/HomeHero";
+import CategorySlider from "@/components/CategorySlider";
+import AutoSliceSlider from "@/components/AutoSliceSlider"; 
 import Footer from "@/components/Footer";
 import { Truck, ShieldCheck, RotateCcw, Zap } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#f0f2f5] overflow-x-hidden">
+    <div className="min-h-screen bg-white overflow-x-hidden selection:bg-pink-100">
       <Navbar />
 
-      <main className="max-w-[1440px] mx-auto pb-24">
-
-        {/* Secondary Menu – Desktop Only */}
+      <main className="max-w-[1440px] mx-auto">
+        {/* Desktop Mini Menu */}
         <div className="bg-white border-b hidden lg:block px-8 py-2">
-          <div className="flex gap-8 text-[11px] font-bold text-gray-500 uppercase tracking-widest">
-            <span className="text-blue-600 cursor-pointer">New Arrivals</span>
-            <span className="hover:text-blue-600 cursor-pointer">Best Sellers</span>
-            <span className="hover:text-blue-600 cursor-pointer">Track Order</span>
+          <div className="flex gap-8 text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+            <span className="text-[#ed4e7e] cursor-pointer">New Arrivals</span>
+            <span className="hover:text-[#ed4e7e] cursor-pointer transition-colors">Best Sellers</span>
+            <span className="hover:text-[#ed4e7e] cursor-pointer transition-colors">Bridal Store</span>
           </div>
         </div>
 
-        {/* Hero */}
-        <div className="px-3 sm:px-4 md:px-8 mt-4">
+        <div className="px-3 sm:px-4 md:px-10 mt-4 space-y-8">
           <Hero />
-        </div>
+          <OfferSection />   
+          <HomeHero />
+          
+          <CategorySlider /> 
 
-        {/* Trust Bar – Mobile Friendly */}
-        <div className="bg-[#041f41] text-white py-3 mt-2">
-          <div className="
-            flex md:justify-center gap-6
-            overflow-x-auto md:overflow-visible
-            px-4
-            text-[10px] sm:text-[11px]
-            font-bold uppercase tracking-wider
-            scrollbar-hide
-          ">
-            <span className="flex items-center gap-2 whitespace-nowrap">
-              <Truck size={15} className="text-[#ffc220]" />
-              Free Express Shipping
-            </span>
-
-            <span className="flex items-center gap-2 whitespace-nowrap">
-              <ShieldCheck size={15} className="text-[#ffc220]" />
-              Secure Checkout
-            </span>
-
-            <span className="flex items-center gap-2 whitespace-nowrap">
-              <RotateCcw size={15} className="text-[#ffc220]" />
-              7 Days Return
-            </span>
-
-            <span className="flex items-center gap-2 whitespace-nowrap text-green-400">
-              <Zap size={15} fill="currentColor" />
-              Cash On Delivery
-            </span>
+          {/* 🟢 FULL AUTO-SLICING SECTIONS ADDED HERE */}
+          <div className="mt-12">
+             <div className="text-center mb-12">
+                <h2 className="text-4xl md:text-5xl font-black text-[#ed4e7e] uppercase italic tracking-tighter">
+                   Our Exclusive Collections
+                </h2>
+                <div className="h-1 w-24 bg-pink-100 mx-auto mt-3 rounded-full"></div>
+             </div>
+             
+             {/* Ye component saare pages ko section-wise load karega */}
+             <AutoSliceSlider /> 
           </div>
         </div>
 
-        {/* Product Details */}
-        <section className="px-3 sm:px-4 md:px-8 mt-6">
-          <ProductDetails />
-        </section>
-
-        {/* Reviews */}
-        <section className="px-3 sm:px-4 md:px-8 mt-10">
-          <ReviewSection />
-        </section>
-
-        {/* Explore More */}
-        <section className="px-3 sm:px-4 md:px-8 mt-14">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl md:text-2xl font-black text-[#041f41] uppercase italic tracking-tighter">
-              Explore More
-            </h2>
-            <button className="text-[11px] md:text-[12px] font-black underline text-[#041f41] uppercase tracking-widest">
-              View all
-            </button>
+        {/* Trust Bar */}
+        <div className="bg-[#fce4ec] border-y border-pink-100 py-10 mt-16">
+          <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 px-6">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="bg-white p-3 rounded-full shadow-sm"><Truck size={24} className="text-[#ed4e7e]" /></div>
+              <div>
+                <p className="text-[11px] font-black uppercase text-gray-700 tracking-tighter">Free Shipping</p>
+                <p className="text-[9px] text-gray-500 italic">On orders above ₹999</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="bg-white p-3 rounded-full shadow-sm"><ShieldCheck size={24} className="text-[#ed4e7e]" /></div>
+              <div>
+                <p className="text-[11px] font-black uppercase text-gray-700 tracking-tighter">100% Privacy</p>
+                <p className="text-[9px] text-gray-500 italic">Discreet Packaging</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="bg-white p-3 rounded-full shadow-sm"><RotateCcw size={24} className="text-[#ed4e7e]" /></div>
+              <div>
+                <p className="text-[11px] font-black uppercase text-gray-700 tracking-tighter">Easy Returns</p>
+                <p className="text-[9px] text-gray-500 italic">7 Days No Question</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="bg-white p-3 rounded-full shadow-sm"><Zap size={24} fill="#ed4e7e" className="text-[#ed4e7e]" /></div>
+              <div>
+                <p className="text-[11px] font-black uppercase text-gray-700 tracking-tighter">Quick COD</p>
+                <p className="text-[9px] text-gray-500 italic">Pay on delivery</p>
+              </div>
+            </div>
           </div>
-
-          <ProductGrid />
-        </section>
-
+        </div>
       </main>
 
-      {/* Mobile Sticky CTA */}
-      <StickyBuy />
-
-      {/* Footer */}
       <Footer />
     </div>
   );

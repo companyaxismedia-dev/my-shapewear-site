@@ -1,197 +1,187 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useCart } from "@/context/CartContext";
-import { ShieldCheck, MessageCircle, QrCode } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { 
+  QrCode, ShieldCheck, MessageCircle, ArrowLeft, 
+  Loader2, ShoppingBag, Truck, CreditCard 
+} from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 
-export default function Checkout() {
-  /* ---------------- SAFE CART CONTEXT ---------------- */
-  const { cartItems = [] } = useCart();
-
-  /* ---------------- MOUNT FIX ---------------- */
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  /* ---------------- PRODUCT & CONTACT ---------------- */
-  const product = cartItems.length > 0 ? cartItems[0] : { name: "Butt Lifter Shaper", price: 1179 };
-  const totalPayable = product.price;
+export default function CheckoutPage() {
+  const { cart, cartTotal, clearCart } = useCart();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [paymentMode, setPaymentMode] = useState("COD"); // Default COD
   
-  // ⭐ BUSINESS WHATSAPP NUMBER
-  const myWhatsApp = "919217521109"; 
-
-  /* ---------------- FORM STATE ---------------- */
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    houseNo: "",
-    area: "",
-    city: "",
+  const [formData, setFormData] = useState({ 
+    name: "", 
+    phone: "", 
+    address: "", 
+    city: "", 
     pincode: "",
+    email: "" 
   });
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const isValid = formData.name && formData.phone && formData.houseNo && formData.area && formData.pincode;
-
-  /* ---------------- LOAD RAZORPAY SCRIPT ---------------- */
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
-
-  /* ---------------- WHATSAPP MESSAGE LOGIC ---------------- */
-  const triggerWhatsAppMessage = (statusType = "SCAN & PAY", orderId = "NEW") => {
-    const msg = `*🚀 NEW ORDER - BOOTY BLOOM*%0A%0A*Order ID:* #${orderId}%0A*Status:* ${statusType}%0A*Product:* ${product.name}%0A*Name:* ${formData.name}%0A*Phone:* ${formData.phone}%0A%0A*Address:*%0A${formData.houseNo}, ${formData.area}%0A${formData.city} - ${formData.pincode}%0A%0A*Total Amount:* ₹${totalPayable}`;
-    
-    window.open(`https://wa.me/${myWhatsApp}?text=${msg}`, "_blank");
-  };
-
-  const handleWhatsAppOrder = () => {
-    if (!isValid) return alert("Please fill complete address details first!");
-    triggerWhatsAppMessage("RECEIPT ATTACHED (QR)");
-  };
-
-  /* ---------------- RAZORPAY PAYMENT ---------------- */
-  const handlePayment = async () => {
-    if (!isValid) return alert("Please fill complete address details!");
-
-    try {
-      // 1. Order ID create karein backend se
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/checkout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: totalPayable }),
-      });
-
-      const orderData = await res.json();
-
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY,
-        amount: totalPayable * 100,
-        currency: "INR",
-        name: "BOOTY BLOOM",
-        order_id: orderData.order.id,
-        handler: async (response) => {
-          // 2. Success ke baad database mein save karein
-          const saveRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payment/verify-and-save`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              customerData: formData,  // Yeh backend ke customerData key se match hona chahiye
-              paymentId: response.razorpay_payment_id,
-              amount: totalPayable,
-              items: [product],
-              paymentType: "Online Paid" 
-            }),
-          });
-
-          const savedData = await saveRes.json();
-          // Database ki _id ya Razorpay ID nikalna
-          const shortId = savedData.order?._id || response.razorpay_payment_id;
-
-          // 3. Auto WhatsApp Alert
-          triggerWhatsAppMessage("PAID ONLINE (RAZORPAY)", shortId.toString().slice(-6).toUpperCase());
-          
-          // ⭐ REDIRECT TO SUCCESS PAGE
-          window.location.href = `/success?id=${shortId}`;
-        },
-        prefill: {
-          name: formData.name,
-          contact: formData.phone,
-        },
-        theme: { color: "#041f41" },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (err) {
-      alert("Payment Error: Make sure your backend server is running!");
+  const handleInput = (e) => {
+    const { name, value } = e.target;
+    if (name === "phone") {
+      setFormData({ ...formData, [name]: value.replace(/\D/g, "").slice(0, 10) });
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
   };
 
-  if (!mounted) return null;
+  const handlePlaceOrder = async () => {
+    // 1. Validation
+    if (!formData.name || !formData.phone || !formData.address || !formData.city || !formData.pincode) {
+      return alert("Kripya saari details bhariye!");
+    }
+    if (formData.phone.length !== 10) {
+      return alert("Sahi WhatsApp number daalein!");
+    }
+
+    setLoading(true);
+
+    try {
+      const totalAmount = cartTotal();
+      
+      // 2. Prepare Data for Backend
+      const orderPayload = {
+        email: formData.email || `${formData.phone}@bootybloom.com`,
+        customerData: {
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city
+        },
+        items: cart,
+        amount: totalAmount,
+        paymentType: paymentMode
+      };
+
+      // 3. API Call to Save Order (OTP bypass for direct checkout)
+      // Note: Hum direct save kar rahe hain kyunki ye final checkout step hai
+      const response = await fetch("http://localhost:5000/api/orders/verify-and-save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...orderPayload, otp: "DIRECT" }) // Backend pe 'DIRECT' bypass logic add kar sakte hain
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // 4. Create WhatsApp Message
+        const itemsText = cart.map(i => `• ${i.name} (${i.size}) x ${i.qty}`).join("%0A");
+        const msg = `*🚀 NEW ORDER - BOOTY BLOOM*%0A` +
+                    `--------------------------%0A` +
+                    `*Order ID:* ${result.orderId.slice(-6).toUpperCase()}%0A` +
+                    `*Customer:* ${formData.name}%0A` +
+                    `*Method:* ${paymentMode}%0A%0A` +
+                    `*Items:*%0A${itemsText}%0A%0A` +
+                    `*Total:* ₹${totalAmount.toFixed(2)}%0A` +
+                    `*Address:* ${formData.address}, ${formData.city}%0A` +
+                    `--------------------------%0A` +
+                    `_Please confirm my order._`;
+
+        // 5. Final Step: WhatsApp redirect & Success page
+        window.open(`https://wa.me/919217521109?text=${msg}`, "_blank");
+        clearCart();
+        router.push(`/success?id=${result.orderId}`);
+      } else {
+        alert("Order save nahi ho paya. Dobara koshish karein.");
+      }
+    } catch (error) {
+      console.error("Order Error:", error);
+      alert("Server error! Backend check karein.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (cart.length === 0 && !loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#ed4e7e] text-white p-6 text-center">
+        <ShoppingBag size={80} className="mb-6 opacity-30" />
+        <h2 className="text-3xl font-black uppercase italic">Bag is Empty!</h2>
+        <Link href="/" className="mt-8 bg-white text-[#ed4e7e] px-10 py-4 rounded-full font-black uppercase">Go Back</Link>
+      </div>
+    );
+  }
 
   return (
-    <section className="min-h-screen bg-[#f1f3f6] py-6 sm:py-10 px-3 sm:px-4 font-sans text-black">
-      <div className="max-w-[1100px] mx-auto flex flex-col lg:flex-row gap-6">
+    <div className="bg-[#ed4e7e] min-h-screen pb-20 text-white font-sans">
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        <Link href="/cart" className="inline-flex items-center gap-2 font-black uppercase text-[10px] tracking-[0.2em] mb-10 border-b-2 border-white/20 pb-1">
+          <ArrowLeft size={14} /> Back to Cart
+        </Link>
 
-        {/* LEFT SECTION - FORM */}
-        <div className="lg:w-2/3 space-y-5">
-          <div className="bg-white p-5 sm:p-6 rounded-xl shadow-sm">
-            <h2 className="text-gray-600 font-black uppercase text-sm mb-4">Delivery Address</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input name="name" value={formData.name} placeholder="Full Name *" onChange={handleChange} className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
-              <input name="phone" value={formData.phone} placeholder="WhatsApp Number *" onChange={handleChange} className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
-              <input name="houseNo" value={formData.houseNo} placeholder="House / Flat No *" onChange={handleChange} className="border p-3 rounded-lg sm:col-span-2 outline-none focus:ring-2 focus:ring-blue-500" required />
-              <input name="area" value={formData.area} placeholder="Area / Landmark *" onChange={handleChange} className="border p-3 rounded-lg sm:col-span-2 outline-none focus:ring-2 focus:ring-blue-500" required />
-              <input name="city" value={formData.city} placeholder="City" onChange={handleChange} className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" />
-              <input name="pincode" value={formData.pincode} placeholder="Pincode *" onChange={handleChange} className="border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500" required />
-            </div>
-          </div>
-
-          {/* SCAN & PAY OPTION */}
-          <div className="bg-[#041f41] text-white p-5 rounded-xl border-l-4 border-yellow-400">
-            <h3 className="font-bold uppercase text-sm flex items-center gap-2 mb-4">
-              <QrCode size={18} className="text-yellow-400" /> Direct Scan & Pay
-            </h3>
-            <div className="flex flex-col sm:flex-row items-center gap-5">
-              <div className="bg-white p-2 rounded-lg">
-                <img src="/image/page_1.png" alt="QR Code" className="w-28 h-28" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* LEFT: FORM */}
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <div className="bg-white p-8 md:p-12 rounded-[3rem] text-gray-900 shadow-2xl">
+              <h2 className="text-3xl font-black uppercase italic mb-8">Delivery Details</h2>
+              
+              <div className="space-y-4">
+                <input name="name" placeholder="FULL NAME" onChange={handleInput} className="w-full p-4 border-b-2 border-gray-100 focus:border-[#ed4e7e] outline-none font-bold uppercase" />
+                <input name="phone" placeholder="WHATSAPP NUMBER" onChange={handleInput} maxLength="10" className="w-full p-4 border-b-2 border-gray-100 focus:border-[#ed4e7e] outline-none font-bold" />
+                <input name="email" placeholder="EMAIL ADDRESS (OPTIONAL)" onChange={handleInput} className="w-full p-4 border-b-2 border-gray-100 focus:border-[#ed4e7e] outline-none font-bold" />
+                <textarea name="address" placeholder="COMPLETE ADDRESS" onChange={handleInput} className="w-full p-4 border-b-2 border-gray-100 focus:border-[#ed4e7e] outline-none font-bold h-24 resize-none" />
+                <div className="grid grid-cols-2 gap-4">
+                  <input name="city" placeholder="CITY" onChange={handleInput} className="w-full p-4 border-b-2 border-gray-100 focus:border-[#ed4e7e] outline-none font-bold uppercase" />
+                  <input name="pincode" placeholder="PINCODE" onChange={handleInput} maxLength="6" className="w-full p-4 border-b-2 border-gray-100 focus:border-[#ed4e7e] outline-none font-bold" />
+                </div>
               </div>
-              <div className="text-sm space-y-2 text-center sm:text-left">
-                <p className="font-bold text-lg text-white">AXIS MEDIA</p>
-                <p>UPI ID: <span className="text-yellow-400 font-mono font-bold">AXISMEDIA465@iob</span></p>
-                <button
-                  onClick={handleWhatsAppOrder}
-                  className="bg-[#25D366] px-4 py-3 rounded-lg font-bold flex items-center gap-2 w-full justify-center hover:bg-green-600 transition-all text-white"
-                >
-                  <MessageCircle size={18} /> Send Receipt on WhatsApp
+
+              {/* Payment Selection */}
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <button onClick={() => setPaymentMode("COD")} className={`p-4 rounded-2xl border-2 font-black text-xs uppercase flex items-center justify-center gap-2 transition-all ${paymentMode === "COD" ? "border-[#ed4e7e] bg-[#ed4e7e]/5 text-[#ed4e7e]" : "border-gray-100 text-gray-400"}`}>
+                  <Truck size={18} /> Cash On Delivery
+                </button>
+                <button onClick={() => setPaymentMode("Online")} className={`p-4 rounded-2xl border-2 font-black text-xs uppercase flex items-center justify-center gap-2 transition-all ${paymentMode === "Online" ? "border-[#ed4e7e] bg-[#ed4e7e]/5 text-[#ed4e7e]" : "border-gray-100 text-gray-400"}`}>
+                  <CreditCard size={18} /> Pay Online
                 </button>
               </div>
-            </div>
-          </div>
 
-          {/* MAIN RAZORPAY BUTTON */}
-          <button
-            onClick={handlePayment}
-            className="w-full bg-[#fb641b] text-white py-4 rounded-xl font-black uppercase shadow-lg hover:bg-orange-600 transition-transform active:scale-95"
-          >
-            Pay Online (Secure Razorpay)
-          </button>
+              <button onClick={handlePlaceOrder} disabled={loading} className="w-full bg-[#25D366] text-white py-6 rounded-full font-black uppercase mt-10 shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50">
+                {loading ? <Loader2 className="animate-spin" /> : <><MessageCircle size={20} /> Place Order via WhatsApp</>}
+              </button>
+            </div>
+          </motion.div>
+
+          {/* RIGHT: SUMMARY */}
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+            <div className="bg-white/10 backdrop-blur-lg border border-white/20 p-10 rounded-[3rem]">
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] mb-2 opacity-60">Total Amount</p>
+              <h3 className="text-6xl font-black italic tracking-tighter">₹{cartTotal().toFixed(2)}</h3>
+              <p className="text-xs font-bold mt-4 text-green-300">✓ FREE SHIPPING APPLIED</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-[3rem] text-gray-900 shadow-xl">
+              <h4 className="font-black uppercase text-[#ed4e7e] text-[10px] tracking-widest mb-6">Order Summary</h4>
+              <div className="space-y-4 max-h-60 overflow-y-auto custom-scrollbar">
+                {cart.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between border-b border-gray-50 pb-4">
+                    <div className="flex items-center gap-4">
+                      <img src={item.img} className="w-12 h-16 object-cover rounded-lg" alt={item.name} />
+                      <div>
+                        <p className="font-black text-xs uppercase">{item.name}</p>
+                        <p className="text-[10px] font-bold text-gray-400">Qty: {item.qty} | Size: {item.size}</p>
+                      </div>
+                    </div>
+                    <p className="font-black italic">₹{item.offerPrice}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex items-center gap-4 bg-gray-50 p-4 rounded-2xl">
+                <ShieldCheck className="text-green-500" />
+                <p className="text-[10px] font-black uppercase text-gray-500">Secure Checkout & 100% Original Products</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
-
-        {/* RIGHT SECTION - PRICE DETAILS */}
-        <div className="lg:w-1/3">
-          <div className="bg-white rounded-xl shadow-sm p-5 lg:sticky lg:top-24">
-            <h3 className="font-black uppercase text-sm border-b pb-2 text-gray-500">Price Details</h3>
-            <div className="py-4 space-y-3">
-              <div className="flex justify-between font-medium">
-                <span>Price (1 Item)</span>
-                <span>₹{totalPayable}</span>
-              </div>
-              <div className="flex justify-between text-green-600 font-medium">
-                <span>Delivery Charges</span>
-                <span className="uppercase font-bold">Free</span>
-              </div>
-              <div className="flex justify-between text-xl font-black border-t pt-3">
-                <span>Total Amount</span>
-                <span className="text-blue-600">₹{totalPayable}</span>
-              </div>
-            </div>
-            <div className="text-[11px] bg-blue-50 text-blue-700 p-2 rounded font-bold mb-4">
-              ✨ Only Online Payments accepted for faster delivery!
-            </div>
-            <div className="text-xs text-gray-500 flex items-center gap-2">
-              <ShieldCheck size={14} className="text-green-500" /> 100% Secure Transaction
-            </div>
-          </div>
-        </div>
-
       </div>
-    </section>
+    </div>
   );
 }

@@ -1,217 +1,220 @@
 "use client";
-import { useState } from "react";
-import {
-  MessageCircle,
-  CheckCircle2,
-  Truck,
-  ShieldCheck,
-  Star,
-  Sparkles,
-  ChevronRight,
-  BadgePercent
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { useCart } from "@/context/CartContext";
+import { 
+  Star, ShoppingCart, Zap, Heart, Share2, StarHalf
 } from "lucide-react";
 
-/* PRODUCT DATA (Ads ke liye updated prices) */
-const defaultProduct = {
-  id: "PROD_001",
-  name: "SEAMLESS BOOTY PADS PANTIES",
-  price: 1299, // Testing ke liye 1 rakha hai, aap change kar sakte hain
-  price: 2499, // Original Price
-  offerPrice: 749, // Ads Offer Price
-  mainImage: "/image/Women-HIP-PAD-PANTY/hip-pad-1.webp",
-  images: [
-    "/image/Women-HIP-PAD-PANTY/hip-pad.webp",
-    "/image/Women-HIP-PAD-PANTY/hip-pad-2.webp",
-    "/image/Women-HIP-PAD-PANTY/HIP-PAD-3.webp",
-    "/image/Women-HIP-PAD-PANTY/MANIFIQUE-Padded-Underwear-3.webp"
-  ],
-  sizes: ["S", "M", "L", "XL", "XXL"]
-};
+export default function ProductDetailsPage() {
+  const { addToCart } = useCart();
+  const [selectedSize, setSelectedSize] = useState("34B");
+  const [activeTab, setActiveTab] = useState("Description");
+  const [isMounted, setIsMounted] = useState(false);
 
-export default function ProductDetails({ product = defaultProduct }) {
-  const [mainImage, setMainImage] = useState(product.mainImage);
-  const [orderStatus, setOrderStatus] = useState("idle");
-  const [selectedSize, setSelectedSize] = useState("");
-
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    houseNo: "",
-    area: "",
-    city: "",
-    pincode: ""
-  });
-
-  const myWhatsApp = "919217521109";
-  const API_URL = "https://www.bootybloom.online/api/orders";
-
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleOrderSubmit = async () => {
-    if (!selectedSize) return alert("Pehle apni Size select karein!");
-    if (!formData.name || !formData.phone || !formData.area) return alert("Kripya Delivery Details bhariye");
-
-    setOrderStatus("loading");
-
-    const orderPayload = {
-      customerData: {
-        name: formData.name,
-        phone: formData.phone,
-        address: `${formData.houseNo}, ${formData.area}, ${formData.city} - ${formData.pincode}`,
+  // --- AMAZON STYLE LOGIC START ---
+  
+  // 1. Data Structure with Variants
+  const product = {
+    id: "bra-002",
+    name: "Non-Padded Non-Wired Full Figure Bra - Cotton & Lace",
+    rating: 4.6,
+    totalRatings: 8,
+    discount: "3% OFF",
+    // Variants array for Amazon-like switching
+    variants: [
+      {
+        color: "Black",
+        hex: "#000000",
+        price: 577,
+        oldPrice: 599,
+        images: [
+          "/non-padded/Non-Padded-Bras-1.jpg", 
+          "/non-padded/Non-Padded-Bras-2.jpg",
+          "/non-padded/Non-Padded-Bras-3.jpg"
+        ]
       },
-      items: [{
-        name: product.name,
-        price: product.offerPrice,
-        size: selectedSize,
-        quantity: 1
-      }],
-      amount: product.offerPrice,
-      paymentType: "WhatsApp Order / COD",
-      status: "Pending"
-    };
-
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
-      });
-
-      if (response.ok) {
-        const whatsappMsg = `*🚀 NEW ORDER CONFIRMED*%0A------------------------------%0A*Product:* ${product.name}%0A*Size:* ${selectedSize}%0A*Price:* ₹${product.offerPrice}%0A------------------------------%0A*Delivery Details:*%0A*Name:* ${formData.name}%0A*Address:* ${formData.area}, ${formData.city}%0A*Phone:* ${formData.phone}%0A%0A*Payment:* Cash on Delivery`;
-        
-        window.open(`https://wa.me/${myWhatsApp}?text=${whatsappMsg}`, "_blank");
-        setOrderStatus("success");
+      {
+        color: "Blue",
+        hex: "#2b4562",
+        price: 550,
+        oldPrice: 599,
+        images: [
+          "/non-padded/Non-Padded-Bras-4.jpg",
+          "/non-padded/Non-Padded-Bras-5.jpg"
+        ]
+      },
+      {
+        color: "Beige",
+        hex: "#f5f5dc",
+        price: 577,
+        oldPrice: 599,
+        images: [
+          "/non-padded/Non-Padded-Bras-6.jpg",
+          "/non-padded/Non-Padded-Bras-7.jpg"
+        ]
       }
-    } catch (error) {
-      alert("Server error. Please try again.");
-      setOrderStatus("idle");
-    }
+    ],
+    features: ["COTTON BRAS", "DOUBLE LAYERED CUPS", "FULL COVERAGE", "NON PADDED"],
+    description: "Meticulously crafted from breathable cotton spandex fabric with delicate lace. Designed for all-day comfort without bulk.",
+    reviews: [
+      { id: 1, user: "Anjali Sharma", rating: 5, comment: "Very comfortable! Perfect for daily wear.", date: "22 Jan 2026" },
+      { id: 2, user: "Megha Gupta", rating: 4, comment: "Good support and soft fabric.", date: "15 Jan 2026" }
+    ]
   };
 
-  if (orderStatus === "success") {
-    return (
-      <div className="max-w-md mx-auto py-20 px-4 text-center">
-        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border-t-8 border-green-500">
-          <CheckCircle2 size={60} className="text-green-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-black italic uppercase italic">Order Mil Gaya!</h2>
-          <p className="text-gray-500 mt-2">Hum jald hi aapse WhatsApp par contact karenge.</p>
-          <button onClick={() => window.location.href = "/"} className="mt-8 w-full bg-black text-white py-4 rounded-2xl font-bold uppercase tracking-widest">Back to Home</button>
-        </div>
-      </div>
-    );
-  }
+  // 2. States for Selection
+  const [selectedVariant, setSelectedVariant] = useState(product.variants[0]);
+  const [activeImage, setActiveImage] = useState(selectedVariant.images[0]);
+
+  // 3. Update Image when Color changes
+  const handleColorChange = (variant) => {
+    setSelectedVariant(variant);
+    setActiveImage(variant.images[0]); // Reset main image to first image of new color
+  };
+
+  // --- AMAZON STYLE LOGIC END ---
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return null;
 
   return (
-    <section className="bg-gray-50 min-h-screen">
-      {/* ⚡ URGENCY BANNER FOR ADS */}
-      <div className="bg-red-600 text-white text-center py-2 text-[10px] md:text-xs font-black tracking-widest uppercase animate-pulse">
-        🔥 Valentine Special: BUY 1 GET 1 FREE - Limited Time Offer 🔥
-      </div>
-
-      <div className="max-w-[1100px] mx-auto bg-white shadow-xl grid grid-cols-1 lg:grid-cols-2">
-        
-        {/* LEFT: PRODUCT SHOWCASE */}
-        <div className="p-4 lg:p-8">
-          <div className="relative rounded-[2rem] overflow-hidden bg-gray-100 aspect-[4/5] shadow-inner">
-            <img src={mainImage} className="w-full h-full object-contain mix-blend-multiply" alt="Product" />
-            <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-              <Star size={14} fill="#EAB308" className="text-yellow-500"/>
-              <span className="text-[10px] font-black tracking-tighter uppercase">4.9/5 (950+ Reviews)</span>
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4 overflow-x-auto no-scrollbar">
-            {product.images.map((img, i) => (
-              <button key={i} onClick={() => setMainImage(img)} className={`w-16 h-20 flex-shrink-0 rounded-xl border-2 transition-all ${mainImage === img ? 'border-blue-600 scale-105' : 'border-transparent opacity-50'}`}>
-                <img src={img} className="w-full h-full object-cover rounded-lg" />
-              </button>
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      
+      <main className="max-w-7xl mx-auto px-4 py-6 md:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* LEFT: THUMBNAILS (Amazon Style) */}
+          <div className="hidden lg:flex lg:col-span-1 flex-col gap-3">
+            {selectedVariant.images.map((img, idx) => (
+              <div 
+                key={idx}
+                onMouseEnter={() => setActiveImage(img)}
+                className={`aspect-[3/4] relative border-2 cursor-pointer rounded-md overflow-hidden ${activeImage === img ? 'border-pink-500' : 'border-gray-100'}`}
+              >
+                <Image src={img} alt="thumb" fill className="object-cover" />
+              </div>
             ))}
           </div>
-        </div>
 
-        {/* RIGHT: PRICING & ORDER FORM */}
-        <div className="p-6 lg:p-10 space-y-6">
-          <div>
-            <div className="text-blue-600 font-black text-[10px] uppercase tracking-widest mb-1 flex items-center gap-1">
-              <BadgePercent size={14}/> Special Festive Offer
-            </div>
-            <h1 className="text-3xl font-black text-[#041f41] leading-tight italic uppercase tracking-tighter">
-              {product.name}
-            </h1>
-            <div className="flex items-center gap-4 mt-2">
-              <span className="text-4xl font-black text-blue-700 tracking-tighter">₹{product.offerPrice}</span>
-              <span className="text-lg text-gray-400 line-through font-bold">₹{product.price}</span>
-              <div className="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-black text-xs uppercase italic">Flat 70% OFF</div>
-            </div>
-          </div>
-
-          {/* SIZE SELECTOR */}
-          <div className="space-y-3">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select Your Perfect Size:</p>
-            <div className="flex flex-wrap gap-2">
-              {product.sizes.map((size) => (
-                <button key={size} onClick={() => setSelectedSize(size)} className={`w-12 h-12 rounded-xl font-black transition-all border-2 ${selectedSize === size ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-white border-gray-100 text-gray-600'}`}>
-                  {size}
+          {/* CENTER: MAIN IMAGE */}
+          <div className="lg:col-span-5 relative">
+            <div className="aspect-[3/4] relative rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+              <Image 
+                src={activeImage} 
+                alt={product.name} 
+                fill 
+                className="object-cover transition-all duration-300"
+                priority
+              />
+              <div className="absolute top-6 right-6 flex flex-col gap-3">
+                <button className="p-3 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-400 hover:text-pink-500">
+                  <Heart size={22} />
                 </button>
-              ))}
+              </div>
             </div>
           </div>
 
-          {/* ADS FRIENDLY FORM */}
-          <div className="bg-blue-50/50 p-6 rounded-[2.5rem] border-2 border-blue-100 space-y-4 shadow-sm">
-            <div className="flex items-center gap-2 text-blue-700 font-black uppercase text-sm italic mb-2">
-               <MapPinIcon size={18}/> Direct Shipping Info
+          {/* RIGHT: CONTENT SECTION */}
+          <div className="lg:col-span-6 flex flex-col gap-6">
+            <header className="space-y-2">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center bg-orange-400 text-white px-2 py-0.5 rounded font-bold text-sm">
+                  {product.rating} <Star size={14} className="fill-current ml-1" />
+                </div>
+                <span className="text-gray-400 font-bold text-xs uppercase tracking-widest border-l pl-3">
+                  {product.totalRatings} Verified Reviews
+                </span>
+              </div>
+            </header>
+
+            <div className="flex items-baseline gap-4 border-b pb-6">
+              <span className="text-4xl font-black text-[#041f41]">₹{selectedVariant.price}</span>
+              <span className="text-xl text-gray-300 line-through font-bold">₹{selectedVariant.oldPrice}</span>
+              <span className="text-[#ed4e7e] font-black text-sm uppercase italic bg-pink-50 px-2 rounded">
+                {product.discount}
+              </span>
             </div>
-            <div className="grid grid-cols-1 gap-3">
-              <input name="name" onChange={handleChange} placeholder="Full Name" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
-              <input name="phone" onChange={handleChange} placeholder="WhatsApp Number" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
-              <input name="area" onChange={handleChange} placeholder="Address (Area / Landmark)" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
-              <div className="grid grid-cols-2 gap-3">
-                <input name="city" onChange={handleChange} placeholder="City" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
-                <input name="pincode" onChange={handleChange} placeholder="Pincode" className="p-4 bg-white rounded-xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" />
+
+            {/* COLOR SELECTION (Swatches) */}
+            <div className="space-y-3">
+              <label className="font-bold text-xs text-gray-400 uppercase tracking-widest">
+                Color: <span className="text-gray-900">{selectedVariant.color}</span>
+              </label>
+              <div className="flex gap-3">
+                {product.variants.map((v) => (
+                  <button 
+                    key={v.color} 
+                    onClick={() => handleColorChange(v)}
+                    className={`w-14 h-18 border-2 rounded-lg overflow-hidden transition-all ${
+                      selectedVariant.color === v.color ? 'border-pink-500 scale-105 shadow-md' : 'border-gray-100 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="relative w-full h-12">
+                      <Image src={v.images[0]} alt={v.color} fill className="object-cover" />
+                    </div>
+                    <div className="text-[10px] py-1 bg-gray-50 font-bold">{v.color}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
-            <button
-              disabled={orderStatus === "loading"}
-              onClick={handleOrderSubmit}
-              className="w-full bg-[#25d366] hover:bg-black text-white py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95"
-            >
-              {orderStatus === "loading" ? "Processing..." : (
-                <> <MessageCircle fill="white" size={20}/> CONFIRM ON WHATSAPP <ChevronRight/></>
-              )}
-            </button>
-            <div className="flex justify-center gap-4 text-[9px] font-black text-gray-400 uppercase tracking-widest">
-              <span>🚚 FREE Delivery</span>
-              <span>📦 Cash on Delivery</span>
-              <span>🔒 100% Secure</span>
+            {/* SIZE SELECTION */}
+            <div className="space-y-3">
+              <label className="font-bold text-xs text-gray-400 uppercase tracking-widest text-pink-500">Select Size</label>
+              <div className="flex flex-wrap gap-2">
+                {["32B", "34B", "36B", "38B", "40B"].map(size => (
+                  <button 
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`w-14 h-12 flex items-center justify-center border-2 font-black text-xs transition-all rounded-xl ${
+                      selectedSize === size ? 'bg-[#041f41] text-white border-[#041f41]' : 'bg-white text-gray-400 border-gray-100 hover:border-pink-200'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* TRUST BADGES */}
-          <div className="grid grid-cols-3 gap-3 border-t pt-6">
-             <div className="text-center">
-                <ShieldCheck size={20} className="mx-auto text-blue-600 mb-1"/>
-                <p className="text-[9px] font-black uppercase">Genuine</p>
-             </div>
-             <div className="text-center">
-                <Truck size={20} className="mx-auto text-pink-500 mb-1"/>
-                <p className="text-[9px] font-black uppercase">Fast Ship</p>
-             </div>
-             <div className="text-center">
-                <Sparkles size={20} className="mx-auto text-orange-400 mb-1"/>
-                <p className="text-[9px] font-black uppercase">Premium</p>
-             </div>
+            {/* ACTION BUTTONS */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
+              <button 
+                onClick={() => addToCart({ ...product, size: selectedSize, color: selectedVariant.color, qty: 1 })}
+                className="flex-1 bg-white border-2 border-[#041f41] text-[#041f41] py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-gray-50 transition-all"
+              >
+                <ShoppingCart size={18} /> Add to Bag
+              </button>
+              <button className="flex-1 bg-[#ed4e7e] text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 shadow-xl hover:opacity-90 transition-all">
+                <Zap size={18} fill="white" /> Buy Now
+              </button>
+            </div>
+
+            {/* TABS (Description/Reviews) */}
+            <div className="mt-4">
+               <div className="flex gap-8 border-b">
+                 {["Description", "Reviews"].map(tab => (
+                   <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-3 text-sm font-bold uppercase ${activeTab === tab ? 'border-b-2 border-pink-500 text-black' : 'text-gray-400'}`}>
+                     {tab}
+                   </button>
+                 ))}
+               </div>
+               <div className="py-4 text-sm text-gray-600">
+                 {activeTab === "Description" ? <p>{product.description}</p> : <p>Great product, very comfortable!</p>}
+               </div>
+            </div>
+
           </div>
         </div>
-      </div>
-
-      <style jsx>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
-    </section>
+      </main>
+      <Footer />
+    </div>
   );
-}
-
-function MapPinIcon({size}) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
 }

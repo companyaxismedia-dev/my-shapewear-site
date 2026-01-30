@@ -1,55 +1,83 @@
 const express = require("express");
 const router = express.Router();
-const Order = require("../models/Order");
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
 
-// Live Website Domain (Tracking link ke liye kaam aayega)
-const DOMAIN = "https://www.bootybloom.online";
+// --- IMPORTANT: Agar .env kaam nahi kar raha, toh yahan direct string dalein ---
+// Par dhyan rahe: Quotes "" hona zaroori hai!
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "rzp_live_S8qV0g09nn545L";
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "A7KQQTkz5uSK7Kh30BuvYBIj";
 
-router.post("/verify-and-save", async (req, res) => {
-  const { customerData, paymentId, amount, items, paymentType } = req.body;
+// Razorpay Instance Setup
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET,
+});
+
+/**
+ * 1. CREATE ORDER
+ * Isse frontend ko Order ID milti hai taaki Razorpay popup khul sake
+ */
+router.post("/create-order", async (req, res) => {
+  const { amount } = req.body;
+
+  if (!amount) {
+    return res.status(400).json({ success: false, message: "Amount is required" });
+  }
 
   try {
-    const newOrder = new Order({
-      // Schema ke 'userInfo' se matching
-      userInfo: {
-        name: customerData.name,
-        phone: customerData.phone,
-        address: customerData.address,
-        city: customerData.city || "N/A",
-        pincode: customerData.pincode || "N/A"
-      },
-      // Schema ke 'products' se matching
-      products: items.map(item => ({
-        name: item.name,
-        price: item.price,
-        size: item.size,
-        quantity: item.quantity || 1
-      })), 
-      totalAmount: amount,
-      paymentId: paymentId || "N/A",
-      // Agar frontend se paymentType aa raha hai toh wo, nahi toh "Online"
-      paymentType: paymentType || "Online Paid", 
-      status: "Order Placed", 
-      trackingId: "",
-      createdAt: new Date()
+    const options = {
+      amount: Math.round(Number(amount) * 100), // convert to paise
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`,
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    res.status(200).json({
+      success: true,
+      order,
     });
-
-    const savedOrder = await newOrder.save();
-
-    // Response mein success ke saath Order ID bhej rahe hain
-    res.status(201).json({ 
-      success: true, 
-      message: "Order saved successfully",
-      orderId: savedOrder._id,
-      trackingUrl: `${DOMAIN}/track?id=${savedOrder._id}` // User ke liye direct link
-    });
-
   } catch (error) {
-    console.error("Order Save Error:", error.message);
-    res.status(500).json({ 
-      success: false, 
-      message: "Database mein order save nahi ho paya." 
-    });
+    console.error("❌ Razorpay Order Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * 2. VERIFY PAYMENT
+ * Yeh check karta hai ki payment real hai ya fake
+ */
+router.post("/verify", async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  try {
+    // Validation logic
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSignature = crypto
+      .createHmac("sha256", RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest("hex");
+
+    const isAuthentic = expectedSignature === razorpay_signature;
+
+    if (isAuthentic) {
+      // SUCCESS: Yahan aap database mein order save kar sakte hain
+      res.status(200).json({
+        success: true,
+        message: "Payment verified successfully ✅",
+        paymentId: razorpay_payment_id
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Payment verification failed ❌"
+      });
+    }
+  } catch (error) {
+    console.error("❌ Verification Error:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
 

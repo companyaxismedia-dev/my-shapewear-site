@@ -1,124 +1,121 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { ExternalLink, Truck, MapPin, Phone, Search, Package, X, Printer, Eye } from "lucide-react";
+import { ExternalLink, Truck, MapPin, Phone, Search, Package, X, Printer, Eye, Loader2 } from "lucide-react";
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [trackingInput, setTrackingInput] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResult, setSearchResult] = useState(null);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // ⭐ API Base URL (Localhost fix)
+  // ⭐ API Base URL
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   useEffect(() => {
     fetchOrders();
   }, []);
 
-  const fetchOrders = () => {
-    fetch(`${API_BASE}/api/orders`)
-      .then(res => res.json())
-      .then(data => {
-        // Handle both array and object responses
-        const finalOrders = Array.isArray(data) ? data : (data.orders || []);
-        setOrders(finalOrders);
-      })
-      .catch(err => console.error("Error fetching orders:", err));
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/orders`);
+      const data = await res.json();
+      const finalOrders = Array.isArray(data) ? data : (data.orders || []);
+      setOrders(finalOrders);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleQuickSearch = (e) => {
     e.preventDefault();
-    // Case-insensitive search for phone or ID
+    const cleanSearch = searchTerm.trim();
     const found = orders.find(o => 
-      (o.customerData?.phone === searchTerm || o.userInfo?.phone === searchTerm) || 
-      o._id === searchTerm
+      (o.userInfo?.phone === cleanSearch) || 
+      (o.customerData?.phone === cleanSearch) || 
+      o._id === cleanSearch ||
+      o._id.toString().slice(-6) === cleanSearch // Last 6 digits search
     );
     
     if (found) {
       setSearchResult(found);
     } else {
-      alert("No order found with this Number/ID");
+      alert("Order nahi mila. Kripya sahi ID ya Phone number dalein.");
     }
   };
 
   const updateTracking = async (orderId) => {
     const trackingId = trackingInput[orderId];
-    if (!trackingId) return alert("Please enter a tracking ID");
+    if (!trackingId) return alert("Tracking ID bharna zaroori hai");
 
     try {
-      // Backend controller ke updateOrderTracking function ko call karega
       const res = await fetch(`${API_BASE}/api/orders/${orderId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          trackingId: trackingId, 
-          status: "Shipped" // Jaise hi tracking ID dalegi, status 'Shipped' ho jayega
-        }),
+        body: JSON.stringify({ trackingId, status: "Shipped" }),
       });
 
       const data = await res.json();
-
       if (data.success) {
-        alert("🚀 Order Marked as Shipped!");
-        fetchOrders(); // List refresh karein
-        setSearchResult(null); // Search result clear karein
-        // Input field clear karein
+        alert("🚀 Order Shipped Mark Ho Gaya!");
+        fetchOrders(); 
+        setSearchResult(null);
         setTrackingInput(prev => {
           const newState = {...prev};
           delete newState[orderId];
           return newState;
         });
-      } else {
-        alert("Error: " + data.message);
       }
     } catch (err) {
-      console.error("Update failed:", err);
       alert("Backend connection failed!");
     }
   };
 
-  // ⭐ Helper function to format address correctly
   const formatAddress = (order) => {
-    const data = order.customerData || order.userInfo;
+    const data = order.userInfo || order.customerData;
     if (typeof data?.address === 'string' && data.address !== "N/A") return data.address;
-    return `${data?.houseNo || ''} ${data?.area || ''} ${data?.city || ''} ${data?.pincode || ''}`.trim();
+    return `${data?.address || ''} ${data?.city || ''} ${data?.pincode || ''}`.trim();
   };
 
   const handlePrint = (order) => {
-    const cust = order.customerData || order.userInfo;
-    const printWindow = window.open('', '_blank', 'width=600,height=600');
+    const cust = order.userInfo || order.customerData;
+    const prod = (order.products || order.items)?.[0];
+    const printWindow = window.open('', '_blank', 'width=500,height=700');
+    
     printWindow.document.write(`
       <html>
         <head>
-          <title>Shipping Label</title>
+          <title>Shipping Label - Booty Bloom</title>
           <style>
-            body { font-family: 'Arial', sans-serif; padding: 20px; }
-            .label-card { border: 2px solid #000; padding: 20px; width: 380px; margin: auto; }
-            .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-            .from { font-size: 10px; color: #555; margin-bottom: 15px; }
-            .to-title { font-weight: bold; text-transform: uppercase; font-size: 14px; background: #000; color: #fff; padding: 4px 8px; display: inline-block; }
-            .customer-name { font-size: 22px; font-weight: 900; margin: 10px 0 5px 0; }
-            .address { font-size: 14px; line-height: 1.4; margin-bottom: 10px; }
-            .phone { font-size: 18px; font-weight: bold; border-top: 1px dashed #ccc; padding-top: 10px; }
-            .product-tag { font-size: 11px; margin-top: 15px; font-style: italic; color: #444; }
+            body { font-family: 'Segoe UI', sans-serif; padding: 10px; }
+            .label { border: 3px solid #000; padding: 20px; max-width: 400px; margin: auto; }
+            .header { border-bottom: 2px solid #000; display: flex; justify-content: space-between; padding-bottom: 10px; }
+            .brand { font-size: 24px; font-weight: 900; font-style: italic; color: #ed4e7e; }
+            .to-box { margin-top: 20px; }
+            .to-label { background: #000; color: #fff; padding: 2px 10px; font-size: 12px; font-weight: bold; }
+            .name { font-size: 20px; font-weight: bold; margin: 10px 0; text-transform: uppercase; }
+            .address { font-size: 15px; line-height: 1.4; margin-bottom: 15px; }
+            .phone { font-size: 18px; font-weight: 900; border: 2px dashed #000; padding: 10px; text-align: center; }
+            .footer { margin-top: 20px; font-size: 10px; text-align: center; color: #666; }
           </style>
         </head>
         <body>
-          <div class="label-card">
+          <div class="label">
             <div class="header">
-               <span style="font-weight:900; font-style:italic;">BOOTY BLOOM</span>
-               <span style="font-size:10px;">${order.paymentType || 'PREPAID'}</span>
+              <div class="brand">BOOTY BLOOM</div>
+              <div style="text-align:right font-weight:bold;">${order.paymentType?.toUpperCase() || 'PREPAID'}</div>
             </div>
-            <div class="from">SENDER: Booty Bloom Online Store, India</div>
-            <div class="to-title">SHIP TO:</div>
-            <div class="customer-name">${cust?.name || 'N/A'}</div>
-            <div class="address">${formatAddress(order)}</div>
-            <div class="phone">📞 ${cust?.phone || 'N/A'}</div>
-            <div class="product-tag">Item: ${order.items?.[0]?.name || order.products?.[0]?.name}</div>
-            <div style="margin-top:20px; text-align:center; font-size:10px; border-top:1px solid #eee; padding-top:10px;">
-               Order ID: #${order._id.toString().slice(-8).toUpperCase()}
+            <div class="to-box">
+              <span class="to-label">SHIP TO:</span>
+              <div class="name">${cust?.name || 'Customer'}</div>
+              <div class="address">${formatAddress(order)}</div>
+              <div class="phone">📞 PHONE: ${cust?.phone || 'N/A'}</div>
             </div>
+            <div style="margin-top:15px; font-size:12px;"><b>ITEM:</b> ${prod?.name || 'Lingerie Set'} (${prod?.size || 'Free'})</div>
+            <div class="footer">Order ID: #${order._id.toString().slice(-10)} <br/> Thank you for shopping!</div>
           </div>
           <script>window.onload = function() { window.print(); window.close(); }</script>
         </body>
@@ -128,186 +125,136 @@ export default function AdminOrders() {
   };
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 bg-gray-50 min-h-screen text-black">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <h1 className="text-xl sm:text-2xl font-black uppercase italic text-[#041f41]">
-          Store Management / Orders
-        </h1>
-        <form onSubmit={handleQuickSearch} className="relative w-full md:w-auto">
+    <div className="p-4 sm:p-8 bg-gray-50 min-h-screen text-gray-900 font-sans">
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+        <div>
+          <h1 className="text-3xl font-black uppercase italic text-[#041f41] tracking-tighter">Orders Dashboard</h1>
+          <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-1">Manage Shipping & Logistics</p>
+        </div>
+
+        <form onSubmit={handleQuickSearch} className="relative w-full md:w-96 group">
           <input 
             type="text" 
-            placeholder="Search by Phone Number..." 
-            className="w-full md:w-80 p-3 pl-10 rounded-xl border-2 border-white shadow-sm focus:border-blue-500 outline-none text-sm font-bold"
+            placeholder="Search Phone or Order ID..." 
+            className="w-full p-4 pl-12 rounded-2xl border-2 border-transparent bg-white shadow-xl focus:border-[#ed4e7e] outline-none transition-all font-bold"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+          <Search className="absolute left-4 top-4 text-gray-300 group-focus-within:text-[#ed4e7e] transition-colors" size={20} />
+          <button type="submit" className="absolute right-2 top-2 bg-[#041f41] text-white px-4 py-2 rounded-xl text-xs font-black uppercase">Find</button>
         </form>
       </div>
 
-      {/* SEARCH RESULT SECTION */}
+      {/* SEARCH RESULT OVERLAY */}
       {searchResult && (
-        <div className="mb-10 bg-[#041f41] rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden">
-          <button onClick={() => setSearchResult(null)} className="absolute right-4 top-4 bg-white/20 p-2 rounded-full hover:bg-white/40">
-            <X size={20} />
+        <div className="mb-10 bg-[#041f41] rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden border-4 border-[#ed4e7e]/20">
+          <button onClick={() => setSearchResult(null)} className="absolute right-6 top-6 bg-white/10 p-2 rounded-full hover:bg-[#ed4e7e] transition-colors">
+            <X size={24} />
           </button>
-          <div className="flex items-center gap-3 mb-4">
-            <Package size={24} className="text-pink-500" />
-            <h2 className="font-black uppercase italic tracking-wider text-lg">Quick View Result</h2>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="bg-[#ed4e7e] p-3 rounded-2xl shadow-lg shadow-pink-500/40">
+              <Package size={28} />
+            </div>
+            <h2 className="font-black uppercase italic text-2xl tracking-tight">Found Order</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div>
-              <p className="text-gray-400 text-[10px] font-black uppercase mb-1">Customer</p>
-              <p className="font-bold text-xl">{(searchResult.customerData || searchResult.userInfo)?.name}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white/5 p-4 rounded-2xl">
+              <p className="text-[#ed4e7e] text-[10px] font-black uppercase mb-2">Customer Details</p>
+              <p className="font-bold text-xl uppercase">{(searchResult.userInfo || searchResult.customerData)?.name}</p>
+              <p className="text-gray-400 font-bold">{(searchResult.userInfo || searchResult.customerData)?.phone}</p>
             </div>
-            <div>
-              <p className="text-gray-400 text-[10px] font-black uppercase mb-1">Product</p>
-              <p className="font-bold">{(searchResult.items || searchResult.products)?.[0]?.name}</p>
+            <div className="bg-white/5 p-4 rounded-2xl">
+              <p className="text-[#ed4e7e] text-[10px] font-black uppercase mb-2">Product Info</p>
+              <p className="font-bold">{(searchResult.products || searchResult.items)?.[0]?.name}</p>
+              <p className="text-gray-400 font-bold text-sm italic">Size: {(searchResult.products || searchResult.items)?.[0]?.size || 'Free'}</p>
             </div>
-            <div>
-              <button onClick={() => handlePrint(searchResult)} className="flex items-center gap-2 bg-pink-600 px-4 py-2 rounded-lg font-black text-xs uppercase hover:bg-pink-700">
-                <Printer size={16} /> Print Label
-              </button>
-            </div>
-            <div className="flex items-center">
-              {!searchResult.trackingId ? (
-                <div className="flex gap-2 w-full">
-                  <input 
-                    placeholder="Enter Tracking" 
-                    className="flex-1 p-2 rounded-lg text-black text-sm outline-none font-bold"
-                    value={trackingInput[searchResult._id] || ""}
-                    onChange={(e) => setTrackingInput({...trackingInput, [searchResult._id]: e.target.value})}
-                  />
-                  <button onClick={() => updateTracking(searchResult._id)} className="bg-white text-blue-900 px-4 py-2 rounded-lg font-black text-xs uppercase hover:bg-gray-200">Ship</button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-green-400 font-bold italic">
-                  <Truck size={20} /> Shipped: {searchResult.trackingId}
-                </div>
-              )}
+            <div className="flex flex-col justify-center gap-3">
+               <button onClick={() => handlePrint(searchResult)} className="w-full flex items-center justify-center gap-3 bg-white text-[#041f41] py-4 rounded-2xl font-black uppercase text-sm hover:scale-105 transition-transform">
+                 <Printer size={20} /> Print Shipping Label
+               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* DESKTOP TABLE */}
-      <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-        <table className="w-full text-left">
-          <thead className="bg-[#041f41] text-white uppercase text-[10px] tracking-widest">
-            <tr>
-              <th className="p-5">Customer & Contact</th>
-              <th className="p-5">Address</th>
-              <th className="p-5">Product Info</th>
-              <th className="p-5">Payment</th>
-              <th className="p-5">Logistics</th>
-              <th className="p-5 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50 text-sm">
-            {orders.length === 0 ? (
-              <tr><td colSpan="6" className="p-10 text-center font-bold text-gray-400">No orders found.</td></tr>
-            ) : orders.map((order, i) => {
-              const cust = order.customerData || order.userInfo;
-              const prod = (order.items || order.products)?.[0];
-              return (
-                <tr key={i} className="hover:bg-blue-50/30 transition-colors group">
-                  <td className="p-5">
-                    <p className="font-black text-gray-800 text-base">{cust?.name || 'N/A'}</p>
-                    <div className="flex items-center gap-1 text-blue-600 font-bold mt-1 text-xs">
-                      <Phone size={12} />
-                      <a href={`https://wa.me/${cust?.phone}`} target="_blank" className="hover:underline">
-                        {cust?.phone}
-                      </a>
-                    </div>
-                  </td>
-                  <td className="p-5 max-w-[220px]">
-                    <p className="text-gray-500 text-xs leading-relaxed font-medium">
-                      {formatAddress(order)}
-                    </p>
-                  </td>
-                  <td className="p-5">
-                    <p className="font-bold text-gray-700 leading-tight">{prod?.name}</p>
-                    <span className="inline-block mt-1 bg-gray-100 px-2 py-0.5 rounded text-[10px] font-black text-gray-600 uppercase">
-                      SIZE: {prod?.size || 'Free'}
-                    </span>
-                  </td>
-                  <td className="p-5">
-                    <p className="font-black text-blue-700 text-base">₹{order.amount || order.totalAmount}</p>
-                    <p className="text-[9px] font-bold text-orange-500 uppercase tracking-tighter">● {order.paymentType || 'Online'}</p>
-                  </td>
-                  <td className="p-5">
-                    {order.trackingId ? (
-                      <div className="flex items-center gap-2 text-green-700 font-bold bg-green-50 px-3 py-2 rounded-xl border border-green-100 text-[11px]">
-                        <Truck size={14} /> {order.trackingId}
-                      </div>
-                    ) : (
-                      <div className="flex gap-1">
-                        <input
-                          placeholder="Tracking ID"
-                          className="border bg-gray-50 p-2 rounded-lg text-[11px] w-28 focus:ring-1 focus:ring-blue-400 outline-none"
-                          value={trackingInput[order._id] || ""}
-                          onChange={(e) => setTrackingInput({...trackingInput, [order._id]: e.target.value})}
-                        />
-                        <button onClick={() => updateTracking(order._id)} className="bg-black text-white px-3 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-pink-600">Ship</button>
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-5 text-center">
-                     <button 
-                       onClick={() => handlePrint(order)}
-                       className="p-3 bg-gray-100 text-gray-600 rounded-full hover:bg-pink-100 hover:text-pink-600 transition-all"
-                     >
-                       <Printer size={18} />
-                     </button>
+      {/* ORDERS LIST (TABLE) */}
+      <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#041f41] text-white">
+                <th className="p-6 font-black uppercase text-[10px] tracking-[0.2em]">Order Details</th>
+                <th className="p-6 font-black uppercase text-[10px] tracking-[0.2em]">Delivery Address</th>
+                <th className="p-6 font-black uppercase text-[10px] tracking-[0.2em]">Status & Payment</th>
+                <th className="p-6 font-black uppercase text-[10px] tracking-[0.2em]">Logistics</th>
+                <th className="p-6 text-center font-black uppercase text-[10px] tracking-[0.2em]">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {isLoading ? (
+                <tr>
+                  <td colSpan="5" className="p-20 text-center">
+                    <Loader2 className="animate-spin mx-auto text-[#ed4e7e]" size={40} />
+                    <p className="mt-4 font-black text-gray-400 uppercase text-xs">Loading Orders...</p>
                   </td>
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* MOBILE VIEW */}
-      <div className="md:hidden space-y-4">
-        {orders.map((order, i) => {
-          const cust = order.customerData || order.userInfo;
-          return (
-            <div key={i} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-black text-lg text-[#041f41]">{cust?.name || 'N/A'}</p>
-                    <p className="text-xs text-blue-600 font-bold">{cust?.phone}</p>
-                  </div>
-                  <button onClick={() => handlePrint(order)} className="p-2 bg-pink-50 text-pink-600 rounded-lg">
-                    <Printer size={20} />
-                  </button>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-2xl text-xs text-gray-600 italic">
-                  {formatAddress(order)}
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-dashed">
-                   <p className="font-black text-blue-700">₹{order.amount || order.totalAmount}</p>
-                   <span className="text-[10px] font-black bg-gray-100 px-2 py-1 rounded">PREPAID</span>
-                </div>
-                {!order.trackingId ? (
-                  <div className="flex gap-2 pt-2">
-                    <input 
-                      placeholder="Tracking ID" 
-                      className="flex-1 bg-gray-50 border p-3 rounded-xl text-xs outline-none"
-                      value={trackingInput[order._id] || ""}
-                      onChange={(e) => setTrackingInput({...trackingInput, [order._id]: e.target.value})}
-                    />
-                    <button onClick={() => updateTracking(order._id)} className="bg-[#041f41] text-white px-5 py-3 rounded-xl font-black text-xs uppercase">Ship</button>
-                  </div>
-                ) : (
-                  <div className="bg-green-600 text-white p-3 rounded-2xl flex items-center justify-center gap-2 font-black text-xs uppercase">
-                    <Truck size={16} /> {order.trackingId}
-                  </div>
-                )}
-            </div>
-          )
-        })}
+              ) : orders.length === 0 ? (
+                <tr><td colSpan="5" className="p-20 text-center font-black text-gray-300 uppercase">No orders placed yet.</td></tr>
+              ) : orders.map((order) => {
+                const cust = order.userInfo || order.customerData;
+                const prod = (order.products || order.items)?.[0];
+                return (
+                  <tr key={order._id} className="hover:bg-pink-50/30 transition-colors group">
+                    <td className="p-6">
+                      <p className="font-black text-gray-900 uppercase text-sm">{cust?.name || 'Guest'}</p>
+                      <a href={`https://wa.me/91${cust?.phone}`} target="_blank" className="flex items-center gap-1 text-green-600 font-bold mt-1 text-xs hover:underline">
+                        <Phone size={12} /> {cust?.phone}
+                      </a>
+                    </td>
+                    <td className="p-6 max-w-[250px]">
+                      <p className="text-gray-500 text-xs font-bold leading-relaxed line-clamp-2">
+                        {formatAddress(order)}
+                      </p>
+                    </td>
+                    <td className="p-6">
+                      <p className="font-black text-[#041f41] text-lg">₹{order.totalAmount || order.amount}</p>
+                      <span className={`text-[9px] font-black px-2 py-1 rounded-md uppercase ${order.paymentType === 'Online' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                        {order.paymentType || 'COD'}
+                      </span>
+                    </td>
+                    <td className="p-6">
+                      {order.trackingId ? (
+                        <div className="inline-flex items-center gap-2 text-white bg-green-500 px-4 py-2 rounded-full font-black text-[10px] uppercase">
+                          <Truck size={14} /> {order.trackingId}
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <input
+                            placeholder="Awb Number"
+                            className="bg-gray-100 p-2 rounded-xl text-[11px] font-bold w-28 outline-none focus:bg-white border-2 border-transparent focus:border-[#ed4e7e]"
+                            value={trackingInput[order._id] || ""}
+                            onChange={(e) => setTrackingInput({...trackingInput, [order._id]: e.target.value})}
+                          />
+                          <button onClick={() => updateTracking(order._id)} className="bg-black text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-[#ed4e7e]">Ship</button>
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-6 text-center">
+                      <button 
+                        onClick={() => handlePrint(order)}
+                        className="p-3 bg-gray-100 text-gray-400 rounded-2xl hover:bg-[#ed4e7e] hover:text-white transition-all shadow-sm"
+                      >
+                        <Printer size={20} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
