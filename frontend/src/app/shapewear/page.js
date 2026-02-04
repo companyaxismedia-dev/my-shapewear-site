@@ -2,17 +2,17 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useCart } from "@/context/CartContext"; 
+import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
-import { 
-  Heart, Filter, ChevronDown, Star, Eye, X, 
-  ShieldCheck, Truck, ShoppingCart, Zap 
+import {
+  Heart, Filter, ChevronDown, Star, Eye, X,
+  ShieldCheck, Truck, ShoppingCart, Zap
 } from "lucide-react";
 
 // Shapewear Products Data (Generating 42 items)
-const products = Array.from({ length: 42 }, (_, i) => {
+export const shapeProducts = Array.from({ length: 42 }, (_, i) => {
   const num = i + 1;
-  const currentPrice = 699 + (i * 7); 
+  const currentPrice = 699 + (i * 7);
   return {
     id: `shapewear-${num}`,
     name: `BootyBloom Curve Sculpting Shapewear ${num}`,
@@ -70,7 +70,7 @@ export default function ShapewearPage() {
 
         <main className="flex-1 p-4 bg-[#fffcfd]">
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {products.map((item) => (
+            {shapeProducts.map((item) => (
               <ProductCard key={item.id} item={item} onOpenDetails={() => setSelectedProduct(item)} />
             ))}
           </div>
@@ -79,9 +79,9 @@ export default function ShapewearPage() {
 
       {/* MODAL COMPONENT */}
       {selectedProduct && (
-        <ProductDetailsModal 
-          product={selectedProduct} 
-          onClose={() => setSelectedProduct(null)} 
+        <ProductDetailsModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
         />
       )}
 
@@ -95,7 +95,7 @@ function ProductCard({ item, onOpenDetails }) {
 
   return (
     <div className="group flex flex-col bg-white border border-pink-50 relative rounded-sm overflow-hidden shadow-sm h-full transition-all hover:shadow-md">
-      
+
       <div className="relative aspect-[3/4] overflow-hidden bg-[#fff5f8]">
         <img
           src={item.img}
@@ -104,7 +104,7 @@ function ProductCard({ item, onOpenDetails }) {
         />
         <div className="absolute top-0 left-0 bg-[#ed4e7e] text-white text-[9px] px-2 py-0.5 font-bold z-10">{item.discount} OFF</div>
         <div className="absolute bottom-0 right-0 bg-[#AD1457] text-white text-[9px] px-2 py-1 font-bold italic z-10">{item.offer}</div>
-        
+
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
           <div onClick={onOpenDetails} className="bg-white/90 p-2 rounded-full shadow-md text-[#ed4e7e] cursor-pointer">
             <Eye size={18} />
@@ -145,10 +145,10 @@ function ProductCard({ item, onOpenDetails }) {
         </div>
 
         <div className="mt-3 w-full px-1 pb-1">
-          <button 
+          <button
             onClick={onOpenDetails}
             className="w-full bg-[#ed4e7e] text-white py-2.5 text-[12px] font-bold uppercase tracking-widest rounded-sm shadow-sm border-none cursor-pointer flex items-center justify-center active:scale-95 transition-all"
-            style={{ backgroundColor: '#ed4e7e', color: 'white' }} 
+            style={{ backgroundColor: '#ed4e7e', color: 'white' }}
           >
             ADD TO CART
           </button>
@@ -174,7 +174,7 @@ function ProductDetailsModal({ product, onClose }) {
   const handleBuyNow = () => {
     if (!size) { alert("Please select a size!"); return; }
     addToCart(product, size);
-    router.push("/cart"); 
+    router.push("/cart");
   };
 
   return (
@@ -193,9 +193,9 @@ function ProductDetailsModal({ product, onClose }) {
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#ed4e7e] bg-pink-50 px-2 py-1 rounded">Seamless Sculpt</span>
             <h1 className="text-2xl font-black text-gray-800 uppercase leading-tight">{product.name}</h1>
             <div className="flex items-center gap-3">
-               <span className="text-3xl font-black text-[#ed4e7e]">₹{product.price}</span>
-               <span className="text-lg text-gray-300 line-through">₹{product.oldPrice}</span>
-               <span className="text-sm font-bold text-green-500">{product.discount} OFF</span>
+              <span className="text-3xl font-black text-[#ed4e7e]">₹{product.price}</span>
+              <span className="text-lg text-gray-300 line-through">₹{product.oldPrice}</span>
+              <span className="text-sm font-bold text-green-500">{product.discount} OFF</span>
             </div>
           </div>
 
@@ -205,7 +205,7 @@ function ProductDetailsModal({ product, onClose }) {
               <div className="flex gap-3">
                 {product.colors.map(c => (
                   <button key={c} onClick={() => setColor(c)} className={`w-10 h-10 rounded-full border-2 transition-all ${color === c ? 'border-[#ed4e7e] p-0.5' : 'border-gray-200'}`}>
-                      <div className="w-full h-full rounded-full shadow-inner" style={{ backgroundColor: c === 'Nude' ? '#e3bc9a' : (c === 'Coffee' ? '#4b3621' : c.toLowerCase()) }}></div>
+                    <div className="w-full h-full rounded-full shadow-inner" style={{ backgroundColor: c === 'Nude' ? '#e3bc9a' : (c === 'Coffee' ? '#4b3621' : c.toLowerCase()) }}></div>
                   </button>
                 ))}
               </div>
@@ -224,26 +224,26 @@ function ProductDetailsModal({ product, onClose }) {
           </div>
 
           <div className="flex flex-col gap-3 pt-6">
-            <button 
+            <button
               onClick={handleCartAdd}
               className="w-full bg-[#ed4e7e] text-white py-2.5 text-[12px] font-bold uppercase tracking-widest rounded-sm shadow-sm flex items-center justify-center active:scale-95 transition-all"
-              style={{ backgroundColor: '#ed4e7e', color: 'white' }} 
+              style={{ backgroundColor: '#ed4e7e', color: 'white' }}
             >
               <ShoppingCart size={16} className="mr-2" /> ADD TO CART
             </button>
 
-            <button 
+            <button
               onClick={handleBuyNow}
               className="w-full bg-[#ed4e7e] text-white py-2.5 text-[12px] font-bold uppercase tracking-widest rounded-sm shadow-sm flex items-center justify-center active:scale-95 transition-all"
-              style={{ backgroundColor: '#ed4e7e', color: 'white' }} 
+              style={{ backgroundColor: '#ed4e7e', color: 'white' }}
             >
               <Zap size={16} className="mr-2" /> BUY NOW
             </button>
           </div>
 
           <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-100">
-             <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase"><Truck size={14} className="text-[#ed4e7e]"/> Express Shipping</div>
-             <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase"><ShieldCheck size={14} className="text-[#ed4e7e]"/> Skin Friendly</div>
+            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase"><Truck size={14} className="text-[#ed4e7e]" /> Express Shipping</div>
+            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase"><ShieldCheck size={14} className="text-[#ed4e7e]" /> Skin Friendly</div>
           </div>
         </div>
       </div>
