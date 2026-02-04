@@ -15,6 +15,7 @@ import {
   Store,
   Smartphone,
 } from "lucide-react";
+import SearchSection from "./SearchSection";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -118,6 +119,7 @@ export default function Navbar() {
             </div>
 
             <div className="flex items-center justify-end gap-4 text-gray-700 z-10 w-1/3">
+            <SearchSection/>
               <LinkNav href="/help" className="hidden sm:flex p-1/2 hover:text-pink-600 transition">
                 <HelpCircle size={22} />
               </LinkNav>
