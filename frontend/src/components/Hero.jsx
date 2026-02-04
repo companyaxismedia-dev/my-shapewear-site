@@ -10,15 +10,15 @@ import "swiper/css/pagination";
 import "swiper/css/effect-fade";
 
 const banners = [
-  { desktop: "/hero-image/hero-01.png", mobile: "/hero-image/hero-01.png", alt: "Premium Lingerie Collection" },
-  { desktop: "/hero-image/hero-ba-3.jpeg", mobile: "/hero-image/hero-ba-3.jpeg", alt: "Comfortable Everyday Bras" },
+  { desktop: "/hero-image/hero-ba-4.jpeg", mobile: "/hero-image/hero-ba-4.jpeg", alt: "Premium Lingerie Collection" },
+  { desktop: "/hero-image/hero-ba-6.jpeg", mobile: "/hero-image/hero-ba-6.jpeg", alt: "Comfortable Everyday Bras" },
   { desktop: "/hero-image/hero-se.png", mobile: "/hero-image/hero-se.png", alt: "Comfortable Everyday Bras" },
   { desktop: "/hero-image/hero-ba-2.jpeg", mobile: "/hero-image/hero-ba-2.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-03.png", mobile: "/hero-image/hero-03.png", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-02.png", mobile: "/hero-image/hero-02.png", alt: "Comfortable Everyday Bras" },
+  { desktop: "/hero-image/hero-ba-5.jpeg", mobile: "/hero-image/hero-ba-5.jpeg", alt: "Comfortable Everyday Bras" },
+  { desktop: "/hero-image/hero-ba-7.jpeg", mobile: "/hero-image/hero-ba-7.jpeg", alt: "Comfortable Everyday Bras" },
   { desktop: "/hero-image/hero-ba-1.png", mobile: "/hero-image/hero-ba-1.png", alt: "Comfortable Everyday Bras" },
   { desktop: "/hero-image/curvy.png", mobile: "/hero-image/curvy.png", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-03.png", mobile: "/hero-image/hero-03.png", alt: "Comfortable Everyday Bras" },
+  { desktop: "/hero-image/hero-ba-8.jpeg", mobile: "/hero-image/hero-ba-8.jpeg", alt: "Comfortable Everyday Bras" },
 ];
 
 export default function Hero() {
