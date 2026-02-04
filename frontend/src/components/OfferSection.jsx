@@ -30,7 +30,7 @@ export default function OfferSection() {
 
       <div className="relative w-full">
         <Image
-          src="/hero-image/hero-6.png"
+          src="/hero-image/home-2.jpeg"
           alt="Offer Banner"
           width={1920}
           height={700}
