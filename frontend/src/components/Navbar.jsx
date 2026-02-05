@@ -14,6 +14,8 @@ import {
   ChevronDown,
   Store,
   Smartphone,
+  ContactIcon,
+  SearchIcon,
 } from "lucide-react";
 import SearchSection from "./SearchSection";
 
@@ -64,7 +66,7 @@ export default function Navbar() {
       `}</style>
 
       <header className="w-full font-sans shadow-sm sticky top-0 z-[100] bg-white">
-        
+
         {/* ================= FIXED TOP HEADER BAR ================= */}
         {/* Changed: Removed max-w-[1400px] and mx-auto to keep items at edges */}
         <div className="hidden md:block text-[10px] font-semibold uppercase">
@@ -99,7 +101,7 @@ export default function Navbar() {
         {/* ================= MAIN LOGO BAR ================= */}
         <div className="bg-white px-4 md:px-6 lg:px-10 border-b border-gray-50">
           <div className="w-full flex items-center justify-between relative py-2">
-            <div className="flex items-center z-10 w-1/3">
+            <div className="flex items-center z-10 w-[45%]">
               <button className="lg:hidden text-black p-2 -ml-2 rounded-md active:bg-pink-100" onClick={() => setMenuOpen(true)}>
                 <Menu size={26} />
               </button>
@@ -114,15 +116,15 @@ export default function Navbar() {
                     alt="Glovia Logo"
                     fill
                     priority
-                    className="object-ccontain over duration-300 hover:scale-105 "
+                    className="object-ccontain over duration-300 hover:scale-105 -ml-15 md:-ml-45 lg:-ml-1"
                   />
                 </div>
               </LinkNav>
             </div>
 
-            <div className="flex items-center justify-end gap-4 text-gray-700 z-10 w-1/3">
-              <SearchSection/>
-              <LinkNav href="/help" className="hidden sm:flex p-1 hover:text-pink-600 transition">
+            <div className="flex items-center justify-end sm:gap-1 lg:gap-2 md:gap-2 text-gray-700 z-10 w-[45%]">
+              <SearchSection />
+              <LinkNav href="/help" className=" sm:flex p-1 hover:text-pink-600 transition">
                 <HelpCircle size={22} />
               </LinkNav>
               <LinkNav href="/login" className="p-1"><User size={22} /></LinkNav>
@@ -156,7 +158,7 @@ export default function Navbar() {
 
               {isBraHovered && (
                 <div className="fixed top-[125px] left-0 w-full bg-white text-black shadow-2xl border-t-2 border-pink-600 z-[110] flex animate-in fade-in slide-in-from-top-2">
-                   <div className="w-1/4 bg-gray-50 border-r border-gray-100 flex flex-col font-black text-[12px] uppercase tracking-tighter">
+                  <div className="w-1/4 bg-gray-50 border-r border-gray-100 flex flex-col font-black text-[12px] uppercase tracking-tighter">
                     <div className="p-6 border-b border-gray-200 bg-pink-50 text-pink-600 italic">Bra Collections</div>
                     <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">Shop By Style</div>
                     <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Padding</div>
@@ -230,6 +232,8 @@ export default function Navbar() {
             <LinkNav href="/exclusive" className="bg-pink-600 px-3 py-1 rounded-sm whitespace-nowrap">Exclusive</LinkNav>
             <LinkNav href="/track" className="whitespace-nowrap">Track Order</LinkNav>
             <LinkNav href="/contact">Contact</LinkNav>
+            <LinkNav href="/help">Help</LinkNav>
+
           </div>
         </nav>
 
@@ -249,7 +253,7 @@ export default function Navbar() {
 
             <div className="p-2 flex flex-col font-bold text-sm uppercase tracking-widest divide-y divide-gray-100">
               <LinkNav href="/" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Home</LinkNav>
-              
+
               <div className="flex flex-col">
                 <div className="px-6 py-5 active:bg-pink-50 flex justify-between items-center cursor-pointer" onClick={() => setMobileBraOpen(!mobileBraOpen)}>
                   <span className={mobileBraOpen ? "text-pink-600" : ""}>Bras</span>
@@ -276,9 +280,19 @@ export default function Navbar() {
 
               <LinkNav href="/panties" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Panties</LinkNav>
               <LinkNav href="/lingerie" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Lingerie</LinkNav>
+              <LinkNav href="/shapewear" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Shapewear</LinkNav>
+              <LinkNav href="/curvy" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Curvy</LinkNav>
+              <LinkNav href="/tummy-control" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Tummy Control</LinkNav>
               <LinkNav href="/track" className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
                 <Package size={18} /> Track Order
               </LinkNav>
+              <LinkNav href="/contact" className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+                <ContactIcon size={18} /> Contact Us
+              </LinkNav>
+              <LinkNav href="/help" className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+                <HelpCircle size={18} /> Help
+              </LinkNav>
+
             </div>
           </div>
         </div>
