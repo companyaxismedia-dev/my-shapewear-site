@@ -35,11 +35,13 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#fffafa] text-[#333] border-t-4 border-pink-500 pt-16 pb-8 font-sans">
-      <div className="max-w-7xl mx-auto px-4 md:px-8">
-        
+      {/* <div className="max-w-7xl mx-auto px-4 md:px-8"> */}
+      <div className="w-full px-4 md:px-10 lg:px-16">
+
+
         {/* MAIN LINKS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-          
+
           {/* Category Section */}
           <div className="space-y-6">
             <h4 className="text-pink-600 font-black text-sm uppercase tracking-widest border-b-2 border-pink-200 pb-2 inline-block">Category</h4>
@@ -73,16 +75,16 @@ export default function Footer() {
             <h4 className="text-pink-600 font-black text-sm uppercase mb-6 tracking-widest">Stay Connected</h4>
             <p className="text-xs text-gray-500 mb-4 font-bold">Naye offers aur updates ke liye subscribe karein!</p>
             <div className="flex flex-col sm:flex-row gap-2 mb-8">
-              <input 
-                type="email" 
-                placeholder="Email Address" 
+              <input
+                type="email"
+                placeholder="Email Address"
                 className="flex-1 px-4 py-3 bg-white border border-pink-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 font-medium"
               />
               <button className="bg-pink-600 text-white px-8 py-3 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-pink-700 transition-all shadow-lg shadow-pink-200">
                 Join Now
               </button>
             </div>
-            
+
             <div className="flex gap-4">
               {[
                 { icon: <Facebook size={20} />, url: "https://www.facebook.com/profile.php?id=61586560657621" },
@@ -113,7 +115,7 @@ export default function Footer() {
 
         {/* BOTTOM SECTION: Razorpay Approval Info */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center bg-[#fffafa] p-8 md:p-12 rounded-[3rem] shadow-xl shadow-pink-100/30 border border-pink-100">
-          
+
           {/* Account Details */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3 text-pink-600 mb-2">
@@ -150,15 +152,15 @@ export default function Footer() {
             {/* Trusted Payment Icons */}
             <div className="flex flex-wrap gap-3 pt-4 border-t border-pink-50">
               {['visa', 'mastercard', 'rupay', 'google-pay-india'].map((img) => (
-                <img 
+                <img
                   key={img}
-                  src={`https://img.icons8.com/color/48/000000/${img}.png`} 
-                  alt={img} 
-                  className="h-10 bg-white rounded-lg p-1 border border-pink-100" 
+                  src={`https://img.icons8.com/color/48/000000/${img}.png`}
+                  alt={img}
+                  className="h-10 bg-white rounded-lg p-1 border border-pink-100"
                 />
               ))}
             </div>
-          </div>
+          </div> 
         </div>
 
         {/* Final Branding Line */}
