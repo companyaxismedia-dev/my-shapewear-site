@@ -1,9 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import LinkNav from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import { useRouter } from "next/navigation";
 import {
   ShoppingCart,
   User,
@@ -16,12 +15,7 @@ import {
   Store,
   Smartphone,
   ContactIcon,
-  LogOut,
-  RefreshCw,
-  Star,
-  MessageSquare,
-  Users,
-  PhoneCall
+  SearchIcon,
 } from "lucide-react";
 import SearchSection from "./SearchSection";
 
@@ -29,26 +23,6 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isBraHovered, setIsBraHovered] = useState(false);
   const [mobileBraOpen, setMobileBraOpen] = useState(false);
-
-  // --- NEW STATES FOR CLOVIA LOGIN ---
-  const [user, setUser] = useState(null);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    // Check if user is logged in from localStorage
-    const userInfo = localStorage.getItem("userInfo");
-    if (userInfo) {
-      setUser(JSON.parse(userInfo));
-    }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("userInfo");
-    setUser(null);
-    setUserMenuOpen(false);
-    router.push("/login");
-  };
 
   const { cart } = useCart();
   const cartCount = cart ? cart.reduce((acc, item) => acc + item.qty, 0) : 0;
@@ -136,13 +110,13 @@ export default function Navbar() {
             {/* Logo Section */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[100]">
               <LinkNav href="/" className=" items-center pointer-events-auto">
-                <div className="relative w-32 h-20 md:w-44 md:h-16 lg:w-50 lg:h-52 p-12 m-12">
+                <div className="relative w-30 h-44 md:w-40 md:h-40 lg:w-50 lg:h-52 p-12 m-12 mb-8 sm:mb-11 md:mb-8 lg:mb-12">
                   <Image
                     src="/hero-image/glovialogo.png"
                     alt="Glovia Logo"
                     fill
                     priority
-                    className="object-ccontain over duration-300 hover:scale-105 -ml-15 md:-ml-45 lg:-ml-1"
+                    className="object-contain over duration-300 hover:scale-105 -ml-15 md:-ml-45 lg:-ml-1"
                   />
                 </div>
               </LinkNav>
@@ -150,7 +124,7 @@ export default function Navbar() {
 
             <div className="flex items-center justify-end sm:gap-1 lg:gap-2 md:gap-2 text-gray-700 z-10 w-[45%]">
               <SearchSection />
-              <LinkNav href="/help" className=" sm:flex p-1 hover:text-pink-600 transition">
+              <LinkNav href="/help" className=" hidden sm:flex p-1 hover:text-pink-600 transition">
                 <HelpCircle size={22} />
               </LinkNav>
               <LinkNav href="/login" className="p-1"><User size={22} /></LinkNav>
@@ -272,9 +246,24 @@ export default function Navbar() {
       {menuOpen && (
         <div className="fixed inset-0 z-[200] bg-black/60 lg:hidden" onClick={() => setMenuOpen(false)}>
           <div className="bg-white w-[85%] md:w-[45%] h-full overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
-              <Image src="/hero-image/glovialogo.png" alt="Logo" width={100} height={40} className="object-contain" />
-              <X size={28} className="text-gray-500 cursor-pointer" onClick={() => setMenuOpen(false)} />
+            <div className="bg-[#e50075] p-4 flex items-center justify-between text-white sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <User size={20} fill="white" />
+                <div className="flex items-center gap-1 font-medium text-[15px]">
+                  <LinkNav href="/login" onClick={() => setMenuOpen(false)} className="hover:underline">
+                    Login
+                  </LinkNav>
+                  <span>&</span>
+                  <LinkNav href="/signup" onClick={() => setMenuOpen(false)} className="hover:underline">
+                    Signup
+                  </LinkNav>
+                </div>
+              </div>
+              <X
+                size={24}
+                className="text-white cursor-pointer opacity-90 hover:opacity-100"
+                onClick={() => setMenuOpen(false)}
+              />
             </div>
 
             <div className="p-2 flex flex-col font-bold text-sm uppercase tracking-widest divide-y divide-gray-100">

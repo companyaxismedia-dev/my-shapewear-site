@@ -17,28 +17,29 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // --- Step 1: Request OTP (Phone Terminal mein aur Email Inbox mein) ---
+  // Backend URL (Change this when you deploy)
+  const API_URL = "http://localhost:5000/api";
+
+  // --- Step 1: Request OTP ---
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Phone validation
-    if (formData.phone.trim().length < 10) {
-      setError("Please enter a valid 10-digit phone number");
+    // Basic Validation
+    if (!formData.email.includes("@")) {
+      setError("Please enter a valid email address");
       setLoading(false);
       return;
     }
 
     try {
-      // Backend ko email aur phone dono bhej rahe hain
-      // Isse Email par FREE OTP jayega aur Phone wala Terminal mein dikhega
-      const res = await axios.post("http://localhost:5000/api/otp/send", { 
-        phone: formData.phone.trim(),
+      // Sirf Email bhej rahe hain kyunki backend ab email identifier use kar raha hai
+      const res = await axios.post(`${API_URL}/otp/send`, { 
         email: formData.email.toLowerCase().trim()
       });
       
-      if (res.data.success) {
+      if (res.data) {
         setStep(2); // OTP screen dikhao
       }
     } catch (err) {
@@ -55,9 +56,9 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      // Poora data bhej rahe hain (Isme OTP bhi backend verify karega)
-      const res = await axios.post("http://localhost:5000/api/users/register", {
-        name: formData.name,
+      // Sabhi fields (name, email, phone, password, otp) bhejna zaroori hai
+      const res = await axios.post(`${API_URL}/users/register`, {
+        name: formData.name.trim(),
         email: formData.email.toLowerCase().trim(),
         phone: formData.phone.trim(),
         password: formData.password,
@@ -66,8 +67,8 @@ export default function RegisterPage() {
       
       if (res.data) {
         localStorage.setItem("userInfo", JSON.stringify(res.data));
-        router.push("/"); // Home page par bhejo
-        router.refresh(); // Navbar update karne ke liye
+        router.push("/"); 
+        router.refresh(); 
       }
     } catch (err) {
       setError(err.response?.data?.message || "Invalid OTP or Registration failed");
@@ -93,7 +94,7 @@ export default function RegisterPage() {
               onChange={(e) => setFormData({...formData, name: e.target.value})} required 
             />
             <input 
-              type="email" placeholder="Email Address (OTP will be sent here)" style={styles.input} 
+              type="email" placeholder="Email Address" style={styles.input} 
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})} required 
             />
@@ -103,7 +104,7 @@ export default function RegisterPage() {
               onChange={(e) => setFormData({...formData, phone: e.target.value})} required 
             />
             <input 
-              type="password" placeholder="Password (min 6 chars)" style={styles.input} 
+              type="password" placeholder="Set Password" style={styles.input} 
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})} required 
             />
@@ -116,7 +117,7 @@ export default function RegisterPage() {
           <form onSubmit={handleRegister}>
             <div style={styles.infoBox}>
                Verification code sent to:<br/>
-               <b>{formData.email}</b> & <b>{formData.phone}</b>
+               <b>{formData.email}</b>
             </div>
             
             <input 
@@ -130,7 +131,7 @@ export default function RegisterPage() {
               {loading ? "VERIFYING..." : "COMPLETE REGISTRATION"}
             </button>
             
-            <p onClick={() => setStep(1)} style={styles.backLink}>
+            <p onClick={() => {setStep(1); setError("");}} style={styles.backLink}>
               ← Edit details
             </p>
           </form>

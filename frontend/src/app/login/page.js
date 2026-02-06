@@ -5,32 +5,31 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
-  const [identifier, setIdentifier] = useState(""); // Email ya Phone ke liye
-  const [password, setPassword] = useState("");
+  const [identifier, setIdentifier] = useState(""); // Email ke liye
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState(1); // 1: Credentials, 2: OTP Verification
+  const [step, setStep] = useState(1); // 1: Email Entry, 2: OTP Verification
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // --- Step 1: Check Credentials & Send OTP ---
+  // Backend API URL
+  const API_URL = "http://localhost:5000/api";
+
+  // --- Step 1: Send OTP ---
   const handleInitialLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // Pehle identify karo ki input Email hai ya Phone
-      const isEmail = identifier.includes("@");
-      
-      // Backend ko request bhej rahe hain OTP generate karne ke liye
-      const res = await axios.post("http://localhost:5000/api/otp/send", { 
-        email: isEmail ? identifier.toLowerCase().trim() : null,
-        phone: !isEmail ? identifier.trim() : null 
+      // Backend ab identifier (email) accept karta hai
+      const res = await axios.post(`${API_URL}/otp/send`, { 
+        email: identifier.toLowerCase().trim()
       });
 
-      if (res.data.success) {
-        setStep(2); // Agar OTP bhej diya gaya, toh next step par chalo
+      // Agar backend success return kare
+      if (res.data) {
+        setStep(2); 
       }
     } catch (err) {
       setError(err.response?.data?.message || "User not found or Error sending OTP");
@@ -39,28 +38,27 @@ export default function LoginPage() {
     }
   };
 
-  // --- Step 2: Final Login (Password + OTP Verification) ---
+  // --- Step 2: Final Login with OTP ---
   const handleFinalLogin = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // Backend ke login API par poora data bhej rahe hain
-      const res = await axios.post("http://localhost:5000/api/users/login", {
-        email: identifier.toLowerCase().trim(), // Backend handles both email/phone in this field
-        password,
+      // Backend ke login API par email aur otp bhej rahe hain
+      const res = await axios.post(`${API_URL}/users/login`, {
+        email: identifier.toLowerCase().trim(),
         otp: otp.trim()
       });
 
       if (res.data) {
-        // User data and Token ko localStorage mein save karein
+        // User data and Token save karein
         localStorage.setItem("userInfo", JSON.stringify(res.data));
         
         // Redirect to Home
         router.push("/");
         
-        // Refresh taaki Navbar/UI update ho jaye
+        // Navbar refresh ke liye
         setTimeout(() => {
           router.refresh();
         }, 100);
@@ -76,42 +74,34 @@ export default function LoginPage() {
     <div style={styles.container}>
       <div style={styles.card}>
         <h2 style={styles.heading}>Login</h2>
-        <p style={styles.subText}>Enter your details to access your account</p>
+        <p style={styles.subText}>Enter your email to receive a login code</p>
         
-        {/* Error Message Display */}
         {error && <div style={styles.errorBox}>{error}</div>}
 
         <form onSubmit={step === 1 ? handleInitialLogin : handleFinalLogin}>
           {step === 1 ? (
-            /* STEP 1: Email/Phone and Password */
+            /* STEP 1: Email Input */
             <>
               <input
-                type="text"
-                placeholder="Email or Phone Number"
+                type="email"
+                placeholder="Registered Email Address"
                 style={styles.input}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
               />
-              <input
-                type="password"
-                placeholder="Enter Password"
-                style={styles.input}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              
               <button type="submit" style={styles.button} disabled={loading}>
-                {loading ? "AUTHENTICATING..." : "GET OTP"}
+                {loading ? "SENDING CODE..." : "GET LOGIN CODE"}
               </button>
             </>
           ) : (
-            /* STEP 2: OTP Verification */
+            /* STEP 2: OTP Input */
             <>
               <div style={styles.infoBox}>
                 OTP sent to: <b>{identifier}</b> <br/>
                 <span style={{fontSize: '11px', color: '#666'}}>
-                  (Check your Email Inbox or VS Code Terminal)
+                  (Check your Email Inbox)
                 </span>
               </div>
               <input
@@ -126,8 +116,8 @@ export default function LoginPage() {
               <button type="submit" style={styles.button} disabled={loading}>
                 {loading ? "VERIFYING..." : "SECURE LOGIN"}
               </button>
-              <p onClick={() => setStep(1)} style={styles.backLink}>
-                ← Use different account / Edit
+              <p onClick={() => {setStep(1); setError("");}} style={styles.backLink}>
+                ← Use different email
               </p>
             </>
           )}

@@ -1,30 +1,47 @@
 const Order = require("../models/Order");
 const nodemailer = require('nodemailer');
+// otpStore ko import karna zaroori hai sync ke liye
 const { otpStore } = require("./otpController"); 
 
 // Email Transporter Setup
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: { 
-        user: "gloviaglamour9@gmail.com", // Naya Email ID
-            pass: "uvqz owgw yvep xapy"        // Naya App Password
+        user: "gloviaglamour9@gmail.com",
+        pass: "uvqz owgw yvep xapy"        
     }
 });
 
 /**
  * 1. CREATE & VERIFY ORDER
- * Yeh function OTP verify karta hai aur order ko DB mein save karta hai.
  */
 exports.createOrder = async (req, res) => {
     try {
         const { email, otp, customerData, items, amount, paymentId, paymentType } = req.body;
-        const userEmail = email.toLowerCase();
+        
+        if (!email || !otp) {
+            return res.status(400).json({ success: false, message: "Email aur OTP zaroori hain!" });
+        }
 
-        // --- 1. OTP Verification Logic ---
-        // 'DIRECT' bypass un orders ke liye jo bina OTP ke check out ho rahe hain (optional)
+        const userEmail = email.toLowerCase().trim();
+
+        // --- 1. OTP Verification Logic (Strict Email Sync) ---
         if (otp !== "DIRECT") {
-            if (!otpStore[userEmail] || otpStore[userEmail] != otp) {
-                return res.status(400).json({ success: false, message: "Invalid or Expired OTP!" });
+            const record = otpStore[userEmail];
+
+            if (!record) {
+                return res.status(400).json({ success: false, message: "OTP Record nahi mila. Phir se OTP mangwayein." });
+            }
+
+            // String match check
+            if (String(record.otp) !== String(otp)) {
+                return res.status(400).json({ success: false, message: "Galat OTP! Kripya sahi code dalein." });
+            }
+
+            // Expiry Check
+            if (Date.now() > record.expiresAt) {
+                delete otpStore[userEmail];
+                return res.status(400).json({ success: false, message: "OTP expire ho gaya hai." });
             }
         }
 
@@ -32,7 +49,7 @@ exports.createOrder = async (req, res) => {
         const orderToSave = {
             userInfo: {
                 name: customerData?.name || "Customer",
-                phone: customerData?.phone,
+                phone: customerData?.phone || "",
                 email: userEmail,
                 address: customerData?.address || "N/A",
                 city: customerData?.city || "N/A",
@@ -41,7 +58,7 @@ exports.createOrder = async (req, res) => {
             products: items.map(item => ({
                 name: item.name,
                 price: item.offerPrice || item.price,
-                quantity: item.qty, // Model mein 'quantity' field hai
+                quantity: item.qty || 1, 
                 size: item.size || "Standard"
             })),
             totalAmount: amount,
@@ -53,10 +70,10 @@ exports.createOrder = async (req, res) => {
         // --- 3. Save to MongoDB ---
         const savedOrder = await new Order(orderToSave).save();
         
-        // Memory cleanup: OTP kaam khatam hone ke baad delete karein
-        if (otpStore[userEmail]) delete otpStore[userEmail];
+        // Memory cleanup: OTP delete karein
+        delete otpStore[userEmail];
 
-        // --- 4. Admin Email Alert (Non-blocking) ---
+        // --- 4. Admin Email Alert ---
         const adminMailOptions = {
             from: '"Glovia Glamour System" <gloviaglamour9@gmail.com>',
             to: 'gloviaglamour9@gmail.com',
@@ -69,7 +86,7 @@ exports.createOrder = async (req, res) => {
                     <p><strong>Amount:</strong> ₹${amount}</p>
                     <p><strong>Payment Mode:</strong> ${orderToSave.paymentType}</p>
                     <hr />
-                    <p><strong>Address:</strong> ${orderToSave.userInfo.address}, ${orderToSave.userInfo.city}</p>
+                    <p><strong>Order ID:</strong> ${savedOrder._id}</p>
                     <br />
                     <a href="https://wa.me/91${orderToSave.userInfo.phone}" 
                        style="background:#25D366; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold;">
@@ -78,10 +95,8 @@ exports.createOrder = async (req, res) => {
                 </div>`
         };
 
-        // Email bhejna (Failure order ko nahi rokega)
         transporter.sendMail(adminMailOptions).catch(err => console.log("Admin Mail Error:", err));
 
-        // --- 5. Final Response ---
         res.status(201).json({ 
             success: true, 
             message: "Order placed successfully", 
@@ -95,7 +110,7 @@ exports.createOrder = async (req, res) => {
 };
 
 /**
- * 2. GET ALL ORDERS (For Admin Panel)
+ * 2. GET ALL ORDERS
  */
 exports.getAllOrders = async (req, res) => {
     try {
