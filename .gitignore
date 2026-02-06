@@ -1,0 +1,12 @@
+node_modules/
+.env
+.next/
+out/
+build/
+dist/
+*.zip
+*.xlsx
+*.lnk
+*.pdf
+desktop.ini
+.DS_Store
