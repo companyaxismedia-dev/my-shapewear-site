@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+
 export default function CheckoutPage() {
   const { cart = [], removeFromCart, cartTotal, clearCart } = useCart() || {};
 
@@ -62,7 +65,7 @@ export default function CheckoutPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/otp/send", {
+      const res = await fetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail }),
@@ -86,7 +89,7 @@ export default function CheckoutPage() {
     
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/otp/verify", {
+      const res = await fetch(`${API_BASE}/api/otp/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), otp: otpValue }),
@@ -112,7 +115,7 @@ export default function CheckoutPage() {
 
     setIsLoading(true);
     try {
-      const orderRes = await fetch("http://localhost:5000/api/payment/create-order", {
+      const orderRes = await fetch(`${API_BASE}/api/payment/create-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: finalPayable }),
@@ -127,7 +130,7 @@ export default function CheckoutPage() {
         name: "Booty Bloom",
         description: "Lingerie Purchase",
         handler: async (res) => {
-          await fetch("http://localhost:5000/api/orders/verify-and-save", {
+          await fetch(`${API_BASE}/api/orders/verify-and-save`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

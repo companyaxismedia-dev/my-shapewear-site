@@ -13,7 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   // Backend API URL
-  const API_URL = "http://localhost:5000/api";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   // --- Step 1: Send OTP ---
   const handleInitialLogin = async (e) => {
@@ -23,7 +23,7 @@ export default function LoginPage() {
 
     try {
       // Backend ab identifier (email) accept karta hai
-      const res = await axios.post(`${API_URL}/otp/send`, { 
+      const res = await axios.post(`${API_BASE}/api/otp/send`, { 
         email: identifier.toLowerCase().trim()
       });
 
@@ -46,7 +46,7 @@ export default function LoginPage() {
 
     try {
       // Backend ke login API par email aur otp bhej rahe hain
-      const res = await axios.post(`${API_URL}/users/login`, {
+      const res = await axios.post(`${API_BASE}/api/users/login`, {
         email: identifier.toLowerCase().trim(),
         otp: otp.trim()
       });

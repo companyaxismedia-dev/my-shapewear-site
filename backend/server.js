@@ -20,7 +20,7 @@ app.use(cors({
          
         "https://www.gloviaglamour.com", // Screenshot image_5a8b41 ke mutabiq add kiya
         "https://gloviaglamour.com",
-        "http://localhost:3000" 
+        "http://localhost:3000",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true

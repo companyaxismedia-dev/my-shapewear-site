@@ -18,7 +18,7 @@ export default function RegisterPage() {
   const router = useRouter();
 
   // Backend URL (Change this when you deploy)
-  const API_URL = "http://localhost:5000/api";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   // --- Step 1: Request OTP ---
   const handleSendOTP = async (e) => {
@@ -35,7 +35,7 @@ export default function RegisterPage() {
 
     try {
       // Sirf Email bhej rahe hain kyunki backend ab email identifier use kar raha hai
-      const res = await axios.post(`${API_URL}/otp/send`, { 
+      const res = await axios.post(`${API_BASE}/api/otp/send`, { 
         email: formData.email.toLowerCase().trim()
       });
       
@@ -57,7 +57,7 @@ export default function RegisterPage() {
 
     try {
       // Sabhi fields (name, email, phone, password, otp) bhejna zaroori hai
-      const res = await axios.post(`${API_URL}/users/register`, {
+      const res = await axios.post(`${API_BASE}/api/users/register`, {
         name: formData.name.trim(),
         email: formData.email.toLowerCase().trim(),
         phone: formData.phone.trim(),

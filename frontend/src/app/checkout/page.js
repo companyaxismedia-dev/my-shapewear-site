@@ -49,7 +49,7 @@ export default function CheckoutPage() {
       
       // 2. Prepare Data for Backend
       const orderPayload = {
-        email: formData.email || `${formData.phone}@bootybloom.com`,
+        email: formData.email || `${formData.phone}@gloviaglamour9.com`,
         customerData: {
           name: formData.name,
           phone: formData.phone,
@@ -63,7 +63,7 @@ export default function CheckoutPage() {
 
       // 3. API Call to Save Order (OTP bypass for direct checkout)
       // Note: Hum direct save kar rahe hain kyunki ye final checkout step hai
-      const response = await fetch("http://localhost:5000/api/orders/verify-and-save", {
+      const response = await fetch(`${API_BASE}/api/orders/verify-and-save`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...orderPayload, otp: "DIRECT" }) // Backend pe 'DIRECT' bypass logic add kar sakte hain
