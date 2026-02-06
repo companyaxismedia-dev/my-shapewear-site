@@ -11,13 +11,20 @@ import "swiper/css/effect-fade";
 
 const banners = [
   { desktop: "/hero-image/clovia1.webp", mobile: "/hero-image/cloviamobile.jpeg", alt: "Premium Lingerie" },
-  { desktop: "/hero-image/hero-n-1.jpeg", mobile: "/hero-image/hero-n-1.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-se.png", mobile: "/hero-image/hero-se.png", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-ba-2.jpeg", mobile: "/hero-image/hero-ba-2.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-n-2.jpeg", mobile: "/hero-image/hero-n-2.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-n-4.jpeg", mobile: "/hero-image/hero-n-4.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-ba-1.png", mobile: "/hero-image/hero-ba-1.png", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/curvy.png", mobile: "/hero-image/curvy.png", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/banar.png", mobile: "/hero-image/cloviamobile.jpeg", alt: "Premium Lingerie" },
+  // { desktop: "/hero-image/newhero.jpeg", mobile: "", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero2.jpeg", mobile: "", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero3.jpeg", mobile: "", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero4.jpeg", mobile: "", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero4.jpeg", mobile: "", alt: "Comfortable Everyday Bras" },
+
+  // { desktop: "/hero-image/hero-n-1.jpeg", mobile: "/hero-image/hero-n-1.jpeg", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-se.png", mobile: "/hero-image/hero-se.png", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-ba-2.jpeg", mobile: "/hero-image/hero-ba-2.jpeg", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-n-2.jpeg", mobile: "/hero-image/hero-n-2.jpeg", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-n-4.jpeg", mobile: "/hero-image/hero-n-4.jpeg", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-ba-1.png", mobile: "/hero-image/hero-ba-1.png", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/curvy.png", mobile: "/hero-image/curvy.png", alt: "Comfortable Everyday Bras" },
 
 ];
 
@@ -114,6 +121,7 @@ export default function Hero() {
             object-fit: contain !important;
             width: 100vw !important;
             height: auto !important;
+            margin: auto
           }
         }
       `}</style>
