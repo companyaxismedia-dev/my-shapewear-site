@@ -5,7 +5,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 
 // Controllers
-const { sendOTP, verifyOTP } = require("./controllers/otpController");
+const { sendOTP, verifyOTP } = require("./controllers/otpController.js");
 
 dotenv.config();
 const app = express();
