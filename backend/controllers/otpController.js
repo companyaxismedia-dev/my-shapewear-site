@@ -1,17 +1,15 @@
 const nodemailer = require("nodemailer");
 
-// OTP ko memory mein save karne ke liye
 const otpStore = {}; 
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  service: 'gmail',
   auth: {
-    user: "gloviaglamour9@gmail.com",
-    pass: "uvqz owgw yvep xapy",
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-// 1. SEND OTP
 exports.sendOTP = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email zaroori hai" });
@@ -19,7 +17,6 @@ exports.sendOTP = async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000);
   const identifier = email.toLowerCase().trim();
 
-  // Store OTP with expiry (5 mins)
   otpStore[identifier] = {
     otp: otp,
     expiresAt: Date.now() + 5 * 60 * 1000,
@@ -27,21 +24,27 @@ exports.sendOTP = async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: '"Glovia Glamour" <gloviaglamour9@gmail.com>',
+      from: `"Glovia Glamour" <${process.env.EMAIL_USER}>`, // Variable use kiya
       to: identifier,
-      subject: "Your Verification Code",
-      text: `Your OTP is ${otp}. It expires in 5 minutes.`,
-      html: `<b>Your OTP is ${otp}</b>`,
+      subject: "Your Verification Code - Glovia Glamour",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;">
+          <h2 style="color: #E91E63;">Glovia Glamour</h2>
+          <p>Aapka verification code niche diya gaya hai:</p>
+          <h1 style="background: #f4f4f4; padding: 10px; display: inline-block;">${otp}</h1>
+          <p>Ye code 5 minutes mein expire ho jayega.</p>
+        </div>
+      `,
     });
 
-    console.log(`🔑 OTP for ${identifier}: ${otp}`); // Debugging ke liye terminal mein
-    res.status(200).json({ message: "OTP sent successfully" });
+    console.log(`🔑 OTP sent to ${identifier}: ${otp}`);
+    res.status(200).json({ success: true, message: "OTP sent successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Email bhejte waqt error aaya" });
+    console.error("Email Error:", error);
+    res.status(500).json({ success: false, message: "Email bhejte waqt error aaya" });
   }
 };
 
-// 2. VERIFY OTP (Iska hona zaroori hai routes ke liye)
 exports.verifyOTP = async (req, res) => {
   const { email, otp } = req.body;
   const identifier = email.toLowerCase().trim();
@@ -56,12 +59,10 @@ exports.verifyOTP = async (req, res) => {
       delete otpStore[identifier];
       return res.status(400).json({ success: false, message: "OTP expire ho gaya" });
     }
-    // Verify hone par delete na karein agar aapko registration mein dobara check karna hai
     return res.status(200).json({ success: true, message: "OTP Verified" });
   } else {
     return res.status(400).json({ success: false, message: "Galat OTP" });
   }
 };
 
-// Isse export karna zaroori hai taaki authController ise use kar sake
 exports.otpStore = otpStore;

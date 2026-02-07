@@ -5,11 +5,12 @@ const { otpStore } = require("./otpController");
 
 // Email Transporter Setup
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { 
-        user: "gloviaglamour9@gmail.com",
-        pass: "uvqz owgw yvep xapy"        
-    }
+  service: 'gmail',
+  auth: {
+    // Render Dashboard ki keys use karein
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
 /**
