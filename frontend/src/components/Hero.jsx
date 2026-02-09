@@ -11,19 +11,19 @@ import "swiper/css/effect-fade";
 
 const banners = [
   { desktop: "/hero-image/clovia1.webp", mobile: "/hero-image/cloviamobile.jpeg", alt: "Premium Lingerie" },
-  { desktop: "/hero-image/hero-n-1.jpeg", mobile: "/hero-image/hero-n-1.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-se.png", mobile: "/hero-image/hero-se.png", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-ba-2.jpeg", mobile: "/hero-image/hero-ba-2.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-n-2.jpeg", mobile: "/hero-image/hero-n-2.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-n-4.jpeg", mobile: "/hero-image/hero-n-4.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/hero-ba-1.png", mobile: "/hero-image/hero-ba-1.png", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/curvy.png", mobile: "/hero-image/curvy.png", alt: "Comfortable Everyday Bras" },
+  { desktop: "/hero-image/Banner-1.jpeg", mobile: "/hero-image/banner1mobile.jpeg", alt: "Comfortable Everyday Bras" },
+  { desktop: "/hero-image/Banner-2.jpeg", mobile: "/hero-image/banner2mobile.jpeg", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-ba-2.jpeg", mobile: "/hero-image/hero-ba-2.jpeg", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-n-2.jpeg", mobile: "/hero-image/hero-n-2.jpeg", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-n-4.jpeg", mobile: "/hero-image/hero-n-4.jpeg", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/hero-ba-1.png", mobile: "/hero-image/hero-ba-1.png", alt: "Comfortable Everyday Bras" },
+  // { desktop: "/hero-image/curvy.png", mobile: "/hero-image/curvy.png", alt: "Comfortable Everyday Bras" },
 
 ];
 
 export default function Hero() {
   return (
-    <section className="relative w-full bg-white">
+    <section className="relative w-full bg-white xs:mt-[-10px]">
       <div className="w-full relative overflow-hidden">
         <Swiper
           modules={[Autoplay, Navigation, Pagination, EffectFade]}

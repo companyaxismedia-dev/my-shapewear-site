@@ -20,7 +20,7 @@ export default function HomeHero() {
   }, []);
 
   return (
-    <section className="relative w-full overflow-hidden bg-white">
+    <section className="relative w-full overflow-hidden bg-white mt-7">
       {/* ================= HEART SLICE POP ANIMATION ================= */}
       <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
         {/* 🟢 Jab tak mounted true na ho (server side), tab tak hearts render nahi honge */}

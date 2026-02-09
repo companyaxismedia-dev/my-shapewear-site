@@ -5,7 +5,7 @@ import Hero from "@/components/Hero";
 import OfferSection from "@/components/OfferSection";
 import HomeHero from "@/components/HomeHero";
 import CategorySlider from "@/components/CategorySlider";
-import AutoSliceSlider from "@/components/AutoSliceSlider"; 
+import AutoSliceSlider from "@/components/AutoSliceSlider";
 import Footer from "@/components/Footer";
 import { Truck, ShieldCheck, RotateCcw, Zap } from "lucide-react";
 
@@ -23,25 +23,26 @@ export default function Home() {
             <span className="hover:text-[#ed4e7e] cursor-pointer transition-colors">Bridal Store</span>
           </div>
         </div> */}
-        <Hero/>
+        <Hero />
+        <OfferSection />
+        <HomeHero />
+
         <div className="px-3 sm:px-4 md:px-10 mt-4 space-y-8">
           {/* <Hero /> */}
-          <OfferSection />   
-          <HomeHero />
-          
-          <CategorySlider /> 
+
+          <CategorySlider />
 
           {/* 🟢 FULL AUTO-SLICING SECTIONS ADDED HERE */}
           <div className="mt-12">
-             <div className="text-center mb-12">
-                <h2 className="text-4xl md:text-5xl font-black text-[#ed4e7e] uppercase italic tracking-tighter">
-                   Our Exclusive Collections
-                </h2>
-                <div className="h-1 w-24 bg-pink-100 mx-auto mt-3 rounded-full"></div>
-             </div>
-             
-             {/* Ye component saare pages ko section-wise load karega */}
-             <AutoSliceSlider /> 
+            <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-5xl font-black text-[#ed4e7e] uppercase italic tracking-tighter">
+                Our Exclusive Collections
+              </h2>
+              <div className="h-1 w-24 bg-pink-100 mx-auto mt-3 rounded-full"></div>
+            </div>
+
+            {/* Ye component saare pages ko section-wise load karega */}
+            <AutoSliceSlider />
           </div>
         </div>
 

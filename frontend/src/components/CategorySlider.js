@@ -71,38 +71,6 @@ export default function CategorySlider() {
           ))}
         </Swiper>
       </div>
-
-      <style jsx global>{`
-        .categorySwiper .swiper-pagination-bullet {
-          width: 8px;
-          height: 8px;
-          background: #ed4e7e !important;
-          opacity: 0.3;
-        }
-        .categorySwiper .swiper-pagination-bullet-active {
-          opacity: 1;
-          width: 20px;
-          border-radius: 4px;
-        }
-        .categorySwiper .swiper-button-next, 
-        .categorySwiper .swiper-button-prev {
-          color: #ed4e7e !important;
-          background: white;
-          width: 35px !important;
-          height: 35px !important;
-          border-radius: 50%;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .categorySwiper .swiper-button-next:after, 
-        .categorySwiper .swiper-button-prev:after {
-          font-size: 14px !important;
-          font-weight: bold;
-        }
-        @media (max-width: 768px) {
-          .categorySwiper .swiper-button-next, 
-          .categorySwiper .swiper-button-prev { display: none; }
-        }
-      `}</style>
     </section>
   );
 }

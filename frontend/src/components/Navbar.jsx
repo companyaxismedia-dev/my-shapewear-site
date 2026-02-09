@@ -157,9 +157,9 @@ export default function Navbar() {
               </LinkNav>
 
               {isBraHovered && (
-                <div className="fixed top-[125px] left-0 w-full bg-white text-black shadow-2xl border-t-2 border-pink-600 z-[110] flex animate-in fade-in slide-in-from-top-2">
-                  <div className="w-1/4 bg-gray-50 border-r border-gray-100 flex flex-col font-black text-[12px] uppercase tracking-tighter">
-                    <div className="p-6 border-b border-gray-200 bg-pink-50 text-pink-600 italic">Bra Collections</div>
+                <div className="fixed top-[125px] left-0 w-full bg-white text-black shadow-2xl border-t-2  z-[110] flex animate-in fade-in slide-in-from-top-2">
+                  <div className="w-1/4 bg-gray-50 border-r border-gray-100 flex flex-col  uppercase ">
+                    <div className="p-6 border-b border-gray-200 bg-pink-50 text-pink-600">Bra Collections</div>
                     <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">Shop By Style</div>
                     <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Padding</div>
                     <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Coverage</div>
@@ -230,9 +230,9 @@ export default function Navbar() {
             ))}
 
             <LinkNav href="/exclusive" className="bg-pink-600 px-3 py-1 rounded-sm whitespace-nowrap">Exclusive</LinkNav>
-            <LinkNav href="/track" className="whitespace-nowrap">Track Order</LinkNav>
+            {/* <LinkNav href="/track" className="whitespace-nowrap">Track Order</LinkNav>
             <LinkNav href="/contact">Contact</LinkNav>
-            <LinkNav href="/help">Help</LinkNav>
+            <LinkNav href="/help">Help</LinkNav> */}
 
           </div>
         </nav>
