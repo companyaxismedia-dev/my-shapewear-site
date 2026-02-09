@@ -104,26 +104,27 @@ function ProductCard({ item, onOpenDetails }) {
     <div className="group flex flex-col bg-white border border-pink-50 relative rounded-sm overflow-hidden shadow-sm h-full transition-all hover:shadow-md">
       
       {/* 1. IMAGE AREA */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-[#fff5f8]">
+      <div  className="relative aspect-[3/4] overflow-hidden bg-[#fff5f8] ">
         <img
           src={item.img}
           alt={item.name}
-          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+          onClick={onOpenDetails}
+          className=" cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute top-0 left-0 bg-[#ed4e7e] text-white text-[9px] px-2 py-0.5 font-bold z-10">{item.discount} OFF</div>
         <div className="absolute bottom-0 right-0 bg-[#AD1457] text-white text-[9px] px-2 py-1 font-bold italic z-10">{item.offer || "3 For 1099"}</div>
         
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
+        {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
           <div onClick={onOpenDetails} className="bg-white/90 p-2 rounded-full shadow-md text-[#ed4e7e] cursor-pointer">
-            <Eye size={18} />
-          </div>
-        </div>
+            <Eye size={18} /> 
+               </div>
+        </div> */}
 
         <div className="absolute bottom-0 left-0 w-full bg-white/95 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 border-t border-pink-100 z-30">
           <p className="text-[8px] font-bold text-pink-400 uppercase mb-1">Quick Add Size:</p>
           <div className="flex flex-wrap gap-1">
             {item.sizes.map((size) => (
-              <span key={size} className="text-[9px] border border-pink-100 px-1 py-0.5 hover:bg-[#ed4e7e] hover:text-white cursor-pointer bg-white text-[#ed4e7e] font-bold">
+              <span key={size} className=" text-[9px] border border-pink-100 px-1 py-0.5 hover:bg-[#ed4e7e] hover:text-white cursor-pointer bg-white text-[#ed4e7e] font-bold">
                 {size}
               </span>
             ))}
@@ -167,7 +168,7 @@ function ProductCard({ item, onOpenDetails }) {
 }
 
 // 🟢 NEW COMPONENT: FULL PRODUCT DETAILS MODAL
-function ProductDetailsModal({ product, onClose }) {
+export function ProductDetailsModal({ product, onClose }) {
   const { addToCart } = useCart();
   const router = useRouter();
   const [size, setSize] = useState("");
@@ -189,7 +190,7 @@ function ProductDetailsModal({ product, onClose }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl relative animate-in zoom-in duration-300 flex flex-col md:flex-row max-h-[90vh]">
-        <button onClick={onClose} className="absolute top-4 right-4 z-50 p-2 bg-white/80 rounded-full text-gray-800 hover:bg-white shadow-md transition-all">
+        <button onClick={onClose} className=" cursor-pointer absolute top-4 right-4 z-50 p-2 bg-white/80 rounded-full text-gray-800 hover:bg-white shadow-md transition-all">
           <X size={24} />
         </button>
 
