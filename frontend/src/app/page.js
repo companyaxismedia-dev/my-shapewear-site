@@ -24,7 +24,7 @@ export default function Home() {
           </div>
         </div> */}
         <Hero />
-        <OfferSection />
+        {/* <OfferSection /> */}
         <HomeHero />
 
         <div className="px-3 sm:px-4 md:px-10 mt-4 space-y-8">

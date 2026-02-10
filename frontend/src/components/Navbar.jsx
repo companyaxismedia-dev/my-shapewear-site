@@ -18,11 +18,16 @@ import {
   SearchIcon,
 } from "lucide-react";
 import SearchSection from "./SearchSection";
+import LoginModal from "@/app/authPage/LoginModal";
+import RegisterModal from "@/app/authPage/RegisterModal";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isBraHovered, setIsBraHovered] = useState(false);
   const [mobileBraOpen, setMobileBraOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+
 
   const { cart } = useCart();
   const cartCount = cart ? cart.reduce((acc, item) => acc + item.qty, 0) : 0;
@@ -127,7 +132,15 @@ export default function Navbar() {
               <LinkNav href="/help" className=" hidden sm:flex p-1 hover:text-pink-600 transition">
                 <HelpCircle size={22} />
               </LinkNav>
-              <LinkNav href="/login" className="p-1"><User size={22} /></LinkNav>
+              {/* <LinkNav href="/login" className="p-1"><User size={22} /></LinkNav> */}
+              <button
+                onClick={() => setLoginOpen(true)}
+                className="p-1 hover:text-pink-600 cursor-pointer"
+                aria-label="Login"
+              >
+                <User size={22} />
+              </button>
+
               <LinkNav href="/wishlist" className="relative p-1">
                 <Heart size={22} />
                 <span className="absolute top-0 right-0 bg-black text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
@@ -155,7 +168,7 @@ export default function Navbar() {
               <LinkNav href="/bra" className="hover:text-pink-400 transition-colors flex items-center gap-1">
                 Bras <ChevronDown size={14} className={`transition-transform duration-300 ${isBraHovered ? "rotate-180" : ""}`} />
               </LinkNav>
- 
+
               {isBraHovered && (
                 <div
                   className="fixed top-[100px] left-0 w-full z-[110]"
@@ -252,6 +265,26 @@ export default function Navbar() {
         </div>
       </header>
 
+
+      <LoginModal
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        openRegister={() => {
+          setLoginOpen(false);
+          setRegisterOpen(true);
+        }}
+      />
+
+      <RegisterModal
+        isOpen={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        openLogin={() => {
+          setLoginOpen(true);
+          setRegisterOpen(false)
+        }}
+      />
+
+
       {/* ================= MOBILE DRAWER ================= */}
       {menuOpen && (
         <div className="fixed inset-0 z-[200] bg-black/60 lg:hidden" onClick={() => setMenuOpen(false)}>
@@ -260,13 +293,23 @@ export default function Navbar() {
               <div className="flex items-center gap-3">
                 <User size={20} fill="white" />
                 <div className="flex items-center gap-1 font-medium text-[15px]">
-                  <LinkNav href="/login" onClick={() => setMenuOpen(false)} className="hover:underline">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setLoginOpen(true)
+                    }}
+                    className="hover:underline">
                     Login
-                  </LinkNav>
+                  </button>
                   <span>&</span>
-                  <LinkNav href="/signup" onClick={() => setMenuOpen(false)} className="hover:underline">
-                    Signup
-                  </LinkNav>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false)
+                      setRegisterOpen(true)
+                    }}
+                    className="hover:underline">
+                    SignUp
+                  </button>
                 </div>
               </div>
               <X
