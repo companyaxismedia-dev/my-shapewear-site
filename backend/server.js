@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
+const adminOrderRoutes = require("./routes/adminOrderRoutes");
+
 
 // Load env FIRST
 dotenv.config();
@@ -59,6 +61,11 @@ app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/users", require("./routes/authRoutes"));
 app.use("/api/payment", require("./routes/paymentRoutes"));
+app.use("/api/admin/orders", adminOrderRoutes);
+
+
+// / --- ADD THIS LINE FOR CART ---
+app.use("/api/cart", require("./routes/cartRoutes"));
 
 // Static uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
