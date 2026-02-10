@@ -1,19 +1,11 @@
-const nodemailer = require("nodemailer");
+require("dotenv").config();
+const { Resend } = require("resend");
 const Otp = require("../models/Otp");
 
-/* ================= EMAIL TRANSPORTER ================= */
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /* =====================================================
-   POST /api/otp/send
+   POST /api/otp/send   (AMAZON STYLE)
 ===================================================== */
 exports.sendOTP = async (req, res) => {
   try {
@@ -27,40 +19,34 @@ exports.sendOTP = async (req, res) => {
       });
     }
 
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      return res.status(500).json({
-        success: false,
-        message: "Email service not configured",
-      });
-    }
-
     const userEmail = email.toLowerCase().trim();
 
-    // 2️⃣ Generate OTP
+    // 2️⃣ Generate OTP (6 digit)
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 min
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     console.log(`🔐 OTP for ${userEmail}: ${otp}`);
 
-    // 3️⃣ Save OTP in MongoDB (UPSERT)
+    // 3️⃣ Save OTP (UPSERT)
     await Otp.findOneAndUpdate(
       { email: userEmail },
       { otp, expiresAt },
       { upsert: true, new: true }
     );
 
-    // 4️⃣ Send Email
-    await transporter.sendMail({
-      from: `"Glovia Glamour" <${process.env.EMAIL_USER}>`,
-      to: userEmail,
-      subject: "Verification Code - Glovia Glamour",
+    // 4️⃣ Send OTP Email (RESEND)
+    await resend.emails.send({
+      from: process.env.OTP_FROM_EMAIL,
+      to: [userEmail],
+      subject: "Your Glovia Glamour verification code",
       html: `
         <div style="font-family: Arial; padding:20px;">
           <h2 style="color:#E91E63;">Glovia Glamour</h2>
           <p>Your verification code is:</p>
-          <h1>${otp}</h1>
-          <p style="font-size:12px;">
-            This OTP is valid for 5 minutes.
+          <h1 style="letter-spacing:4px;">${otp}</h1>
+          <p style="font-size:12px;color:#555;">
+            This code is valid for 5 minutes.  
+            Please do not share this OTP with anyone.
           </p>
         </div>
       `,
@@ -71,7 +57,7 @@ exports.sendOTP = async (req, res) => {
       message: "OTP sent successfully",
     });
   } catch (error) {
-    console.error("❌ OTP SEND ERROR:", error.message);
+    console.error("❌ OTP SEND ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "OTP send failed",
@@ -80,7 +66,7 @@ exports.sendOTP = async (req, res) => {
 };
 
 /* =====================================================
-   POST /api/otp/verify   (OPTIONAL)
+   POST /api/otp/verify
 ===================================================== */
 exports.verifyOTP = async (req, res) => {
   try {
@@ -96,7 +82,7 @@ exports.verifyOTP = async (req, res) => {
 
     const userEmail = email.toLowerCase().trim();
 
-    // 2️⃣ Find OTP in DB
+    // 2️⃣ Find OTP
     const record = await Otp.findOne({ email: userEmail });
 
     if (!record) {
@@ -106,7 +92,7 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    // 3️⃣ Expiry Check
+    // 3️⃣ Expiry check
     if (Date.now() > record.expiresAt) {
       await Otp.deleteOne({ email: userEmail });
       return res.status(400).json({
@@ -123,7 +109,7 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    // 5️⃣ Success → Delete OTP
+    // 5️⃣ Success → delete OTP
     await Otp.deleteOne({ email: userEmail });
 
     return res.status(200).json({
@@ -131,7 +117,7 @@ exports.verifyOTP = async (req, res) => {
       message: "OTP verified successfully",
     });
   } catch (error) {
-    console.error("❌ OTP VERIFY ERROR:", error.message);
+    console.error("❌ OTP VERIFY ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "OTP verify failed",

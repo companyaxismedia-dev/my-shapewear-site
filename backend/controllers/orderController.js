@@ -1,15 +1,10 @@
+require("dotenv").config();
+
 const Order = require("../models/Order");
 const Otp = require("../models/Otp");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-/* ================= EMAIL TRANSPORTER ================= */
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /* =====================================================
    1. CREATE & VERIFY ORDER
@@ -93,11 +88,11 @@ exports.createOrder = async (req, res) => {
 
     const savedOrder = await newOrder.save();
 
-    /* ---------- ADMIN EMAIL ---------- */
-    transporter
-      .sendMail({
-        from: `"Glovia Glamour" <${process.env.EMAIL_USER}>`,
-        to: process.env.EMAIL_USER,
+    /* ---------- ADMIN EMAIL (RESEND) ---------- */
+    resend.emails
+      .send({
+        from: process.env.OTP_FROM_EMAIL,
+        to: [process.env.OTP_FROM_EMAIL],
         subject: `🛒 New Order ₹${amount}`,
         html: `
           <h2>New Order Received</h2>
@@ -106,7 +101,7 @@ exports.createOrder = async (req, res) => {
           <p><b>Amount:</b> ₹${amount}</p>
         `,
       })
-      .catch((err) => console.error("Email error:", err));
+      .catch((err) => console.error("Resend Email Error:", err));
 
     return res.status(201).json({
       success: true,
