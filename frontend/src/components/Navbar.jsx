@@ -20,6 +20,7 @@ import {
 import SearchSection from "./SearchSection";
 import LoginModal from "@/app/authPage/LoginModal";
 import RegisterModal from "@/app/authPage/RegisterModal";
+import UserMenu from "@/app/AccountPage/UserMenu";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -133,13 +134,19 @@ export default function Navbar() {
                 <HelpCircle size={22} />
               </LinkNav>
               {/* <LinkNav href="/login" className="p-1"><User size={22} /></LinkNav> */}
-              <button
+              {/* <button
                 onClick={() => setLoginOpen(true)}
                 className="p-1 hover:text-pink-600 cursor-pointer"
                 aria-label="Login"
               >
                 <User size={22} />
-              </button>
+              </button> */}
+
+              <UserMenu
+                openLogin={() => setLoginOpen(true)}
+                openRegister={() => setRegisterOpen(true)}
+              />
+
 
               <LinkNav href="/wishlist" className="relative p-1">
                 <Heart size={22} />

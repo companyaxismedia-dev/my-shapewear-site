@@ -4,6 +4,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthModal from "./AuthModal";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginModal({ isOpen, onClose, openRegister }) {
   const [identifier, setIdentifier] = useState("");
@@ -12,11 +13,12 @@ export default function LoginModal({ isOpen, onClose, openRegister }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth();
 
   const API_BASE =
     typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1")
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1")
       ? "http://localhost:5000"
       : "https://my-shapewear-site.onrender.com";
 
@@ -49,8 +51,15 @@ export default function LoginModal({ isOpen, onClose, openRegister }) {
       });
 
       localStorage.setItem("userInfo", JSON.stringify(res.data));
+      login(
+        {
+          name: res.data.user?.name || res.data.name || "User",
+          email: res.data.user?.email || identifier,
+        },
+        res.data.token || null
+      );
+
       onClose();
-      router.refresh();
     } catch (err) {
       setError(err.response?.data?.message || "Invalid OTP");
     } finally {
