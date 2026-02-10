@@ -1,126 +1,214 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+
 const Order = require("../models/Order");
-const nodemailer = require('nodemailer');
-const { otpStore } = require("../controllers/otpController"); 
+const { protect, admin } = require("../middleware/authMiddleware");
 
-// --- Email Transporter Configuration ---
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: "gloviaglamour9@gmail.com", // Naya Email ID
-            pass: "uvqz owgw yvep xapy"        // Naya App Password
+/* =====================================================
+   1️⃣ CREATE ORDER
+   POST /api/orders
+   (Login user → userId save | Guest → userId null)
+===================================================== */
+router.post("/", protect, async (req, res) => {
+  try {
+    const { customerData, items, amount, paymentType, paymentId } = req.body;
+
+    if (
+      !customerData?.phone ||
+      !Array.isArray(items) ||
+      items.length === 0 ||
+      !amount
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields missing",
+      });
     }
+
+    const newOrder = new Order({
+      userId: req.user ? req.user._id : null,
+
+      userInfo: {
+        name: customerData.name || "Customer",
+        phone: customerData.phone,
+        email: customerData.email || "",
+        address: customerData.address || "N/A",
+        city: customerData.city || "N/A",
+        pincode: customerData.pincode || "",
+      },
+
+      products: items.map((item) => ({
+        name: item.name,
+        price: Number(item.offerPrice || item.price),
+        quantity: Number(item.qty || 1),
+        size: item.size || "Standard",
+      })),
+
+      totalAmount: Number(amount),
+      paymentType: paymentType || "COD",
+      paymentId: paymentId || `ORDER_${Date.now()}`,
+
+      status: "Order Placed",
+      statusHistory: [
+        {
+          status: "Order Placed",
+          date: new Date(),
+        },
+      ],
+    });
+
+    const savedOrder = await newOrder.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Order placed successfully",
+      orderId: savedOrder._id,
+    });
+  } catch (error) {
+    console.error("❌ CREATE ORDER ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
 });
 
-/**
- * 1. Verify OTP and Save Order
- * Path: POST /api/orders/verify-and-save
- */
-router.post('/verify-and-save', async (req, res) => {
-    const { email, otp, customerData, items, amount, paymentType, paymentId } = req.body;
 
-    // A. Validation logic to prevent crashes
-    if (!email || !otp || !items || !amount || !customerData?.phone) {
-        return res.status(400).json({ 
-            success: false, 
-            message: "Missing Required Fields (Email, OTP, Phone or Items)!" 
-        });
-    }
 
-    try {
-        const userEmail = email.toLowerCase();
-        
-        // B. OTP Verification - Match string types to prevent "Incorrect OTP" alert
-        const storedOtp = otpStore[userEmail];
-        if (!storedOtp || String(storedOtp) !== String(otp)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Galat OTP ya OTP expire ho gaya hai!" 
-            });
-        }
+/* =====================================================
+   2️⃣ MY ORDERS (LOGIN USER)
+   GET /api/orders/my-orders
+===================================================== */
+router.get("/my-orders", protect, async (req, res) => {
+  try {
+    const orders = await Order.find({
+      userId: req.user._id,
+    }).sort({ createdAt: -1 });
 
-        // C. Prepare Order Data based on your Schema
-        const newOrder = new Order({
-            userInfo: {
-                name: customerData.name || "Verified Customer",
-                phone: customerData.phone,
-                address: customerData.address || "N/A",
-                city: customerData.city || "N/A",
-                email: userEmail
-            },
-            products: items.map((item, index) => ({
-                // Fixing duplicate key issues by ensuring index/id handling
-                name: item.name,
-                price: Number(item.offerPrice || item.price),
-                size: item.size || "Standard",
-                quantity: Number(item.qty || item.quantity || 1)
-            })),
-            totalAmount: Number(amount),
-            paymentType: paymentType || "Online", 
-            paymentId: paymentId || `ORDER_${Date.now()}`,
-            status: "Order Placed"
-        });
-
-        // D. Save to Database
-        const savedOrder = await newOrder.save();
-
-        // E. Cleanup OTP after success
-        delete otpStore[userEmail];
-
-        // F. Admin Notification
-        const orderIDShort = savedOrder._id.toString().slice(-6).toUpperCase();
-        const whatsappLink = `https://wa.me/91${customerData.phone}?text=Hello, order %23${orderIDShort} received!`;
-
-        const mailOptions = {
-            from: '"Glovia Glamour Admin" <gloviaglamour9@gmail.com>',
-            to: 'gloviaglamour9@gmail.com',
-            subject: `🚨 NEW ORDER: ₹${amount} from ${customerData.phone}`,
-            html: `
-                <div style="font-family: sans-serif; border: 2px solid #ed4e7e; padding: 20px; border-radius: 12px; max-width: 600px; color: #333;">
-                    <h2 style="color: #ed4e7e; text-align: center;">New Order Alert!</h2>
-                    <hr style="border: 0; border-top: 1px solid #eee;">
-                    <p><strong>Order ID:</strong> #${orderIDShort}</p>
-                    <p><strong>Phone:</strong> ${customerData.phone}</p>
-                    <p><strong>Total Amount:</strong> ₹${amount}</p>
-                    <div style="text-align: center; margin-top: 25px;">
-                        <a href="${whatsappLink}" style="background: #25D366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-                            Contact on WhatsApp
-                        </a>
-                    </div>
-                </div>`
-        };
-
-        transporter.sendMail(mailOptions).catch(err => console.error("Email Error:", err));
-
-        res.status(201).json({ 
-            success: true, 
-            message: "Order successfully placed!",
-            orderId: savedOrder._id 
-        });
-
-    } catch (error) {
-        console.error("❌ SERVER ERROR:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Server Error: " + error.message 
-        });
-    }
+    res.status(200).json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error("❌ MY ORDERS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
 });
 
-/**
- * 2. Track Order (Backend stable check)
- */
-router.get('/track', async (req, res) => {
+
+
+/* =====================================================
+   3️⃣ GUEST ORDER TRACK (PHONE)
+   GET /api/orders/track?phone=9999999999
+===================================================== */
+router.get("/track", async (req, res) => {
+  try {
     const { phone } = req.query;
-    if (!phone) return res.status(400).json({ success: false, message: "Phone number zaruri hai" });
 
-    try {
-        const orders = await Order.find({ "userInfo.phone": phone }).sort({ createdAt: -1 });
-        res.status(200).json({ success: true, orders });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Server error" });
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number required",
+      });
     }
+
+    const orders = await Order.find({
+      "userInfo.phone": phone,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error("❌ TRACK ORDER ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+});
+
+
+
+/* =====================================================
+   4️⃣ SINGLE ORDER DETAIL
+   GET /api/orders/:id
+===================================================== */
+router.get("/:id", async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      order,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid Order ID",
+    });
+  }
+});
+
+
+
+/* =====================================================
+   5️⃣ ADMIN – UPDATE ORDER STATUS
+   PUT /api/orders/admin/update-status
+===================================================== */
+router.put("/admin/update-status", protect, admin, async (req, res) => {
+  try {
+    const { orderId, status, trackingId } = req.body;
+
+    if (!orderId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "orderId & status required",
+      });
+    }
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    order.status = status;
+    if (trackingId) order.trackingId = trackingId;
+
+    order.statusHistory.push({
+      status,
+      date: new Date(),
+    });
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Order status updated",
+      order,
+    });
+  } catch (error) {
+    console.error("❌ ADMIN STATUS ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
 });
 
 module.exports = router;

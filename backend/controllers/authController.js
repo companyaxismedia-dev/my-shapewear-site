@@ -1,110 +1,139 @@
 const User = require("../models/User");
+const Otp = require("../models/Otp");
 const jwt = require("jsonwebtoken");
-const { otpStore } = require("./otpController"); 
 
+/* ================= TOKEN ================= */
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };
 
-// ======================================================
-// REGISTER USER (Email-Only OTP Verification)
-// ======================================================
+/* ======================================================
+   REGISTER USER (EMAIL + OTP)
+====================================================== */
 exports.registerUser = async (req, res) => {
   const { name, email, phone, password, otp } = req.body;
 
   try {
-    // 1. Validation check
+    /* ---------- VALIDATION ---------- */
     if (!name || !email || !phone || !password || !otp) {
-      return res.status(400).json({ message: "Sabhi fields aur OTP bharna zaroori hai" });
+      return res.status(400).json({
+        message: "Sabhi fields aur OTP zaroori hain",
+      });
     }
 
-    // 2. User exists check
-    const userExists = await User.findOne({ $or: [{ email: email.toLowerCase() }, { phone }] });
+    const userEmail = email.toLowerCase().trim();
+
+    /* ---------- USER EXISTS ---------- */
+    const userExists = await User.findOne({
+      $or: [{ email: userEmail }, { phone }],
+    });
+
     if (userExists) {
-      return res.status(400).json({ message: "User pehle se register hai" });
+      return res.status(400).json({
+        message: "User pehle se register hai",
+      });
     }
 
-    // 3. OTP VERIFICATION (Only using Email as Identifier)
-    const identifier = email.toLowerCase().trim();
-    const record = otpStore[identifier];
+    /* ---------- OTP VERIFY (DB) ---------- */
+    const record = await Otp.findOne({ email: userEmail });
 
     if (!record) {
-      return res.status(400).json({ message: "OTP record nahi mila. Phir se OTP bhejein." });
-    }
-
-    if (String(record.otp) !== String(otp)) {
-      return res.status(400).json({ message: "Galat OTP enter kiya hai!" });
+      return res.status(400).json({
+        message: "OTP record nahi mila, dobara OTP bhejein",
+      });
     }
 
     if (Date.now() > record.expiresAt) {
-      delete otpStore[identifier];
-      return res.status(400).json({ message: "OTP expire ho gaya hai" });
+      await record.deleteOne();
+      return res.status(400).json({
+        message: "OTP expire ho gaya hai",
+      });
     }
 
-    // 4. Create User
+    if (String(record.otp) !== String(otp)) {
+      return res.status(400).json({
+        message: "Galat OTP",
+      });
+    }
+
+    /* ---------- CREATE USER ---------- */
     const user = await User.create({
       name,
-      email: email.toLowerCase(),
+      email: userEmail,
       phone,
       password,
     });
 
-    if (user) {
-      delete otpStore[identifier]; // Success ke baad delete karein
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        token: generateToken(user._id),
-      });
-    }
+    // OTP delete after success
+    await record.deleteOne();
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      token: generateToken(user._id),
+    });
+
   } catch (error) {
     console.error("Register Error:", error);
-    res.status(500).json({ message: error.message || "Registration fail ho gaya" });
+    res.status(500).json({
+      message: "Registration fail ho gaya",
+    });
   }
 };
 
-// ======================================================
-// LOGIN USER (Email-Only OTP Verification)
-// ======================================================
+/* ======================================================
+   LOGIN USER (EMAIL + OTP)
+====================================================== */
 exports.loginUser = async (req, res) => {
-  const { email, otp } = req.body; 
+  const { email, otp } = req.body;
 
   try {
     if (!email || !otp) {
-      return res.status(400).json({ message: "Email aur OTP dono zaroori hain" });
+      return res.status(400).json({
+        message: "Email aur OTP dono zaroori hain",
+      });
     }
 
-    const user = await User.findOne({ 
-      $or: [{ email: email.toLowerCase() }, { phone: email }] 
-    });
+    const userEmail = email.toLowerCase().trim();
+
+    /* ---------- FIND USER ---------- */
+    const user = await User.findOne({ email: userEmail });
 
     if (!user) {
-      return res.status(404).json({ message: "User nahi mila. Kripya pehle Register karein." });
+      return res.status(404).json({
+        message: "User nahi mila, pehle register karein",
+      });
     }
 
-    // Login ke liye bhi sirf Email identifier check karein
-    const identifier = user.email.toLowerCase().trim();
-    const record = otpStore[identifier];
+    /* ---------- OTP VERIFY (DB) ---------- */
+    const record = await Otp.findOne({ email: userEmail });
 
     if (!record) {
-      return res.status(400).json({ message: "Login OTP record nahi mila." });
-    }
-
-    if (String(record.otp) !== String(otp)) {
-      return res.status(400).json({ message: "Galat OTP! Kripya sahi OTP dalein." });
+      return res.status(400).json({
+        message: "Login OTP record nahi mila",
+      });
     }
 
     if (Date.now() > record.expiresAt) {
-      delete otpStore[identifier];
-      return res.status(400).json({ message: "OTP expire ho gaya hai." });
+      await record.deleteOne();
+      return res.status(400).json({
+        message: "OTP expire ho gaya hai",
+      });
     }
 
-    delete otpStore[identifier];
+    if (String(record.otp) !== String(otp)) {
+      return res.status(400).json({
+        message: "Galat OTP",
+      });
+    }
+
+    // OTP delete after success
+    await record.deleteOne();
 
     res.status(200).json({
       _id: user._id,
@@ -117,6 +146,8 @@ exports.loginUser = async (req, res) => {
 
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).json({ message: "Server error ki wajah se login fail hua" });
+    res.status(500).json({
+      message: "Server error ki wajah se login fail hua",
+    });
   }
-};
+};36
