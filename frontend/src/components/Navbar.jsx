@@ -155,65 +155,75 @@ export default function Navbar() {
               <LinkNav href="/bra" className="hover:text-pink-400 transition-colors flex items-center gap-1">
                 Bras <ChevronDown size={14} className={`transition-transform duration-300 ${isBraHovered ? "rotate-180" : ""}`} />
               </LinkNav>
-
+ 
               {isBraHovered && (
-                <div className="fixed top-[125px] left-0 w-full bg-white text-black shadow-2xl border-t-2  z-[110] flex animate-in fade-in slide-in-from-top-2">
-                  <div className="w-1/4 bg-gray-50 border-r border-gray-100 flex flex-col  uppercase ">
-                    <div className="p-6 border-b border-gray-200 bg-pink-50 text-pink-600">Bra Collections</div>
-                    <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">Shop By Style</div>
-                    <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Padding</div>
-                    <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Coverage</div>
-                    <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">Specific Solutions</div>
-                  </div>
+                <div
+                  className="fixed top-[100px] left-0 w-full z-[110]"
+                  onMouseEnter={() => setIsBraHovered(true)}
+                  onMouseLeave={() => setIsBraHovered(false)}
+                >
+                  {/* invisible hover bridge */}
+                  <div className="h-[15px] w-full bg-transparent"></div>
 
-                  <div className="w-3/4 grid grid-cols-4 gap-8 p-10 bg-white">
-                    <div>
-                      <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Styles</h3>
-                      <ul className="flex flex-col gap-3">
-                        {braCategories.styles.map((item) => (
-                          <li key={item.name}>
-                            <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block">{item.name}</LinkNav>
-                          </li>
-                        ))}
-                      </ul>
+                  {/* original dropdown (UNCHANGED UI) */}
+                  <div className="bg-white text-black shadow-2xl border-t-2 flex animate-in fade-in slide-in-from-top-2">
+                    <div className="w-1/4 bg-gray-50 border-r border-gray-100 flex flex-col  uppercase ">
+                      <div className="p-6 border-b border-gray-200 bg-pink-50 text-pink-600">Bra Collections</div>
+                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">Shop By Style</div>
+                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Padding</div>
+                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Coverage</div>
+                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">Specific Solutions</div>
                     </div>
-                    <div>
-                      <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Padding</h3>
-                      <ul className="flex flex-col gap-3">
-                        {braCategories.padding.map((item) => (
-                          <li key={item.name}>
-                            <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block ">{item.name}</LinkNav>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="flex flex-col gap-8">
+
+                    <div className="w-3/4 grid grid-cols-4 gap-8 p-10 bg-white">
                       <div>
-                        <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Coverage</h3>
+                        <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Styles</h3>
                         <ul className="flex flex-col gap-3">
-                          {braCategories.coverage.map((item) => (
+                          {braCategories.styles.map((item) => (
+                            <li key={item.name}>
+                              <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block">{item.name}</LinkNav>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Padding</h3>
+                        <ul className="flex flex-col gap-3">
+                          {braCategories.padding.map((item) => (
                             <li key={item.name}>
                               <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block ">{item.name}</LinkNav>
                             </li>
                           ))}
                         </ul>
                       </div>
-                      <div>
-                        <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Solutions</h3>
-                        <ul className="flex flex-col gap-3">
-                          {braCategories.solutions.map((item) => (
-                            <li key={item.name}>
-                              <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block ">{item.name}</LinkNav>
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="flex flex-col gap-8">
+                        <div>
+                          <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Coverage</h3>
+                          <ul className="flex flex-col gap-3">
+                            {braCategories.coverage.map((item) => (
+                              <li key={item.name}>
+                                <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block ">{item.name}</LinkNav>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Solutions</h3>
+                          <ul className="flex flex-col gap-3">
+                            {braCategories.solutions.map((item) => (
+                              <li key={item.name}>
+                                <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block ">{item.name}</LinkNav>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
-                    </div>
-                    {/* <div className="bg-pink-100 p-6 rounded-xl flex flex-col items-center justify-center text-center">
+                      {/* <div className="bg-pink-100 p-6 rounded-xl flex flex-col items-center justify-center text-center">
                       <p className="text-[10px] font-black text-pink-500 uppercase">Special Offer</p>
                       <h4 className="clovia-font text-3xl text-gray-800">Buy 2 Get 1</h4>
                       <LinkNav href="/bra" className="mt-4 bg-black text-white px-6 py-2 rounded-full text-[10px] font-black uppercase">Shop Now</LinkNav>
                     </div> */}
+                    </div>
                   </div>
                 </div>
               )}
