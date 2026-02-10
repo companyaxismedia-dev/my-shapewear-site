@@ -5,11 +5,11 @@ const dotenv = require("dotenv");
 const path = require("path");
 const adminOrderRoutes = require("./routes/adminOrderRoutes");
 
-
+ 
 // Load env FIRST
 dotenv.config();
 
-const { sendOTP, verifyOTP } = require("./controllers/otpController");
+const { sendOTP, verifyOTP } = require("./controllers/otpController.js");
 
 const app = express();
 

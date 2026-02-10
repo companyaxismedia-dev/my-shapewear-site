@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AuthModal from "./AuthModal";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterModal({ isOpen, onClose, openLogin }) {
   const [formData, setFormData] = useState({
@@ -13,20 +14,19 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     password: "",
     otp: "",
   });
-  const [step, setStep] = useState(1); // 1 for Details, 2 for OTP
+  const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth()
 
-  // ✅ SAME API BASE — UNCHANGED
   const API_BASE =
     typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1")
+      (window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1")
       ? "http://localhost:5000"
       : "https://my-shapewear-site.onrender.com";
 
-  // ✅ SAME FUNCTION — UNCHANGED
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -49,14 +49,13 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Failed to send OTP. Check if Backend is running."
+        "Failed to send OTP. Check if Backend is running."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ SAME FUNCTION — UNCHANGED
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -73,14 +72,21 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
 
       if (res.data) {
         localStorage.setItem("userInfo", JSON.stringify(res.data));
-        onClose();        // close modal
-        router.push("/"); // SAME AS PAGE
-        router.refresh(); // SAME AS PAGE
+        login(
+          {
+            name: res.data.user?.name || formData.name,
+            email: res.data.user?.email || formData.email,
+          },
+          res.data.token || null
+        );
+
+        onClose();
+        router.push("/");
       }
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Invalid OTP or Registration failed"
+        "Invalid OTP or Registration failed"
       );
     } finally {
       setLoading(false);
@@ -89,7 +95,6 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
 
   return (
     <AuthModal isOpen={isOpen} onClose={onClose}>
-      {/* ❌ NO EXTRA CARD HERE — THIS FIXES DOUBLE BOX */}
 
       <h2 style={styles.heading}>Create Account</h2>
       <p style={styles.subText}>Verified Signup for Glovia Glamour</p>
@@ -97,7 +102,6 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
       {error && <div style={styles.errorBox}>{error}</div>}
 
       {step === 1 ? (
-        /* DETAILS FORM */
         <form onSubmit={handleSendOTP}>
           <input
             type="text"
@@ -145,7 +149,6 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           </button>
         </form>
       ) : (
-        /* OTP FORM */
         <form onSubmit={handleRegister}>
           <div style={styles.infoBox}>
             Verification code sent to:<br />
