@@ -155,7 +155,7 @@ export default function Navbar() {
               <LinkNav href="/bra" className="hover:text-pink-400 transition-colors flex items-center gap-1">
                 Bras <ChevronDown size={14} className={`transition-transform duration-300 ${isBraHovered ? "rotate-180" : ""}`} />
               </LinkNav>
-
+ 
               {isBraHovered && (
                 <div
                   className="fixed top-[100px] left-0 w-full z-[110]"
