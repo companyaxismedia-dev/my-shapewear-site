@@ -21,7 +21,7 @@ export default function Home() {
             <span className="text-[#ed4e7e] cursor-pointer">New Arrivals</span>
             <span className="hover:text-[#ed4e7e] cursor-pointer transition-colors">Best Sellers</span>
             <span className="hover:text-[#ed4e7e] cursor-pointer transition-colors">Bridal Store</span>
-          </div>
+          </div> 
         </div> */}
         <Hero />
         {/* <OfferSection /> */}
@@ -72,7 +72,7 @@ export default function Home() {
             </div>
             <div className="flex flex-col items-center text-center gap-3">
               <div className="bg-white p-3 rounded-full shadow-sm"><Zap size={24} fill="#ed4e7e" className="text-[#ed4e7e]" /></div>
-              <div>
+              <div> 
                 <p className="text-[11px] font-black uppercase text-gray-700 tracking-tighter">Quick COD</p>
                 <p className="text-[9px] text-gray-500 italic">Pay on delivery</p>
               </div>

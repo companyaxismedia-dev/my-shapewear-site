@@ -12,7 +12,6 @@ export const pantyProducts = [
     const num = i + 1;
     const currentPrice = 299 + (i * 7);
     const oldPrice = currentPrice + 500;
-
     return {
       id: `panty-${num}`,
       name: `BOOTYBLOOM ULTRA COMFORT PANTY ${num}`,
