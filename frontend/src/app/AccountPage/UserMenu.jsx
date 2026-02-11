@@ -9,18 +9,19 @@ export default function UserMenu({ openLogin, openRegister }) {
   return (
     <div className="relative group">
       {/* USER ICON */}
-      <button className="p-1 hover:text-pink-600 relative z-10">
+      <button className="p-1 hover:text-pink-600 relative z-10 cursor-pointer">
         <User size={22} />
       </button>
 
       {/* HOVER GAP BRIDGE */}
-      <div className="absolute top-full right-0 w-14 h-3 bg-transparent"></div>
+      <div className="absolute flex top-full right-0 w4 h-3 bg-transparent"></div>
 
       {/* DROPDOWN */}
       <div
         className="
-          absolute
-          top-[calc(100%+6px)]
+          absolute justify-end
+          top-[calc(100%+8px)]
+          left-[-193px]
           right-0
           w-[320px]
           bg-white
@@ -37,7 +38,7 @@ export default function UserMenu({ openLogin, openRegister }) {
         "
       >
         {/* ARROW (REFERENCE STYLE) */}
-        <div className="absolute -top-2 right-7 w-4 h-4 bg-white rotate-45 border-l border-t"></div>
+        <div className="absolute -top-2 right-30 w-4 h-4 bg-white rotate-45 border-l border-t"></div>
 
         {!user ? (
           <>

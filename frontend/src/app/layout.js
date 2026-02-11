@@ -2,6 +2,7 @@ import "./globals.css";
 import Script from "next/script";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 
 export const metadata = {
   title: "Shapewear Store | Premium Collection",
@@ -34,15 +35,18 @@ export default function RootLayout({ children }) {
 
       <body
         className="
-          antialiased text-slate-900 bg-[#f0f2f5] touch-manipulation"
+          antialiased text-slate-900 bg-[#f0f2f5] touch-manipulation
+        "
       >
         {/* ✅ GLOBAL APP PROVIDERS */}
         <AuthProvider>
           <CartProvider>
+            <WishlistProvider>
             {/* ✅ SAFE AREA SUPPORT (iPhone notch etc.) */}
             <div className="min-h-screen w-full pb-[env(safe-area-inset-bottom)]">
               {children}
             </div>
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
       </body>

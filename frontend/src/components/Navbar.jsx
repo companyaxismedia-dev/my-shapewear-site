@@ -21,13 +21,14 @@ import SearchSection from "./SearchSection";
 import LoginModal from "@/app/authPage/LoginModal";
 import RegisterModal from "@/app/authPage/RegisterModal";
 import UserMenu from "@/app/AccountPage/UserMenu";
+import WishlistButton from "@/app/wishlist/WishlistButton";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isBraHovered, setIsBraHovered] = useState(false);
   const [mobileBraOpen, setMobileBraOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);  
 
 
   const { cart } = useCart();
@@ -146,12 +147,9 @@ export default function Navbar() {
                 openLogin={() => setLoginOpen(true)}
                 openRegister={() => setRegisterOpen(true)}
               />
+              
+                <WishlistButton onLoginOpen={()=>setLoginOpen(true)}/>
 
-
-              <LinkNav href="/wishlist" className="relative p-1">
-                <Heart size={22} />
-                <span className="absolute top-0 right-0 bg-black text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center">0</span>
-              </LinkNav>
               <LinkNav href="/cart" className="relative p-1">
                 <ShoppingCart size={22} />
                 <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
