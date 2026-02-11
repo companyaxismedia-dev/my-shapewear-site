@@ -1,25 +1,45 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 
-// GET CART
+/* ============================
+   GET USER CART
+   GET /api/cart
+============================ */
 exports.getCart = async (req, res) => {
   try {
-    const cart = await Cart.findOne({ userId: req.user._id });
+    const cart = await Cart.findOne({ user: req.user._id })
+      .populate("items.product");
 
     if (!cart) {
-      return res.status(200).json({ items: [], bill: 0 });
+      return res.status(200).json({
+        success: true,
+        items: [],
+        total: 0,
+      });
     }
 
-    res.status(200).json(cart);
-  } catch (err) {
-    res.status(500).json({ message: "Cart fetch error" });
+    // 🔥 Total calculate runtime pe
+    let total = 0;
+    cart.items.forEach((item) => {
+      total += item.product.price * item.qty;
+    });
+
+    res.status(200).json({
+      success: true,
+      items: cart.items,
+      total,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Cart fetch failed" });
   }
 };
 
-// ADD TO CART
+/* ============================
+   ADD TO CART
+   POST /api/cart
+============================ */
 exports.addItemToCart = async (req, res) => {
   try {
-    const userId = req.user._id;
     const { productId, qty = 1, size, color } = req.body;
 
     const product = await Product.findById(productId);
@@ -27,14 +47,18 @@ exports.addItemToCart = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    let cart = await Cart.findOne({ userId });
+    let cart = await Cart.findOne({ user: req.user._id });
+
     if (!cart) {
-      cart = new Cart({ userId, items: [], bill: 0 });
+      cart = new Cart({
+        user: req.user._id,
+        items: [],
+      });
     }
 
     const itemIndex = cart.items.findIndex(
       (item) =>
-        item.productId.toString() === productId &&
+        item.product.toString() === productId &&
         item.size === size &&
         item.color === color
     );
@@ -43,51 +67,48 @@ exports.addItemToCart = async (req, res) => {
       cart.items[itemIndex].qty += qty;
     } else {
       cart.items.push({
-        productId,
-        name: product.name,
-        image: product.image,
-        price: product.price,
+        product: productId,
         qty,
         size,
         color,
       });
     }
 
-    // 🔥 SAFE BILL CALCULATION
-    cart.bill = cart.items.reduce(
-      (total, item) => total + item.price * item.qty,
-      0
-    );
-
     await cart.save();
-    res.status(200).json(cart);
-  } catch (err) {
+
+    res.status(200).json({
+      success: true,
+      message: "Product added to cart",
+    });
+  } catch (error) {
     res.status(500).json({ message: "Add to cart failed" });
   }
 };
 
-// REMOVE ITEM
+/* ============================
+   REMOVE ITEM FROM CART
+   DELETE /api/cart/:productId
+============================ */
 exports.deleteItemFromCart = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    const cart = await Cart.findOne({ userId: req.user._id });
+    const cart = await Cart.findOne({ user: req.user._id });
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
     }
 
     cart.items = cart.items.filter(
-      (item) => item.productId.toString() !== productId
-    );
-
-    cart.bill = cart.items.reduce(
-      (total, item) => total + item.price * item.qty,
-      0
+      (item) => item.product.toString() !== productId
     );
 
     await cart.save();
-    res.status(200).json(cart);
-  } catch (err) {
+
+    res.status(200).json({
+      success: true,
+      message: "Item removed from cart",
+    });
+  } catch (error) {
     res.status(500).json({ message: "Remove failed" });
   }
 };

@@ -4,6 +4,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const adminOrderRoutes = require("./routes/adminOrderRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+
 
  
 // Load env FIRST
@@ -62,6 +64,9 @@ app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/users", require("./routes/authRoutes"));
 app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/admin/orders", adminOrderRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/users", require("./routes/userAddressRoutes"));
+
 
 
 // / --- ADD THIS LINE FOR CART ---
