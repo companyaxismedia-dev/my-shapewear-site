@@ -2,23 +2,23 @@ require("dotenv").config();
 
 const Order = require("../models/Order");
 const Otp = require("../models/Otp");
-const { Resend } = require("resend");
+const Cart = require("../models/Cart");
+const User = require("../models/User");
 
+const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /* =====================================================
-   1. CREATE & VERIFY ORDER
+   1. CREATE ORDER FROM CART (AMAZON STYLE)
 ===================================================== */
 exports.createOrder = async (req, res) => {
   try {
-    const { email, otp, customerData, items, amount, paymentId, paymentType } =
-      req.body;
+    const { email, otp, paymentId, paymentType, addressId } = req.body;
 
-    /* ---------- BASIC VALIDATION ---------- */
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Email aur OTP zaroori hain!",
+        message: "Email aur OTP zaroori hain",
       });
     }
 
@@ -31,7 +31,7 @@ exports.createOrder = async (req, res) => {
       if (!record) {
         return res.status(400).json({
           success: false,
-          message: "OTP nahi mila, dobara mangwayein.",
+          message: "OTP nahi mila",
         });
       }
 
@@ -39,69 +39,92 @@ exports.createOrder = async (req, res) => {
         await Otp.deleteOne({ email: userEmail });
         return res.status(400).json({
           success: false,
-          message: "OTP expire ho gaya hai.",
+          message: "OTP expire ho gaya",
         });
       }
 
       if (String(record.otp) !== String(otp)) {
         return res.status(400).json({
           success: false,
-          message: "Galat OTP!",
+          message: "Galat OTP",
         });
       }
 
       await Otp.deleteOne({ email: userEmail });
     }
 
+    /* ---------- FETCH CART ---------- */
+    const cart = await Cart.findOne({ userId: req.user._id });
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cart empty hai",
+      });
+    }
+
+    /* ---------- FETCH ADDRESS ---------- */
+    const user = await User.findById(req.user._id);
+
+    const address =
+      user.addresses?.find((a) => a._id.toString() === addressId) ||
+      user.addresses?.find((a) => a.isDefault === true);
+
+    if (!address) {
+      return res.status(400).json({
+        success: false,
+        message: "Delivery address nahi mila",
+      });
+    }
+
     /* ---------- CREATE ORDER ---------- */
-    const newOrder = new Order({
-      userId: req.user ? req.user._id : null, // logged user / guest
+    const order = new Order({
+      userId: req.user._id,
 
       userInfo: {
-        name: customerData?.name || "Customer",
-        phone: customerData?.phone || "",
+        name: address.fullName,
+        phone: address.phone,
         email: userEmail,
-        address: customerData?.address || "N/A",
-        city: customerData?.city || "N/A",
-        pincode: customerData?.pincode || "",
+        address: address.addressLine,
+        city: address.city,
+        pincode: address.pincode,
       },
 
-      products: (items || []).map((item) => ({
+      products: cart.items.map((item) => ({
         name: item.name,
-        price: item.offerPrice || item.price,
-        quantity: item.qty || 1,
+        price: item.price,
+        quantity: item.qty,
         size: item.size || "Standard",
+        img: item.image,
       })),
 
-      totalAmount: amount || 0,
+      totalAmount: cart.bill,
       paymentId: paymentId || "N/A",
       paymentType: paymentType || "COD",
-      status: "Order Placed",
 
-      statusHistory: [
-        {
-          status: "Order Placed",
-          date: new Date(),
-        },
-      ],
+      status: "Order Placed",
+      statusHistory: [{ status: "Order Placed" }],
     });
 
-    const savedOrder = await newOrder.save();
+    const savedOrder = await order.save();
 
-    /* ---------- ADMIN EMAIL (RESEND) ---------- */
+    /* ---------- CLEAR CART (AMAZON RULE) ---------- */
+    await Cart.deleteOne({ userId: req.user._id });
+
+    /* ---------- ADMIN EMAIL ---------- */
     resend.emails
       .send({
         from: process.env.OTP_FROM_EMAIL,
         to: [process.env.OTP_FROM_EMAIL],
-        subject: `🛒 New Order ₹${amount}`,
+        subject: `🛒 New Order ₹${cart.bill}`,
         html: `
           <h2>New Order Received</h2>
           <p><b>Order ID:</b> ${savedOrder._id}</p>
-          <p><b>Phone:</b> ${customerData?.phone}</p>
-          <p><b>Amount:</b> ₹${amount}</p>
+          <p><b>Phone:</b> ${address.phone}</p>
+          <p><b>Amount:</b> ₹${cart.bill}</p>
         `,
       })
-      .catch((err) => console.error("Resend Email Error:", err));
+      .catch(() => {});
 
     return res.status(201).json({
       success: true,
@@ -109,7 +132,7 @@ exports.createOrder = async (req, res) => {
       orderId: savedOrder._id,
     });
   } catch (error) {
-    console.error("❌ ORDER ERROR:", error);
+    console.error("ORDER ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -118,67 +141,47 @@ exports.createOrder = async (req, res) => {
 };
 
 /* =====================================================
-   2. GET ALL ORDERS (ADMIN)
+   2. MY ORDERS (LOGIN USER)
 ===================================================== */
-exports.getAllOrders = async (req, res) => {
+exports.getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
-    return res.status(200).json({
-      success: true,
-      orders,
+    const orders = await Order.find({ userId: req.user._id }).sort({
+      createdAt: -1,
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+
+    res.status(200).json({ success: true, orders });
+  } catch {
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
 /* =====================================================
-   3. TRACK ORDER (GUEST – PHONE / ID)
+   3. TRACK ORDER (GUEST / USER)
 ===================================================== */
 exports.trackOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
+    if (!order)
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
 
-    return res.status(200).json({
-      success: true,
-      order,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Invalid Order ID",
-    });
+    res.status(200).json({ success: true, order });
+  } catch {
+    res.status(500).json({ success: false, message: "Invalid Order ID" });
   }
 };
 
 /* =====================================================
-   4. MY ORDERS (LOGIN USER)
+   4. ADMIN – GET ALL ORDERS
 ===================================================== */
-exports.getMyOrders = async (req, res) => {
+exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find({
-      userId: req.user._id,
-    }).sort({ createdAt: -1 });
-
-    return res.status(200).json({
-      success: true,
-      orders,
-    });
+    const orders = await Order.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, orders });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -189,45 +192,24 @@ exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId, status, trackingId } = req.body;
 
-    if (!orderId || !status) {
-      return res.status(400).json({
-        success: false,
-        message: "orderId and status are required",
-      });
-    }
-
     const order = await Order.findById(orderId);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
+    if (!order)
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
 
     order.status = status;
+    if (trackingId) order.trackingId = trackingId;
 
-    if (trackingId) {
-      order.trackingId = trackingId;
-    }
-
-    order.statusHistory.push({
-      status,
-      date: new Date(),
-    });
-
+    order.statusHistory.push({ status });
     await order.save();
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: "Order status updated successfully",
+      message: "Order updated",
       order,
     });
-  } catch (error) {
-    console.error("❌ ADMIN UPDATE ERROR:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+  } catch {
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

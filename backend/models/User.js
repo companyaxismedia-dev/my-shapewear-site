@@ -1,6 +1,58 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+/* ===============================
+   📦 ADDRESS SUB-SCHEMA (AMAZON STYLE)
+================================ */
+const addressSchema = new mongoose.Schema(
+  {
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    pincode: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    city: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    state: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    addressLine: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    isDefault: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { _id: true }
+);
+
+/* ===============================
+   👤 USER SCHEMA
+================================ */
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -16,7 +68,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    // 📱 Phone number field added (Required for OTP verification)
+    // 📱 Phone number field (OTP based auth)
     phone: {
       type: String,
       required: true,
@@ -35,21 +87,40 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+
+    /* ===============================
+       ❤️ AMAZON-STYLE WISHLIST
+    =============================== */
+    wishlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+    ],
+
+    /* ===============================
+       🏠 AMAZON-STYLE ADDRESSES
+    =============================== */
+    addresses: [addressSchema],
   },
   { timestamps: true }
 );
 
-// 🔐 Password hash before save
-userSchema.pre("save", async function (next) {
+/* =================================================
+   🔐 PASSWORD HASH (MONGOOSE 7 SAFE)
+================================================= */
+userSchema.pre("save", async function () {
   if (!this.isModified("password")) {
-    next();
+    return;
   }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// 🔐 Match password (login time)
+/* =================================================
+   🔐 MATCH PASSWORD
+================================================= */
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
