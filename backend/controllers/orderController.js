@@ -1,7 +1,6 @@
 require("dotenv").config();
 
 const Order = require("../models/Order");
-const Otp = require("../models/Otp");
 const Cart = require("../models/Cart");
 const User = require("../models/User");
 
@@ -9,48 +8,20 @@ const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 /* =====================================================
-   1. CREATE ORDER FROM CART (AMAZON STYLE)
+   1️⃣ CREATE ORDER FROM CART (AMAZON STYLE – LOGIN USER)
 ===================================================== */
 exports.createOrder = async (req, res) => {
   try {
-    const { email, otp, paymentId, paymentType, addressId } = req.body;
+    const { paymentId, paymentType, addressId } = req.body;
 
-    if (!email || !otp) {
-      return res.status(400).json({
+    /* ---------- FETCH USER ---------- */
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(401).json({
         success: false,
-        message: "Email aur OTP zaroori hain",
+        message: "User not found",
       });
-    }
-
-    const userEmail = email.toLowerCase().trim();
-
-    /* ---------- OTP VERIFICATION ---------- */
-    if (otp !== "DIRECT") {
-      const record = await Otp.findOne({ email: userEmail });
-
-      if (!record) {
-        return res.status(400).json({
-          success: false,
-          message: "OTP nahi mila",
-        });
-      }
-
-      if (Date.now() > record.expiresAt) {
-        await Otp.deleteOne({ email: userEmail });
-        return res.status(400).json({
-          success: false,
-          message: "OTP expire ho gaya",
-        });
-      }
-
-      if (String(record.otp) !== String(otp)) {
-        return res.status(400).json({
-          success: false,
-          message: "Galat OTP",
-        });
-      }
-
-      await Otp.deleteOne({ email: userEmail });
     }
 
     /* ---------- FETCH CART ---------- */
@@ -64,8 +35,6 @@ exports.createOrder = async (req, res) => {
     }
 
     /* ---------- FETCH ADDRESS ---------- */
-    const user = await User.findById(req.user._id);
-
     const address =
       user.addresses?.find((a) => a._id.toString() === addressId) ||
       user.addresses?.find((a) => a.isDefault === true);
@@ -84,7 +53,7 @@ exports.createOrder = async (req, res) => {
       userInfo: {
         name: address.fullName,
         phone: address.phone,
-        email: userEmail,
+        email: user.email,
         address: address.addressLine,
         city: address.city,
         pincode: address.pincode,
@@ -141,7 +110,7 @@ exports.createOrder = async (req, res) => {
 };
 
 /* =====================================================
-   2. MY ORDERS (LOGIN USER)
+   2️⃣ MY ORDERS (LOGIN USER)
 ===================================================== */
 exports.getMyOrders = async (req, res) => {
   try {
@@ -156,16 +125,17 @@ exports.getMyOrders = async (req, res) => {
 };
 
 /* =====================================================
-   3. TRACK ORDER (GUEST / USER)
+   3️⃣ TRACK ORDER (GUEST / USER)
 ===================================================== */
 exports.trackOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
-    if (!order)
+    if (!order) {
       return res
         .status(404)
         .json({ success: false, message: "Order not found" });
+    }
 
     res.status(200).json({ success: true, order });
   } catch {
@@ -174,7 +144,7 @@ exports.trackOrder = async (req, res) => {
 };
 
 /* =====================================================
-   4. ADMIN – GET ALL ORDERS
+   4️⃣ ADMIN – GET ALL ORDERS
 ===================================================== */
 exports.getAllOrders = async (req, res) => {
   try {
@@ -186,17 +156,19 @@ exports.getAllOrders = async (req, res) => {
 };
 
 /* =====================================================
-   5. ADMIN – UPDATE ORDER STATUS
+   5️⃣ ADMIN – UPDATE ORDER STATUS
 ===================================================== */
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { orderId, status, trackingId } = req.body;
 
     const order = await Order.findById(orderId);
-    if (!order)
+
+    if (!order) {
       return res
         .status(404)
         .json({ success: false, message: "Order not found" });
+    }
 
     order.status = status;
     if (trackingId) order.trackingId = trackingId;
