@@ -10,13 +10,13 @@ export function WishlistProvider({ children }) {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE =
+  const API_BASE = 
     typeof window !== "undefined" &&
     window.location.hostname === "localhost"
       ? "http://localhost:5000"
       : "https://my-shapewear-site.onrender.com";
 
-  // 🔹 Fetch wishlist
+  // ✅ FETCH WISHLIST
   useEffect(() => {
     if (!user) {
       setWishlist([]);
@@ -26,15 +26,14 @@ export function WishlistProvider({ children }) {
     const fetchWishlist = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(
-          `${API_BASE}/api/wishlist`,
-          {
-            headers: { Authorization: `Bearer ${user.token}` },
-          }
-        );
-        setWishlist(data);
+        const res = await axios.get(`${API_BASE}/api/wishlist`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+
+
+        setWishlist(res.data.wishlist || []);
       } catch (err) {
-        console.error("Wishlist fetch error");
+        console.error("Wishlist fetch error", err);
       } finally {
         setLoading(false);
       }
@@ -43,39 +42,38 @@ export function WishlistProvider({ children }) {
     fetchWishlist();
   }, [user]);
 
-  // 🔹 ADD ITEM (HARD ADD)
-  const addToWishlist = async (productId) => {
-    if (!user) return;
+  // ✅ TOGGLE (ADD / REMOVE)
+  const toggleWishlist = async (productId) => {
+    if (!user) return alert("Login first");
 
-    const { data } = await axios.post(
-      `${API_BASE}/api/wishlist`,
+    await axios.post(
+      `${API_BASE}/api/wishlist/toggle`,
       { productId },
       { headers: { Authorization: `Bearer ${user.token}` } }
     );
 
-    setWishlist(data);
-  };
-
-  // 🔹 REMOVE ITEM (HARD DELETE)
-  const removeFromWishlist = async (productId) => {
-    if (!user) return;
-
-    const { data } = await axios.delete(
-      `${API_BASE}/api/wishlist/${productId}`,
-      { headers: { Authorization: `Bearer ${user.token}` } }
-    );
-
-    setWishlist(data);
-  };
-
-  // 🔹 CLEAR ALL
-  const clearWishlist = async () => {
-    if (!user) return;
-
-    await axios.delete(`${API_BASE}/api/wishlist`, {
+    // 🔁 REFRESH wishlist after toggle
+    const res = await axios.get(`${API_BASE}/api/wishlist`, {
       headers: { Authorization: `Bearer ${user.token}` },
     });
 
+    setWishlist(res.data.wishlist || []);
+  };
+
+  // ✅ REMOVE DIRECT
+  const removeFromWishlist = async (productId) => {
+    if (!user) return;
+
+    await axios.delete(
+      `${API_BASE}/api/wishlist/remove/${productId}`,
+      { headers: { Authorization: `Bearer ${user.token}` } }
+    );
+
+    setWishlist((prev) => prev.filter((p) => p._id !== productId));
+  };
+
+  // ❌ CLEAR (optional – you don’t have backend yet)
+  const clearWishlist = () => {
     setWishlist([]);
   };
 
@@ -85,7 +83,7 @@ export function WishlistProvider({ children }) {
         wishlist,
         wishlistCount: wishlist.length,
         loading,
-        addToWishlist,
+        toggleWishlist,
         removeFromWishlist,
         clearWishlist,
       }}
@@ -96,7 +94,7 @@ export function WishlistProvider({ children }) {
 }
 
 export const useWishlist = () => useContext(WishlistContext);
-
+  
 
 
 // "use client";
