@@ -13,7 +13,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     phone: "",
     password: "",
     otp: "",
-  });
+  }); 
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

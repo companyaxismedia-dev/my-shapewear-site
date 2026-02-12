@@ -33,7 +33,7 @@ export default function UserMenu({ openLogin, openRegister }) {
           group-hover:opacity-100
           group-hover:visible
           transition-opacity
-          duration-200
+          duration-600
           z-[200]
         "
       >
