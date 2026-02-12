@@ -13,10 +13,12 @@ const addressSchema = new mongoose.Schema(
     },
 
     phone: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+  type: String,
+  unique: true,
+  sparse: true,   // ✅ multiple null allow karega
+  trim: true,
+},
+
 
     pincode: {
       type: String,
@@ -68,13 +70,14 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    // 📱 Phone number field (OTP based auth)
-    phone: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
+    // 📱 Phone number field (Optional for Google login)
+phone: {
+  type: String,
+  unique: true,
+  sparse: true,   // ✅ multiple null allowed
+  trim: true,
+},
+
 
     password: {
       type: String,
