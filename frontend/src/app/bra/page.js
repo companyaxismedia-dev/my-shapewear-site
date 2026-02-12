@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 export const braProducts = [
   ...[2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28].map((num, index) => ({
     id: `bra-${num}`,
-    name: `Clovia Pink Luxe Lace Bra ${num}`,
+    name: `Pink Luxe Lace Bra ${num}`,
     price: 499 + index * 23,
     oldPrice: 1299 + index * 20,
     img: `/image/bra/bra-${num}.jpg`,
@@ -100,7 +100,7 @@ export default function BraPage() {
 }
 
 function ProductCard({ item, onOpenDetails }) {
-  const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
+  const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
 
   const isWishlisted = wishlist.some((p) => p.id === item.id);
@@ -113,7 +113,7 @@ function ProductCard({ item, onOpenDetails }) {
 
     isWishlisted
       ? removeFromWishlist(item.id)
-      : addToWishlist(item);
+      : toggleWishlist(item);
   };
 
   return (

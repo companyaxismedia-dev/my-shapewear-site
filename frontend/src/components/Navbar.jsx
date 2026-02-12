@@ -28,7 +28,7 @@ export default function Navbar() {
   const [isBraHovered, setIsBraHovered] = useState(false);
   const [mobileBraOpen, setMobileBraOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);  
+  const [registerOpen, setRegisterOpen] = useState(false);
 
 
   const { cart } = useCart();
@@ -147,8 +147,8 @@ export default function Navbar() {
                 openLogin={() => setLoginOpen(true)}
                 openRegister={() => setRegisterOpen(true)}
               />
-              
-                <WishlistButton onLoginOpen={()=>setLoginOpen(true)}/>
+
+              <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
 
               <LinkNav href="/cart" className="relative p-1">
                 <ShoppingCart size={22} />
@@ -253,11 +253,21 @@ export default function Navbar() {
               { name: "Shapewear", path: "/shapewear" },
               { name: "Curvy", path: "/curvy" },
               { name: "Tummy Control", path: "/tummy-control" },
+              { name: "Accessories ", path: "/accessories " },
+              {
+                name: (
+                  <span className="inline-flex items-center font-semibold">
+                    <span>Care</span>
+                    <span className="text-pink-600 ml-0 text-xl mb-0.5">+</span>
+                  </span>
+                ), path: "/care"
+              },
+
             ].map((link) => (
               <LinkNav key={link.name} href={link.path} className="hover:text-pink-400 transition-colors">{link.name}</LinkNav>
             ))}
 
-            <LinkNav href="/exclusive" className="bg-pink-600 px-3 py-1 rounded-sm whitespace-nowrap">Exclusive</LinkNav>
+            <LinkNav href="/exclusive" className="bg-pink-600 px-3 py-1 rounded-sm whitespace-nowrap">Sales</LinkNav>
             {/* <LinkNav href="/track" className="whitespace-nowrap">Track Order</LinkNav>
             <LinkNav href="/contact">Contact</LinkNav>
             <LinkNav href="/help">Help</LinkNav> */}

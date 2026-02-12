@@ -14,7 +14,7 @@ export const lingierieProducts = Array.from({ length: 42 }, (_, i) => {
 
   return {
     id: `lingerie-${num}`,
-    name: `CLOVIA PINK LUXE LACE LINGERIE SET ${num}`,
+    name: `PINK LUXE LACE LINGERIE SET ${num}`,
     price: currentPrice,
     oldPrice: oldPrice,
     img: `/image/lingerie-set-gum/Lingerie-set-gum-${num}.jpg`,
