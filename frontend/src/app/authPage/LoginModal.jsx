@@ -1,225 +1,344 @@
 "use client";
+
 import { useState } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
-import AuthModal from "./AuthModal";
 import { useAuth } from "@/context/AuthContext";
+import AuthModal from "./AuthModal";
 
-export default function LoginModal({ isOpen, onClose, openRegister }) {
+  //  API BASE (Production Ready)
+const API_BASE =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1")
+    ? "http://localhost:5000"
+    : "https://my-shapewear-site.onrender.com";
+
+  //  REUSABLE INPUT
+export function AuthInput({
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+}) {
+  return (
+    <input
+      type={type}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      required
+      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none transition"
+    />
+  );
+}
+
+  //  REUSABLE BUTTON
+export function AuthButton({
+  children,
+  type = "button",
+  onClick,
+  loading,
+  variant = "primary",
+}) {
+  const base =
+    "w-full py-3 rounded-lg font-semibold transition active:scale-95";
+
+  const styles = {
+    primary: "bg-pink-600 text-white hover:bg-pink-700",
+    outline: "border border-gray-300 hover:bg-gray-100",
+  };
+
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={loading}
+      className={`${base} ${styles[variant]}`}
+    >
+      {loading ? "Please wait..." : children}
+    </button>
+  );
+}
+
+  //  REUSABLE DIVIDER
+  export function AuthDivider() {
+  return (
+    <div className="flex items-center gap-3 my-4">
+      <div className="flex-1 h-px bg-gray-300"></div>
+      <span className="text-gray-500 text-sm">OR</span>
+      <div className="flex-1 h-px bg-gray-300"></div>
+    </div>
+  );
+}
+
+  //  GOOGLE LOGIN
+export function GoogleLoginButton() {
+  return (
+    <button
+      onClick={() => (window.location.href = `${API_BASE}/api/auth/google`)}
+      className="w-full border border-gray-300 py-3 rounded-lg hover:bg-gray-100 transition font-medium"
+    >
+      Continue with Google
+    </button>
+  );
+}
+
+  //  MAIN LOGIN MODAL
+export default function LoginModal({ isOpen, onClose }) {
+  const { login } = useAuth();
+
   const [step, setStep] = useState(1);
-  const [loginMethod, setLoginMethod] = useState("password"); 
+  const [view, setView] = useState("password");
+
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
-  const { login } = useAuth();
+      // COMMON LOGIN HANDLER (FIXED)
+  const handleAuthSuccess = (res) => {
+    const token = res.data.token;
+    const userData =
+      res.data.user ||
+      {
+        name: res.data.name || "User",
+        email: res.data.email || identifier,
+      };
 
-  const API_BASE =
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1")
-      ? "http://localhost:5000"
-      : "https://my-shapewear-site.onrender.com";
+    localStorage.setItem(
+      "userInfo",
+      JSON.stringify({
+        user: userData,
+        token,
+      })
+    );
 
-  // STEP 1 → Continue
-  const handleContinue = (e) => {
-    e.preventDefault();
-    if (!identifier.trim()) return;
-    setStep(2);
+    login(userData, token);
+
+    alert("Successfully Logged In ✅");
+    onClose();
   };
 
-  // PASSWORD LOGIN 
+    //  PASSWORD LOGIN
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setIdentifier()
 
     try {
-      const res = await axios.post(`${API_BASE}/api/users/login-password`, {
-        identifier,
+      const res = await axios.post(`${API_BASE}/api/users/login`, {
+        email: identifier,
         password,
       });
 
-      login(res.data.user, res.data.token);
-      onClose();
+      handleAuthSuccess(res);
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid credentials");
-    } finally {
-      setLoading(false);
-    } 
-  };
-
-  // OTP SEND
-  const handleSendOtp = async () => {
-    setLoading(true);
-    try {
-      await axios.post(`${API_BASE}/api/otp/send`, { identifier });
-      setStep(3);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to send OTP");
+      alert(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
     }
   };
 
-  // OTP VERIFY
-  const handleOtpLogin = async (e) => {
-    e.preventDefault();
+    //  SEND OTP
+  const sendOTP = async (mode = "login") => {
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/api/users/login-otp`, {
-        identifier,
+      await axios.post(`${API_BASE}/api/otp/send`, {
+        email: identifier,
+      });
+
+      setView(mode === "forgot" ? "verifyForgotOtp" : "verifyOtp");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+      // VERIFY OTP LOGIN
+  const handleVerifyOTPLogin = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.post(`${API_BASE}/api/users/login`, {
+        email: identifier,
         otp,
       });
 
-      login(res.data.user, res.data.token);
-      onClose();
+      handleAuthSuccess(res);
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid OTP");
+      alert(err.response?.data?.message || "Invalid OTP");
     } finally {
       setLoading(false);
     }
   };
 
-  const resendOtp = async () => {
+    //  RESET PASSWORD
+  const handleResetPassword = async () => {
+    if (password !== confirm) {
+      return alert("Passwords do not match");
+    }
+
+    setLoading(true);
+
     try {
-      await axios.post(`${API_BASE}/api/otp/resend`, { identifier });
-      alert("OTP Resent");
+      const res = await axios.post(
+        `${API_BASE}/api/users/reset-password`,
+        {
+          email: identifier,
+          otp,
+          password,
+        }
+      );
+
+      alert("Password changed successfully ✅");
+
+      handleAuthSuccess(res);
     } catch (err) {
-      alert("Failed to resend OTP");
+      alert(err.response?.data?.message || "Reset failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <AuthModal isOpen={isOpen} onClose={onClose}>
-      <h2 className="text-2xl font-bold mb-6">Login</h2>
+      <div className="space-y-5">
+        <h2 className="text-2xl font-bold">Login</h2>
 
-      {error && (
-        <div className="mb-4 bg-red-100 text-red-600 px-3 py-2 rounded">
-          {error}
-        </div>
-      )}
-
-      {/* STEP 1 - IDENTIFIER */}
-      {step === 1 && (
-        <form onSubmit={handleContinue} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Email or Mobile Number"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            required
-            className="w-full border px-4 py-3 rounded-lg focus:ring-2 focus:ring-pink-500"
-          />
-
-          <button className="w-full bg-pink-600 text-white py-3 rounded-lg">
-            Continue
-          </button>
-
-          <div className="flex items-center gap-2 my-4">
-            <hr className="flex-1" />
-            <span className="text-sm text-gray-500">OR</span>
-            <hr className="flex-1" />
-          </div>
-
-          <button
-            type="button"
-            className="w-full border py-3 rounded-lg font-semibold"
-            onClick={() => router.push("/api/auth/google")}
-          >
-            Login with Google
-          </button>
-        </form>
-      )}
-
-      {/* STEP 2 - CHOOSE METHOD */}
-      {step === 2 && (
-        <div className="space-y-4">
-          <button
-            className="w-full bg-pink-600 text-white py-3 rounded-lg"
-            onClick={() => setLoginMethod("password")}
-          >
-            Login via Password
-          </button>
-
-          <div className="flex items-center gap-2 my-2">
-            <hr className="flex-1" />
-            <span className="text-sm text-gray-500">OR</span>
-            <hr className="flex-1" />
-          </div>
-
-          <button
-            className="w-full border py-3 rounded-lg"
-            onClick={() => {
-              setLoginMethod("otp");
-              handleSendOtp();
+        {step === 1 && (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setStep(2);
             }}
+            className="space-y-4"
           >
-            Login via OTP
-          </button>
+            <AuthInput
+              placeholder="Email or Mobile Number"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+            />
 
-          {loginMethod === "password" && (
-            <form onSubmit={handlePasswordLogin} className="space-y-3 mt-4">
-              <input
-                type="password"
-                placeholder="Enter Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full border px-4 py-3 rounded-lg"
+            <AuthButton type="submit">Continue</AuthButton>
+
+            <AuthDivider />
+            <GoogleLoginButton />
+          </form>
+        )}
+
+        {step === 2 && view === "password" && (
+          <>
+            <form
+              onSubmit={handlePasswordLogin}
+              className="space-y-4"
+            >
+              <AuthInput
+                placeholder="Email"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
               />
 
-              <button className="w-full bg-pink-600 text-white py-3 rounded-lg">
-                {loading ? "Logging in..." : "Login"}
-              </button>
+              <AuthInput
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
 
-              <div className="text-right text-sm text-pink-600 cursor-pointer">
-                Forgot Password?
-              </div>
+              <AuthButton type="submit" loading={loading}>
+                Login
+              </AuthButton>
             </form>
-          )}
-        </div>
-      )}
 
-      {/* STEP 3 - OTP LOGIN */}
-      {step === 3 && loginMethod === "otp" && (
-        <form onSubmit={handleOtpLogin} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Enter OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            required
-            maxLength={6}
-            className="w-full border px-4 py-3 rounded-lg text-center tracking-widest"
-          />
+            <div className="text-right">
+              <button
+                onClick={() => sendOTP("forgot")}
+                className="text-sm text-pink-600"
+              >
+                Forgot Password?
+              </button>
+            </div>
 
-          <button className="w-full bg-pink-600 text-white py-3 rounded-lg">
-            {loading ? "Verifying..." : "Verify & Login"}
-          </button>
+            <AuthDivider />
 
-          <div
-            className="text-sm text-pink-600 text-center cursor-pointer"
-            onClick={resendOtp}
-          >
-            Resend OTP
-          </div>
-        </form>
-      )}
+            <AuthButton
+              variant="outline"
+              onClick={() => sendOTP("login")}
+            >
+              Login via OTP
+            </AuthButton>
+          </>
+        )}
 
-      <p className="mt-6 text-sm text-center">
-        New user?{" "}
-        <span
-          onClick={openRegister}
-          className="text-pink-600 font-bold cursor-pointer"
-        >
-          Register
-        </span>
-      </p>
+        {/* VERIFY OTP LOGIN */}
+        {view === "verifyOtp" && (
+          <>
+            <AuthInput
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
+
+            <AuthButton
+              onClick={handleVerifyOTPLogin}
+              loading={loading}
+            >
+              Verify OTP
+            </AuthButton>
+
+            <AuthDivider />
+
+            <AuthButton
+              variant="outline"
+              onClick={() => setView("password")}
+            >
+              Login via Password
+            </AuthButton>
+          </>
+        )}
+
+        {/* VERIFY FORGOT OTP */}
+        {view === "verifyForgotOtp" && (
+          <>
+            <AuthInput
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
+
+            <AuthButton
+              onClick={() => setView("reset")}
+            >
+              Verify OTP
+            </AuthButton>
+          </>
+        )}
+
+        {/* RESET PASSWORD */}
+        {view === "reset" && (
+          <>
+            <AuthInput
+              type="password"
+              placeholder="New Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <AuthInput
+              type="password"
+              placeholder="Confirm Password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+            />
+
+            <AuthButton
+              onClick={handleResetPassword}
+              loading={loading}
+            >
+              Change Password
+            </AuthButton>
+          </>
+        )}
+      </div>
     </AuthModal>
   );
 }
