@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { GoogleLogin } from "@react-oauth/google";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
+import { GoogleLogin } from "@react-oauth/google";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
 
 
 /* ================= REUSABLE INPUT ================= */
 export function AuthInput({
   type = "text",
   placeholder,
-  value,
+  value,  
   onChange,
 }) {
   return (
@@ -67,7 +68,7 @@ export function AuthDivider() {
   );
 }
 
-/* ================= GOOGLE LOGIN BUTTON ================= */
+/* ================= GOOGLE LOGIN BUTTON (UPDATED) ================= */
 export function GoogleLoginButton({ onSuccess }) {
   return (
     <div className="w-full">
@@ -75,7 +76,7 @@ export function GoogleLoginButton({ onSuccess }) {
         onSuccess={async (credentialResponse) => {
           try {
             const res = await axios.post(
-              `${API_BASE}/api/users/login/google`,
+              `${API_BASE}/api/auth/google`,
               {
                 credential: credentialResponse.credential,
               }
@@ -97,8 +98,7 @@ export function GoogleLoginButton({ onSuccess }) {
   );
 }
 
-/* ================= MAIN LOGIN MODAL ================= */
-export default function LoginModal({ isOpen, onClose }) {
+export default function LoginModal({ isOpen, onClose, openRegister }) {
   const { login } = useAuth();
 
   const [step, setStep] = useState(1);
@@ -108,7 +108,24 @@ export default function LoginModal({ isOpen, onClose }) {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [confirm, setConfirm] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [activeAction, setActiveAction] = useState(null);
+
+  const resetForm = () => {
+    setStep(1);
+    setView("password");
+    setIdentifier("");
+    setPassword("");
+    setOtp("");
+    setConfirm("");
+    setLoading(false);
+    setActiveAction(null);
+  };
+
+  useEffect(() => {
+    if (!isOpen) resetForm();
+  }, [isOpen]);
 
   /* ===== COMMON SUCCESS HANDLER ===== */
   const handleAuthSuccess = (res) => {
@@ -123,10 +140,7 @@ export default function LoginModal({ isOpen, onClose }) {
 
     localStorage.setItem(
       "userInfo",
-      JSON.stringify({
-        user: userData,
-        token,
-      })
+      JSON.stringify({ user: userData, token })
     );
 
     login(userData, token);
@@ -135,88 +149,155 @@ export default function LoginModal({ isOpen, onClose }) {
     onClose();
   };
 
-  /* ===== PASSWORD LOGIN ===== */
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
+    setActiveAction("passwordLogin");
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        `${API_BASE}/api/auth/login`,
-        {
-          email: identifier,
-          password,
-        }
-      );
+      const payload = identifier.includes("@")
+  ? { email: identifier, password }
+  : { phone: identifier, password };
+
+      const res = await axios.post(`${API_BASE}/api/auth/login`, payload);
 
       handleAuthSuccess(res);
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
 
-  /* ===== SEND OTP ===== */
-  const sendOTP = async (mode = "login") => {
+  const sendLoginOtp = async () => {
+    setActiveAction("sendLoginOtp");
     setLoading(true);
-    try {
-      await axios.post(`${API_BASE}/api/otp/send`, {
-        email: identifier,
-      });
 
-      setView(mode === "forgot" ? "verifyForgotOtp" : "verifyOtp");
+    try {
+      const payload = identifier.includes("@")
+        ? { email: identifier }
+        : { phone: identifier };
+
+      await axios.post(`${API_BASE}/api/auth/login/send-otp`, payload);
+
+      setView("verifyOtp");
     } catch (err) {
       alert(err.response?.data?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
 
-  /* ===== VERIFY OTP LOGIN ===== */
-  const handleVerifyOTPLogin = async () => {
+  const verifyLoginOtp = async () => {
+    setActiveAction("verifyLoginOtp");
     setLoading(true);
+
     try {
-      const res = await axios.post(`${API_BASE}/api/users/login`, {
-        email: identifier,
-        otp,
-      });
+      const payload = identifier.includes("@")
+  ? { email: identifier, otp }
+  : { phone: identifier, otp };
+
+const res = await axios.post(
+  `${API_BASE}/api/auth/login/verify-otp`,
+  payload
+);
+
 
       handleAuthSuccess(res);
     } catch (err) {
       alert(err.response?.data?.message || "Invalid OTP");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
 
-  /* ===== RESET PASSWORD ===== */
-  const handleResetPassword = async () => {
-    if (password !== confirm) {
-      return alert("Passwords do not match");
-    }
-
+  const forgotPassword = async () => {
+    setActiveAction("forgotPassword");
     setLoading(true);
 
     try {
-      await axios.post(
-        `${API_BASE}/api/users/reset-password`,
-        {
-          email: identifier,
-          otp,
-          newPassword: password,
-        }
-      );
+const payload = identifier.includes("@")
+  ? { email: identifier.toLowerCase().trim() }
+  : { phone: identifier.trim() };
 
-      alert("Password changed successfully ✅");
-      setView("password");
+await axios.post(`${API_BASE}/api/auth/password/forgot`, payload);
+
+      setView("verifyForgotOtp");
     } catch (err) {
-      alert(err.response?.data?.message || "Reset failed");
+      alert(err.response?.data?.message || "Failed");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
 
+  const verifyForgotOtp = async () => {
+  setActiveAction("verifyForgotOtp");
+  setLoading(true);
+
+  try {
+    const payload = {
+      email: identifier.toLowerCase().trim(),
+      otp: otp.trim(),
+    };
+
+    const res = await axios.post(
+      `${API_BASE}/api/auth/password/verify-otp`,
+      payload
+    );
+
+    localStorage.setItem("resetToken", res.data.resetToken);
+
+    setView("reset");
+
+  } catch (err) {
+    alert(err.response?.data?.message || "Invalid OTP");
+  } finally {
+    setLoading(false);
+    setActiveAction(null);
+  }
+};
+
+
+const resetPassword = async () => {
+  if (password !== confirm) {
+    return alert("Passwords do not match");
+  }
+
+  setActiveAction("resetPassword");
+  setLoading(true);
+
+  try {
+    const resetToken = localStorage.getItem("resetToken");
+
+    if (!resetToken) {
+      return alert("Reset session expired. Please try again.");
+    }
+
+    const res = await axios.post(
+      `${API_BASE}/api/auth/password/reset`,
+      {
+        resetToken,
+        newPassword: password,
+      }
+    );
+
+    alert("Password reset successful ✅");
+
+    localStorage.removeItem("resetToken");
+
+    handleAuthSuccess(res);
+
+  } catch (err) {
+    alert(err.response?.data?.message || "Reset failed");
+  } finally {
+    setLoading(false);
+    setActiveAction(null);
+  }
+};
   return (
     <AuthModal isOpen={isOpen} onClose={onClose}>
       <div className="space-y-5">
@@ -226,6 +307,7 @@ export default function LoginModal({ isOpen, onClose }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (!identifier.trim()) return;
               setStep(2);
             }}
             className="space-y-4"
@@ -236,28 +318,26 @@ export default function LoginModal({ isOpen, onClose }) {
               onChange={(e) => setIdentifier(e.target.value)}
             />
 
-            <AuthButton type="submit">Continue</AuthButton>
+            <AuthButton type="submit">
+              Continue
+            </AuthButton>
 
             <AuthDivider />
 
-            <GoogleLoginButton
-              onSuccess={handleAuthSuccess}
-            />
+            <GoogleLoginButton onSuccess={handleAuthSuccess} />
           </form>
         )}
 
         {step === 2 && view === "password" && (
           <>
+            <p className="text-sm text-gray-600">
+              {identifier}
+            </p>
+
             <form
               onSubmit={handlePasswordLogin}
               className="space-y-4"
             >
-              <AuthInput
-                placeholder="Email"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-              />
-
               <AuthInput
                 type="password"
                 placeholder="Password"
@@ -265,14 +345,20 @@ export default function LoginModal({ isOpen, onClose }) {
                 onChange={(e) => setPassword(e.target.value)}
               />
 
-              <AuthButton type="submit" loading={loading}>
+              <AuthButton
+                type="submit"
+                loading={
+                  loading &&
+                  activeAction === "passwordLogin"
+                }
+              >
                 Login
               </AuthButton>
             </form>
 
             <div className="text-right">
               <button
-                onClick={() => sendOTP("forgot")}
+                onClick={forgotPassword}
                 className="text-sm text-pink-600"
               >
                 Forgot Password?
@@ -283,7 +369,11 @@ export default function LoginModal({ isOpen, onClose }) {
 
             <AuthButton
               variant="outline"
-              onClick={() => sendOTP("login")}
+              onClick={sendLoginOtp}
+              loading={
+                loading &&
+                activeAction === "sendLoginOtp"
+              }
             >
               Login via OTP
             </AuthButton>
@@ -299,8 +389,11 @@ export default function LoginModal({ isOpen, onClose }) {
             />
 
             <AuthButton
-              onClick={handleVerifyOTPLogin}
-              loading={loading}
+              onClick={verifyLoginOtp}
+              loading={
+                loading &&
+                activeAction === "verifyLoginOtp"
+              }
             >
               Verify OTP
             </AuthButton>
@@ -316,7 +409,11 @@ export default function LoginModal({ isOpen, onClose }) {
             />
 
             <AuthButton
-              onClick={() => setView("reset")}
+              onClick={verifyForgotOtp}
+              loading={
+                loading &&
+                activeAction === "verifyForgotOtp"
+              }
             >
               Verify OTP
             </AuthButton>
@@ -339,14 +436,27 @@ export default function LoginModal({ isOpen, onClose }) {
             />
 
             <AuthButton
-              onClick={handleResetPassword}
-              loading={loading}
+              onClick={resetPassword}
+              loading={
+                loading &&
+                activeAction === "resetPassword"
+              }
             >
               Change Password
             </AuthButton>
           </>
         )}
       </div>
+
+      <p className="mt-5 text-sm text-gray-600">
+        New user?{" "}
+        <span
+          onClick={openRegister}
+          className="text-pink-600 font-semibold cursor-pointer hover:underline"
+        >
+          Register
+        </span>
+      </p>
     </AuthModal>
   );
 }
