@@ -4,7 +4,6 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
 const compression = require("compression");
 
 dotenv.config();
@@ -17,56 +16,13 @@ const app = express();
 
 app.set("trust proxy", 1);
 
-// Helmet
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 
-// Compression
 app.use(compression());
-
-/* ======================================================
-   ✅ RATE LIMIT (SMART FIX)
-   Development me disable
-   Production me enable
-====================================================== */
-
-if (process.env.NODE_ENV === "production") {
-  console.log("🔐 Production Mode → Rate Limit Enabled");
-
-  // Global limiter
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 500,
-      standardHeaders: true,
-      legacyHeaders: false,
-    })
-  );
-
-  // OTP limiter
-  const otpLimiter = rateLimit({
-    windowMs: 5 * 60 * 1000,
-    max: 5,
-  });
-
-  // Login limiter
-  const loginLimiter = rateLimit({
-    windowMs: 10 * 60 * 1000,
-    max: 10,
-  });
-
-  app.use("/api/otp", otpLimiter, require("./routes/otpRoutes"));
-  app.use("/api/auth", loginLimiter, require("./routes/authRoutes"));
-
-} else {
-  console.log("🛠 Development Mode → Rate Limit Disabled");
-
-  app.use("/api/otp", require("./routes/otpRoutes"));
-  app.use("/api/auth", require("./routes/authRoutes"));
-}
 
 /* ======================================================
    📦 NORMAL MIDDLEWARE
@@ -75,24 +31,19 @@ if (process.env.NODE_ENV === "production") {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+// ✅ Simple CORS (Local Development Safe)
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://my-shapewear-site.vercel.app",
-      "https://gloviaglamour.com",
-      "https://www.gloviaglamour.com",
-      /\.vercel\.app$/,
-    ],
+    origin: "http://localhost:3000",
     credentials: true,
   })
 );
 
+
+
 // Logger
 app.use((req, res, next) => {
-  console.log(
-    `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
-  );
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
 
@@ -109,13 +60,20 @@ mongoose
   });
 
 /* ======================================================
-   🛣 OTHER ROUTES
+   🛣 ROUTES
 ====================================================== */
 
 app.get("/", (req, res) => {
   res.status(200).send("🚀 Glovia Glamour API Running");
 });
 
+// 🔹 OTP Routes (NO LIMIT)
+app.use("/api/otp", require("./routes/otpRoutes"));
+
+// 🔹 Auth Routes
+app.use("/api/auth", require("./routes/authRoutes"));
+
+// 🔹 Other Routes
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/cart", require("./routes/cartRoutes"));
@@ -159,7 +117,6 @@ const server = app.listen(PORT, () => {
   console.log("=================================");
 });
 
-// Unhandled Rejection
 process.on("unhandledRejection", (err) => {
   console.error("UNHANDLED ERROR:", err);
   server.close(() => process.exit(1));
