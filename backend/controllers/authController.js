@@ -282,7 +282,7 @@ exports.verifyResetOTP = async (req, res) => {
 
     if (!email || !otp) {
       return res.status(400).json({ message: "All fields required" });
-    }
+    } 
 
     const userEmail = email.toLowerCase().trim();
     const record = await Otp.findOne({ email: userEmail });

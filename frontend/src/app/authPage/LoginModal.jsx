@@ -363,13 +363,18 @@ import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
 import { GoogleLogin } from "@react-oauth/google";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE =   typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1")
+    ? "http://localhost:5000"
+    : "https://my-shapewear-site.onrender.com";
+
 
 /* ================= REUSABLE INPUT ================= */
 export function AuthInput({
   type = "text",
   placeholder,
-  value,
+  value,  
   onChange,
 }) {
   return (
