@@ -52,12 +52,12 @@ export default function Hero() {
                     width={1966}
                     height={835}
                     className="w-full h-auto block select-none"
-                    style={{
-                      height: 'auto',
-                      width: '100%',
-                      objectFit: 'contain',
-                      aspectRatio: '1966 / 835',
-                    }}
+                    // style={{
+                    //   height: 'auto',
+                    //   width: '100%',
+                    //   objectFit: 'contain',
+                    //   // aspectRatio: '1966 / 835',
+                    // }}
                     loading={index === 0 ? "eager" : "lazy"}
                   />
                 </picture>

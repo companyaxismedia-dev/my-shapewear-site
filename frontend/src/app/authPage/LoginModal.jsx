@@ -1,19 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 
-  //  API BASE (Production Ready)
-const API_BASE =
-  typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1")
-    ? "http://localhost:5000"
-    : "https://my-shapewear-site.onrender.com";
+const API_BASE = "http://localhost:5000"
+  // typeof window !== "undefined" &&
+  // (window.location.hostname === "localhost" ||
+  //   window.location.hostname === "127.0.0.1")
+  //   ? "http://localhost:5000"
+  //   : "https://my-shapewear-site.onrender.com";
 
-  //  REUSABLE INPUT
 export function AuthInput({
   type = "text",
   placeholder,
@@ -32,7 +31,6 @@ export function AuthInput({
   );
 }
 
-  //  REUSABLE BUTTON
 export function AuthButton({
   children,
   type = "button",
@@ -60,8 +58,7 @@ export function AuthButton({
   );
 }
 
-  //  REUSABLE DIVIDER
-  export function AuthDivider() {
+export function AuthDivider() {
   return (
     <div className="flex items-center gap-3 my-4">
       <div className="flex-1 h-px bg-gray-300"></div>
@@ -71,20 +68,7 @@ export function AuthButton({
   );
 }
 
-  //  GOOGLE LOGIN
-export function GoogleLoginButton() {
-  return (
-    <button
-      onClick={() => (window.location.href = `${API_BASE}/api/auth/google`)}
-      className="w-full border border-gray-300 py-3 rounded-lg hover:bg-gray-100 transition font-medium"
-    >
-      Continue with Google
-    </button>
-  );
-}
-
-  //  MAIN LOGIN MODAL
-export default function LoginModal({ isOpen, onClose }) {
+export default function LoginModal({ isOpen, onClose, openRegister}) {
   const { login } = useAuth();
 
   const [step, setStep] = useState(1);
@@ -94,24 +78,35 @@ export default function LoginModal({ isOpen, onClose }) {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [loading, setLoading] = useState(false);
 
-      // COMMON LOGIN HANDLER (FIXED)
+  const [loading, setLoading] = useState(false);
+  const [activeAction, setActiveAction] = useState(null);
+  const {googleAuth} = useGoogleAuth()
+
+
+  const resetForm = () => {
+    setStep(1);
+    setView("password");
+    setIdentifier("");
+    setPassword("");
+    setOtp("");
+    setConfirm("");
+    setLoading(false);
+    setActiveAction(null);
+  };
+
+  useEffect(() => {
+    if (!isOpen) resetForm();
+  }, [isOpen]);
+
+
   const handleAuthSuccess = (res) => {
     const token = res.data.token;
-    const userData =
-      res.data.user ||
-      {
-        name: res.data.name || "User",
-        email: res.data.email || identifier,
-      };
+    const userData = res.data.user;
 
     localStorage.setItem(
       "userInfo",
-      JSON.stringify({
-        user: userData,
-        token,
-      })
+      JSON.stringify({ user: userData, token })
     );
 
     login(userData, token);
@@ -120,14 +115,14 @@ export default function LoginModal({ isOpen, onClose }) {
     onClose();
   };
 
-    //  PASSWORD LOGIN
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
+    setActiveAction("passwordLogin");
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE}/api/users/login`, {
-        email: identifier,
+      const res = await axios.post(`${API_BASE}/api/auth/login`, {
+        identifier,
         password,
       });
 
@@ -136,79 +131,134 @@ export default function LoginModal({ isOpen, onClose }) {
       alert(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
 
-    //  SEND OTP
-  const sendOTP = async (mode = "login") => {
+    //  LOGIN OTP SEND
+    //  POST /api/auth/login/send-otp
+  const sendLoginOtp = async () => {
+    setActiveAction("sendLoginOtp");
     setLoading(true);
+
     try {
-      await axios.post(`${API_BASE}/api/otp/send`, {
-        email: identifier,
+      await axios.post(`${API_BASE}/api/auth/login/send-otp`, {
+        identifier,
       });
 
-      setView(mode === "forgot" ? "verifyForgotOtp" : "verifyOtp");
+      setView("verifyOtp");
     } catch (err) {
       alert(err.response?.data?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
 
-      // VERIFY OTP LOGIN
-  const handleVerifyOTPLogin = async () => {
+    //   LOGIN OTP VERIFY
+    //  POST /api/auth/login/verify-otp
+  const verifyLoginOtp = async () => {
+    setActiveAction("verifyLoginOtp");
     setLoading(true);
+
     try {
-      const res = await axios.post(`${API_BASE}/api/users/login`, {
-        email: identifier,
-        otp,
-      });
+      const res = await axios.post(
+        `${API_BASE}/api/auth/login/verify-otp`,
+        { identifier, otp }
+      );
 
       handleAuthSuccess(res);
     } catch (err) {
       alert(err.response?.data?.message || "Invalid OTP");
     } finally {
       setLoading(false);
+      setActiveAction(null);
+    }
+  };
+
+    //   FORGOT PASSWORD
+    //  POST /api/auth/password/forgot
+  const forgotPassword = async () => {
+    setActiveAction("forgotPassword");
+    setLoading(true);
+
+    try {
+      await axios.post(`${API_BASE}/api/auth/password/forgot`, {
+        identifier,
+      });
+
+      setView("verifyForgotOtp");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed");
+    } finally {
+      setLoading(false);
+      setActiveAction(null);
+    }
+  };
+
+    //   VERIFY FORGOT OTP
+    //  POST /api/auth/password/verify-otp
+  const verifyForgotOtp = async () => {
+    setActiveAction("verifyForgotOtp");
+    setLoading(true);
+
+    try {
+      await axios.post(
+        `${API_BASE}/api/auth/password/verify-otp`,
+        { identifier, otp }
+      );
+
+      setView("reset");
+    } catch (err) {
+      alert(err.response?.data?.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+      setActiveAction(null);
     }
   };
 
     //  RESET PASSWORD
-  const handleResetPassword = async () => {
+    //  POST /api/auth/password/reset
+  const resetPassword = async () => {
     if (password !== confirm) {
       return alert("Passwords do not match");
     }
 
+    setActiveAction("resetPassword");
     setLoading(true);
 
     try {
       const res = await axios.post(
-        `${API_BASE}/api/users/reset-password`,
-        {
-          email: identifier,
-          otp,
-          password,
-        }
+        `${API_BASE}/api/auth/password/reset`,
+        { identifier, otp, password }
       );
-
-      alert("Password changed successfully ✅");
 
       handleAuthSuccess(res);
     } catch (err) {
       alert(err.response?.data?.message || "Reset failed");
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
+
+    //  GOOGLE LOGIN
+    //  POST /api/auth/google
+  // const googleLogin = () => {
+  //   window.location.href = `${API_BASE}/api/users/login/google`;
+  // };
 
   return (
     <AuthModal isOpen={isOpen} onClose={onClose}>
       <div className="space-y-5">
         <h2 className="text-2xl font-bold">Login</h2>
 
+        {/* STEP   */}
         {step === 1 && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (!identifier.trim()) return;
               setStep(2);
             }}
             className="space-y-4"
@@ -219,25 +269,32 @@ export default function LoginModal({ isOpen, onClose }) {
               onChange={(e) => setIdentifier(e.target.value)}
             />
 
-            <AuthButton type="submit">Continue</AuthButton>
+            <AuthButton type="submit">
+              Continue
+            </AuthButton>
 
             <AuthDivider />
-            <GoogleLoginButton />
+
+            <AuthButton
+              variant="outline"
+              onClick={googleAuth}
+            >
+              Continue with Google
+            </AuthButton>
           </form>
         )}
 
+        {/* STEP 2 PASSWORD */}
         {step === 2 && view === "password" && (
           <>
+            <p className="text-sm text-gray-600">
+              {identifier}
+            </p>
+
             <form
               onSubmit={handlePasswordLogin}
               className="space-y-4"
             >
-              <AuthInput
-                placeholder="Email"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-              />
-
               <AuthInput
                 type="password"
                 placeholder="Password"
@@ -245,14 +302,20 @@ export default function LoginModal({ isOpen, onClose }) {
                 onChange={(e) => setPassword(e.target.value)}
               />
 
-              <AuthButton type="submit" loading={loading}>
+              <AuthButton
+                type="submit"
+                loading={
+                  loading &&
+                  activeAction === "passwordLogin"
+                }
+              >
                 Login
               </AuthButton>
             </form>
 
             <div className="text-right">
               <button
-                onClick={() => sendOTP("forgot")}
+                onClick={forgotPassword}
                 className="text-sm text-pink-600"
               >
                 Forgot Password?
@@ -263,14 +326,18 @@ export default function LoginModal({ isOpen, onClose }) {
 
             <AuthButton
               variant="outline"
-              onClick={() => sendOTP("login")}
+              onClick={sendLoginOtp}
+              loading={
+                loading &&
+                activeAction === "sendLoginOtp"
+              }
             >
               Login via OTP
             </AuthButton>
           </>
         )}
 
-        {/* VERIFY OTP LOGIN */}
+        {/* LOGIN OTP VERIFY */}
         {view === "verifyOtp" && (
           <>
             <AuthInput
@@ -280,24 +347,18 @@ export default function LoginModal({ isOpen, onClose }) {
             />
 
             <AuthButton
-              onClick={handleVerifyOTPLogin}
-              loading={loading}
+              onClick={verifyLoginOtp}
+              loading={
+                loading &&
+                activeAction === "verifyLoginOtp"
+              }
             >
               Verify OTP
-            </AuthButton>
-
-            <AuthDivider />
-
-            <AuthButton
-              variant="outline"
-              onClick={() => setView("password")}
-            >
-              Login via Password
             </AuthButton>
           </>
         )}
 
-        {/* VERIFY FORGOT OTP */}
+        {/* FORGOT OTP VERIFY */}
         {view === "verifyForgotOtp" && (
           <>
             <AuthInput
@@ -307,7 +368,11 @@ export default function LoginModal({ isOpen, onClose }) {
             />
 
             <AuthButton
-              onClick={() => setView("reset")}
+              onClick={verifyForgotOtp}
+              loading={
+                loading &&
+                activeAction === "verifyForgotOtp"
+              }
             >
               Verify OTP
             </AuthButton>
@@ -331,14 +396,27 @@ export default function LoginModal({ isOpen, onClose }) {
             />
 
             <AuthButton
-              onClick={handleResetPassword}
-              loading={loading}
+              onClick={resetPassword}
+              loading={
+                loading &&
+                activeAction === "resetPassword"
+              }
             >
               Change Password
             </AuthButton>
           </>
         )}
       </div>
+      <p className="mt-5 text-sm text-gray-600">
+        New user?{" "}
+        <span
+          onClick={openRegister}
+          className="text-pink-600 font-semibold cursor-pointer hover:underline"
+        >
+          Register
+        </span>
+      </p>
+
     </AuthModal>
   );
 }
