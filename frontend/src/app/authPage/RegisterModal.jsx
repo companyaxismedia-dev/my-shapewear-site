@@ -62,7 +62,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     setError("");
 
     try {
-      const res = await axios.post(`${API_BASE}/api/users/register`, {
+      const res = await axios.post(`${API_BASE}/api/auth/register`, {
         name: formData.name.trim(),
         email: formData.email.toLowerCase().trim(),
         phone: formData.phone.trim(),

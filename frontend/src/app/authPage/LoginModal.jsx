@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
 
-  //  API BASE (Production Ready)
 const API_BASE =
   typeof window !== "undefined" &&
   (window.location.hostname === "localhost" ||
@@ -13,7 +13,7 @@ const API_BASE =
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
-  //  REUSABLE INPUT
+/* ================= REUSABLE INPUT ================= */
 export function AuthInput({
   type = "text",
   placeholder,
@@ -32,7 +32,7 @@ export function AuthInput({
   );
 }
 
-  //  REUSABLE BUTTON
+/* ================= REUSABLE BUTTON ================= */
 export function AuthButton({
   children,
   type = "button",
@@ -60,8 +60,8 @@ export function AuthButton({
   );
 }
 
-  //  REUSABLE DIVIDER
-  export function AuthDivider() {
+/* ================= DIVIDER ================= */
+export function AuthDivider() {
   return (
     <div className="flex items-center gap-3 my-4">
       <div className="flex-1 h-px bg-gray-300"></div>
@@ -71,19 +71,37 @@ export function AuthButton({
   );
 }
 
-  //  GOOGLE LOGIN
-export function GoogleLoginButton() {
+/* ================= GOOGLE LOGIN BUTTON ================= */
+export function GoogleLoginButton({ onSuccess }) {
   return (
-    <button
-      onClick={() => (window.location.href = `${API_BASE}/api/auth/google`)}
-      className="w-full border border-gray-300 py-3 rounded-lg hover:bg-gray-100 transition font-medium"
-    >
-      Continue with Google
-    </button>
+    <div className="w-full">
+      <GoogleLogin
+        onSuccess={async (credentialResponse) => {
+          try {
+            const res = await axios.post(
+              `${API_BASE}/api/users/login/google`,
+              {
+                credential: credentialResponse.credential,
+              }
+            );
+
+            onSuccess(res);
+          } catch (error) {
+            alert(
+              error.response?.data?.message ||
+                "Google login failed"
+            );
+          }
+        }}
+        onError={() => {
+          alert("Google Login Failed");
+        }}
+      />
+    </div>
   );
 }
 
-  //  MAIN LOGIN MODAL
+/* ================= MAIN LOGIN MODAL ================= */
 export default function LoginModal({ isOpen, onClose }) {
   const { login } = useAuth();
 
@@ -96,15 +114,16 @@ export default function LoginModal({ isOpen, onClose }) {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-      // COMMON LOGIN HANDLER (FIXED)
+  /* ===== COMMON SUCCESS HANDLER ===== */
   const handleAuthSuccess = (res) => {
     const token = res.data.token;
-    const userData =
-      res.data.user ||
-      {
-        name: res.data.name || "User",
-        email: res.data.email || identifier,
-      };
+
+    const userData = {
+      _id: res.data._id,
+      name: res.data.name,
+      email: res.data.email,
+      role: res.data.role,
+    };
 
     localStorage.setItem(
       "userInfo",
@@ -120,16 +139,19 @@ export default function LoginModal({ isOpen, onClose }) {
     onClose();
   };
 
-    //  PASSWORD LOGIN
+  /* ===== PASSWORD LOGIN ===== */
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API_BASE}/api/users/login`, {
-        email: identifier,
-        password,
-      });
+      const res = await axios.post(
+        `${API_BASE}/api/auth/login`,
+        {
+          email: identifier,
+          password,
+        }
+      );
 
       handleAuthSuccess(res);
     } catch (err) {
@@ -139,7 +161,7 @@ export default function LoginModal({ isOpen, onClose }) {
     }
   };
 
-    //  SEND OTP
+  /* ===== SEND OTP ===== */
   const sendOTP = async (mode = "login") => {
     setLoading(true);
     try {
@@ -155,7 +177,7 @@ export default function LoginModal({ isOpen, onClose }) {
     }
   };
 
-      // VERIFY OTP LOGIN
+  /* ===== VERIFY OTP LOGIN ===== */
   const handleVerifyOTPLogin = async () => {
     setLoading(true);
     try {
@@ -172,7 +194,7 @@ export default function LoginModal({ isOpen, onClose }) {
     }
   };
 
-    //  RESET PASSWORD
+  /* ===== RESET PASSWORD ===== */
   const handleResetPassword = async () => {
     if (password !== confirm) {
       return alert("Passwords do not match");
@@ -181,18 +203,17 @@ export default function LoginModal({ isOpen, onClose }) {
     setLoading(true);
 
     try {
-      const res = await axios.post(
+      await axios.post(
         `${API_BASE}/api/users/reset-password`,
         {
           email: identifier,
           otp,
-          password,
+          newPassword: password,
         }
       );
 
       alert("Password changed successfully ✅");
-
-      handleAuthSuccess(res);
+      setView("password");
     } catch (err) {
       alert(err.response?.data?.message || "Reset failed");
     } finally {
@@ -222,7 +243,10 @@ export default function LoginModal({ isOpen, onClose }) {
             <AuthButton type="submit">Continue</AuthButton>
 
             <AuthDivider />
-            <GoogleLoginButton />
+
+            <GoogleLoginButton
+              onSuccess={handleAuthSuccess}
+            />
           </form>
         )}
 
@@ -270,7 +294,6 @@ export default function LoginModal({ isOpen, onClose }) {
           </>
         )}
 
-        {/* VERIFY OTP LOGIN */}
         {view === "verifyOtp" && (
           <>
             <AuthInput
@@ -285,19 +308,9 @@ export default function LoginModal({ isOpen, onClose }) {
             >
               Verify OTP
             </AuthButton>
-
-            <AuthDivider />
-
-            <AuthButton
-              variant="outline"
-              onClick={() => setView("password")}
-            >
-              Login via Password
-            </AuthButton>
           </>
         )}
 
-        {/* VERIFY FORGOT OTP */}
         {view === "verifyForgotOtp" && (
           <>
             <AuthInput
@@ -314,7 +327,6 @@ export default function LoginModal({ isOpen, onClose }) {
           </>
         )}
 
-        {/* RESET PASSWORD */}
         {view === "reset" && (
           <>
             <AuthInput

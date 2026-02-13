@@ -5,57 +5,68 @@ const dotenv = require("dotenv");
 const path = require("path");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const compression = require("compression");
 
 dotenv.config();
 
 const app = express();
 
 /* ======================================================
-   🔐 SECURITY MIDDLEWARE (PRODUCTION LEVEL)
+   🔐 SECURITY MIDDLEWARE
 ====================================================== */
 
-// ⚠️ IMPORTANT (Railway / Render / Vercel pe required)
 app.set("trust proxy", 1);
 
-// 1️⃣ Helmet (Security headers)
+// Helmet
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 
-// 2️⃣ Global Rate Limit (Basic protection)
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
-  max: 500,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(globalLimiter);
+// Compression
+app.use(compression());
 
-// 3️⃣ OTP Rate Limit (Brute force protection)
-const otpLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Bahut zyada OTP attempts. 5 minute baad try karein.",
-  },
-});
+/* ======================================================
+   ✅ RATE LIMIT (SMART FIX)
+   Development me disable
+   Production me enable
+====================================================== */
 
-// 4️⃣ Login Rate Limit
-const loginLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Zyada login attempts. Thodi der baad try karein.",
-  },
-});
+if (process.env.NODE_ENV === "production") {
+  console.log("🔐 Production Mode → Rate Limit Enabled");
+
+  // Global limiter
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 500,
+      standardHeaders: true,
+      legacyHeaders: false,
+    })
+  );
+
+  // OTP limiter
+  const otpLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: 5,
+  });
+
+  // Login limiter
+  const loginLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 10,
+  });
+
+  app.use("/api/otp", otpLimiter, require("./routes/otpRoutes"));
+  app.use("/api/auth", loginLimiter, require("./routes/authRoutes"));
+
+} else {
+  console.log("🛠 Development Mode → Rate Limit Disabled");
+
+  app.use("/api/otp", require("./routes/otpRoutes"));
+  app.use("/api/auth", require("./routes/authRoutes"));
+}
 
 /* ======================================================
    📦 NORMAL MIDDLEWARE
@@ -68,20 +79,20 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
-      "http://localhost:5000",
       "https://my-shapewear-site.vercel.app",
       "https://gloviaglamour.com",
       "https://www.gloviaglamour.com",
       /\.vercel\.app$/,
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
 
 // Logger
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(
+    `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
+  );
   next();
 });
 
@@ -98,44 +109,27 @@ mongoose
   });
 
 /* ======================================================
-   🛣 ROUTES
+   🛣 OTHER ROUTES
 ====================================================== */
 
 app.get("/", (req, res) => {
   res.status(200).send("🚀 Glovia Glamour API Running");
 });
 
-/* ================= OTP ROUTES ================= */
-app.use("/api/otp", otpLimiter, require("./routes/otpRoutes"));
-
-/* ================= AUTH ROUTES ================= */
-app.use("/api/users", loginLimiter, require("./routes/authRoutes"));
-
-/* ================= PRODUCT ROUTES ================= */
 app.use("/api/products", require("./routes/productRoutes"));
-
-/* ================= ORDER ROUTES ================= */
 app.use("/api/orders", require("./routes/orderRoutes"));
-
-/* ================= CART ROUTES ================= */
 app.use("/api/cart", require("./routes/cartRoutes"));
-
-/* ================= WISHLIST ROUTES ================= */
 app.use("/api/wishlist", require("./routes/wishlistRoutes"));
-
-/* ================= ADMIN ORDER ROUTES ================= */
 app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
-
-/* ================= ADDRESS ROUTES ================= */
 app.use("/api/users", require("./routes/userAddressRoutes"));
 
-/* ================= STATIC ================= */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* ======================================================
    ❌ ERROR HANDLING
 ====================================================== */
 
+// 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -143,11 +137,13 @@ app.use((req, res) => {
   });
 });
 
+// Global Error Handler
 app.use((err, req, res, next) => {
-  console.error("🔥 SERVER ERROR:", err.stack);
-  res.status(500).json({
+  console.error("🔥 SERVER ERROR:", err);
+
+  res.status(err.status || 500).json({
     success: false,
-    message: "Internal Server Error",
+    message: err.message || "Internal Server Error",
   });
 });
 
@@ -163,7 +159,8 @@ const server = app.listen(PORT, () => {
   console.log("=================================");
 });
 
+// Unhandled Rejection
 process.on("unhandledRejection", (err) => {
-  console.error("UNHANDLED ERROR:", err.message);
+  console.error("UNHANDLED ERROR:", err);
   server.close(() => process.exit(1));
 });
