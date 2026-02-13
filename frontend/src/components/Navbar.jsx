@@ -117,7 +117,7 @@ export default function Navbar() {
             {/* Logo Section */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[100]">
               <LinkNav href="/" className=" items-center pointer-events-auto">
-                <div className="relative w-30 h-44 md:w-40 md:h-40 lg:w-50 lg:h-52 p-12 m-12 mb-8 sm:mb-11 md:mb-8 lg:mb-12">
+                <div className="relative w-39 h-44 md:w-40 md:h-40 lg:w-50 lg:h-52 p-12 m-12 mb-8 sm:mb-11 md:mb-8 lg:mb-12">
                   <Image
                     src="/hero-image/glovialogo.png"
                     alt="Glovia Logo"
@@ -256,9 +256,9 @@ export default function Navbar() {
               { name: "Accessories ", path: "/accessories " },
               {
                 name: (
-                  <span className="inline-flex items-center font-semibold">
+                  <span className="inline-flex text-pink-600 items-center font-extrabold">
                     <span>Care</span>
-                    <span className="text-pink-600 ml-0 text-xl mb-0.5">+</span>
+                    <span className=" ml-0 text-xl mb-0.5">+</span>
                   </span>
                 ), path: "/care"
               },

@@ -16,6 +16,7 @@ export default function AuthModal({ isOpen, onClose, children }) {
   );
 }
 
+
 const styles = {
   overlay: {
     position: "fixed",

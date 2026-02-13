@@ -1,10 +1,10 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import AuthModal from "./AuthModal";
 import { useAuth } from "@/context/AuthContext";
+import { useGoogleAuth } from "@/hooks/useGoogleAuth";
 
 export default function RegisterModal({ isOpen, onClose, openLogin }) {
   const [formData, setFormData] = useState({
@@ -13,12 +13,24 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     phone: "",
     password: "",
     otp: "",
-  }); 
+  });
+
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { login } = useAuth()
+  const { login } = useAuth();
+  const {googleAuth} = useGoogleAuth();
+
+  const resetForm = () => {
+    setStep(1);
+    setError("");
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!isOpen) resetForm();
+  }, [isOpen]);
 
   const API_BASE =
     typeof window !== "undefined" &&
@@ -43,9 +55,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
         email: formData.email.toLowerCase().trim(),
       });
 
-      if (res.data) {
-        setStep(2);
-      }
+      if (res.data) setStep(2);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -95,70 +105,99 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
 
   return (
     <AuthModal isOpen={isOpen} onClose={onClose}>
+      <h2 className="text-[28px] text-[#333] mb-2 font-extrabold">
+        Create Account
+      </h2>
 
-      <h2 style={styles.heading}>Create Account</h2>
-      <p style={styles.subText}>Verified Signup for Glovia Glamour</p>
+      <p className="text-[14px] text-[#777] mb-[20px]">
+        Verified Signup for Glovia Glamour
+      </p>
 
-      {error && <div style={styles.errorBox}>{error}</div>}
+      {error && (
+        <div className="text-[#c62828] bg-[#ffebee] p-3 rounded-[8px] text-[13px] mb-5 border border-[#ffcdd2]">
+          {error}
+        </div>
+      )}
 
       {step === 1 ? (
         <form onSubmit={handleSendOTP}>
           <input
             type="text"
             placeholder="Full Name"
-            style={styles.input}
+            className="w-full p-[8px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
             value={formData.name}
             onChange={(e) =>
               setFormData({ ...formData, name: e.target.value })
             }
             required
           />
+
           <input
             type="email"
             placeholder="Email Address"
-            style={styles.input}
+            className="w-full p-[9px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
             value={formData.email}
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
             required
           />
+
           <input
             type="text"
             placeholder="Phone Number"
-            style={styles.input}
+            className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
             value={formData.phone}
             onChange={(e) =>
               setFormData({ ...formData, phone: e.target.value })
             }
             required
           />
+
           <input
             type="password"
             placeholder="Set Password"
-            style={styles.input}
+            className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
             value={formData.password}
             onChange={(e) =>
               setFormData({ ...formData, password: e.target.value })
             }
             required
           />
+          <div className="flex justify-between items-center mt-[10px] gap-3">
 
-          <button type="submit" style={styles.button} disabled={loading}>
-            {loading ? "SENDING CODE..." : "SEND VERIFICATION CODE"}
-          </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
+            >
+              {/* {loading ? "SENDING CODE..." : "SEND VERIFICATION CODE"} */}
+              {loading ? "SENDING CODE..." : "SIGN UP"}
+            </button>
+
+            <button
+              type="button"
+              className="w-1/2 p-[10px] border border-gray-300 rounded-[8px] text-[13px] cursor-pointer font-semibold hover:bg-gray-50 transition"
+              onClick={googleAuth}
+            >
+              Sign in via Google
+            </button>
+
+          </div>
+
         </form>
       ) : (
         <form onSubmit={handleRegister}>
-          <div style={styles.infoBox}>
-            Verification code sent to:<br />
+          <div className="text-[13px] text-[#555] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px] border border-[#d0e3ff]">
+            {/* Verification code sent to: */}
+            <br />
             <b>{formData.email}</b>
           </div>
 
           <input
             type="text"
             placeholder="Enter 6-Digit OTP"
-            style={styles.input}
+            className="w-full p-[14px] my-[10px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
             value={formData.otp}
             onChange={(e) =>
               setFormData({ ...formData, otp: e.target.value })
@@ -167,7 +206,11 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
             maxLength={6}
           />
 
-          <button type="submit" style={styles.button} disabled={loading}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full p-[15px] bg-[#E91E63] text-white border-none rounded-[8px] font-bold cursor-pointer mt-[15px] text-[15px] disabled:opacity-70"
+          >
             {loading ? "VERIFYING..." : "COMPLETE REGISTRATION"}
           </button>
 
@@ -176,88 +219,24 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
               setStep(1);
               setError("");
             }}
-            style={styles.backLink}
+            className="cursor-pointer text-[13px] mt-[20px] text-[#666] underline"
           >
             ← Edit details
           </p>
         </form>
       )}
 
-      <p style={styles.footerLink}>
+      <p className="mt-[25px] text-[14px] text-[#888]">
         Already have an account?{" "}
         <span
           onClick={openLogin}
-          style={{ color: "#E91E63", fontWeight: "bold", cursor: "pointer" }}
+          className="text-[#E91E63] font-bold cursor-pointer"
         >
           Login
         </span>
       </p>
     </AuthModal>
   );
-}
 
-const styles = {
-  heading: {
-    fontSize: "28px",
-    color: "#333",
-    marginBottom: "8px",
-    fontWeight: "800",
-  },
-  subText: {
-    fontSize: "14px",
-    color: "#777",
-    marginBottom: "25px",
-  },
-  input: {
-    width: "100%",
-    padding: "14px",
-    margin: "10px 0",
-    border: "1px solid #eee",
-    borderRadius: "8px",
-    fontSize: "14px",
-    outlineColor: "#E91E63",
-    backgroundColor: "#fcfcfc",
-  },
-  button: {
-    width: "100%",
-    padding: "15px",
-    backgroundColor: "#E91E63",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    marginTop: "15px",
-    fontSize: "15px",
-  },
-  errorBox: {
-    color: "#c62828",
-    backgroundColor: "#ffebee",
-    padding: "12px",
-    borderRadius: "8px",
-    fontSize: "13px",
-    marginBottom: "20px",
-    border: "1px solid #ffcdd2",
-  },
-  infoBox: {
-    fontSize: "13px",
-    color: "#555",
-    backgroundColor: "#f0f7ff",
-    padding: "12px",
-    borderRadius: "8px",
-    marginBottom: "15px",
-    border: "1px solid #d0e3ff",
-  },
-  backLink: {
-    cursor: "pointer",
-    fontSize: "13px",
-    marginTop: "20px",
-    color: "#666",
-    textDecoration: "underline",
-  },
-  footerLink: {
-    marginTop: "25px",
-    fontSize: "14px",
-    color: "#888",
-  },
-};
+
+}
