@@ -4,7 +4,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import AuthModal from "./AuthModal";
 import { useAuth } from "@/context/AuthContext";
-import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function RegisterModal({ isOpen, onClose, openLogin }) {
   const [formData, setFormData] = useState({
@@ -20,7 +20,6 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
-  const {googleAuth} = useGoogleAuth();
 
   const resetForm = () => {
     setStep(1);
@@ -32,12 +31,44 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     if (!isOpen) resetForm();
   }, [isOpen]);
 
-  const API_BASE =
-    typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1")
-      ? "http://localhost:5000"
-      : "https://my-shapewear-site.onrender.com";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
+
+  /* ================= GOOGLE SUCCESS HANDLER ================= */
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await axios.post(
+        `${API_BASE}/api/auth/google`,
+        {
+          credential: credentialResponse.credential,
+        }
+      );
+
+      const token = res.data.token;
+
+      const userData = {
+        _id: res.data._id,
+        name: res.data.name,
+        email: res.data.email,
+        role: res.data.role,
+      };
+
+      localStorage.setItem(
+        "userInfo",
+        JSON.stringify({ user: userData, token })
+      );
+
+      login(userData, token);
+
+      onClose();
+      router.push("/");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Google login failed"
+      );
+    }
+  };
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
@@ -59,7 +90,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Failed to send OTP. Check if Backend is running."
+          "Failed to send OTP. Check if Backend is running."
       );
     } finally {
       setLoading(false);
@@ -96,7 +127,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-        "Invalid OTP or Registration failed"
+          "Invalid OTP or Registration failed"
       );
     } finally {
       setLoading(false);
@@ -164,6 +195,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
             }
             required
           />
+
           <div className="flex justify-between items-center mt-[10px] gap-3">
 
             <button
@@ -171,25 +203,23 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
               disabled={loading}
               className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
             >
-              {/* {loading ? "SENDING CODE..." : "SEND VERIFICATION CODE"} */}
               {loading ? "SENDING CODE..." : "SIGN UP"}
             </button>
 
-            <button
-              type="button"
-              className="w-1/2 p-[10px] border border-gray-300 rounded-[8px] text-[13px] cursor-pointer font-semibold hover:bg-gray-50 transition"
-              onClick={googleAuth}
-            >
-              Sign in via Google
-            </button>
+            <div className="w-1/2">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => {
+                  setError("Google Login Failed");
+                }}
+              />
+            </div>
 
           </div>
-
         </form>
       ) : (
         <form onSubmit={handleRegister}>
           <div className="text-[13px] text-[#555] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px] border border-[#d0e3ff]">
-            {/* Verification code sent to: */}
             <br />
             <b>{formData.email}</b>
           </div>
@@ -237,6 +267,4 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
       </p>
     </AuthModal>
   );
-
-
 }
