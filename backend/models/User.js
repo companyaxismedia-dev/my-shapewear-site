@@ -32,11 +32,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-<<<<<<< Updated upstream
-    // Optional phone (Google login safe)
-=======
-    // ✅ OPTIONAL PHONE (Google Safe – No default null)
->>>>>>> Stashed changes
+    // ✅ OPTIONAL PHONE (Google Safe)
     phone: {
       type: String,
       unique: true,
@@ -69,11 +65,7 @@ const userSchema = new mongoose.Schema(
 );
 
 /* =================================================
-<<<<<<< Updated upstream
-   🔐 HASH PASSWORD (FIXED — NO next())
-=======
-   🔐 HASH PASSWORD (SAFE VERSION)
->>>>>>> Stashed changes
+   🔐 HASH PASSWORD
 ================================================= */
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
@@ -98,14 +90,10 @@ userSchema.methods.toJSON = function () {
   return obj;
 };
 
-<<<<<<< Updated upstream
 /* =================================================
-   🔄 INDEX DEFINITIONS
-   (Only here — not duplicated anywhere else)
+   🔄 INDEX DEFINITIONS (ONLY HERE)
 ================================================= */
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ phone: 1 }, { unique: true, sparse: true });
 
-=======
->>>>>>> Stashed changes
 module.exports = mongoose.model("User", userSchema);
