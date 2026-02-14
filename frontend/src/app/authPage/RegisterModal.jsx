@@ -168,11 +168,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <input
             type="text"
             placeholder="Full Name"
-<<<<<<< Updated upstream
-            className="w-full p-[8px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-=======
             className="w-full p-[8px] my-[7px] border rounded-[8px]"
->>>>>>> Stashed changes
             value={formData.name}
             onChange={(e) =>
               setFormData({ ...formData, name: e.target.value })
@@ -183,47 +179,29 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <input
             type="email"
             placeholder="Email Address"
-<<<<<<< Updated upstream
-            className="w-full p-[9px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-=======
             className="w-full p-[9px] my-[7px] border rounded-[8px]"
->>>>>>> Stashed changes
             value={formData.email}
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
             }
-<<<<<<< Updated upstream
             required
-=======
->>>>>>> Stashed changes
           />
 
           <input
             type="text"
             placeholder="Phone Number"
-<<<<<<< Updated upstream
             className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-=======
-            className="w-full p-[9px] my-[8px] border rounded-[8px]"
->>>>>>> Stashed changes
             value={formData.phone}
             onChange={(e) =>
               setFormData({ ...formData, phone: e.target.value })
             }
-<<<<<<< Updated upstream
             required
-=======
->>>>>>> Stashed changes
           />
 
           <input
             type="password"
             placeholder="Set Password"
-<<<<<<< Updated upstream
             className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-=======
-            className="w-full p-[9px] my-[8px] border rounded-[8px]"
->>>>>>> Stashed changes
             value={formData.password}
             onChange={(e) =>
               setFormData({ ...formData, password: e.target.value })
@@ -232,23 +210,15 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           />
 
           <div className="flex justify-between items-center mt-[10px] gap-3">
-<<<<<<< Updated upstream
 
             <button
               type="submit"
               disabled={loading}
               className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
-=======
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px]"
->>>>>>> Stashed changes
             >
               {loading ? "SENDING CODE..." : "SIGN UP"}
             </button>
 
-<<<<<<< Updated upstream
             <div className="w-1/2 p-[1px] text-white rounded-[10px] font-bold cursor-pointer text-[14px] disabled:opacity-70">
               <GoogleLogin
               text="signup"
@@ -259,41 +229,19 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
               />
             </div>
 
-=======
-            <div className="w-1/2 flex justify-end">
-              <div className="scale-[0.9] origin-right">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => {
-                    setError("Google Login Failed");
-                  }}
-                />
-              </div>
-            </div>
->>>>>>> Stashed changes
           </div>
         </form>
       ) : (
         <form onSubmit={handleRegister}>
-<<<<<<< Updated upstream
-          <div className="text-[13px] text-[#555] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px] border border-[#d0e3ff]">
-            <br />
-            <b>{formData.email}</b>
-=======
           <div className="text-[13px] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px]">
             OTP sent to{" "}
             <b>{formData.email || formData.phone}</b>
->>>>>>> Stashed changes
           </div>
 
           <input
             type="text"
             placeholder="Enter 6-Digit OTP"
-<<<<<<< Updated upstream
             className="w-full p-[14px] my-[10px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-=======
-            className="w-full p-[14px] my-[10px] border rounded-[8px]"
->>>>>>> Stashed changes
             value={formData.otp}
             onChange={(e) =>
               setFormData({ ...formData, otp: e.target.value })
@@ -305,11 +253,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <button
             type="submit"
             disabled={loading}
-<<<<<<< Updated upstream
             className="w-full p-[15px] bg-[#E91E63] text-white border-none rounded-[8px] font-bold cursor-pointer mt-[15px] text-[15px] disabled:opacity-70"
-=======
-            className="w-full p-[15px] bg-[#E91E63] text-white rounded-[8px]"
->>>>>>> Stashed changes
           >
             {loading ? "VERIFYING..." : "COMPLETE REGISTRATION"}
           </button>
@@ -319,11 +263,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
               setStep(1);
               setError("");
             }}
-<<<<<<< Updated upstream
             className="cursor-pointer text-[13px] mt-[20px] text-[#666] underline"
-=======
-            className="cursor-pointer text-[13px] mt-[20px] underline"
->>>>>>> Stashed changes
           >
             ← Edit details
           </p>

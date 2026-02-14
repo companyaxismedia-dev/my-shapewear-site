@@ -7,11 +7,6 @@ import AuthModal from "./AuthModal";
 import { GoogleLogin } from "@react-oauth/google";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-<<<<<<< Updated upstream
- 
-
-=======
->>>>>>> Stashed changes
 
 /* ================= REUSABLE INPUT ================= */
 export function AuthInput({
@@ -71,11 +66,7 @@ export function AuthDivider() {
   );
 }
 
-<<<<<<< Updated upstream
-/* ================= GOOGLE LOGIN BUTTON (UPDATED) ================= */
-=======
 /* ================= GOOGLE LOGIN BUTTON ================= */
->>>>>>> Stashed changes
 export function GoogleLoginButton({ onSuccess }) {
   return (
     <div className="w-full">
@@ -94,17 +85,11 @@ export function GoogleLoginButton({ onSuccess }) {
             );
           }
         }}
-<<<<<<< Updated upstream
-        onError={() => {
-          alert("Google Login Failed");
-        }}
-=======
         onError={() => alert("Google Login Failed")}
         width="100%"
         size="large"
         shape="rectangular"
         theme="outline"
->>>>>>> Stashed changes
       />
     </div>
   );
