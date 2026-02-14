@@ -80,7 +80,7 @@ const SearchSection = ({ onToggleMobileSearch }) => {
     </ul>
   );
 
-  return (
+  return ( 
     <div className="relative">
       {/* DESKTOP VIEW */}
       <div className="hidden md:block w-72 lg:w-60">

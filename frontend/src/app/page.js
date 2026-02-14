@@ -40,7 +40,7 @@ export default function Home() {
               <div className="h-1 w-24 bg-pink-100 mx-auto mt-3 rounded-full"></div>
             </div>
 
-            {/* Ye component saare pages ko section-wise load karega */}
+             {/* Ye component saare pages ko section-wise load karega */}
             <AutoSliceSlider />
           </div>
         </div>

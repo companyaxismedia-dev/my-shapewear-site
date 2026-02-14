@@ -206,8 +206,9 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
               {loading ? "SENDING CODE..." : "SIGN UP"}
             </button>
 
-            <div className="w-1/2">
+            <div className="w-1/2 p-[1px] text-white rounded-[10px] font-bold cursor-pointer text-[14px] disabled:opacity-70">
               <GoogleLogin
+              text="signup"
                 onSuccess={handleGoogleSuccess}
                 onError={() => {
                   setError("Google Login Failed");

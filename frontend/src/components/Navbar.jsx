@@ -117,13 +117,13 @@ export default function Navbar() {
             {/* Logo Section */}
             <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-[100] ${isSearchOpen ? 'hidden md:flex' : 'flex'}`}>
               <LinkNav href="/" className=" items-center pointer-events-auto">
-                <div className="relative w-40 h-40 md:w-40 md:h-40 lg:w-50 lg:h-52 -ml-15 mt-2.5  lg:mt-0 md:-ml-45 lg:-ml-1">
+                <div className="relative w-30 h-35 lg:w-35 lg:h-30 md:w-30 md:h-35 52 -ml-15 lg:mt-0 md:-ml-45 lg:-ml-1">
                   <Image
                     src="/hero-image/glovialogo.png"
                     alt="Glovia Logo"
                     fill
                     priority
-                    className="object-contain over duration-300 hover:scale-105 -ml-7 lg:ml-2 mt-1 lg:mt-0"
+                    className="object-contain over duration-300 hover:scale-105 -ml-7 lg:ml-2 mt-1 lg:mt-[-9]"
                   />
                 </div>
               </LinkNav>
