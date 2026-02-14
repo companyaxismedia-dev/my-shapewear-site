@@ -16,12 +16,15 @@ import {
   Smartphone,
   ContactIcon,
   SearchIcon,
+  LogOut,
 } from "lucide-react";
 import SearchSection from "./SearchSection";
 import LoginModal from "@/app/authPage/LoginModal";
 import RegisterModal from "@/app/authPage/RegisterModal";
 import UserMenu from "@/app/AccountPage/UserMenu";
 import WishlistButton from "@/app/wishlist/WishlistButton";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,6 +33,7 @@ export default function Navbar() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const {user, logout} = useAuth();
 
 
   const { cart } = useCart();
@@ -261,7 +265,11 @@ export default function Navbar() {
               },
 
             ].map((link) => (
-              <LinkNav key={link.name} href={link.path} className="hover:text-pink-400 transition-colors">{link.name}</LinkNav>
+              <Link key={link.name} href={link.path} className="hover:text-pink-400 transition-colors">
+                <span className="font-">
+                  {link.name}
+                </span>
+              </Link>
             ))}
 
             <LinkNav href="/exclusive" className="bg-pink-600 px-3 py-1 rounded-sm whitespace-nowrap">Sales</LinkNav>
@@ -305,7 +313,13 @@ export default function Navbar() {
               <div className="flex items-center gap-3">
                 <User size={20} fill="white" />
                 <div className="flex items-center gap-1 font-medium text-[15px]">
-                  <button
+                  {user?(
+                    <span>
+                      Hi, {user.name}
+                    </span>
+                  ):(
+                    <>
+                    <button
                     onClick={() => {
                       setMenuOpen(false)
                       setLoginOpen(true)
@@ -321,7 +335,8 @@ export default function Navbar() {
                     }}
                     className="hover:underline">
                     SignUp
-                  </button>
+                  </button></>
+                  )}
                 </div>
               </div>
               <X
@@ -372,6 +387,13 @@ export default function Navbar() {
               <LinkNav href="/help" className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
                 <HelpCircle size={18} /> Help
               </LinkNav>
+              <button onClick= {()=>{
+                logout();
+                 setMenuOpen(false)
+              }} 
+                className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" >
+                <LogOut size={18} /> Logout
+              </button>
 
             </div>
           </div>
