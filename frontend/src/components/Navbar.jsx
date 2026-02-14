@@ -101,7 +101,7 @@ export default function Navbar() {
               </LinkNav>
               <LinkNav href="/stores" className="flex items-center gap-1 hover:text-pink-600">
                 <Store size={12} /> Our Stores
-              </LinkNav>
+              </LinkNav> 
             </div>
           </div>
         </div>
