@@ -4,89 +4,78 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
+const compression = require("compression");
 
 dotenv.config();
 
 const app = express();
 
 /* ======================================================
-   🔐 SECURITY MIDDLEWARE (PRODUCTION LEVEL)
+   🔐 SECURITY MIDDLEWARE
 ====================================================== */
 
-// ⚠️ IMPORTANT (Railway / Render / Vercel pe required)
 app.set("trust proxy", 1);
 
-// 1️⃣ Helmet (Security headers)
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
 
-// 2️⃣ Global Rate Limit (Basic protection)
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
-  max: 500,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(globalLimiter);
-
-// 3️⃣ OTP Rate Limit (Brute force protection)
-const otpLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Bahut zyada OTP attempts. 5 minute baad try karein.",
-  },
-});
-
-// 4️⃣ Login Rate Limit
-const loginLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: "Zyada login attempts. Thodi der baad try karein.",
-  },
-});
+app.use(compression());
 
 /* ======================================================
-   📦 NORMAL MIDDLEWARE
+   📦 BODY PARSER
 ====================================================== */
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+/* ======================================================
+   🌍 CORS CONFIGURATION (IMPORTANT FIX)
+====================================================== */
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://my-shapewear-site.vercel.app",
+  "https://www.gloviaglamour.com",
+  "https://gloviaglamour.com",
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5000",
-      "https://my-shapewear-site.vercel.app",
-      "https://gloviaglamour.com",
-      "https://www.gloviaglamour.com",
-      /\.vercel\.app$/,
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: function (origin, callback) {
+      // allow server-to-server or Postman
+      if (!origin) return callback(null, true);
+
+      // allow vercel preview deployments automatically
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.includes("vercel.app")
+      ) {
+        return callback(null, true);
+      }
+
+      console.log("❌ CORS Blocked Origin:", origin);
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
 
-// Logger
+/* ======================================================
+   📝 LOGGER
+====================================================== */
+
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(
+    `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
+  );
   next();
 });
 
 /* ======================================================
-   🗄 DATABASE
+   🗄 DATABASE CONNECTION
 ====================================================== */
 
 mongoose
@@ -105,35 +94,22 @@ app.get("/", (req, res) => {
   res.status(200).send("🚀 Glovia Glamour API Running");
 });
 
-/* ================= OTP ROUTES ================= */
-app.use("/api/otp", otpLimiter, require("./routes/otpRoutes"));
+// Auth + OTP
+app.use("/api/otp", require("./routes/otpRoutes"));
+app.use("/api/auth", require("./routes/authRoutes"));
 
-/* ================= AUTH ROUTES ================= */
-app.use("/api/users", loginLimiter, require("./routes/authRoutes"));
-
-/* ================= PRODUCT ROUTES ================= */
+// Other APIs
 app.use("/api/products", require("./routes/productRoutes"));
-
-/* ================= ORDER ROUTES ================= */
 app.use("/api/orders", require("./routes/orderRoutes"));
-
-/* ================= CART ROUTES ================= */
 app.use("/api/cart", require("./routes/cartRoutes"));
-
-/* ================= WISHLIST ROUTES ================= */
 app.use("/api/wishlist", require("./routes/wishlistRoutes"));
-
-/* ================= ADMIN ORDER ROUTES ================= */
 app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
-
-/* ================= ADDRESS ROUTES ================= */
 app.use("/api/users", require("./routes/userAddressRoutes"));
 
-/* ================= STATIC ================= */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* ======================================================
-   ❌ ERROR HANDLING
+   ❌ 404 HANDLER
 ====================================================== */
 
 app.use((req, res) => {
@@ -143,11 +119,16 @@ app.use((req, res) => {
   });
 });
 
+/* ======================================================
+   🔥 GLOBAL ERROR HANDLER
+====================================================== */
+
 app.use((err, req, res, next) => {
-  console.error("🔥 SERVER ERROR:", err.stack);
-  res.status(500).json({
+  console.error("🔥 SERVER ERROR:", err.message);
+
+  res.status(err.status || 500).json({
     success: false,
-    message: "Internal Server Error",
+    message: err.message || "Internal Server Error",
   });
 });
 
@@ -162,6 +143,10 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log("=================================");
 });
+
+/* ======================================================
+   💥 HANDLE UNHANDLED PROMISES
+====================================================== */
 
 process.on("unhandledRejection", (err) => {
   console.error("UNHANDLED ERROR:", err.message);

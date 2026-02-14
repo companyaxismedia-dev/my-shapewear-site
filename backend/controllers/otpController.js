@@ -1,8 +1,20 @@
 require("dotenv").config();
 const { Resend } = require("resend");
+const jwt = require("jsonwebtoken");
 const Otp = require("../models/Otp");
+const User = require("../models/User");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+/* =====================================================
+   🔐 RESEND INITIALIZATION (Safe Mode)
+===================================================== */
+
+let resend;
+
+if (!process.env.RESEND_API_KEY) {
+  console.error("❌ RESEND_API_KEY missing in .env");
+} else {
+  resend = new Resend(process.env.RESEND_API_KEY);
+}
 
 /* =====================================================
    POST /api/otp/send   (EMAIL + MOBILE SUPPORT)
@@ -38,6 +50,13 @@ exports.sendOTP = async (req, res) => {
         { upsert: true, new: true }
       );
 
+      if (!resend) {
+        return res.status(500).json({
+          success: false,
+          message: "Email service not configured",
+        });
+      }
+
       await resend.emails.send({
         from: process.env.OTP_FROM_EMAIL,
         to: [userEmail],
@@ -70,13 +89,14 @@ exports.sendOTP = async (req, res) => {
         { upsert: true, new: true }
       );
 
-      // Future SMS integration (Twilio etc)
+      // ⚠️ Yaha future me SMS integration laga sakte ho
     }
 
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
     });
+
   } catch (error) {
     console.error("❌ OTP SEND ERROR:", error);
     return res.status(500).json({
@@ -87,8 +107,7 @@ exports.sendOTP = async (req, res) => {
 };
 
 /* =====================================================
-   POST /api/otp/verify  (EMAIL + MOBILE SUPPORT)
-   WITH LOCK SYSTEM
+   VERIFY OTP FOR LOGIN / REGISTER
 ===================================================== */
 exports.verifyOTP = async (req, res) => {
   try {
@@ -119,15 +138,6 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    /* ================= LOCK CHECK ================= */
-    if (record.isLocked()) {
-      return res.status(403).json({
-        success: false,
-        message: "Zyada galat attempts. 10 minute baad try karein.",
-      });
-    }
-
-    /* ================= EXPIRY CHECK ================= */
     if (Date.now() > record.expiresAt) {
       await record.deleteOne();
       return res.status(400).json({
@@ -136,28 +146,87 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    /* ================= MATCH OTP ================= */
     if (String(record.otp) !== String(otp)) {
-      await record.incrementAttempts();
       return res.status(400).json({
         success: false,
         message: "Galat OTP",
       });
     }
 
-    /* ================= SUCCESS ================= */
-    await record.resetAttempts();
     await record.deleteOne();
 
     return res.status(200).json({
       success: true,
       message: "OTP verified successfully",
     });
+
   } catch (error) {
     console.error("❌ OTP VERIFY ERROR:", error);
     return res.status(500).json({
       success: false,
       message: "OTP verify failed",
+    });
+  }
+};
+
+/* =====================================================
+   VERIFY OTP FOR PASSWORD RESET
+   RETURNS resetToken
+===================================================== */
+exports.verifyResetOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email aur OTP zaroori hain",
+      });
+    }
+
+    const userEmail = email.toLowerCase().trim();
+    const record = await Otp.findOne({ email: userEmail });
+
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not found",
+      });
+    }
+
+    if (Date.now() > record.expiresAt) {
+      await record.deleteOne();
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    if (String(record.otp) !== String(otp)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    const resetToken = jwt.sign(
+      { email: userEmail },
+      process.env.JWT_SECRET,
+      { expiresIn: "10m" }
+    );
+
+    await record.deleteOne();
+
+    return res.status(200).json({
+      success: true,
+      resetToken,
+    });
+
+  } catch (error) {
+    console.error("❌ RESET OTP VERIFY ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Reset OTP verification failed",
     });
   }
 };
