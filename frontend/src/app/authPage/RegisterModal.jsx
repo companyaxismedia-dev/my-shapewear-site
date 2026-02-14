@@ -151,133 +151,112 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
       )}
 
       {step === 1 ? (
-        <form onSubmit={handleSendOTP}>
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="w-full p-[8px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-            value={formData.name}
-            onChange={(e) =>
-              setFormData({ ...formData, name: e.target.value })
-            }
-            required
-          />
-
-          <input
-            type="email"
-            placeholder="Email Address"
-            className="w-full p-[9px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-            required
-          />
-
-          <input
-            type="text"
-            placeholder="Phone Number"
-            className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-            value={formData.phone}
-            onChange={(e) =>
-              setFormData({ ...formData, phone: e.target.value })
-            }
-            required
-          />
-
-          <input
-            type="password"
-            placeholder="Set Password"
-            className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-            value={formData.password}
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
-            required
-          />
-
-          <div className="flex justify-between items-center mt-[10px] gap-3">
-
-            <button
-<<<<<<< HEAD
-              type="submit"
-              disabled={loading}
-              className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
-            >
-              {loading ? "SENDING CODE..." : "SIGN UP"}
-            </button>
-
-            <div className="w-1/2">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => {
-                  setError("Google Login Failed");
-                }}
-              />
-            </div>
-=======
-  type="submit"
-  disabled={loading}
-  className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
->
-  {loading ? "SENDING CODE..." : "SIGN UP"}
-</button>
-
-<div className="w-1/2 flex justify-end">
-  <div className="scale-[0.9] origin-right">
-    <GoogleLogin
-      onSuccess={handleGoogleSuccess}
-      onError={() => {
-        setError("Google Login Failed");
-      }}
-      size="medium"
-      theme="outline"
-      shape="rectangular"
+  <form onSubmit={handleSendOTP}>
+    <input
+      type="text"
+      placeholder="Full Name"
+      className="w-full p-[8px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
+      value={formData.name}
+      onChange={(e) =>
+        setFormData({ ...formData, name: e.target.value })
+      }
+      required
     />
-  </div>
-</div>
->>>>>>> main
 
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={handleRegister}>
-          <div className="text-[13px] text-[#555] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px] border border-[#d0e3ff]">
-            <br />
-            <b>{formData.email}</b>
-          </div>
+    <input
+      type="email"
+      placeholder="Email Address"
+      className="w-full p-[9px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
+      value={formData.email}
+      onChange={(e) =>
+        setFormData({ ...formData, email: e.target.value })
+      }
+      required
+    />
 
-          <input
-            type="text"
-            placeholder="Enter 6-Digit OTP"
-            className="w-full p-[14px] my-[10px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-            value={formData.otp}
-            onChange={(e) =>
-              setFormData({ ...formData, otp: e.target.value })
-            }
-            required
-            maxLength={6}
-          />
+    <input
+      type="text"
+      placeholder="Phone Number"
+      className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
+      value={formData.phone}
+      onChange={(e) =>
+        setFormData({ ...formData, phone: e.target.value })
+      }
+      required
+    />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full p-[15px] bg-[#E91E63] text-white border-none rounded-[8px] font-bold cursor-pointer mt-[15px] text-[15px] disabled:opacity-70"
-          >
-            {loading ? "VERIFYING..." : "COMPLETE REGISTRATION"}
-          </button>
+    <input
+      type="password"
+      placeholder="Set Password"
+      className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
+      value={formData.password}
+      onChange={(e) =>
+        setFormData({ ...formData, password: e.target.value })
+      }
+      required
+    />
 
-          <p
-            onClick={() => {
-              setStep(1);
-              setError("");
+    <div className="flex justify-between items-center mt-[10px] gap-3">
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
+      >
+        {loading ? "SENDING CODE..." : "SIGN UP"}
+      </button>
+
+      <div className="w-1/2 flex justify-end">
+        <div className="scale-[0.9] origin-right">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              setError("Google Login Failed");
             }}
-            className="cursor-pointer text-[13px] mt-[20px] text-[#666] underline"
-          >
-            ← Edit details
-          </p>
-        </form>
-      )}
+            size="medium"
+            theme="outline"
+            shape="rectangular"
+          />
+        </div>
+      </div>
+    </div>
+  </form>
+) : (
+  <form onSubmit={handleRegister}>
+    <div className="text-[13px] text-[#555] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px] border border-[#d0e3ff]">
+      OTP sent to <b>{formData.email}</b>
+    </div>
+
+    <input
+      type="text"
+      placeholder="Enter 6-Digit OTP"
+      className="w-full p-[14px] my-[10px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
+      value={formData.otp}
+      onChange={(e) =>
+        setFormData({ ...formData, otp: e.target.value })
+      }
+      required
+      maxLength={6}
+    />
+
+    <button
+      type="submit"
+      disabled={loading}
+      className="w-full p-[15px] bg-[#E91E63] text-white border-none rounded-[8px] font-bold cursor-pointer mt-[15px] text-[15px] disabled:opacity-70"
+    >
+      {loading ? "VERIFYING..." : "COMPLETE REGISTRATION"}
+    </button>
+
+    <p
+      onClick={() => {
+        setStep(1);
+        setError("");
+      }}
+      className="cursor-pointer text-[13px] mt-[20px] text-[#666] underline"
+    >
+      ← Edit details
+    </p>
+  </form>
+)}
 
       <p className="mt-[25px] text-[14px] text-[#888]">
         Already have an account?{" "}

@@ -426,10 +426,7 @@ export function AuthDivider() {
 }
 
 /* ================= GOOGLE LOGIN BUTTON (UPDATED) ================= */
-<<<<<<< HEAD
-=======
-/* ================= GOOGLE LOGIN BUTTON ================= */
->>>>>>> main
+
 export function GoogleLoginButton({ onSuccess }) {
   return (
     <div className="w-full flex justify-center">
@@ -463,12 +460,6 @@ export function GoogleLoginButton({ onSuccess }) {
   );
 }
 
-<<<<<<< HEAD
-=======
-
-
-
->>>>>>> main
 export default function LoginModal({ isOpen, onClose, openRegister }) {
   const { login } = useAuth();
 
