@@ -199,6 +199,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <div className="flex justify-between items-center mt-[10px] gap-3">
 
             <button
+<<<<<<< HEAD
               type="submit"
               disabled={loading}
               className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
@@ -214,6 +215,28 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
                 }}
               />
             </div>
+=======
+  type="submit"
+  disabled={loading}
+  className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
+>
+  {loading ? "SENDING CODE..." : "SIGN UP"}
+</button>
+
+<div className="w-1/2 flex justify-end">
+  <div className="scale-[0.9] origin-right">
+    <GoogleLogin
+      onSuccess={handleGoogleSuccess}
+      onError={() => {
+        setError("Google Login Failed");
+      }}
+      size="medium"
+      theme="outline"
+      shape="rectangular"
+    />
+  </div>
+</div>
+>>>>>>> main
 
           </div>
         </form>

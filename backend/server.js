@@ -25,15 +25,29 @@ app.use(
 app.use(compression());
 
 /* ======================================================
+<<<<<<< HEAD
    📦 NORMAL MIDDLEWARE
+=======
+   📦 BODY PARSER
+>>>>>>> main
 ====================================================== */
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+<<<<<<< HEAD
 // ✅ Simple CORS (Local Development Safe)
 const allowedOrigins = [
   "http://localhost:3000",
+=======
+/* ======================================================
+   🌍 CORS CONFIGURATION (IMPORTANT FIX)
+====================================================== */
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://my-shapewear-site.vercel.app",
+>>>>>>> main
   "https://www.gloviaglamour.com",
   "https://gloviaglamour.com",
 ];
@@ -41,6 +55,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
+<<<<<<< HEAD
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -48,22 +63,44 @@ app.use(
       } else {
         callback(new Error("Not allowed by CORS"));
       }
+=======
+      // allow server-to-server or Postman
+      if (!origin) return callback(null, true);
+
+      // allow vercel preview deployments automatically
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.includes("vercel.app")
+      ) {
+        return callback(null, true);
+      }
+
+      console.log("❌ CORS Blocked Origin:", origin);
+      callback(new Error("Not allowed by CORS"));
+>>>>>>> main
     },
     credentials: true,
   })
 );
 
+<<<<<<< HEAD
 
 
 
 // Logger
+=======
+/* ======================================================
+   📝 LOGGER
+====================================================== */
+
+>>>>>>> main
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
 
 /* ======================================================
-   🗄 DATABASE
+   🗄 DATABASE CONNECTION
 ====================================================== */
 
 mongoose
@@ -82,6 +119,7 @@ app.get("/", (req, res) => {
   res.status(200).send("🚀 Glovia Glamour API Running");
 });
 
+<<<<<<< HEAD
 // 🔹 OTP Routes (NO LIMIT)
 app.use("/api/otp", require("./routes/otpRoutes"));
 
@@ -89,6 +127,13 @@ app.use("/api/otp", require("./routes/otpRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
 // 🔹 Other Routes
+=======
+// Auth + OTP
+app.use("/api/otp", require("./routes/otpRoutes"));
+app.use("/api/auth", require("./routes/authRoutes"));
+
+// Other APIs
+>>>>>>> main
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/cart", require("./routes/cartRoutes"));
@@ -99,10 +144,9 @@ app.use("/api/users", require("./routes/userAddressRoutes"));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* ======================================================
-   ❌ ERROR HANDLING
+   ❌ 404 HANDLER
 ====================================================== */
 
-// 404
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -110,9 +154,12 @@ app.use((req, res) => {
   });
 });
 
-// Global Error Handler
+/* ======================================================
+   🔥 GLOBAL ERROR HANDLER
+====================================================== */
+
 app.use((err, req, res, next) => {
-  console.error("🔥 SERVER ERROR:", err);
+  console.error("🔥 SERVER ERROR:", err.message);
 
   res.status(err.status || 500).json({
     success: false,
@@ -132,7 +179,14 @@ const server = app.listen(PORT, () => {
   console.log("=================================");
 });
 
+<<<<<<< HEAD
+=======
+/* ======================================================
+   💥 HANDLE UNHANDLED PROMISES
+====================================================== */
+
+>>>>>>> main
 process.on("unhandledRejection", (err) => {
-  console.error("UNHANDLED ERROR:", err);
+  console.error("UNHANDLED ERROR:", err.message);
   server.close(() => process.exit(1));
 });
