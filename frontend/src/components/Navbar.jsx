@@ -29,6 +29,7 @@ export default function Navbar() {
   const [mobileBraOpen, setMobileBraOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
 
   const { cart } = useCart();
@@ -100,7 +101,7 @@ export default function Navbar() {
               </LinkNav>
               <LinkNav href="/stores" className="flex items-center gap-1 hover:text-pink-600">
                 <Store size={12} /> Our Stores
-              </LinkNav>
+              </LinkNav> 
             </div>
           </div>
         </div>
@@ -108,29 +109,28 @@ export default function Navbar() {
         {/* ================= MAIN LOGO BAR ================= */}
         <div className="bg-white px-4 md:px-6 lg:px-10 border-b border-gray-50">
           <div className="w-full flex items-center justify-between relative py-2">
-            <div className="flex items-center z-10 w-[45%]">
+            <div className={`flex items-center z-10 w-[45%] ${isSearchOpen ? 'invisible md:visible' : ''}`}>
               <button className="lg:hidden text-black p-2 -ml-2 rounded-md active:bg-pink-100" onClick={() => setMenuOpen(true)}>
                 <Menu size={26} />
               </button>
             </div>
-
             {/* Logo Section */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[100]">
+            <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-[100] ${isSearchOpen ? 'hidden md:flex' : 'flex'}`}>
               <LinkNav href="/" className=" items-center pointer-events-auto">
-                <div className="relative w-39 h-44 md:w-40 md:h-40 lg:w-50 lg:h-52 p-12 m-12 mb-8 sm:mb-11 md:mb-8 lg:mb-12">
+                <div className="relative w-40 h-40 md:w-40 md:h-40 lg:w-50 lg:h-52 -ml-15 mt-2.5  lg:mt-0 md:-ml-45 lg:-ml-1">
                   <Image
                     src="/hero-image/glovialogo.png"
                     alt="Glovia Logo"
                     fill
                     priority
-                    className="object-contain over duration-300 hover:scale-105 -ml-15 md:-ml-45 lg:-ml-1"
+                    className="object-contain over duration-300 hover:scale-105 -ml-7 lg:ml-2 mt-1 lg:mt-0"
                   />
                 </div>
               </LinkNav>
             </div>
 
             <div className="flex items-center justify-end sm:gap-1 lg:gap-2 md:gap-2 text-gray-700 z-10 w-[45%]">
-              <SearchSection />
+              <SearchSection onToggleMobileSearch={(val) => setIsSearchOpen(val)} />
               <LinkNav href="/help" className=" hidden sm:flex p-1 hover:text-pink-600 transition">
                 <HelpCircle size={22} />
               </LinkNav>
@@ -143,19 +143,16 @@ export default function Navbar() {
                 <User size={22} />
               </button> */}
 
-              <UserMenu
-                openLogin={() => setLoginOpen(true)}
-                openRegister={() => setRegisterOpen(true)}
-              />
-
-              <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
-
-              <LinkNav href="/cart" className="relative p-1">
-                <ShoppingCart size={22} />
-                <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                  {cartCount}
-                </span>
-              </LinkNav>
+              <div className={`flex items-center gap-1 lg:gap-2 ${isSearchOpen ? 'hidden md:flex' : 'flex'}`}>
+                <UserMenu openLogin={() => setLoginOpen(true)} openRegister={() => setRegisterOpen(true)} />
+                <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
+                <LinkNav href="/cart" className="relative p-1">
+                  <ShoppingCart size={22} />
+                  <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                    {cartCount}
+                  </span>
+                </LinkNav>
+              </div>
             </div>
           </div>
         </div>
