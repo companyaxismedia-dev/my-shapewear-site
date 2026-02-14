@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-const SearchSection = () => {
+const SearchSection = ({ onToggleMobileSearch }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -46,6 +46,11 @@ const SearchSection = () => {
       // Redirects to a dedicated search results page
       router.push(`/search?q=${encodeURIComponent(query)}`);
     }
+  };
+
+  const handleToggleMobile = (visible) => {
+    setIsMobileSearchVisible(visible);
+    if (onToggleMobileSearch) onToggleMobileSearch(visible);
   };
 
   const renderResultsList = () => (
@@ -91,8 +96,8 @@ const SearchSection = () => {
             onFocus={() => setIsOpen(true)}
             className="w-full rounded-full border border-gray-300 py-1 pl-4 pr-12 text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="absolute right-0 top-0 h-full px-4 text-gray-400 hover:text-pink-600 transition-colors"
           >
             <Search size={18} />
@@ -103,8 +108,8 @@ const SearchSection = () => {
 
       {/* MOBILE VIEW ICON */}
       <div className="md:hidden">
-        <button 
-          onClick={() => setIsMobileSearchVisible(true)} 
+        <button
+          onClick={() => handleToggleMobile(true)} // Changed
           className="p-2 text-gray-700 hover:bg-gray-100 rounded-full"
         >
           <Search size={24} />
@@ -115,10 +120,9 @@ const SearchSection = () => {
       {isMobileSearchVisible && (
         <div className="fixed inset-0 bg-white z-[999] p-4 flex flex-col md:hidden">
           <div className="flex items-center gap-3 mb-4">
-            <button onClick={() => setIsMobileSearchVisible(false)}>
+            <button onClick={() => handleToggleMobile(false)}> {/* Changed */}
               <X size={24} className="text-gray-600" />
-            </button>
-            <form onSubmit={handleSearchSubmit} className="flex-1 relative">
+            </button>            <form onSubmit={handleSearchSubmit} className="flex-1 relative">
               <input
                 autoFocus
                 type="text"

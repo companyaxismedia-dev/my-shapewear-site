@@ -5,13 +5,15 @@ import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
 import { useGoogleAuth } from "@/hooks/useGoogleAuth";
+import {GoogleLogin} from "@react-oauth/google"
 
-const API_BASE = "http://localhost:5000"
-  // typeof window !== "undefined" &&
-  // (window.location.hostname === "localhost" ||
-  //   window.location.hostname === "127.0.0.1")
-  //   ? "http://localhost:5000"
-  //   : "https://my-shapewear-site.onrender.com";
+
+const API_BASE = 
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1")
+    ? "http://localhost:5000"
+    : "https://my-shapewear-site.onrender.com";
 
 export function AuthInput({
   type = "text",
@@ -68,6 +70,36 @@ export function AuthDivider() {
   );
 }
 
+/* ================= GOOGLE LOGIN BUTTON ================= */
+export function GoogleLoginButton({ onSuccess }) {
+  return (
+    <div className="w-full">
+      <GoogleLogin
+        onSuccess={async (credentialResponse) => {
+          try {
+            const res = await axios.post(
+              `${API_BASE}/api/users/login/google`,
+              {
+                credential: credentialResponse.credential,
+              }
+            );
+
+            onSuccess(res);
+          } catch (error) {
+            alert(
+              error.response?.data?.message ||
+                "Google login failed"
+            );
+          }
+        }}
+        onError={() => {
+          alert("Google Login Failed");
+        }}
+      />
+    </div>
+  );
+}
+
 export default function LoginModal({ isOpen, onClose, openRegister}) {
   const { login } = useAuth();
 
@@ -102,7 +134,12 @@ export default function LoginModal({ isOpen, onClose, openRegister}) {
 
   const handleAuthSuccess = (res) => {
     const token = res.data.token;
-    const userData = res.data.user;
+    const userData = {
+      _id: res.data.user,
+      name: res.data.name,
+      email: res.data.email,
+      role: res
+    }
 
     localStorage.setItem(
       "userInfo",

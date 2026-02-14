@@ -12,7 +12,7 @@ import "swiper/css/effect-fade";
 const banners = [
   // { desktop: "/hero-image/clovia1.webp", mobile: "/hero-image/cloviamobile.jpeg", alt: "Premium Lingerie" },
   { desktop: "/hero-image/Banner-1.jpeg", mobile: "/hero-image/banner1mobile.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/Banner-2.jpeg", mobile: "/hero-image/banner2mobile.jpeg", alt: "Comfortable Everyday Bras" },
+  { desktop: "/hero-image/Banner-2.png", mobile: "/hero-image/banner2mobile.jpeg", alt: "Comfortable Everyday Bras" },
   // { desktop: "/hero-image/hero-ba-2.jpeg", mobile: "/hero-image/hero-ba-2.jpeg", alt: "Comfortable Everyday Bras" },
   // { desktop: "/hero-image/hero-n-2.jpeg", mobile: "/hero-image/hero-n-2.jpeg", alt: "Comfortable Everyday Bras" },
   // { desktop: "/hero-image/hero-n-4.jpeg", mobile: "/hero-image/hero-n-4.jpeg", alt: "Comfortable Everyday Bras" },
@@ -23,7 +23,7 @@ const banners = [
 
 export default function Hero() {
   return (
-    <section className="relative w-full bg-white xs:mt-[-10px]">
+    <section className="relative w-full bg-white mt-0 p-0">
       <div className="w-full relative overflow-hidden">
         <Swiper
           modules={[Autoplay, Navigation, Pagination, EffectFade]}
@@ -99,10 +99,9 @@ export default function Hero() {
 
         @media (max-width: 767px) {
           /* Hide Arrows on Mobile */
-          .swiper-button-next, .swiper-button-prev {
-            display: none !important;
-          }
-
+.swiper-button-next, .swiper-button-prev, .swiper-pagination {
+    display: none !important;
+  }
           /* Hide Pagination Dots on Mobile */
           .swiper-pagination {
             display: none !important;
@@ -110,11 +109,11 @@ export default function Hero() {
 
           /* Keep full image visibility on Mobile */
           .hero-swiper img {
-            aspect-ratio: 2 / 3 !important; 
-            object-fit: contain !important;
-            width: 100vw !important;
-            height: auto !important;
-          }
+aspect-ratio: auto !important; /* Remove the forced 2/3 ratio */
+    object-fit: cover !important;  /* Changed from contain to cover */
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;          }
         }
       `}</style>
     </section>
