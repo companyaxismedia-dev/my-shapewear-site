@@ -22,7 +22,11 @@ const addressSchema = new mongoose.Schema(
 ================================ */
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
     email: {
       type: String,
@@ -32,11 +36,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Optional phone (Google login safe)
+    // ✅ OPTIONAL PHONE (Google Safe)
     phone: {
       type: String,
       unique: true,
-      sparse: true,
+      sparse: true, // allows multiple null values
       trim: true,
       default: null,
     },
@@ -66,13 +70,18 @@ const userSchema = new mongoose.Schema(
 );
 
 /* =================================================
-   🔐 HASH PASSWORD (FIXED — NO next())
+   🔐 HASH PASSWORD
 ================================================= */
-userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
 
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 /* =================================================
@@ -93,7 +102,6 @@ userSchema.methods.toJSON = function () {
 
 /* =================================================
    🔄 INDEX DEFINITIONS
-   (Only here — not duplicated anywhere else)
 ================================================= */
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ phone: 1 }, { unique: true, sparse: true });

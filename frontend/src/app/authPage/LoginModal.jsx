@@ -426,9 +426,10 @@ export function AuthDivider() {
 }
 
 /* ================= GOOGLE LOGIN BUTTON (UPDATED) ================= */
+/* ================= GOOGLE LOGIN BUTTON ================= */
 export function GoogleLoginButton({ onSuccess }) {
   return (
-    <div className="w-full">
+    <div className="w-full flex justify-center">
       <GoogleLogin
         onSuccess={async (credentialResponse) => {
           try {
@@ -450,10 +451,17 @@ export function GoogleLoginButton({ onSuccess }) {
         onError={() => {
           alert("Google Login Failed");
         }}
+        width="100%"
+        size="large"
+        shape="rectangular"
+        theme="outline"
       />
     </div>
   );
 }
+
+
+
 
 export default function LoginModal({ isOpen, onClose, openRegister }) {
   const { login } = useAuth();
