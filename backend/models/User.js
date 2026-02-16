@@ -32,13 +32,12 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Optional phone (Google login safe)
+    // ✅ OPTIONAL PHONE (Google Safe)
     phone: {
       type: String,
       unique: true,
       sparse: true,
       trim: true,
-      default: null,
     },
 
     password: {
@@ -66,7 +65,7 @@ const userSchema = new mongoose.Schema(
 );
 
 /* =================================================
-   🔐 HASH PASSWORD (FIXED — NO next())
+   🔐 HASH PASSWORD
 ================================================= */
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
@@ -79,21 +78,20 @@ userSchema.pre("save", async function () {
    🔐 MATCH PASSWORD
 ================================================= */
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  return bcrypt.compare(enteredPassword, this.password);
 };
 
 /* =================================================
    🔒 REMOVE PASSWORD FROM RESPONSE
 ================================================= */
 userSchema.methods.toJSON = function () {
-  const userObject = this.toObject();
-  delete userObject.password;
-  return userObject;
+  const obj = this.toObject();
+  delete obj.password;
+  return obj;
 };
 
 /* =================================================
-   🔄 INDEX DEFINITIONS
-   (Only here — not duplicated anywhere else)
+   🔄 INDEX DEFINITIONS (ONLY HERE)
 ================================================= */
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ phone: 1 }, { unique: true, sparse: true });

@@ -25,6 +25,13 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     setStep(1);
     setError("");
     setLoading(false);
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      otp: "",
+    });
   };
 
   useEffect(() => {
@@ -32,7 +39,6 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
   }, [isOpen]);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-
 
   /* ================= GOOGLE SUCCESS HANDLER ================= */
   const handleGoogleSuccess = async (credentialResponse) => {
@@ -53,6 +59,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
         role: res.data.role,
       };
 
+      localStorage.setItem("token", token);
       localStorage.setItem(
         "userInfo",
         JSON.stringify({ user: userData, token })
@@ -65,38 +72,42 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Google login failed"
+        "Google login failed"
       );
     }
   };
 
+  /* ================= SEND OTP (EMAIL OR PHONE) ================= */
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    if (!formData.email.includes("@")) {
-      setError("Please enter a valid email address");
+    if (!formData.email && !formData.phone) {
+      setError("Email or phone number required");
       setLoading(false);
       return;
     }
 
     try {
-      const res = await axios.post(`${API_BASE}/api/otp/send`, {
-        email: formData.email.toLowerCase().trim(),
-      });
+      const payload = formData.email
+        ? { email: formData.email.toLowerCase().trim() }
+        : { phone: formData.phone.trim() };
+
+      const res = await axios.post(`${API_BASE}/api/otp/send`, payload);
 
       if (res.data) setStep(2);
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Failed to send OTP. Check if Backend is running."
+        "Failed to send OTP. Check backend."
       );
     } finally {
       setLoading(false);
     }
   };
 
+  /* ================= REGISTER ================= */
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -112,13 +123,15 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
       });
 
       if (res.data) {
+        localStorage.setItem("token", res.data.token);
         localStorage.setItem("userInfo", JSON.stringify(res.data));
+
         login(
           {
-            name: res.data.user?.name || formData.name,
-            email: res.data.user?.email || formData.email,
+            name: res.data.name || formData.name,
+            email: res.data.email || formData.email,
           },
-          res.data.token || null
+          res.data.token
         );
 
         onClose();
@@ -127,7 +140,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Invalid OTP or Registration failed"
+        "Invalid OTP or Registration failed"
       );
     } finally {
       setLoading(false);
@@ -155,7 +168,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <input
             type="text"
             placeholder="Full Name"
-            className="w-full p-[8px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
+            className="w-full p-[8px] my-[7px] border rounded-[8px]"
             value={formData.name}
             onChange={(e) =>
               setFormData({ ...formData, name: e.target.value })
@@ -166,7 +179,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <input
             type="email"
             placeholder="Email Address"
-            className="w-full p-[9px] my-[7px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
+            className="w-full p-[9px] my-[7px] border rounded-[8px]"
             value={formData.email}
             onChange={(e) =>
               setFormData({ ...formData, email: e.target.value })
@@ -220,9 +233,9 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
         </form>
       ) : (
         <form onSubmit={handleRegister}>
-          <div className="text-[13px] text-[#555] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px] border border-[#d0e3ff]">
-            <br />
-            <b>{formData.email}</b>
+          <div className="text-[13px] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px]">
+            OTP sent to{" "}
+            <b>{formData.email || formData.phone}</b>
           </div>
 
           <input
