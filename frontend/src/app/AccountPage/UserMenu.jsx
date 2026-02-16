@@ -126,7 +126,11 @@ export default function UserMenu({ openLogin, openRegister }) {
   };
 
   return (
-    <div className="relative group">
+<div
+  className="relative"
+  onMouseEnter={() => setDropdownOpen(true)}
+  onMouseLeave={() => setDropdownOpen(false)}
+>
       {/* USER ICON BUTTON */}
       <button
         className="p-1 hover:text-pink-600 relative z-10 cursor-pointer"
@@ -140,7 +144,7 @@ export default function UserMenu({ openLogin, openRegister }) {
       </button>
  
       {/* HOVER GAP BRIDGE */}
-      <div className="absolute flex top-full right-0 w4 h-3 bg-transparent"></div>
+      {/* <div className="absolute flex top-full right-0 w4 h-3 bg-transparent"></div> */}
 
       {/* DROPDOWN */}
       <div
@@ -154,12 +158,11 @@ export default function UserMenu({ openLogin, openRegister }) {
           border
           rounded-xl
           shadow-2xl
-          transition-opacity duration-300
+          transition-opacity duration-400
           z-[200]
 
           /* Show on hover OR if dropdownOpen is true */
-          group-hover:opacity-100 group-hover:visible
-          ${dropdownOpen ? "opacity-100 visible" : "opacity-0 invisible"}
+${dropdownOpen ? "opacity-100 visible" : "opacity-0 invisible"}
         `}
       >
         {/* ARROW */}
