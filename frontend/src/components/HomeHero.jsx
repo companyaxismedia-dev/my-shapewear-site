@@ -39,7 +39,7 @@ export default function HomeHero() {
       {/* ================= HERO BANNER IMAGE ================= */}
       <div className="relative w-full">
         <Image
-          src="/hero-image/home-1.jpeg"
+          src="/hero-image/home-12.jpeg"
           alt="Bootybloom Home Banner"
           width={1920}
           height={850}
@@ -69,6 +69,8 @@ export default function HomeHero() {
           animation: heartPop 7s ease-in infinite;
         }
       `}</style>
+
     </section>
   );
 }
+

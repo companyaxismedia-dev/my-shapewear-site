@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { ChevronRight, Star } from "lucide-react";
@@ -23,11 +23,28 @@ const homeSections = [
 
 export default function AutoSliceSlider() {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productsData, setProductsData] = useState({});
+  useEffect(() => {
+    const loadProducts = async () => {
+      const data = {};
+
+      for (const section of homeSections) {
+        const products = await getCategoryProducts(section.id);
+        data[section.id] = products || [];
+      }
+
+      setProductsData(data);
+    };
+
+    loadProducts();
+  }, []);
 
   return (
     <div className="flex flex-col gap-12 py-10 bg-white">
       {homeSections.map((section) => {
-        const products = getCategoryProducts(section.id).slice(0, section.count);
+        // const products = getCategoryProducts(section.id).slice(0, section.count);
+        const products = productsData[section.id]?.slice(0, section.count) || [];
+
 
         return (
           <div key={section.id} className="w-full">
@@ -107,7 +124,105 @@ export default function AutoSliceSlider() {
   );
 }
 
+// function ProductCard({ product, onOpenDetails }) {
+//   return (
+//     <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full">
+//       {/* Image */}
+//       <div
+//         className="relative aspect-[3/4] overflow-hidden bg-gray-50 cursor-pointer"
+//         onClick={onOpenDetails}
+//       >
+//         <img
+//           src={product.img}
+//           alt={product.name}
+//           className="w-full h-full object-cover object-top transition-transform duration-700 hover:scale-110"
+//         />
+//         <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-[10px] font-bold px-2 py-0.5 rounded">
+//           {product.discount} OFF
+//         </div>
+//       </div>
+
+//       {/* Details */}
+//       <div className="p-3 flex flex-col flex-grow">
+//         <div className="flex items-center gap-1 mb-1">
+//           <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
+//           <span className="text-[10px] font-bold text-[#ed4e7e]">
+//             {product.rating}
+//           </span>
+//           <span className="text-[9px] text-gray-400">
+//             ({product.reviews})
+//           </span>
+//         </div>
+
+//         <h3 className="text-[11px] font-bold text-gray-700 truncate uppercase mb-1">
+//           {product.name}
+//         </h3>
+
+//         <div className="flex items-center gap-2 mb-3">
+//           <span className="text-sm font-black text-gray-900">
+//             ₹{product.price}
+//           </span>
+//           <span className="text-[10px] text-gray-400 line-through">
+//             ₹{product.oldPrice}
+//           </span>
+//         </div>
+
+//         {/* Sizes */}
+//         <div className="mt-auto space-y-3">
+//           <div className="flex gap-1 mb-1">
+//             {product.sizes.slice(0, 4).map((size) => (
+//               <span
+//                 key={size}
+//                 className="flex-1 text-center border border-gray-200 text-[10px] py-1 rounded font-bold text-gray-600"
+//               >
+//                 {size}
+//               </span>
+//             ))}
+//           </div>
+//         </div>
+
+
+//         {/* Button */}
+//         <button
+//           onClick={onOpenDetails}
+//           className="cursor-pointer mt-auto w-full bg-[#ed4e7e] text-white py-2.5 text-[12px] font-bold uppercase tracking-widest rounded-sm shadow-sm active:scale-95"
+//         >
+//           ADD TO CART
+//         </button>
+//       </div>
+//     </div>
+//   );
+// }
+
+
 function ProductCard({ product, onOpenDetails }) {
+
+  // ✅ Normalize Backend Structure
+  const image =
+    product.images?.[0] ||
+    product.variants?.[0]?.images?.[0] ||
+    "/placeholder.jpg";
+
+  const price =
+    product.price ||
+    product.variants?.[0]?.price ||
+    0;
+
+  const oldPrice =
+    product.mrp ||
+    product.variants?.[0]?.mrp ||
+    null;
+
+  const discount =
+    product.discount ||
+    (oldPrice && price
+      ? Math.round(((oldPrice - price) / oldPrice) * 100) + "%"
+      : null);
+
+  const sizes =
+    product.variants?.[0]?.sizes?.map((s) => s.size) ||
+    [];
+
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full">
       {/* Image */}
@@ -116,26 +231,20 @@ function ProductCard({ product, onOpenDetails }) {
         onClick={onOpenDetails}
       >
         <img
-          src={product.img}
+          src={image}
           alt={product.name}
           className="w-full h-full object-cover object-top transition-transform duration-700 hover:scale-110"
         />
-        <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-[10px] font-bold px-2 py-0.5 rounded">
-          {product.discount} OFF
-        </div>
+
+        {discount && (
+          <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-[10px] font-bold px-2 py-0.5 rounded">
+            {discount} OFF
+          </div>
+        )}
       </div>
 
       {/* Details */}
       <div className="p-3 flex flex-col flex-grow">
-        <div className="flex items-center gap-1 mb-1">
-          <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
-          <span className="text-[10px] font-bold text-[#ed4e7e]">
-            {product.rating}
-          </span>
-          <span className="text-[9px] text-gray-400">
-            ({product.reviews})
-          </span>
-        </div>
 
         <h3 className="text-[11px] font-bold text-gray-700 truncate uppercase mb-1">
           {product.name}
@@ -143,29 +252,32 @@ function ProductCard({ product, onOpenDetails }) {
 
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm font-black text-gray-900">
-            ₹{product.price}
+            ₹{price}
           </span>
-          <span className="text-[10px] text-gray-400 line-through">
-            ₹{product.oldPrice}
-          </span>
+
+          {oldPrice && (
+            <span className="text-[10px] text-gray-400 line-through">
+              ₹{oldPrice}
+            </span>
+          )}
         </div>
 
         {/* Sizes */}
-        <div className="mt-auto space-y-3">
-          <div className="flex gap-1 mb-1">
-            {product.sizes.slice(0, 4).map((size) => (
-              <span
-                key={size}
-                className="flex-1 text-center border border-gray-200 text-[10px] py-1 rounded font-bold text-gray-600"
-              >
-                {size}
-              </span>
-            ))}
+        {sizes.length > 0 && (
+          <div className="mt-auto space-y-3">
+            <div className="flex gap-1 mb-1">
+              {sizes.slice(0, 4).map((size) => (
+                <span
+                  key={size}
+                  className="flex-1 text-center border border-gray-200 text-[10px] py-1 rounded font-bold text-gray-600"
+                >
+                  {size}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-
-        {/* Button */}
         <button
           onClick={onOpenDetails}
           className="cursor-pointer mt-auto w-full bg-[#ed4e7e] text-white py-2.5 text-[12px] font-bold uppercase tracking-widest rounded-sm shadow-sm active:scale-95"
