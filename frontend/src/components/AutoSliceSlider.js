@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { ChevronRight, Star } from "lucide-react";
@@ -23,11 +23,28 @@ const homeSections = [
 
 export default function AutoSliceSlider() {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productsData, setProductsData] = useState({});
+  useEffect(() => {
+    const loadProducts = async () => {
+      const data = {};
+
+      for (const section of homeSections) {
+        const products = await getCategoryProducts(section.id);
+        data[section.id] = products || [];
+      }
+
+      setProductsData(data);
+    };
+
+    loadProducts();
+  }, []);
 
   return (
     <div className="flex flex-col gap-12 py-10 bg-white">
       {homeSections.map((section) => {
-        const products = getCategoryProducts(section.id).slice(0, section.count);
+        // const products = getCategoryProducts(section.id).slice(0, section.count);
+        const products = productsData[section.id]?.slice(0, section.count) || [];
+
 
         return (
           <div key={section.id} className="w-full">

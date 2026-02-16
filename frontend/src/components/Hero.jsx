@@ -12,7 +12,7 @@ import "swiper/css/effect-fade";
 const banners = [
   // { desktop: "/hero-image/clovia1.webp", mobile: "/hero-image/cloviamobile.jpeg", alt: "Premium Lingerie" },
   { desktop: "/hero-image/Banner-1.jpeg", mobile: "/hero-image/banner1mobile.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/Banner-2.png", mobile: "/hero-image/banner2mobile.jpeg", alt: "Comfortable Everyday Bras" },
+  { desktop: "/hero-image/Banner-2.jpeg", mobile: "/hero-image/banner2mobile.jpeg", alt: "Comfortable Everyday Bras" },
   // { desktop: "/hero-image/hero-ba-2.jpeg", mobile: "/hero-image/hero-ba-2.jpeg", alt: "Comfortable Everyday Bras" },
   // { desktop: "/hero-image/hero-n-2.jpeg", mobile: "/hero-image/hero-n-2.jpeg", alt: "Comfortable Everyday Bras" },
   // { desktop: "/hero-image/hero-n-4.jpeg", mobile: "/hero-image/hero-n-4.jpeg", alt: "Comfortable Everyday Bras" },
