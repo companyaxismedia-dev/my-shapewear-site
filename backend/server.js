@@ -32,7 +32,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 /* ======================================================
-   🌍 CORS CONFIGURATION (IMPORTANT FIX)
+   🌍 CORS CONFIGURATION
 ====================================================== */
 
 const allowedOrigins = [
@@ -45,10 +45,8 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow server-to-server or Postman
       if (!origin) return callback(null, true);
 
-      // allow vercel preview deployments automatically
       if (
         allowedOrigins.includes(origin) ||
         origin.includes("vercel.app")
@@ -87,6 +85,21 @@ mongoose
   });
 
 /* ======================================================
+   🖼 STATIC IMAGE SERVING (🔥 IMPORTANT FIX)
+====================================================== */
+
+// Serve entire public folder
+app.use(
+  express.static(path.join(__dirname, "../frontend/public"))
+);
+
+// OR if you want only image folder:
+app.use(
+  "/image",
+  express.static(path.join(__dirname, "../frontend/public/image"))
+);
+
+/* ======================================================
    🛣 ROUTES
 ====================================================== */
 
@@ -98,7 +111,7 @@ app.get("/", (req, res) => {
 app.use("/api/otp", require("./routes/otpRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
-// Other APIs
+// APIs
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/cart", require("./routes/cartRoutes"));

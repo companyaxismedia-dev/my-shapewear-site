@@ -37,10 +37,18 @@ const productSchema = new mongoose.Schema(
     },
 
     category: {
-      type: String,
-      enum: ["bra", "panties", "lingerie", "shapewear"],
-      required: true,
-    },
+  type: String,
+  enum: [
+    "bra",
+    "panties",
+    "lingerie",
+    "shapewear",
+    "curvy",
+    "tummy-control",
+    "non-padded"
+  ],
+  required: true,
+},
 
     brand: String,
     description: String,

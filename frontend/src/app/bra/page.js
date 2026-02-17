@@ -129,9 +129,10 @@ function ProductCard({ item, onOpenDetails }) {
   const { user } = useAuth();
 
   const image =
-    item.images?.[0]
-      ? `${API_BASE}${item.images[0]}`
-      : "/fallback.jpg";
+  item.variants?.[0]?.images?.[0]
+    ? `${API_BASE}${item.variants[0].images[0]}`
+    : "/fallback.jpg";
+
 
   const isWishlisted = wishlist.some((p) => p.id === item._id);
 
