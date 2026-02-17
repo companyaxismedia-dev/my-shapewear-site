@@ -15,56 +15,56 @@ exports.getProducts = async (req, res) => {
     }
 
     if (req.query.keyword) {
-  const searchRegex = new RegExp(req.query.keyword, "i");
+      const searchRegex = new RegExp(req.query.keyword, "i");
 
-  filter.$or = [
-    { name: searchRegex },
-    { brand: searchRegex },
-    { description: searchRegex },
-    { category: searchRegex },
-    { details: { $elemMatch: { $regex: searchRegex } } },
-    { "variants.color": searchRegex }
-  ];
-}
+      filter.$or = [
+        { name: searchRegex },
+        { brand: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+        { details: { $elemMatch: { $regex: searchRegex } } },
+        { "variants.color": searchRegex }
+      ];
+    }
 
-// ✅ PRICE FILTER
-if (req.query.minPrice || req.query.maxPrice) {
-  filter.price = {};
+    // ✅ PRICE FILTER
+    if (req.query.minPrice || req.query.maxPrice) {
+      filter.price = {};
 
-  if (req.query.minPrice) {
-    filter.price.$gte = Number(req.query.minPrice);
-  }
+      if (req.query.minPrice) {
+        filter.price.$gte = Number(req.query.minPrice);
+      }
 
-  if (req.query.maxPrice) {
-    filter.price.$lte = Number(req.query.maxPrice);
-  }
-}
-
-// ✅ RATING FILTER
-if (req.query.rating) {
-  filter.rating = { $gte: Number(req.query.rating) };
-}
-
-// ✅ FEATURED FILTER
-if (req.query.featured === "true") {
-  filter.isFeatured = true;
-}
-
-// ✅ COLOR FILTER (Exact Match)
-if (req.query.color) {
-  filter["variants.color"] = req.query.color;
-}
-
-// ✅ SIZE FILTER
-if (req.query.size) {
-  filter.variants = {
-    $elemMatch: {
-      sizes: {
-        $elemMatch: { size: req.query.size }
+      if (req.query.maxPrice) {
+        filter.price.$lte = Number(req.query.maxPrice);
       }
     }
-  };
-}
+
+    // ✅ RATING FILTER
+    if (req.query.rating) {
+      filter.rating = { $gte: Number(req.query.rating) };
+    }
+
+    // ✅ FEATURED FILTER
+    if (req.query.featured === "true") {
+      filter.isFeatured = true;
+    }
+
+    // ✅ COLOR FILTER (Exact Match)
+    if (req.query.color) {
+      filter["variants.color"] = req.query.color;
+    }
+
+    // ✅ SIZE FILTER
+    if (req.query.size) {
+      filter.variants = {
+        $elemMatch: {
+          sizes: {
+            $elemMatch: { size: req.query.size }
+          }
+        }
+      };
+    }
 
 
     let sortOption = { createdAt: -1 };
