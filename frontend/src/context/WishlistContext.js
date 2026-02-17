@@ -1,4 +1,5 @@
 "use client";
+
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
@@ -6,19 +7,20 @@ import { useAuth } from "./AuthContext";
 const WishlistContext = createContext();
 
 export function WishlistProvider({ children }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = 
+  const API_BASE =
     typeof window !== "undefined" &&
     window.location.hostname === "localhost"
       ? "http://localhost:5000"
       : "https://my-shapewear-site.onrender.com";
 
-  // ✅ FETCH WISHLIST
+  /* ================= FETCH WISHLIST ================= */
+
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.token) {
       setWishlist([]);
       return;
     }
@@ -26,14 +28,21 @@ export function WishlistProvider({ children }) {
     const fetchWishlist = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${API_BASE}/api/wishlist`, {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
 
+        const res = await axios.get(`${API_BASE}/api/wishlist`, {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        });
 
         setWishlist(res.data.wishlist || []);
       } catch (err) {
-        console.error("Wishlist fetch error", err);
+        console.error("Wishlist fetch error:", err?.response?.data || err);
+
+        // 🔴 If token expired → auto logout
+        if (err.response?.status === 401) {
+          logout();
+        }
       } finally {
         setLoading(false);
       }
@@ -42,37 +51,71 @@ export function WishlistProvider({ children }) {
     fetchWishlist();
   }, [user]);
 
-  // ✅ TOGGLE (ADD / REMOVE)
+  /* ================= TOGGLE WISHLIST ================= */
+
   const toggleWishlist = async (productId) => {
-    if (!user) return alert("Login first");
+    if (!user || !user.token) {
+      alert("Please login first");
+      return;
+    }
 
-    await axios.post(
-      `${API_BASE}/api/wishlist/toggle`,
-      { productId },
-      { headers: { Authorization: `Bearer ${user.token}` } }
-    );
+    try {
+      await axios.post(
+        `${API_BASE}/api/wishlist/toggle`,
+        { productId },
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
 
-    // 🔁 REFRESH wishlist after toggle
-    const res = await axios.get(`${API_BASE}/api/wishlist`, {
-      headers: { Authorization: `Bearer ${user.token}` },
-    });
+      // Optimistic update (better UX)
+      setWishlist((prev) => {
+        const exists = prev.find((p) => p._id === productId);
+        if (exists) {
+          return prev.filter((p) => p._id !== productId);
+        }
+        return [...prev, { _id: productId }];
+      });
+    } catch (err) {
+      console.error("Toggle wishlist error:", err?.response?.data || err);
 
-    setWishlist(res.data.wishlist || []);
+      if (err.response?.status === 401) {
+        logout();
+      }
+    }
   };
 
-  // ✅ REMOVE DIRECT
+  /* ================= REMOVE ================= */
+
   const removeFromWishlist = async (productId) => {
-    if (!user) return;
+    if (!user || !user.token) return;
 
-    await axios.delete(
-      `${API_BASE}/api/wishlist/remove/${productId}`,
-      { headers: { Authorization: `Bearer ${user.token}` } }
-    );
+    try {
+      await axios.delete(
+        `${API_BASE}/api/wishlist/remove/${productId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
 
-    setWishlist((prev) => prev.filter((p) => p._id !== productId));
+      setWishlist((prev) =>
+        prev.filter((p) => p._id !== productId)
+      );
+    } catch (err) {
+      console.error("Remove wishlist error:", err?.response?.data || err);
+
+      if (err.response?.status === 401) {
+        logout();
+      }
+    }
   };
 
-  // ❌ CLEAR (optional – you don’t have backend yet)
+  /* ================= CLEAR ================= */
+
   const clearWishlist = () => {
     setWishlist([]);
   };
@@ -94,57 +137,3 @@ export function WishlistProvider({ children }) {
 }
 
 export const useWishlist = () => useContext(WishlistContext);
-  
-
-
-// "use client";
-// import { createContext, useContext, useState } from "react";
-// import { useAuth } from "./AuthContext";
-
-// const WishlistContext = createContext();
-
-// export function WishlistProvider({ children }) {
-//   const { user } = useAuth();
-
-//   // 🔒 FRONTEND ONLY MODE
-//   const [wishlist, setWishlist] = useState([]);
-
-//   /* ================= ADD ================= */
-//   const addToWishlist = (product) => {
-//     if (!user) {
-//       alert("Please login first");
-//       return;
-//     }
-
-//     setWishlist((prev) => {
-//       const exists = prev.some((p) => p.id === product.id);
-//       return exists ? prev : [...prev, product];
-//     });
-//   };
-
-//   /* ================= REMOVE ================= */
-//   const removeFromWishlist = (productId) => {
-//     setWishlist((prev) => prev.filter((p) => p.id !== productId));
-//   };
-
-//   /* ================= CLEAR ================= */
-//   const clearWishlist = () => {
-//     setWishlist([]);
-//   };
-
-//   return (
-//     <WishlistContext.Provider
-//       value={{
-//         wishlist,
-//         wishlistCount: wishlist.length,
-//         addToWishlist,
-//         removeFromWishlist,
-//         clearWishlist,
-//       }}
-//     >
-//       {children}
-//     </WishlistContext.Provider>
-//   );
-// }
-
-// export const useWishlist = () => useContext(WishlistContext);

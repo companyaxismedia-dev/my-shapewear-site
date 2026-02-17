@@ -25,7 +25,7 @@ const API_BASE =
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
-export default function NonPaddedPage() {
+export default function PaddedPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ export default function NonPaddedPage() {
     const fetchProducts = async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/products?category=bra&keyword=non&limit=50`
+          `${API_BASE}/api/products?category=bra&keyword=padded&limit=50`
         );
         const data = await res.json();
 
@@ -42,7 +42,7 @@ export default function NonPaddedPage() {
           setProducts(data.products);
         }
       } catch (error) {
-        console.error("Error fetching non-padded bras:", error);
+        console.error("Error fetching padded bras:", error);
       } finally {
         setLoading(false);
       }
@@ -68,6 +68,7 @@ export default function NonPaddedPage() {
             <option>New Arrivals</option>
           </select>
         </div>
+
         <div className="flex gap-4">
           <button className="flex items-center gap-2 text-[10px] font-bold uppercase border border-[#ed4e7e] px-3 py-1 rounded-sm">
             <Filter size={12} /> Show Filters
@@ -80,6 +81,7 @@ export default function NonPaddedPage() {
           <h2 className="font-bold text-[10px] mb-6 tracking-widest uppercase">
             Refine Your Selection
           </h2>
+
           {["Size", "Color", "Discount", "Price Range", "Material"].map(
             (f) => (
               <div
