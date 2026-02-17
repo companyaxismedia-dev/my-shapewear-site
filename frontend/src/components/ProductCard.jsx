@@ -189,7 +189,7 @@ export default function ProductPage() {
                 onClick={handleAddToCart}
                 className="flex-1 bg-[#ed4e7e] text-white py-4 rounded-md font-black uppercase tracking-[0.1em] text-[11px] flex items-center justify-center gap-2 hover:brightness-110 shadow-lg"
               >
-                <ShoppingCart size={18} /> Add to Cart
+                <ShoppingCart size={18} /> Add to C
               </button>
             </div>
 

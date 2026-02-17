@@ -156,7 +156,11 @@ import { Search, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1")
+    ? "http://localhost:5000"
+    : "https://my-shapewear-site.onrender.com";
 
 const SearchSection = ({ onToggleMobileSearch }) => {
   const [query, setQuery] = useState("");
@@ -252,7 +256,7 @@ const SearchSection = ({ onToggleMobileSearch }) => {
           className="cursor-pointer px-4 py-3 text-sm hover:bg-pink-50 border-b border-gray-50 last:border-none flex gap-3 items-center"
         >
           <img
-            src={item.images?.[0] || "/placeholder.jpg"}
+            src={item.variants?.[0]?.images?.[0] ? `${API_BASE}${item.variants[0].images[0]}`: "/placeholder.jpg"}
             className="w-10 h-12 object-cover rounded"
             alt={item.name}
           />
