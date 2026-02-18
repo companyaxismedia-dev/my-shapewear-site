@@ -1,43 +1,130 @@
 const mongoose = require("mongoose");
 
-/* ================= SIZE SCHEMA ================= */
-const sizeSchema = new mongoose.Schema(
+/* ======================================================
+   IMAGE SCHEMA
+====================================================== */
+const imageSchema = new mongoose.Schema(
   {
-    size: { type: String, required: true, trim: true },
-    stock: { type: Number, required: true, default: 0, min: 0 },
-    sku: { type: String, trim: true },
+    url: { type: String, required: true },
+    altText: String,
+    isPrimary: { type: Boolean, default: false },
+    order: { type: Number, default: 0 },
+    width: Number,
+    height: Number,
+    format: String,
   },
   { _id: false }
 );
 
-/* ================= VARIANT SCHEMA ================= */
+/* ======================================================
+   SERVICEABLE PINCODE
+====================================================== */
+const serviceablePincodeSchema = new mongoose.Schema(
+  {
+    pincode: { type: String, required: true, index: true },
+    codAvailable: { type: Boolean, default: true },
+    estimatedDays: { type: Number, default: 3 },
+  },
+  { _id: false }
+);
+
+/* ======================================================
+   OFFER
+====================================================== */
+const offerSchema = new mongoose.Schema(
+  {
+    title: String,
+    code: String,
+    discountType: { type: String, enum: ["percentage", "flat"] },
+    discountValue: Number,
+    minOrderValue: Number,
+    description: String,
+    isActive: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
+/* ======================================================
+   SPECIFICATIONS TABLE
+====================================================== */
+const specificationSchema = new mongoose.Schema(
+  {
+    key: String,
+    value: String,
+  },
+  { _id: false }
+);
+
+/* ======================================================
+   SIZE & FITS (Dynamic Structured Attributes)
+====================================================== */
+const sizeFitSchema = new mongoose.Schema(
+  {
+    label: String,  // Fabric, Padding, Wire etc.
+    value: String,
+  },
+  { _id: false }
+);
+
+/* ======================================================
+   REVIEW
+====================================================== */
+const reviewSchema = new mongoose.Schema(
+  {
+    userName: String,
+    rating: { type: Number, min: 1, max: 5 },
+    comment: String,
+    images: [String],
+    createdAt: { type: Date, default: Date.now },
+    verified: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
+/* ======================================================
+   SIZE / SKU LEVEL
+====================================================== */
+const sizeSchema = new mongoose.Schema(
+  {
+    size: { type: String, required: true },
+    sku: { type: String, required: true, uppercase: true },
+    price: { type: Number, required: true },
+    mrp: Number,
+    discount: Number,
+    stock: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
+/* ======================================================
+   VARIANT (COLOR LEVEL)
+====================================================== */
 const variantSchema = new mongoose.Schema(
   {
-    color: { type: String, required: true, trim: true },
-    colorCode: { type: String, trim: true },
-    price: { type: Number, required: true, min: 0 },
-    mrp: { type: Number, min: 0 },
-    images: [String],
+    color: { type: String, required: true },
+    colorCode: String,
+    images: [imageSchema],
     video: String,
     sizes: [sizeSchema],
   },
   { _id: false }
 );
 
-/* ================= PRODUCT SCHEMA ================= */
+/* ======================================================
+   MAIN PRODUCT SCHEMA
+====================================================== */
 const productSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    /* BASIC */
+    /* BASIC */
+name: { type: String, required: true },
+slug: { type: String, unique: true, index: true },
+brand: { type: String, index: true },
 
-    slug: {
-      type: String,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-
-    category: {
+category: {
   type: String,
+  required: true,
   enum: [
     "bra",
     "panties",
@@ -47,32 +134,81 @@ const productSchema = new mongoose.Schema(
     "tummy-control",
     "non-padded"
   ],
-  required: true,
+  index: true
 },
 
-    brand: String,
-    description: String,
-    details: [String],
-    images: [String],
+subCategory: { type: String, index: true },
 
-    price: Number,
+
+    shortDescription: String,
+    productDetails: String,
+    features: [String],
+
+    /* SIZE & FITS (Dynamic Subcategory Support) */
+    sizeAndFits: [sizeFitSchema],
+
+    materialCare: [String],
+    specifications: [specificationSchema],
+
+    /* VARIANTS */
+    variants: [variantSchema],
+
+    /* DELIVERY */
+    serviceablePincodes: [serviceablePincodeSchema],
+
+    /* OFFERS */
+    offers: [offerSchema],
+
+    /* PRICE SUMMARY */
+    minPrice: Number,
+    maxPrice: Number,
     mrp: Number,
     discount: Number,
+    totalStock: Number,
 
-    totalStock: { type: Number, default: 0 },
-
+    /* RATINGS */
     rating: { type: Number, default: 0 },
     numReviews: { type: Number, default: 0 },
 
-    variants: [variantSchema],
+    ratingBreakdown: {
+      five: { type: Number, default: 0 },
+      four: { type: Number, default: 0 },
+      three: { type: Number, default: 0 },
+      two: { type: Number, default: 0 },
+      one: { type: Number, default: 0 },
+    },
 
-    isFeatured: { type: Boolean, default: false },
-    isActive: { type: Boolean, default: true },
+    reviews: [reviewSchema],
+
+    /* MEDIA */
+    thumbnail: String,
+
+    /* FLAGS */
+    isFeatured: { type: Boolean, default: false, index: true },
+    isBestSeller: { type: Boolean, default: false },
+    isNewArrival: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true, index: true },
+
+    /* SEO */
+    metaTitle: String,
+    metaDescription: String,
+    metaKeywords: [String],
   },
   { timestamps: true }
 );
 
-/* ================= AUTO SLUG ================= */
+/* ======================================================
+   INDEXING
+====================================================== */
+productSchema.index({ name: "text", shortDescription: "text", brand: "text" });
+productSchema.index({ category: 1, subCategory: 1 });
+productSchema.index({ minPrice: 1 });
+productSchema.index({ rating: -1 });
+productSchema.index({ "variants.color": 1 });
+
+/* ======================================================
+   AUTO SLUG
+====================================================== */
 productSchema.pre("validate", function () {
   if (!this.slug && this.name) {
     this.slug = this.name
@@ -82,30 +218,77 @@ productSchema.pre("validate", function () {
   }
 });
 
-/* ================= AUTO CALCULATIONS ================= */
+/* ======================================================
+   AUTO CALCULATIONS
+====================================================== */
 productSchema.pre("save", function () {
-  let total = 0;
+  let totalStock = 0;
+  let prices = [];
+  let mrps = [];
 
-  if (this.variants) {
+  if (this.variants?.length) {
     this.variants.forEach((variant) => {
-      if (variant.sizes) {
-        variant.sizes.forEach((size) => {
-          total += size.stock || 0;
-        });
-      }
+      variant.sizes.forEach((size) => {
+        totalStock += size.stock;
+        prices.push(size.price);
+
+        if (size.mrp) {
+          mrps.push(size.mrp);
+
+          if (size.mrp > size.price) {
+            size.discount = Math.round(
+              ((size.mrp - size.price) / size.mrp) * 100
+            );
+          }
+        }
+      });
     });
   }
 
-  this.totalStock = total;
+  this.totalStock = totalStock;
 
-  if (!this.price && this.variants?.length > 0) {
-    this.price = this.variants[0].price;
+  if (prices.length) {
+    this.minPrice = Math.min(...prices);
+    this.maxPrice = Math.max(...prices);
   }
 
-  if (this.mrp && this.price && this.mrp > this.price) {
+  if (mrps.length) {
+    this.mrp = Math.max(...mrps);
+  }
+
+  if (this.mrp && this.minPrice && this.mrp > this.minPrice) {
     this.discount = Math.round(
-      ((this.mrp - this.price) / this.mrp) * 100
+      ((this.mrp - this.minPrice) / this.mrp) * 100
     );
+  }
+
+  /* Thumbnail */
+  if (!this.thumbnail && this.variants?.length) {
+    const firstVariant = this.variants[0];
+    const primary =
+      firstVariant.images.find((img) => img.isPrimary) ||
+      firstVariant.images[0];
+    this.thumbnail = primary?.url;
+  }
+
+  /* Rating */
+  const totalRatings =
+    this.ratingBreakdown.five +
+    this.ratingBreakdown.four +
+    this.ratingBreakdown.three +
+    this.ratingBreakdown.two +
+    this.ratingBreakdown.one;
+
+  if (totalRatings > 0) {
+    const weightedSum =
+      this.ratingBreakdown.five * 5 +
+      this.ratingBreakdown.four * 4 +
+      this.ratingBreakdown.three * 3 +
+      this.ratingBreakdown.two * 2 +
+      this.ratingBreakdown.one * 1;
+
+    this.rating = Number((weightedSum / totalRatings).toFixed(1));
+    this.numReviews = totalRatings;
   }
 });
 

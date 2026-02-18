@@ -6,17 +6,15 @@ import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import {
-  Heart,
   Filter,
   ChevronDown,
   Star,
-  Eye,
   X,
-  ShieldCheck,
-  Truck,
   ShoppingCart,
-  Zap,
+  Heart,
 } from "lucide-react";
+import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 
 /* ================= API BASE ================= */
 
@@ -38,13 +36,10 @@ export default function LingeriePage() {
     const fetchLingerie = async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/products?category=lingerie`
+          `${API_BASE}/api/products?category=lingerie&limit=50`
         );
         const data = await res.json();
-
-        if (data.success) {
-          setProducts(data.products);
-        }
+        if (data.success) setProducts(data.products);
       } catch (err) {
         console.error("Lingerie fetch error:", err);
       } finally {
@@ -59,7 +54,6 @@ export default function LingeriePage() {
     <div className="min-h-screen bg-white text-[#ed4e7e]">
       <Navbar />
 
-      {/* HEADER */}
       <div className="px-4 py-3 border-b flex justify-between items-center">
         <span className="text-[12px] font-bold uppercase">
           Lingerie Collection
@@ -117,18 +111,40 @@ export default function LingeriePage() {
 /* ================= PRODUCT CARD ================= */
 
 function ProductCard({ product, onOpenDetails }) {
-  const image =
-    product.variants?.[0]?.images?.[0]
-      ? `${API_BASE}${product.variants[0].images[0]}`
-      : "/placeholder.jpg";
+  const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
+  const { user } = useAuth();
 
-  const price = product.variants?.[0]?.price || 0;
-  const mrp = product.variants?.[0]?.mrp || null;
+  const variant = product?.variants?.[0];
+  const imageObj = variant?.images?.[0];
+
+  const image = imageObj
+    ? `${API_BASE}${typeof imageObj === "string" ? imageObj : imageObj.url}`
+    : "/placeholder.jpg";
+
+  const firstSize = variant?.sizes?.[0];
+  const price = firstSize?.price || 0;
+  const mrp = firstSize?.mrp || 0;
 
   const discount =
-    mrp && price
-      ? Math.round(((mrp - price) / mrp) * 100)
-      : null;
+    mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+
+  const rating = product?.rating || 0;
+  const reviews = product?.numReviews || 0;
+
+  const isWishlisted = wishlist.some((p) => p.id === product._id);
+
+  const handleWishlist = (e) => {
+    e.stopPropagation();
+
+    if (!user) {
+      alert("Please login to use wishlist");
+      return;
+    }
+
+    isWishlisted
+      ? removeFromWishlist(product._id)
+      : toggleWishlist({ id: product._id, ...product });
+  };
 
   return (
     <div className="group border rounded-sm overflow-hidden shadow-sm hover:shadow-md transition">
@@ -142,11 +158,23 @@ function ProductCard({ product, onOpenDetails }) {
           className="w-full h-full object-cover"
         />
 
-        {discount && (
+        {discount > 0 && (
           <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-[9px] px-2 py-1 font-bold">
             {discount}% OFF
           </div>
         )}
+
+        {/* ❤️ WISHLIST */}
+        <button
+          onClick={handleWishlist}
+          className="absolute top-2 right-2 bg-white p-1 rounded-full shadow"
+        >
+          <Heart
+            size={16}
+            fill={isWishlisted ? "#ed4e7e" : "none"}
+            stroke="#ed4e7e"
+          />
+        </button>
       </div>
 
       <div className="p-3">
@@ -154,11 +182,21 @@ function ProductCard({ product, onOpenDetails }) {
           {product.name}
         </h3>
 
+        <div className="flex items-center gap-1 mt-1">
+          <Star size={12} className="fill-[#ed4e7e] text-[#ed4e7e]" />
+          <span className="text-[11px] font-bold text-black">
+            {rating}
+          </span>
+          <span className="text-[10px] text-gray-400">
+            ({reviews})
+          </span>
+        </div>
+
         <div className="flex items-center gap-2 mt-1">
           <span className="text-sm font-black text-black">
             ₹{price}
           </span>
-          {mrp && (
+          {mrp > price && (
             <span className="text-[10px] line-through text-gray-400">
               ₹{mrp}
             </span>
@@ -182,13 +220,21 @@ function ProductDetailsModal({ product, onClose }) {
   const { addToCart } = useCart();
   const router = useRouter();
 
-  const [variant, setVariant] = useState(product.variants[0]);
+  const variant = product?.variants?.[0];
+  const imageObj = variant?.images?.[0];
+
+  const image = imageObj
+    ? `${API_BASE}${typeof imageObj === "string" ? imageObj : imageObj.url}`
+    : "/placeholder.jpg";
+
   const [size, setSize] = useState("");
 
-  const image =
-    variant?.images?.[0]
-      ? `${API_BASE}${variant.images[0]}`
-      : "/placeholder.jpg";
+  const selectedSizeData = variant?.sizes?.find(
+    (s) => s.size === size
+  );
+
+  const rating = product?.rating || 0;
+  const reviews = product?.numReviews || 0;
 
   const handleCartAdd = () => {
     if (!size) return alert("Please select size");
@@ -196,7 +242,8 @@ function ProductDetailsModal({ product, onClose }) {
     addToCart({
       id: product._id,
       name: product.name,
-      price: variant.price,
+      price:
+        selectedSizeData?.price || variant?.sizes?.[0]?.price,
       image,
       size,
       quantity: 1,
@@ -222,42 +269,26 @@ function ProductDetailsModal({ product, onClose }) {
             {product.name}
           </h1>
 
-          <div className="flex gap-3">
-            <span className="text-2xl font-black text-[#ed4e7e]">
-              ₹{variant.price}
+          <div className="flex items-center gap-2">
+            <Star size={16} className="fill-[#ed4e7e] text-[#ed4e7e]" />
+            <span className="font-bold">{rating}</span>
+            <span className="text-gray-500 text-sm">
+              ({reviews} Reviews)
             </span>
-            {variant.mrp && (
-              <span className="line-through text-gray-400">
-                ₹{variant.mrp}
-              </span>
-            )}
           </div>
 
-          {/* COLOR */}
-          <div>
-            <p className="text-xs font-bold uppercase mb-2">
-              Select Color
-            </p>
-            <div className="flex gap-2">
-              {product.variants.map((v, i) => (
-                <button
-                  key={i}
-                  onClick={() => setVariant(v)}
-                  className="px-3 py-1 border rounded text-xs"
-                >
-                  {v.color}
-                </button>
-              ))}
-            </div>
+          <div className="text-2xl font-black text-[#ed4e7e]">
+            ₹
+            {selectedSizeData?.price ||
+              variant?.sizes?.[0]?.price}
           </div>
 
-          {/* SIZE */}
           <div>
             <p className="text-xs font-bold uppercase mb-2">
               Select Size
             </p>
             <div className="flex gap-2 flex-wrap">
-              {variant.sizes.map((s) => (
+              {variant?.sizes?.map((s) => (
                 <button
                   key={s.size}
                   onClick={() => setSize(s.size)}

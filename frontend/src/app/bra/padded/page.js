@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,13 +11,14 @@ import {
   ChevronDown,
   Star,
   X,
-  ShieldCheck,
-  Truck,
   ShoppingCart,
   Zap,
+  ChevronsDown,
 } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
+
+/* ================= API BASE ================= */
 
 const API_BASE =
   typeof window !== "undefined" &&
@@ -24,6 +26,8 @@ const API_BASE =
     window.location.hostname === "127.0.0.1")
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
+
+/* ================= PAGE ================= */
 
 export default function PaddedPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -34,12 +38,15 @@ export default function PaddedPage() {
     const fetchProducts = async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/products?category=bra&keyword=padded&limit=50`
+          `${API_BASE}/api/products?category=bra&subCategory=padded&limit=50`
         );
         const data = await res.json();
 
         if (data.success) {
-          setProducts(data.products);
+          const activeProducts = data.products.filter(
+            (p) => p.isActive === true
+          );
+          setProducts(activeProducts);
         }
       } catch (error) {
         console.error("Error fetching padded bras:", error);
@@ -52,54 +59,21 @@ export default function PaddedPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white font-sans overflow-x-hidden text-[#ed4e7e]">
-      <div className="w-full sticky top-0 z-50 bg-white border-b border-pink-50 shadow-sm">
-        <Navbar />
-      </div>
+    <div className="min-h-screen bg-white text-[#ed4e7e]">
+      <Navbar />
 
-      <div className="px-4 py-3 border-b border-pink-100 flex justify-between items-center bg-white sticky top-[64px] z-40">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest">
-            Sort By:
-          </span>
-          <select className="text-[10px] font-bold uppercase outline-none bg-transparent cursor-pointer">
-            <option>Low to High</option>
-            <option>High to Low</option>
-            <option>New Arrivals</option>
-          </select>
-        </div>
-
-        <div className="flex gap-4">
-          <button className="flex items-center gap-2 text-[10px] font-bold uppercase border border-[#ed4e7e] px-3 py-1 rounded-sm">
-            <Filter size={12} /> Show Filters
-          </button>
-        </div>
+      <div className="px-4 py-3 border-b flex justify-between items-center sticky top-[64px] bg-white z-40">
+        <span className="text-[10px] font-bold uppercase tracking-widest">
+          Padded Bras Collection
+        </span>
       </div>
 
       <div className="max-w-[1600px] mx-auto flex">
-        <aside className="hidden lg:block w-64 p-6 border-r border-pink-50 sticky top-[120px] h-[calc(100vh-120px)] overflow-y-auto">
-          <h2 className="font-bold text-[10px] mb-6 tracking-widest uppercase">
-            Refine Your Selection
-          </h2>
-
-          {["Size", "Color", "Discount", "Price Range", "Material"].map(
-            (f) => (
-              <div
-                key={f}
-                className="mb-4 flex justify-between items-center cursor-pointer border-b border-pink-50 pb-2"
-              >
-                <span className="text-[11px] font-bold uppercase">{f}</span>
-                <ChevronDown size={14} />
-              </div>
-            )
-          )}
-        </aside>
-
         <main className="flex-1 p-4">
           {loading ? (
             <p className="text-center">Loading products...</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
               {products.map((item) => (
                 <ProductCard
                   key={item._id}
@@ -130,18 +104,26 @@ function ProductCard({ item, onOpenDetails }) {
   const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
 
-  const image =
-    item.variants?.[0]?.images?.[0]
-      ? `${API_BASE}${item.variants[0].images[0]}`
-      : "/fallback.jpg";
+  const variant = item?.variants?.[0];
+
+  const imageObj =
+    variant?.images?.find((img) => img.isPrimary) ||
+    variant?.images?.[0];
+
+  const image = imageObj
+    ? `${API_BASE}${imageObj.url || imageObj}`
+    : "/fallback.jpg";
+
+  const minPrice = item?.minPrice || 0;
+  const mrp = item?.mrp || 0;
+  const discount =
+    mrp > minPrice ? Math.round(((mrp - minPrice) / mrp) * 100) : 0;
 
   const isWishlisted = wishlist.some((p) => p.id === item._id);
 
-  const handleWishlist = () => {
-    if (!user) {
-      alert("Please login to use wishlist");
-      return;
-    }
+  const handleWishlist = (e) => {
+    e.stopPropagation();
+    if (!user) return alert("Please login");
 
     isWishlisted
       ? removeFromWishlist(item._id)
@@ -149,74 +131,88 @@ function ProductCard({ item, onOpenDetails }) {
   };
 
   return (
-    <div className="group flex flex-col bg-white border border-pink-50 relative rounded-sm overflow-hidden shadow-sm h-full hover:shadow-md">
-      <div className="relative aspect-[3/4] overflow-hidden bg-[#fff5f8]">
+    <div
+      className="border rounded-sm overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer"
+      onClick={onOpenDetails}
+    >
+      <div className="relative aspect-[3/4] bg-[#fff5f8]">
         <img
           src={image}
           alt={item.name}
-          onClick={onOpenDetails}
-          className="cursor-pointer w-full h-full object-cover object-top"
+          className="w-full h-full object-cover"
         />
+
+        {discount > 0 && (
+          <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-[9px] px-2 py-1 font-bold">
+            {discount}% OFF
+          </div>
+        )}
 
         <button
           onClick={handleWishlist}
-          className="absolute top-2 right-2 z-20 bg-white p-1 rounded-full shadow"
+          className="absolute top-2 right-2 bg-white p-1 rounded-full shadow"
         >
           <Heart
-            size={18}
+            size={16}
             fill={isWishlisted ? "#ed4e7e" : "none"}
             stroke="#ed4e7e"
           />
         </button>
       </div>
 
-      <div className="p-3 flex flex-col flex-grow bg-white">
-        <h3 className="text-[10px] font-bold truncate uppercase mb-1">
+      <div className="p-3">
+        <h3 className="text-[11px] font-bold uppercase truncate">
           {item.name}
         </h3>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-black text-gray-900">
-            ₹{item.variants?.[0]?.price}
+        <div className="flex items-center gap-1 mt-1">
+          <Star size={12} className="fill-[#ed4e7e] text-[#ed4e7e]" />
+          <span className="text-[11px] font-bold text-black">
+            {item.rating || 0}
+          </span>
+          <span className="text-[10px] text-gray-400">
+            ({item.numReviews || 0})
           </span>
         </div>
 
-        <div className="flex items-center gap-1 mt-1.5 mb-3">
-          <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
-          <span className="text-[10px] font-bold">
-            {item.rating}
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-sm font-black text-black">
+            ₹{minPrice}
           </span>
-          <span className="text-[10px] text-pink-300">
-            ({item.numReviews})
-          </span>
+          {mrp > minPrice && (
+            <span className="text-[10px] line-through text-gray-400">
+              ₹{mrp}
+            </span>
+          )}
         </div>
 
-        <div className="mt-auto w-full px-1 pb-1">
-          <button
-            onClick={onOpenDetails}
-            className="w-full bg-[#ed4e7e] text-white py-2.5 text-[12px] font-bold uppercase rounded-sm"
-          >
-            ADD TO CART
-          </button>
-        </div>
+        <button className="mt-3 w-full bg-[#ed4e7e] text-white py-2 text-xs font-bold uppercase">
+          ADD TO CART
+        </button>
       </div>
     </div>
   );
 }
 
-/* ================= PRODUCT MODAL ================= */
+/* ================= MODAL ================= */
 
 function ProductDetailsModal({ product, onClose }) {
   const { addToCart } = useCart();
   const router = useRouter();
 
-  const [variant, setVariant] = useState(product.variants?.[0]);
+  const [variant, setVariant] = useState(product?.variants?.[0]);
   const [size, setSize] = useState("");
 
-  const image =
-    variant?.images?.[0]
-      ? `${API_BASE}${variant.images[0]}`
-      : "/fallback.jpg";
+  const imageObj =
+    variant?.images?.find((img) => img.isPrimary) ||
+    variant?.images?.[0];
+
+  const image = imageObj
+    ? `${API_BASE}${imageObj.url || imageObj}`
+    : "/fallback.jpg";
+
+  const selectedSizeObj =
+    variant?.sizes?.find((s) => s.size === size);
 
   const handleCartAdd = () => {
     if (!size) return alert("Select size");
@@ -224,14 +220,13 @@ function ProductDetailsModal({ product, onClose }) {
     addToCart({
       id: product._id,
       name: product.name,
-      price: variant.price,
+      price: selectedSizeObj?.price,
       image,
       size,
       quantity: 1,
     });
 
     alert("Added to cart");
-    onClose();
   };
 
   const handleBuyNow = () => {
@@ -240,32 +235,23 @@ function ProductDetailsModal({ product, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[90vh]">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-50 p-2 bg-white rounded-full"
-        >
-          <X size={24} />
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+      <div className="bg-white max-w-4xl w-full rounded-xl overflow-hidden flex flex-col md:flex-row relative">
+        <button onClick={onClose} className="absolute top-4 right-4">
+          <X size={20} />
         </button>
 
-        <div className="md:w-1/2 bg-[#fff5f8]">
-          <img
-            src={image}
-            className="w-full h-full object-cover"
-            alt={product.name}
-          />
+        <div className="md:w-1/2">
+          <img src={image} className="w-full h-full object-cover" />
         </div>
 
-        <div className="md:w-1/2 p-6 space-y-6 overflow-y-auto">
-          <h1 className="text-2xl font-black uppercase">
+        <div className="md:w-1/2 p-6 space-y-6">
+          <h1 className="text-xl font-black uppercase">
             {product.name}
           </h1>
 
-          <div className="flex items-center gap-3">
-            <span className="text-3xl font-black text-[#ed4e7e]">
-              ₹{variant?.price}
-            </span>
+          <div className="text-2xl font-black text-[#ed4e7e]">
+            ₹{selectedSizeObj?.price || product.minPrice}
           </div>
 
           <div>
@@ -277,7 +263,11 @@ function ProductDetailsModal({ product, onClose }) {
                 <button
                   key={s.size}
                   onClick={() => setSize(s.size)}
-                  className="px-4 py-2 border rounded"
+                  className={`px-4 py-2 border rounded ${
+                    size === s.size
+                      ? "bg-[#ed4e7e] text-white"
+                      : ""
+                  }`}
                 >
                   {s.size}
                 </button>
@@ -289,14 +279,23 @@ function ProductDetailsModal({ product, onClose }) {
             onClick={handleCartAdd}
             className="w-full bg-[#ed4e7e] text-white py-3 font-bold uppercase"
           >
-            Add to Cart
+            <ShoppingCart size={16} className="inline mr-2" />
+            Add To Cart
           </button>
 
           <button
             onClick={handleBuyNow}
             className="w-full bg-black text-white py-3 font-bold uppercase"
           >
+            <Zap size={16} className="inline mr-2" />
             Buy Now
+          </button>
+
+          <button
+            onClick={() => router.push(`/product/${product.slug}`)}
+            className="w-full border border-[#ed4e7e] text-[#ed4e7e] py-3 font-bold uppercase"
+          >
+            Show More Details <ChevronsDown />
           </button>
         </div>
       </div>

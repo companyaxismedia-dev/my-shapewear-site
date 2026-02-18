@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-
 const Product = require("../models/Product");
 
 const {
@@ -18,11 +17,11 @@ const { protect, admin } = require("../middleware/authMiddleware");
    PUBLIC ROUTES
 ====================================================== */
 
-// 🔹 GET all active products
+/* 🔹 GET ALL PRODUCTS (Filter + Search + Pagination) */
 router.get("/", getProducts);
 
-// 🔹 GET featured products
-router.get("/featured/list", async (req, res) => {
+/* 🔹 GET FEATURED PRODUCTS */
+router.get("/featured", async (req, res) => {
   try {
     const products = await Product.find({
       isFeatured: true,
@@ -42,7 +41,49 @@ router.get("/featured/list", async (req, res) => {
   }
 });
 
-// 🔹 GET products by category
+/* 🔹 GET BEST SELLERS */
+router.get("/best-sellers", async (req, res) => {
+  try {
+    const products = await Product.find({
+      isBestSeller: true,
+      isActive: true,
+    }).sort({ rating: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+/* 🔹 GET NEW ARRIVALS */
+router.get("/new-arrivals", async (req, res) => {
+  try {
+    const products = await Product.find({
+      isNewArrival: true,
+      isActive: true,
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+/* 🔹 GET PRODUCTS BY CATEGORY */
 router.get("/category/:category", async (req, res) => {
   try {
     const products = await Product.find({
@@ -63,18 +104,17 @@ router.get("/category/:category", async (req, res) => {
   }
 });
 
-// 🔹 GET product by slug
+/* 🔹 GET PRODUCT BY SLUG */
 router.get("/slug/:slug", getProductBySlug);
 
-// 🔹 GET product by ID
+/* 🔹 GET SINGLE PRODUCT BY ID */
 router.get("/:id", getProductById);
 
-
 /* ======================================================
-   ADMIN ROUTES (Protected)
+   ADMIN ROUTES (PROTECTED)
 ====================================================== */
 
-// 🔹 ADMIN - Get all products (Active + Inactive)
+/* 🔹 ADMIN: GET ALL PRODUCTS (Active + Inactive) */
 router.get("/admin/all", protect, admin, async (req, res) => {
   try {
     const products = await Product.find({}).sort({ createdAt: -1 });
@@ -92,7 +132,7 @@ router.get("/admin/all", protect, admin, async (req, res) => {
   }
 });
 
-// 🔹 ADMIN - Restore product (inactive → active)
+/* 🔹 ADMIN: RESTORE PRODUCT */
 router.put("/admin/restore/:id", protect, admin, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -120,13 +160,41 @@ router.put("/admin/restore/:id", protect, admin, async (req, res) => {
   }
 });
 
-// 🔹 CREATE product
+/* 🔹 ADMIN: TOGGLE FEATURED */
+router.put("/admin/feature/:id", protect, admin, async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    product.isFeatured = !product.isFeatured;
+    await product.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Feature status updated",
+      product,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+/* 🔹 CREATE PRODUCT */
 router.post("/", protect, admin, createProduct);
 
-// 🔹 UPDATE product
+/* 🔹 UPDATE PRODUCT */
 router.put("/:id", protect, admin, updateProduct);
 
-// 🔹 DELETE product (Soft delete)
+/* 🔹 SOFT DELETE PRODUCT */
 router.delete("/:id", protect, admin, deleteProduct);
 
 module.exports = router;

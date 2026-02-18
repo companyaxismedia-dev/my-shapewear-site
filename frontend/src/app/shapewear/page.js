@@ -5,9 +5,13 @@ import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import {
-  Heart, Filter, ChevronDown, Star, Eye, X,
-  ShieldCheck, Truck, ShoppingCart, Zap
+  Star,
+  X,
+  ShoppingCart,
+  Heart
 } from "lucide-react";
+import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 
 /* ================= API BASE ================= */
 
@@ -29,20 +33,16 @@ export default function ShapewearPage() {
     const fetchProducts = async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/api/products?category=shapewear`
+          `${API_BASE}/api/products?category=shapewear&limit=50`
         );
         const data = await res.json();
-
-        if (data.success) {
-          setProducts(data.products);
-        }
+        if (data.success) setProducts(data.products);
       } catch (error) {
         console.error("Error fetching shapewear:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
@@ -50,13 +50,13 @@ export default function ShapewearPage() {
     <div className="min-h-screen bg-white text-[#ed4e7e]">
       <Navbar />
 
-      <div className="px-4 py-3 border-b flex justify-between items-center">
+      <div className="px-4 py-3 border-b">
         <span className="text-[10px] font-bold uppercase">
           Shapewear Collection
         </span>
       </div>
 
-      <div className="max-w-[1600px] mx-auto p-4 bg-[#fffcfd]">
+      <div className="max-w-[1600px] mx-auto p-4">
         {loading ? (
           <p>Loading products...</p>
         ) : (
@@ -87,21 +87,40 @@ export default function ShapewearPage() {
 /* ================= PRODUCT CARD ================= */
 
 function ProductCard({ item, onOpenDetails }) {
-  const variant = item.variants?.[0] || {};
-  const image = variant.images?.[0]
-    ? `${API_BASE}${variant.images[0]}`
+  const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
+  const { user } = useAuth();
+
+  const variant = item?.variants?.[0];
+  const imageObj = variant?.images?.[0];
+
+  const image = imageObj
+    ? `${API_BASE}${typeof imageObj === "string" ? imageObj : imageObj.url}`
     : "/placeholder.jpg";
 
-  const price = variant.price || 0;
-  const mrp = variant.mrp || null;
+  const firstSize = variant?.sizes?.[0];
+  const price = firstSize?.price || 0;
+  const mrp = firstSize?.mrp || 0;
 
   const discount =
-    mrp && price
-      ? Math.round(((mrp - price) / mrp) * 100)
-      : null;
+    mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+
+  const isWishlisted = wishlist.some((p) => p.id === item._id);
+
+  const handleWishlist = (e) => {
+    e.stopPropagation();
+
+    if (!user) {
+      alert("Please login to use wishlist");
+      return;
+    }
+
+    isWishlisted
+      ? removeFromWishlist(item._id)
+      : toggleWishlist({ id: item._id, ...item });
+  };
 
   return (
-    <div className="group bg-white border rounded-sm shadow-sm hover:shadow-md transition flex flex-col">
+    <div className="bg-white border rounded-sm shadow-sm hover:shadow-md transition">
       <div
         className="relative aspect-[3/4] bg-[#fff5f8] cursor-pointer"
         onClick={onOpenDetails}
@@ -112,23 +131,45 @@ function ProductCard({ item, onOpenDetails }) {
           className="w-full h-full object-cover"
         />
 
-        {discount && (
+        {discount > 0 && (
           <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-xs px-2 py-1 font-bold">
             {discount}% OFF
           </div>
         )}
+
+        {/* ❤️ WISHLIST BUTTON */}
+        <button
+          onClick={handleWishlist}
+          className="absolute top-2 right-2 bg-white p-1 rounded-full shadow"
+        >
+          <Heart
+            size={18}
+            fill={isWishlisted ? "#ed4e7e" : "none"}
+            stroke="#ed4e7e"
+          />
+        </button>
       </div>
 
-      <div className="p-3 flex flex-col flex-grow">
+      <div className="p-3">
         <h3 className="text-[11px] font-bold uppercase truncate">
           {item.name}
         </h3>
+
+        <div className="flex items-center gap-1 mt-1">
+          <Star size={12} className="fill-[#ed4e7e] text-[#ed4e7e]" />
+          <span className="text-[11px] font-bold">
+            {item.rating || 0}
+          </span>
+          <span className="text-[10px] text-gray-400">
+            ({item.numReviews || 0})
+          </span>
+        </div>
 
         <div className="flex items-center gap-2 mt-1">
           <span className="text-sm font-black text-black">
             ₹{price}
           </span>
-          {mrp && (
+          {mrp > price && (
             <span className="text-xs line-through text-gray-400">
               ₹{mrp}
             </span>
@@ -150,15 +191,33 @@ function ProductCard({ item, onOpenDetails }) {
 
 function ProductDetailsModal({ product, onClose }) {
   const { addToCart } = useCart();
-  const router = useRouter();
+  const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
+  const { user } = useAuth();
 
-  const [variant, setVariant] = useState(product.variants[0]);
+  const [variant, setVariant] = useState(product?.variants?.[0]);
   const [size, setSize] = useState("");
 
-  const image =
-    variant?.images?.[0]
-      ? `${API_BASE}${variant.images[0]}`
-      : "/placeholder.jpg";
+  const imageObj = variant?.images?.[0];
+  const image = imageObj
+    ? `${API_BASE}${typeof imageObj === "string" ? imageObj : imageObj.url}`
+    : "/placeholder.jpg";
+
+  const selectedSizeObj =
+    variant?.sizes?.find((s) => s.size === size) ||
+    variant?.sizes?.[0];
+
+  const isWishlisted = wishlist.some((p) => p.id === product._id);
+
+  const handleWishlist = () => {
+    if (!user) {
+      alert("Please login to use wishlist");
+      return;
+    }
+
+    isWishlisted
+      ? removeFromWishlist(product._id)
+      : toggleWishlist({ id: product._id, ...product });
+  };
 
   const handleCartAdd = () => {
     if (!size) return alert("Please select size");
@@ -166,7 +225,7 @@ function ProductDetailsModal({ product, onClose }) {
     addToCart({
       id: product._id,
       name: product.name,
-      price: variant.price,
+      price: selectedSizeObj?.price,
       image,
       size,
       quantity: 1,
@@ -178,44 +237,65 @@ function ProductDetailsModal({ product, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
-      <div className="bg-white max-w-4xl w-full rounded-xl overflow-hidden flex flex-col md:flex-row relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4"
-        >
+      <div className="bg-white max-w-5xl w-full rounded-xl overflow-hidden flex flex-col md:flex-row relative max-h-[90vh]">
+
+        <button onClick={onClose} className="absolute top-4 right-4">
           <X size={20} />
         </button>
 
-        <div className="md:w-1/2">
+        <div className="md:w-1/2 bg-[#fff5f8] relative">
           <img src={image} className="w-full h-full object-cover" />
+
+          {/* ❤️ Modal Wishlist */}
+          <button
+            onClick={handleWishlist}
+            className="absolute top-4 left-4 bg-white p-2 rounded-full shadow"
+          >
+            <Heart
+              size={20}
+              fill={isWishlisted ? "#ed4e7e" : "none"}
+              stroke="#ed4e7e"
+            />
+          </button>
         </div>
 
-        <div className="md:w-1/2 p-6 space-y-6">
+        <div className="md:w-1/2 p-6 space-y-5 overflow-y-auto">
+
           <h1 className="text-xl font-black uppercase">
             {product.name}
           </h1>
 
+          <div className="flex items-center gap-2">
+            <Star size={16} className="fill-[#ed4e7e] text-[#ed4e7e]" />
+            <span className="font-bold">{product.rating}</span>
+            <span className="text-gray-400 text-sm">
+              ({product.numReviews} Reviews)
+            </span>
+          </div>
+
           <div className="flex gap-3">
             <span className="text-2xl font-black text-[#ed4e7e]">
-              ₹{variant.price}
+              ₹{selectedSizeObj?.price}
             </span>
-            {variant.mrp && (
+            {selectedSizeObj?.mrp > selectedSizeObj?.price && (
               <span className="line-through text-gray-400">
-                ₹{variant.mrp}
+                ₹{selectedSizeObj?.mrp}
               </span>
             )}
           </div>
 
-          {/* COLOR */}
           <div>
             <p className="text-xs font-bold uppercase mb-2">
               Select Color
             </p>
             <div className="flex gap-2">
-              {product.variants.map((v, i) => (
+              {product.variants?.map((v, i) => (
                 <button
                   key={i}
-                  onClick={() => setVariant(v)}
+                  onClick={() => {
+                    setVariant(v);
+                    setSize("");
+                  }}
                   className="px-3 py-1 border rounded text-xs"
                 >
                   {v.color}
@@ -224,13 +304,12 @@ function ProductDetailsModal({ product, onClose }) {
             </div>
           </div>
 
-          {/* SIZE */}
           <div>
             <p className="text-xs font-bold uppercase mb-2">
               Select Size
             </p>
             <div className="flex gap-2 flex-wrap">
-              {variant.sizes.map((s) => (
+              {variant?.sizes?.map((s) => (
                 <button
                   key={s.size}
                   onClick={() => setSize(s.size)}

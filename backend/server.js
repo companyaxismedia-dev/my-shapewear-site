@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 const helmet = require("helmet");
 const compression = require("compression");
+const rateLimit = require("express-rate-limit");
 
 dotenv.config();
 
@@ -24,11 +25,25 @@ app.use(
 
 app.use(compression());
 
+/* ================= RATE LIMIT ================= */
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests. Please try again later.",
+  },
+});
+
+app.use("/api", limiter);
+
 /* ======================================================
    📦 BODY PARSER
 ====================================================== */
 
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 /* ======================================================
@@ -54,7 +69,7 @@ app.use(
         return callback(null, true);
       }
 
-      console.log("❌ CORS Blocked Origin:", origin);
+      console.log("❌ CORS Blocked:", origin);
       callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
@@ -62,7 +77,7 @@ app.use(
 );
 
 /* ======================================================
-   📝 LOGGER
+   📝 REQUEST LOGGER
 ====================================================== */
 
 app.use((req, res, next) => {
@@ -73,53 +88,81 @@ app.use((req, res, next) => {
 });
 
 /* ======================================================
-   🗄 DATABASE CONNECTION
+   🗄 DATABASE CONNECTION (Production Safe)
 ====================================================== */
 
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
+  .connect(process.env.MONGO_URI, {
+    autoIndex: false,
+  })
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+  })
   .catch((err) => {
     console.error("❌ MongoDB Error:", err.message);
     process.exit(1);
   });
 
 /* ======================================================
-   🖼 STATIC IMAGE SERVING (🔥 IMPORTANT FIX)
+   🖼 STATIC FILE SERVING
 ====================================================== */
 
-// Serve entire public folder
-app.use(
-  express.static(path.join(__dirname, "../frontend/public"))
-);
-
-// OR if you want only image folder:
 app.use(
   "/image",
   express.static(path.join(__dirname, "../frontend/public/image"))
 );
 
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
+
 /* ======================================================
-   🛣 ROUTES
+   🛣 ROOT + HEALTH CHECK
 ====================================================== */
 
 app.get("/", (req, res) => {
-  res.status(200).send("🚀 Glovia Glamour API Running");
+  res.status(200).json({
+    success: true,
+    message: "🚀 Glovia Glamour Enterprise API Running",
+  });
 });
 
-// Auth + OTP
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
+});
+
+/* ======================================================
+   📦 ROUTES
+====================================================== */
+
+/* ================= AUTH ================= */
 app.use("/api/otp", require("./routes/otpRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
-// APIs
+/* ================= PRODUCTS ================= */
+/*
+   Supports:
+   - Multiple variants
+   - Pincode check
+   - Review system
+   - Offer validation
+   - Advanced filtering
+*/
 app.use("/api/products", require("./routes/productRoutes"));
-app.use("/api/orders", require("./routes/orderRoutes"));
-app.use("/api/cart", require("./routes/cartRoutes"));
-app.use("/api/wishlist", require("./routes/wishlistRoutes"));
-app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
-app.use("/api/users", require("./routes/userAddressRoutes"));
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+/* ================= CART ================= */
+app.use("/api/cart", require("./routes/cartRoutes"));
+
+/* ================= WISHLIST ================= */
+app.use("/api/wishlist", require("./routes/wishlistRoutes"));
+
+/* ================= ORDERS ================= */
+app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
+
+/* ================= USERS ================= */
+app.use("/api/users", require("./routes/userAddressRoutes"));
 
 /* ======================================================
    ❌ 404 HANDLER
@@ -158,10 +201,17 @@ const server = app.listen(PORT, () => {
 });
 
 /* ======================================================
-   💥 HANDLE UNHANDLED PROMISES
+   💥 GRACEFUL SHUTDOWN
 ====================================================== */
 
 process.on("unhandledRejection", (err) => {
   console.error("UNHANDLED ERROR:", err.message);
   server.close(() => process.exit(1));
+});
+
+process.on("SIGTERM", () => {
+  console.log("SIGTERM RECEIVED. Shutting down gracefully");
+  server.close(() => {
+    console.log("Process terminated");
+  });
 });
