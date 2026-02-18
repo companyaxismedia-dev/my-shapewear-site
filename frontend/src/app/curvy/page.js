@@ -1,84 +1,124 @@
 "use client";
-
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import {
-  Heart, Filter, ChevronDown, Star, Eye, X,
-  ShieldCheck, Truck, ShoppingCart, Zap
+  Heart,
+  Filter,
+  ChevronDown,
+  Star,
+  X,
+  ShoppingCart,
+  Zap,
+  ChevronsDown,
 } from "lucide-react";
+import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
 
-/* ================= PRODUCT DATA ================= */
+const API_BASE =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1")
+    ? "http://localhost:5000"
+    : "https://my-shapewear-site.onrender.com";
 
-const generateCurvyProducts = () =>
-  Array.from({ length: 42 }, (_, i) => {
-    const num = i + 1;
-    const price = 799 + (i * 15);
-    const mrp = price + 1000;
+/* =====================================================
+   PANTY PAGE — EXACT SAME STRUCTURE AS BRA PAGE
+===================================================== */
 
-    return {
-      id: `curvy-${num}`,
-      name: `Glovia Curve Supreme Support Bra ${num}`,
-      price,
-      oldPrice: mrp,
-      img: `/image/curvy/curvy-${num}.jpg`,
-      discount: Math.round(((mrp - price) / mrp) * 100),
-      rating: (4.4 + (i % 5) * 0.1).toFixed(1),
-      reviews: 120 + (i * 3),
-      offer: "3 FOR 1499",
-      sizes: ["34C", "36D", "38C", "40D", "42DD"],
-      colors: [
-        { name: "Pink", code: "#ffc0cb" },
-        { name: "Black", code: "#000000" },
-        { name: "Nude", code: "#e3bc9a" }
-      ]
-    };
-  });
-
-/* ================= PAGE ================= */
-
-export default function CurvyPage() {
+export default function PantyPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const products = useMemo(() => generateCurvyProducts(), []);
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/products?category=curvy&limit=50`
+        );
+        const data = await res.json();
+        if (data.success) setProducts(data.products);
+      } catch (error) {
+        console.error("Error fetching panties:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white font-sans overflow-x-hidden text-[#ed4e7e]">
-      <Navbar />
 
-      {/* Banner */}
-      <div className="bg-pink-50 py-6 text-center border-b border-pink-100">
-        <h1 className="text-2xl font-bold uppercase tracking-widest">
-          Curvy Collection
-        </h1>
-        <p className="text-[11px] italic opacity-80">
-          Luxury support crafted for fuller silhouettes
-        </p>
+      {/* ===== STICKY NAVBAR ===== */}
+      <div className="w-full sticky top-0 z-50 bg-white border-b border-pink-50 shadow-sm">
+        <Navbar />
       </div>
 
-      {/* Filter Header */}
-      <div className="px-4 py-3 border-b flex justify-between items-center sticky top-[64px] bg-white z-40">
-        <span className="text-[10px] font-bold uppercase">
-          42 Products
-        </span>
-        <button className="flex items-center gap-2 text-[10px] font-bold border px-3 py-1 rounded-sm">
-          <Filter size={12} /> Filters
-        </button>
+      {/* ===== FILTER HEADER (IDENTICAL) ===== */}
+      <div className="px-4 py-3 border-b border-pink-100 flex justify-between items-center bg-white sticky top-[64px] z-40">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest">
+            Sort By:
+          </span>
+          <select className="text-[10px] font-bold uppercase outline-none bg-transparent cursor-pointer">
+            <option>Low to High</option>
+            <option>High to Low</option>
+            <option>New Arrivals</option>
+          </select>
+        </div>
+
+        <div className="flex gap-4">
+          <button className="flex items-center gap-1 text-[10px] font-bold uppercase">
+            <span className="w-2 h-2 bg-[#ed4e7e] inline-block"></span> Size
+          </button>
+
+          <button className="flex items-center gap-2 text-[10px] font-bold uppercase border border-[#ed4e7e] px-3 py-1 rounded-sm">
+            <Filter size={12} /> Show Filters
+          </button>
+        </div>
       </div>
 
       <div className="max-w-[1600px] mx-auto flex">
-        <main className="flex-1 p-4 bg-[#fffcfd]">
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {products.map((item) => (
-              <ProductCard
-                key={item.id}
-                item={item}
-                onOpenDetails={() => setSelectedProduct(item)}
-              />
-            ))}
-          </div>
+
+        {/* ===== SIDEBAR ===== */}
+        <aside className="hidden lg:block w-64 p-6 border-r border-pink-50 sticky top-[120px] h-[calc(100vh-120px)] overflow-y-auto no-scrollbar">
+          <h2 className="font-bold text-[10px] mb-6 tracking-widest uppercase">
+            Refine Your Selection
+          </h2>
+
+          {["Size", "Color", "Discount", "Padded", "Price Range", "Material"].map(
+            (f) => (
+              <div
+                key={f}
+                className="mb-4 flex justify-between items-center cursor-pointer border-b border-pink-50 pb-2"
+              >
+                <span className="text-[11px] font-bold uppercase">{f}</span>
+                <ChevronDown size={14} />
+              </div>
+            )
+          )}
+        </aside>
+
+        {/* ===== GRID ===== */}
+        <main className="flex-1 p-4">
+          {loading ? (
+            <p className="text-center">Loading products...</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              {products.map((item) => (
+                <ProductCard
+                  key={item._id}
+                  item={item}
+                  onOpenDetails={() => setSelectedProduct(item)}
+                />
+              ))}
+            </div>
+          )}
         </main>
       </div>
 
@@ -94,90 +134,228 @@ export default function CurvyPage() {
   );
 }
 
-/* ================= PRODUCT CARD ================= */
+/* =====================================================
+   SAME getImageUrl HELPER
+===================================================== */
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return "/fallback.jpg";
+
+  if (typeof imagePath === "string") {
+    if (imagePath.startsWith("http")) return imagePath;
+    return `${API_BASE}${imagePath}`;
+  }
+
+  if (typeof imagePath === "object") {
+    const path = imagePath.url || imagePath.path;
+    if (!path) return "/fallback.jpg";
+    if (path.startsWith("http")) return path;
+    return `${API_BASE}${path}`;
+  }
+
+  return "/fallback.jpg";
+};
+
+/* =====================================================
+   PRODUCT CARD — 100% IDENTICAL TO BRA PAGE
+===================================================== */
 
 function ProductCard({ item, onOpenDetails }) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
+  const { user } = useAuth();
+  const { addToCart } = useCart();
+
+  const [showSizes, setShowSizes] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const cardRef = React.useRef(null);
+
+  const image = getImageUrl(item.variants?.[0]?.images?.[0]);
+
+  const isWishlisted = wishlist.some((p) => p.id === item._id);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cardRef.current && !cardRef.current.contains(event.target)) {
+        setShowSizes(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleWishlist = () => {
+    if (!user) {
+      alert("Please login to use wishlist");
+      return;
+    }
+
+    isWishlisted
+      ? removeFromWishlist(item._id)
+      : toggleWishlist({ id: item._id, ...item });
+  };
+
+  const handleSizeSelect = (size) => {
+    const variant = item.variants?.[0];
+
+    addToCart({
+      productId: item._id,
+      name: item.name,
+      price: variant?.price || item.price,
+      image,
+      size,
+      quantity: 1,
+    });
+
+    setShowSizes(false);
+
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 1500);
+  };
 
   return (
-    <div className="group bg-white border rounded-sm overflow-hidden shadow-sm hover:shadow-md transition">
+    <div
+      ref={cardRef}
+      className="group flex flex-col bg-white border border-pink-50 relative rounded-sm overflow-hidden shadow-sm h-full transition-all hover:shadow-md"
+    >
+      <div className="relative aspect-[3/4] overflow-hidden bg-[#fff5f8]">
 
-      <div className="relative aspect-[3/4] bg-[#fff5f8] overflow-hidden">
         <img
-          src={item.img}
+          src={image}
           alt={item.name}
-          className="w-full h-full object-cover object-top group-hover:scale-105 transition"
+          onClick={onOpenDetails}
+          className={`cursor-pointer w-full h-full object-cover object-top transition-all duration-500 group-hover:scale-105 ${
+            showSizes ? "blur-sm scale-105" : ""
+          }`}
         />
 
-        <div className="absolute top-0 left-0 bg-[#ed4e7e] text-white text-[9px] px-2 py-0.5 font-bold">
-          {item.discount}% OFF
-        </div>
+        {item.discount > 0 && (
+          <div className="absolute top-0 left-0 bg-[#ed4e7e] text-white text-[9px] px-2 py-0.5 font-bold z-10">
+            {item.discount}% OFF
+          </div>
+        )}
 
-        <div className="absolute bottom-0 right-0 bg-[#AD1457] text-white text-[9px] px-2 py-1 font-bold italic">
-          {item.offer}
-        </div>
+        <button
+          onClick={handleWishlist}
+          className="absolute top-2 right-2 z-20 bg-white p-1 rounded-full shadow hover:scale-110 transition"
+        >
+          <Heart
+            size={18}
+            fill={isWishlisted ? "#ed4e7e" : "none"}
+            stroke="#ed4e7e"
+          />
+        </button>
 
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-          <div
-            onClick={onOpenDetails}
-            className="bg-white p-2 rounded-full shadow-md cursor-pointer"
-          >
-            <Eye size={18} />
+        {/* SIZE OVERLAY */}
+        <div
+          className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+            showSizes ? "opacity-100 visible" : "opacity-0 invisible"
+          }`}
+        >
+          <div className="bg-white/95 backdrop-blur-md p-5 rounded-xl shadow-2xl">
+
+            <p className="text-xs font-bold uppercase mb-3 text-center text-[#ed4e7e] tracking-wider">
+              SELECT SIZE
+            </p>
+
+            <div className="flex gap-3 flex-wrap justify-center">
+              {item.variants?.[0]?.sizes?.map((s, i) => (
+                <button
+                  key={i}
+                  disabled={s.stock === 0}
+                  onClick={() => handleSizeSelect(s.size)}
+                  className="px-3 py-1 border border-[#ed4e7e] text-[#ed4e7e] rounded text-xs font-medium hover:bg-[#ed4e7e] hover:text-white transition"
+                >
+                  {s.size}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
+
+        {showSuccess && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-4 py-2 rounded-full shadow-lg animate-bounce">
+            Added to Bag ✓
+          </div>
+        )}
       </div>
 
-      <div className="p-3 flex flex-col">
-        <h3 className="text-[11px] font-bold uppercase truncate mb-1">
+      <div className="p-3 flex flex-col flex-grow bg-white">
+        <h3 className="text-[10px] font-bold truncate uppercase mb-1">
           {item.name}
         </h3>
 
         <div className="flex items-center gap-2">
-          <span className="font-black text-gray-900">₹{item.price}</span>
-          <span className="text-[10px] line-through text-gray-400">
-            ₹{item.oldPrice}
+          <span className="text-sm font-black text-gray-900">
+            ₹{item.price}
           </span>
+
+          {item.mrp && (
+            <span className="text-[10px] text-pink-200 line-through font-medium">
+              ₹{item.mrp}
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-1 mt-1">
+        <div className="flex items-center gap-1 mt-1.5 mb-3">
           <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
-          <span className="text-[10px] font-bold">{item.rating}</span>
-          <span className="text-[10px] text-gray-400">
-            ({item.reviews})
+          <span className="text-[10px] font-bold">
+            {item.rating}
+          </span>
+          <span className="text-[10px] text-pink-300">
+            ({item.numReviews})
           </span>
         </div>
 
-        <button
-          onClick={onOpenDetails}
-          className="mt-3 w-full bg-[#ed4e7e] text-white py-2 text-xs font-bold uppercase rounded-sm"
-        >
-          ADD TO CART
-        </button>
+        <div className="mt-auto w-full px-1 pb-1">
+          <button
+            onClick={() => setShowSizes(true)}
+            className="cursor-pointer w-full bg-[#ed4e7e] text-white py-2.5 text-[12px] font-bold uppercase tracking-widest rounded-sm shadow-sm flex items-center justify-center active:scale-95 transition-all hover:scale-105"
+          >
+            ADD TO CART
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ================= MODAL ================= */
+/* =====================================================
+   PRODUCT DETAILS MODAL — EXACT BRA VERSION
+===================================================== */
 
-function ProductDetailsModal({ product, onClose }) {
+export function ProductDetailsModal({ product, onClose }) {
   const { addToCart } = useCart();
   const router = useRouter();
 
+  const [variant, setVariant] = useState(product.variants?.[0]);
   const [size, setSize] = useState("");
-  const [color, setColor] = useState(product.colors[0]);
+
+  const image = getImageUrl(
+    variant?.images?.[0]
+  );
 
   const handleCartAdd = () => {
-    if (!size) return alert("Please select size");
+    if (!size) return alert("Select size");
 
-    addToCart({
-      ...product,
-      selectedSize: size,
-      selectedColor: color.name,
-      quantity: 1
+    // addToCart({
+    //   id: product._id,
+    //   name: product.name,
+    //   price: variant.price,
+    //   image,
+    //   size,
+    //   quantity: 1,
+    // });
+        addToCart({
+  productId: product._id,
+  size,
+  quantity: 1,
     });
 
-    onClose();
+
+    alert("Added to cart");
   };
 
   const handleBuyNow = () => {
@@ -185,73 +363,87 @@ function ProductDetailsModal({ product, onClose }) {
     router.push("/cart");
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-w-4xl w-full rounded-xl overflow-hidden flex flex-col md:flex-row relative">
+  const handleShowMore = () => {
+    router.push(`/product/${product.slug}`);
+  };
 
-        <button onClick={onClose} className="absolute top-4 right-4">
-          <X size={20} />
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[90vh]">
+
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-50 p-2 bg-white rounded-full hover:rotate-90 transition"
+        >
+          <X size={24} />
         </button>
 
-        <div className="md:w-1/2">
+        <div className="md:w-1/2 bg-[#fff5f8]">
           <img
-            src={product.img}
+            src={image}
             className="w-full h-full object-cover"
+            alt={product.name}
           />
         </div>
 
-        <div className="md:w-1/2 p-6 space-y-6">
-          <h1 className="text-xl font-black uppercase">
+        <div className="md:w-1/2 p-6 space-y-6 overflow-y-auto">
+          <h1 className="text-2xl font-black uppercase">
             {product.name}
           </h1>
 
-          <div className="flex gap-3">
-            <span className="text-2xl font-black text-[#ed4e7e]">
-              ₹{product.price}
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-black text-[#ed4e7e]">
+              ₹{variant?.price}
             </span>
-            <span className="line-through text-gray-400">
-              ₹{product.oldPrice}
-            </span>
+
+            {variant?.mrp && (
+              <span className="line-through text-gray-400">
+                ₹{variant.mrp}
+              </span>
+            )}
           </div>
 
-          {/* Color */}
+          {/* COLOR */}
           <div>
             <p className="text-xs font-bold uppercase mb-2">
               Select Color
             </p>
             <div className="flex gap-2">
-              {product.colors.map((c) => (
+              {product.variants?.map((v, i) => (
                 <button
-                  key={c.name}
-                  onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 ${
-                    color.name === c.name
-                      ? "border-[#ed4e7e]"
-                      : "border-gray-200"
-                  }`}
-                  style={{ backgroundColor: c.code }}
-                />
+                  key={i}
+                  onClick={() => {
+                    setVariant(v);
+                    setSize("");
+                  }}
+                  className={`px-3 py-1 border rounded transition ${variant?.color === v.color
+                      ? "bg-[#ed4e7e] text-white border-[#ed4e7e]"
+                      : "hover:scale-105"
+                    }`}>
+
+                  {v.color}
+                </button>
               ))}
             </div>
           </div>
 
-          {/* Size */}
+          {/* SIZE */}
           <div>
             <p className="text-xs font-bold uppercase mb-2">
               Select Size
             </p>
             <div className="flex gap-2 flex-wrap">
-              {product.sizes.map((s) => (
+              {variant?.sizes?.map((s) => (
                 <button
-                  key={s}
-                  onClick={() => setSize(s)}
-                  className={`px-4 py-2 border rounded ${
-                    size === s
+                  key={s.size}
+                  onClick={() => setSize(s.size)}
+                  className={`px-4 py-2 border rounded transition ${
+                    size === s.size
                       ? "bg-[#ed4e7e] text-white"
-                      : ""
+                      : "hover:scale-105"
                   }`}
                 >
-                  {s}
+                  {s.size}
                 </button>
               ))}
             </div>
@@ -259,30 +451,30 @@ function ProductDetailsModal({ product, onClose }) {
 
           <button
             onClick={handleCartAdd}
-            className="w-full bg-[#ed4e7e] text-white py-3 font-bold uppercase"
+            className="w-full bg-[#ed4e7e] text-white py-3 font-bold uppercase hover:scale-105 transition"
           >
             <ShoppingCart size={16} className="inline mr-2" />
-            Add To Cart
+            Add to Cart
           </button>
 
           <button
             onClick={handleBuyNow}
-            className="w-full border border-[#ed4e7e] text-[#ed4e7e] py-3 font-bold uppercase"
+            className="w-full bg-black text-white py-3 font-bold uppercase hover:scale-105 transition"
           >
             <Zap size={16} className="inline mr-2" />
             Buy Now
           </button>
 
-          <div className="flex justify-between text-[10px] font-bold uppercase pt-4 border-t">
-            <span className="flex items-center gap-1">
-              <Truck size={14} /> Fast Delivery
-            </span>
-            <span className="flex items-center gap-1">
-              <ShieldCheck size={14} /> Premium Quality
-            </span>
-          </div>
+          <button
+            onClick={handleShowMore}
+            className="w-full flex items-center justify-center gap-2 border border-[#ed4e7e] text-[#ed4e7e] py-3 font-bold uppercase hover:bg-[#ed4e7e] hover:text-white transition-all duration-300 group"
+          >
+            Show More Details
+            <ChevronsDown className="group-hover:translate-y-1 transition-transform duration-300" />
+          </button>
         </div>
       </div>
     </div>
   );
 }
+

@@ -153,13 +153,32 @@ export default function AutoSliceSlider() {
 function ProductCard({ product, onOpenDetails }) {
   const variant = product?.variants?.[0] || {};
 
+  // const imagePath = variant?.images?.[0];
+
+  // const image = imagePath
+  //   ? imagePath.startsWith("http")
+  //     ? imagePath
+  //     : `${API_BASE}${imagePath}`
+  //   : "/placeholder.jpg";
   const imagePath = variant?.images?.[0];
 
-  const image = imagePath
-    ? imagePath.startsWith("http")
+let image = "/placeholder.jpg";
+
+if (imagePath) {
+  if (typeof imagePath === "string") {
+    image = imagePath.startsWith("http")
       ? imagePath
-      : `${API_BASE}${imagePath}`
-    : "/placeholder.jpg";
+      : `${API_BASE}${imagePath}`;
+  } else if (typeof imagePath === "object") {
+    const path = imagePath.url || imagePath.path;
+    if (path) {
+      image = path.startsWith("http")
+        ? path
+        : `${API_BASE}${path}`;
+    }
+  }
+}
+
 
   const price = variant?.price || product.price || 0;
   const oldPrice = variant?.mrp || product.mrp || null;

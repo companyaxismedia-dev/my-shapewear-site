@@ -15,11 +15,12 @@ import {
 } from "lucide-react";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
+import Footer from "@/components/Footer";
 
 const API_BASE =
   typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1")
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1")
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
@@ -114,6 +115,7 @@ export default function BraPage() {
           onClose={() => setSelectedProduct(null)}
         />
       )}
+      <Footer />
     </div>
   );
 }
@@ -206,6 +208,29 @@ export default function BraPage() {
 //   );
 // }
 
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return "/fallback.jpg";
+
+  // If already full URL
+  if (typeof imagePath === "string") {
+    if (imagePath.startsWith("http")) return imagePath;
+    return `${API_BASE}${imagePath}`;
+  }
+
+  // If backend sends object
+  if (typeof imagePath === "object") {
+    const path = imagePath.url || imagePath.path;
+    if (!path) return "/fallback.jpg";
+
+    if (path.startsWith("http")) return path;
+    return `${API_BASE}${path}`;
+  }
+
+  return "/fallback.jpg";
+};
+
+
 function ProductCard({ item, onOpenDetails }) {
   const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
@@ -216,10 +241,14 @@ function ProductCard({ item, onOpenDetails }) {
 
   const cardRef = React.useRef(null);
 
-  const image =
+  // const image =
+  //   item.variants?.[0]?.images?.[0]
+  //     ? `${API_BASE}${item.variants[0].images[0]}`
+  //     : "/fallback.jpg";
+  const image = getImageUrl(
     item.variants?.[0]?.images?.[0]
-      ? `${API_BASE}${item.variants[0].images[0]}`
-      : "/fallback.jpg";
+  );
+
 
   const isWishlisted = wishlist.some((p) => p.id === item._id);
 
@@ -283,9 +312,8 @@ function ProductCard({ item, onOpenDetails }) {
           src={image}
           alt={item.name}
           onClick={onOpenDetails}
-          className={`cursor-pointer w-full h-full object-cover object-top transition-all duration-500 group-hover:scale-105 ${
-            showSizes ? "blur-sm scale-105" : ""
-          }`}
+          className={`cursor-pointer w-full h-full object-cover object-top transition-all duration-500 group-hover:scale-105 ${showSizes ? "blur-sm scale-105" : ""
+            }`}
         />
 
         {/* DISCOUNT */}
@@ -309,11 +337,10 @@ function ProductCard({ item, onOpenDetails }) {
 
         {/* ================= SIZE OVERLAY ================= */}
         <div
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
-            showSizes
-              ? "opacity-100 visible"
-              : "opacity-0 invisible"
-          }`}
+          className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${showSizes
+            ? "opacity-100 visible"
+            : "opacity-0 invisible"
+            }`}
         >
           <div className="bg-white/95 backdrop-blur-md p-5 rounded-xl shadow-2xl transform transition-all duration-300 scale-100">
 
@@ -394,19 +421,20 @@ export function ProductDetailsModal({ product, onClose }) {
   const [variant, setVariant] = useState(product.variants?.[0]);
   const [size, setSize] = useState("");
 
-  const image =
+  // const image =
+  //   variant?.images?.[0]
+  //     ? `${API_BASE}${variant.images[0]}`
+  //     : "/fallback.jpg";
+  const image = getImageUrl(
     variant?.images?.[0]
-      ? `${API_BASE}${variant.images[0]}`
-      : "/fallback.jpg";
+  );
+
 
   const handleCartAdd = () => {
     if (!size) return alert("Select size");
 
     addToCart({
-      id: product._id,
-      name: product.name,
-      price: variant.price,
-      image,
+      productId: product._id,
       size,
       quantity: 1,
     });
@@ -461,9 +489,15 @@ export function ProductDetailsModal({ product, onClose }) {
               {product.variants?.map((v, i) => (
                 <button
                   key={i}
-                  onClick={() => setVariant(v)}
-                  className="px-3 py-1 border rounded hover:scale-105 transition"
-                >
+                  onClick={() => {
+                    setVariant(v);
+                    setSize("");
+                  }}
+                  className={`px-3 py-1 border rounded transition ${variant?.color === v.color
+                      ? "bg-[#ed4e7e] text-white border-[#ed4e7e]"
+                      : "hover:scale-105"
+                    }`}>
+
                   {v.color}
                 </button>
               ))}
@@ -480,8 +514,10 @@ export function ProductDetailsModal({ product, onClose }) {
                 <button
                   key={s.size}
                   onClick={() => setSize(s.size)}
-                  className="px-4 py-2 border rounded hover:scale-105 transition"
-                >
+                  className={`px-4 py-2 border rounded transition ${size === s.size
+                    ? "bg-[#ed4e7e] text-white"
+                    : "hover:scale-105"
+                    }`}                >
                   {s.size}
                 </button>
               ))}
