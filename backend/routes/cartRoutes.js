@@ -3,20 +3,18 @@ const router = express.Router();
 const { protect } = require("../middleware/authMiddleware");
 const cartController = require("../controllers/cartController");
 
-// 1️⃣ GET LOGGED-IN USER CART
-// GET /api/cart
+// GET USER CART
 router.get("/", protect, cartController.getCart);
 
-// 2️⃣ ADD TO CART
-// POST /api/cart/add
-router.post("/add", protect, cartController.addItemToCart);
+// ADD ITEM
+router.post("/", protect, cartController.addItemToCart);
 
-// 3️⃣ REMOVE ITEM FROM CART
-// DELETE /api/cart/remove/:productId
-router.delete(
-  "/remove/:productId",
-  protect,
-  cartController.deleteItemFromCart
-);
+// UPDATE QUANTITY
+router.put("/:itemId", protect, cartController.updateQty);
+router.put("/size/:itemId", protect, cartController.updateSize);
+
+
+// REMOVE SINGLE ITEM
+router.delete("/:itemId", protect, cartController.deleteItemFromCart);
 
 module.exports = router;

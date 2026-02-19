@@ -153,26 +153,63 @@ export default function AutoSliceSlider() {
 function ProductCard({ product, onOpenDetails }) {
   const variant = product?.variants?.[0] || {};
 
+  // const imagePath = variant?.images?.[0];
+
+  // const image = imagePath
+  //   ? imagePath.startsWith("http")
+  //     ? imagePath
+  //     : `${API_BASE}${imagePath}`
+  //   : "/placeholder.jpg";
   const imagePath = variant?.images?.[0];
 
-  const image = imagePath
-    ? imagePath.startsWith("http")
+let image = "/placeholder.jpg";
+
+if (imagePath) {
+  if (typeof imagePath === "string") {
+    image = imagePath.startsWith("http")
       ? imagePath
-      : `${API_BASE}${imagePath}`
-    : "/placeholder.jpg";
+      : `${API_BASE}${imagePath}`;
+  } else if (typeof imagePath === "object") {
+    const path = imagePath.url || imagePath.path;
+    if (path) {
+      image = path.startsWith("http")
+        ? path
+        : `${API_BASE}${path}`;
+    }
+  }
+}
 
-  const price = variant?.price || product.price || 0;
-  const oldPrice = variant?.mrp || product.mrp || null;
 
-  const discount =
-    oldPrice && price
-      ? Math.round(((oldPrice - price) / oldPrice) * 100)
-      : null;
+  /* ===== PRICE + MRP FIX (SIZE BASED) ===== */
 
-  const sizes = variant?.sizes?.map((s) => s.size) || [];
+const firstSize = variant?.sizes?.[0] || {};
 
-  const rating = product?.rating || 4.4;
-  const reviews = product?.numReviews || 150;
+const price =
+  firstSize?.price ||
+  product?.minPrice ||
+  product?.price ||
+  0;
+
+const oldPrice =
+  firstSize?.mrp ||
+  product?.mrp ||
+  null;
+
+const discount =
+  oldPrice && price
+    ? Math.round(((oldPrice - price) / oldPrice) * 100)
+    : null;
+
+/* ===== SIZES ===== */
+
+const sizes =
+  variant?.sizes?.map((s) => s.size) || [];
+
+/* ===== RATING ===== */
+
+const rating = product?.rating || 4.4;
+const reviews = product?.numReviews || 150;
+
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full">
@@ -224,7 +261,7 @@ function ProductCard({ product, onOpenDetails }) {
 
         {sizes.length > 0 && (
           <div className="flex gap-1 mb-3">
-            {sizes.slice(0, 4).map((size) => (
+            {sizes.slice(0, ).map((size) => (
               <span
                 key={size}
                 className="flex-1 text-center border text-[10px] py-1 rounded font-bold text-gray-600"
