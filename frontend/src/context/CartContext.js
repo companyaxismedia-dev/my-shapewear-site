@@ -8,138 +8,224 @@ const CartContext = createContext();
 
 const API_BASE =
   typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1")
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1")
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
-/* ================= GET TOKEN SAFE ================= */
-const getToken = () => {
-  if (typeof window === "undefined") return null;
-
-  const user = localStorage.getItem("user");
-  if (!user) return null;
-
-  try {
-    const parsed = JSON.parse(user);
-    return parsed?.token || null;
-  } catch {
-    return null;
-  }
-};
+const getToken = () => localStorage.getItem("token");
 
 export const CartProvider = ({ children }) => {
-  const { user, logout } = useAuth();
-
+  const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   /* ================= LOAD CART ================= */
-
   useEffect(() => {
-    if (user) {
-      fetchCartFromDB();
-    } else {
-      const local = localStorage.getItem("guestCart");
-      if (local) setCartItems(JSON.parse(local));
-    }
+    const loadCart = async () => {
+      if (user) {
+        await mergeGuestCart();
+        await fetchCart();
+      } else {
+        const guest = localStorage.getItem("guestCart");
+        if (guest) setCartItems(JSON.parse(guest));
+      }
+    };
+
+    loadCart();
   }, [user]);
 
   /* ================= FETCH CART ================= */
+  // const fetchCart = async () => {
+  //   const res = await axios.get(`${API_BASE}/api/cart`, {
+  //     headers: { Authorization: `Bearer ${getToken()}` },
+  //   });
 
-  const fetchCartFromDB = async () => {
-    const token = getToken();
-    if (!token) return;
+  //   // const formatted = res.data.items.map((item) => ({
+  //   //   id: item._id,
+  //   //   productId: item.product._id,
+  //   //   name: item.product.name,
+  //   //   price: item.product.price,
+  //   //   image: item.product.images?.[0] || "/fallback.jpg",
+  //   //   quantity: item.qty,
+  //   //   size: item.size,
+  //   //   color: item.color,
+  //   // }));
 
-    try {
-      setLoading(true);
+  //   const formatted = res.data.items.map((item) => ({
+  //     id: item._id,
+  //     productId: item.product._id,
+  //     name: item.product.name,
+  //     brand: item.product.brand || "Glovia",
+  //     price: item.product.price,
+  //     mrp: item.product.mrp || item.product.price,
+  //     discount: item.product.discount || 0,
+  //     image:
+  //       item.product.images?.[0] ||
+  //       item.product.variants?.[0]?.images?.[0] ||
+  //       "/fallback.jpg",
+  //     quantity: item.qty,
+  //     size: item.size,
+  //     color: item.color,
+  //     seller: "Glovia Glamour",
+  //     deliveryDate: "5-7 Business Days",
+  //   }));
 
-      const res = await axios.get(`${API_BASE}/api/cart`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  //   setCartItems(formatted);
+  // };
 
-      setCartItems(res.data.items || []);
-      setSummary(res.data.summary || null);
-    } catch (err) {
-      console.error("Cart fetch error:", err.response?.data || err.message);
+  const fetchCart = async () => {
+    const res = await axios.get(`${API_BASE}/api/cart`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
 
-      // 🔥 AUTO LOGOUT IF TOKEN INVALID
-      if (err.response?.status === 401) {
-        logout?.();
-        localStorage.removeItem("user");
-      }
-    } finally {
-      setLoading(false);
+    const formatted = res.data.items.map((item) => {
+      const product = item.product;
+
+      const price = product.price || 0;
+      const mrp = product.mrp || price;
+      const discount =
+        mrp > price
+          ? Math.round(((mrp - price) / mrp) * 100)
+          : 0;
+
+      const image =
+        product.images?.[0] ||
+        product.variants?.[0]?.images?.[0] ||
+        "/fallback.jpg";
+
+      //       let image = "";
+
+      // if (product.images?.length > 0) {
+      //   image = product.images[0];
+      // } else if (product.variants?.length > 0) {
+      //   for (const variant of product.variants) {
+      //     if (variant.images?.length > 0) {
+      //       image = variant.images[0];
+      //       break;
+      //     }
+      //   }
+      // }
+      // if (!image) {
+      //   image = "https://via.placeholder.com/300";
+      // }
+
+      // 🔥 Find correct variant using cart color
+      const selectedVariant = product.variants?.find(
+        (v) => v.color === item.color
+      ) || product.variants?.[0];
+
+      // 🔥 Extract size list from that variant
+      const availableSizes =
+        selectedVariant?.sizes?.map((s) => s.size) || [];
+
+      return {
+        id: item._id,
+        productId: product._id,
+        slug: product.slug,
+        name: product.name,
+        brand: product.brand || "Glovia",
+        price,
+        mrp,
+        discount,
+        image,
+        quantity: item.qty,
+        size: item.size,
+        color: item.color,
+        seller: "Glovia Glamour",
+        deliveryDate: "5-7 Business Days",
+        returnText: "3 days return available",
+
+        // ✅ NOW THIS WILL WORK
+        availableSizes,
+      };
+    });
+
+    setCartItems(formatted);
+    };
+
+
+  /* ================= MERGE GUEST ================= */
+  const mergeGuestCart = async () => {
+    const guest = JSON.parse(localStorage.getItem("guestCart") || "[]");
+
+    if (!guest.length) return;
+
+    for (const item of guest) {
+      await axios.post(
+        `${API_BASE}/api/cart`,
+        {
+          productId: item.productId,
+          qty: item.quantity,
+          size: item.size,
+          color: item.color,
+        },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
     }
+
+    localStorage.removeItem("guestCart");
   };
 
-  /* ================= ADD TO CART ================= */
-
-  const addToCart = async (product) => {
-    const token = getToken();
-
-    if (token) {
-      try {
-        await axios.post(
-          `${API_BASE}/api/cart/item`,
-          product,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        fetchCartFromDB();
-      } catch (err) {
-        console.error("Add cart error:", err.response?.data);
-      }
+  /* ================= ADD ================= */
+  const addToCart = async ({ productId, size, quantity = 1, color = "default" }) => {
+    if (user) {
+      await axios.post(
+        `${API_BASE}/api/cart`,
+        { productId, qty: quantity, size, color },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      fetchCart();
     } else {
-      const updated = [...cartItems, product];
+      const updated = [...cartItems, { productId, size, quantity, color }];
       setCartItems(updated);
       localStorage.setItem("guestCart", JSON.stringify(updated));
     }
   };
 
-  /* ================= UPDATE QTY ================= */
-
-  const updateQty = async (itemId, qty) => {
-    const token = getToken();
-
-    if (token) {
-      try {
-        await axios.put(
-          `${API_BASE}/api/cart/item/${itemId}`,
-          { quantity: qty },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        fetchCartFromDB();
-      } catch (err) {
-        console.error("Update qty error:", err.response?.data);
-      }
+  /* ================= UPDATE ================= */
+  const updateQty = async (itemId, quantity) => {
+    if (user) {
+      await axios.put(
+        `${API_BASE}/api/cart/${itemId}`,
+        { quantity },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      fetchCart();
     } else {
       const updated = cartItems.map((item) =>
-        item.id === itemId ? { ...item, quantity: qty } : item
+        item.id === itemId ? { ...item, quantity } : item
       );
       setCartItems(updated);
       localStorage.setItem("guestCart", JSON.stringify(updated));
     }
   };
 
-  /* ================= REMOVE ITEM ================= */
+  const updateSize = async (itemId, size) => {
+    if (user) {
+      await axios.put(
+        `${API_BASE}/api/cart/size/${itemId}`,
+        { size },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      fetchCart();
+    } else {
+      const updated = cartItems.map((item) =>
+        item.id === itemId ? { ...item, size } : item
+      );
+      setCartItems(updated);
+      localStorage.setItem("guestCart", JSON.stringify(updated));
+    }
+  };
 
+
+  /* ================= REMOVE ================= */
   const removeItem = async (itemId) => {
-    const token = getToken();
-
-    if (token) {
-      try {
-        await axios.delete(`${API_BASE}/api/cart/item/${itemId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        fetchCartFromDB();
-      } catch (err) {
-        console.error("Remove error:", err.response?.data);
-      }
+    if (user) {
+      await axios.delete(
+        `${API_BASE}/api/cart/${itemId}`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      fetchCart();
     } else {
       const updated = cartItems.filter((item) => item.id !== itemId);
       setCartItems(updated);
@@ -147,37 +233,14 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  /* ================= CLEAR CART ================= */
-
-  const clearCart = async () => {
-    const token = getToken();
-
-    if (token) {
-      try {
-        await axios.delete(`${API_BASE}/api/cart`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        fetchCartFromDB();
-      } catch (err) {
-        console.error("Clear cart error:", err.response?.data);
-      }
-    } else {
-      setCartItems([]);
-      localStorage.removeItem("guestCart");
-    }
-  };
-
   return (
     <CartContext.Provider
       value={{
         cartItems,
-        summary,
-        loading,
         addToCart,
         updateQty,
+        updateSize,
         removeItem,
-        clearCart,
-        fetchCartFromDB,
       }}
     >
       {children}

@@ -1,413 +1,495 @@
-// "use client";
-// import { useCart } from "@/context/CartContext";
-// import { 
-//   Trash2, 
-//   Loader2, 
-//   CheckCircle, 
-//   ShieldCheck, 
-//   Search, 
-//   ChevronDown 
-// } from "lucide-react";
-// import { useEffect, useRef, useState } from "react";
-
-//   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-
-// export default function CheckoutPage() {
-//   const { cart = [], removeFromCart, cartTotal, clearCart } = useCart() || {};
-
-//   /* 🌸 BABY PINK – DEFINITIONS */
-//   const babyPink = "#FCE4EC"; // Global background color
-//   const babyPinkCard = "#F8BBD0"; 
-//   const babyPinkStrong = "#F48FB1";
-
-//   const [mobileNumber, setMobileNumber] = useState("");
-//   const [email, setEmail] = useState("");
-//   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-//   const [isOtpSent, setIsOtpSent] = useState(false);
-//   const [isVerified, setIsVerified] = useState(false);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [timer, setTimer] = useState(60);
-
-//   const [address, setAddress] = useState({
-//     firstName: "", lastName: "", address: "", apartment: "", city: "", state: "Delhi", pin: ""
-//   });
-
-//   const otpRefs = useRef([]);
-
-//   const subTotal = typeof cartTotal === "function" ? cartTotal() : 0;
-//   const tax = Math.round(subTotal * 0.05);
-//   const finalPayable = subTotal + tax;
-
-//   /* ================= OTP LOGIC ================= */
-//   useEffect(() => {
-//     if (!isOtpSent || timer === 0) return;
-//     const interval = setInterval(() => setTimer((t) => t - 1), 1000);
-//     return () => clearInterval(interval);
-//   }, [isOtpSent, timer]);
-
-//   const handleOtpChange = (val, i) => {
-//     if (!/^[0-9]?$/.test(val)) return;
-//     const n = [...otp]; n[i] = val; setOtp(n);
-//     if (val && i < 5) otpRefs.current[i + 1]?.focus();
-//   };
-
-//   const handleOtpKeyDown = (e, i) => {
-//     if (e.key === "Backspace" && !otp[i] && i > 0) otpRefs.current[i - 1]?.focus();
-//   };
-
-//   const handleSendOtp = async () => {
-//     const cleanMobile = mobileNumber.trim();
-//     const cleanEmail = email.trim();
-
-//     if (cleanMobile.length !== 10) return alert("Please enter a valid 10-digit Mobile Number");
-//     if (!cleanEmail.includes("@")) return alert("Please enter a valid Email Address");
-
-//     setIsLoading(true);
-//     try {
-//       const res = await fetch(API_BASE, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ email: cleanEmail }),
-//       });
-//       if (res.ok) {
-//         setIsOtpSent(true);
-//         setTimer(60);
-//       } else {
-//         alert("Server error while sending OTP");
-//       }
-//     } catch (err) { 
-//       alert("Failed to connect to server"); 
-//     } finally { 
-//       setIsLoading(false); 
-//     }
-//   };
-
-//   const handleVerifyOTP = async () => {
-//     const otpValue = otp.join("");
-//     if (otpValue.length !== 6) return alert("Enter 6 digit OTP");
-    
-//     setIsLoading(true);
-//     try {
-//       const res = await fetch(`${API_BASE}/api/otp/verify`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ email: email.trim(), otp: otpValue }),
-//       });
-//       const data = await res.json();
-//       if (data.success) {
-//         setIsVerified(true);
-//       } else {
-//         alert("Invalid OTP, please try again");
-//       }
-//     } catch (err) { 
-//       alert("Verification error"); 
-//     } finally { 
-//       setIsLoading(false); 
-//     }
-//   };
-
-//   /* ================= RAZORPAY INTEGRATION ================= */
-//   const handleFinalPayment = async () => {
-//     if (!address.firstName || !address.address || !address.pin) {
-//       return alert("Please fill the required delivery details");
-//     }
-
-//     setIsLoading(true);
-//     try {
-//       const orderRes = await fetch(`${API_BASE}/api/payment/create-order`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ amount: finalPayable }),
-//       });
-//       const orderData = await orderRes.json();
-
-//       const rzp = new window.Razorpay({
-//         key: "rzp_live_S8qV0g09nn545L",
-//         amount: orderData.order.amount,
-//         currency: "INR",
-//         order_id: orderData.order.id,
-//         name: "Booty Bloom",
-//         description: "Lingerie Purchase",
-//         handler: async (res) => {
-//           await fetch(`${API_BASE}/api/orders/verify-and-save`, {
-//             method: "POST",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify({
-//               email: email.trim(),
-//               items: cart,
-//               amount: finalPayable,
-//               paymentId: res.razorpay_payment_id,
-//               shippingAddress: address
-//             }),
-//           });
-//           clearCart();
-//           window.location.href = "/success";
-//         },
-//         theme: { color: "#ec4899" }
-//       });
-//       rzp.open();
-//     } catch (err) {
-//       alert("Payment initialization failed");
-//     } finally { 
-//       setIsLoading(false); 
-//     }
-//   };
-
-//   return (
-//     /* MAIN WRAPPER - Force Baby Pink */
-//     <div className="flex flex-col md:flex-row min-h-screen font-sans" style={{ backgroundColor: babyPink }}>
-      
-//       {/* LEFT COLUMN: Checkout Flow */}
-//       <div className="w-full md:w-[55%] p-6 md:p-16" style={{ backgroundColor: babyPink }}>
-//         <div className="max-w-xl ml-auto">
-//           <h1 className="text-3xl font-black italic mb-10 text-pink-600 tracking-tighter uppercase">BOOTY BLOOM</h1>
-
-//           {!isVerified ? (
-//             /* --- STEP 1: LOGIN & OTP SECTION --- */
-//             <div className="p-8 rounded-2xl shadow-sm border border-pink-200 animate-in fade-in duration-500" style={{ backgroundColor: babyPinkCard }}>
-//               <div className="mb-6 border-b border-pink-100 pb-4">
-//                 <h2 className="text-2xl font-bold text-gray-900">Checkout Login</h2>
-//                 <p className="text-gray-500 text-sm">Verify your details to proceed</p>
-//               </div>
-              
-//               <div className="space-y-5">
-//                 <div>
-//                   <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Mobile Number</label>
-//                   <input
-//                     type="tel"
-//                     placeholder="1234567890"
-//                     className="w-full border-b-2 border-gray-100 p-3 outline-none focus:border-pink-500 transition-colors text-lg bg-transparent"
-//                     maxLength={10}
-//                     onChange={(e) => setMobileNumber(e.target.value)}
-//                     disabled={isOtpSent}
-//                   />
-//                 </div>
-                
-//                 <div className="pb-4">
-//                   <label className="text-[10px] font-bold uppercase text-gray-400 ml-1">Email Address</label>
-//                   <input
-//                     type="email"
-//                     placeholder="you@example.com"
-//                     className="w-full border-b-2 border-gray-100 p-3 outline-none focus:border-pink-500 transition-colors text-lg bg-transparent"
-//                     onChange={(e) => setEmail(e.target.value)}
-//                     disabled={isOtpSent}
-//                   />
-//                 </div>
-
-//                 {isOtpSent && (
-//                   <div className="py-4 rounded-2xl border border-pink-200 animate-in zoom-in-95 duration-300" style={{ backgroundColor: babyPinkStrong }}>
-//                     <p className="text-center text-[9px] text-pink-400 mb-3 uppercase tracking-[0.2em] font-black">
-//                       Enter Security Code
-//                     </p>
-                    
-//                     <div className="flex gap-1.5 justify-center">
-//                       {otp.map((d, i) => (
-//                         <input
-//                           key={i}
-//                           ref={(el) => (otpRefs.current[i] = el)}
-//                           value={d}
-//                           maxLength={1}
-//                           type="text"
-//                           inputMode="numeric"
-//                           className="w-12 h-12 md:w-16 md:h-16 border border-gray-200 rounded-lg text-center font-bold text-base bg-white shadow-sm text-pink-600 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 outline-none transition-all duration-200"
-//                           onChange={(e) => handleOtpChange(e.target.value, i)}
-//                           onKeyDown={(e) => handleOtpKeyDown(e, i)}
-//                         />
-//                       ))}
-//                     </div>
-
-//                     <div className="text-center mt-3">
-//                       {timer > 0 ? (
-//                         <span className="text-[10px] text-gray-400">Resend in <b className="text-pink-600">{timer}s</b></span>
-//                       ) : (
-//                         <button onClick={handleSendOtp} className="text-[10px] text-pink-600 underline font-bold uppercase tracking-tighter">Resend OTP</button>
-//                       )}
-//                     </div>
-//                   </div>
-//                 )}
-
-//                 <button
-//                   onClick={isOtpSent ? handleVerifyOTP : handleSendOtp}
-//                   disabled={isLoading}
-//                   className="w-full bg-pink-600 hover:bg-pink-700 text-white py-4 rounded-xl font-black uppercase tracking-[0.1em] shadow-md shadow-pink-100 transition-all active:scale-[0.98] flex justify-center items-center gap-2 mt-2"
-//                 >
-//                   {isLoading && <Loader2 className="animate-spin" size={18} />}
-//                   {isOtpSent ? "Verify & Continue" : "Send OTP to Email"}
-//                 </button>
-//               </div>
-//             </div>
-//           ) : (
-//             /* --- STEP 2: DELIVERY & PAYMENT FORM --- */
-//             <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
-              
-//               <section>
-//                 <div className="flex items-center gap-3 mb-6">
-//                   <div className="bg-pink-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</div>
-//                   <h2 className="text-2xl font-bold text-gray-900">Shipping Details</h2>
-//                   <div className="ml-auto bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase flex items-center gap-1 border border-green-200">
-//                     <CheckCircle size={12}/> Account Verified
-//                   </div>
-//                 </div>
-
-//                 <div className="grid gap-4 bg-white p-8 rounded-2xl border border-pink-100 shadow-sm">
-//                   <div className="flex gap-4">
-//                     <input placeholder="First name" className="w-1/2 p-4 border rounded-xl outline-none focus:ring-2 focus:ring-pink-500 bg-gray-50 border-transparent transition-all" onChange={(e) => setAddress({ ...address, firstName: e.target.value })} />
-//                     <input placeholder="Last name" className="w-1/2 p-4 border rounded-xl outline-none focus:ring-2 focus:ring-pink-500 bg-gray-50 border-transparent transition-all" onChange={(e) => setAddress({ ...address, lastName: e.target.value })} />
-//                   </div>
-//                   <div className="relative">
-//                     <input placeholder="Flat / House No. / Building" className="w-full p-4 border rounded-xl outline-none bg-gray-50 border-transparent focus:ring-2 focus:ring-pink-500 transition-all" onChange={(e) => setAddress({ ...address, address: e.target.value })} />
-//                     <Search className="absolute right-4 top-4 text-gray-400" size={18} />
-//                   </div>
-//                   <input placeholder="Area / Colony / Street (Optional)" className="w-full p-4 border rounded-xl outline-none bg-gray-50 border-transparent focus:ring-2 focus:ring-pink-500 transition-all" onChange={(e) => setAddress({ ...address, apartment: e.target.value })} />
-//                   <div className="flex gap-4">
-//                     <input placeholder="City" className="w-1/3 p-4 border rounded-xl outline-none bg-gray-50 border-transparent focus:ring-2 focus:ring-pink-500 transition-all" onChange={(e) => setAddress({ ...address, city: e.target.value })} />
-//                     <div className="w-1/3 relative">
-//                       <select className="w-full p-4 border rounded-xl bg-gray-50 border-transparent appearance-none font-medium text-gray-600 outline-none focus:ring-2 focus:ring-pink-500" onChange={(e) => setAddress({ ...address, state: e.target.value })}>
-//                         <option>Delhi</option><option>Maharashtra</option><option>Karnataka</option><option>Haryana</option>
-//                       </select>
-//                       <ChevronDown className="absolute right-4 top-5 text-gray-400" size={16} />
-//                     </div>
-//                     <input placeholder="PIN code" className="w-1/3 p-4 border rounded-xl outline-none bg-gray-50 border-transparent focus:ring-2 focus:ring-pink-500 transition-all" onChange={(e) => setAddress({ ...address, pin: e.target.value })} />
-//                   </div>
-//                 </div>
-//               </section>
-
-//               <section className="space-y-4">
-//                 <div className="px-2">
-//                   <h3 className="text-xl font-bold text-gray-900">Payment</h3>
-//                   <p className="text-xs text-gray-500">All transactions are secure and encrypted.</p>
-//                 </div>
-
-//                 <div className="bg-white border border-pink-100 rounded-2xl overflow-hidden shadow-sm">
-//                   <div className="p-5 flex justify-between items-center bg-gray-50/50 border-b border-pink-50">
-//                     <span className="text-sm font-bold text-gray-800">Cashfree Payments (UPI, Cards, Wallets)</span>
-//                     <div className="flex gap-1">
-//                       <span className="bg-white border px-1.5 py-0.5 rounded text-[9px] font-black text-blue-600">UPI</span>
-//                       <span className="bg-white border px-1.5 py-0.5 rounded text-[9px] font-black text-blue-800 italic">VISA</span>
-//                       <span className="bg-white border px-1.5 py-0.5 rounded text-[9px] font-black text-orange-600">MC</span>
-//                     </div>
-//                   </div>
-//                   <div className="p-10 text-center bg-white">
-//                     <div className="w-14 h-14 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-4">
-//                       <ShieldCheck className="text-pink-500" size={28} />
-//                     </div>
-//                     <p className="text-sm text-gray-500 max-w-xs mx-auto">
-//                       After clicking "Complete Payment", you will be redirected to Cashfree Payments to complete your purchase securely.
-//                     </p>
-//                   </div>
-//                 </div>
-//               </section>
-
-//               <button 
-//                 onClick={handleFinalPayment} 
-//                 disabled={isLoading} 
-//                 className="w-full bg-black hover:bg-gray-900 text-white py-6 rounded-2xl font-black text-xl uppercase tracking-widest shadow-2xl transition-all active:scale-[0.98] flex justify-center items-center gap-3 mt-4"
-//               >
-//                 {isLoading ? <Loader2 className="animate-spin" /> : "Complete Payment"}
-//               </button>
-//             </div>
-//           )}
-//         </div>
-//       </div>
-
-//       {/* RIGHT COLUMN: Order Summary */}
-//       <div className="w-full md:w-[45%] p-6 md:p-16 border-l border-pink-200" style={{ backgroundColor: babyPink }}>
-//         <div className="max-w-md">
-//           <h3 className="text-xs font-black tracking-[0.2em] text-gray-400 mb-8 uppercase">Your Cart</h3>
-          
-//           <div className="space-y-6 mb-10 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-//             {cart.length > 0 ? cart.map((item, idx) => (
-//               <div key={idx} className="flex items-center gap-5 group">
-//                 <div className="relative bg-white p-2 rounded-2xl border border-gray-200 shadow-sm transition-transform group-hover:scale-105">
-//                   <img src={item.img || item.image || "/placeholder.png"} alt={item.name} className="w-16 h-20 object-cover rounded-lg" />
-//                   <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full font-bold shadow-md">{item.qty || 1}</span>
-//                 </div>
-//                 <div className="flex-1">
-//                   <h3 className="text-sm font-bold text-gray-800 leading-tight">{item.name}</h3>
-//                   <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Size: {item.size || "Standard"}</p>
-//                 </div>
-//                 <p className="text-sm font-black text-gray-900">₹{(item.offerPrice || item.price || 0).toLocaleString()}</p>
-//               </div>
-//             )) : (
-//                 <p className="text-gray-400 italic">Cart is empty</p>
-//             )}
-//           </div>
-
-//           <div className="border-t border-pink-200 pt-8 space-y-4">
-//             <div className="flex justify-between text-sm">
-//                 <span className="text-gray-500 font-medium">Subtotal</span>
-//                 <span className="font-bold text-gray-900">₹{subTotal.toLocaleString()}</span>
-//             </div>
-//             <div className="flex justify-between text-sm">
-//                 <span className="text-gray-500 font-medium">GST (5%)</span>
-//                 <span className="font-bold text-gray-900">₹{tax.toLocaleString()}</span>
-//             </div>
-//             <div className="flex justify-between text-sm border-b border-dashed border-pink-200 pb-4">
-//                 <span className="text-gray-500 font-medium">Shipping</span>
-//                 <span className="text-pink-600 font-black text-xs uppercase tracking-widest tracking-tighter">FREE</span>
-//             </div>
-            
-//             <div className="flex justify-between text-2xl font-black text-gray-900 pt-2">
-//               <span>Total</span>
-//               <div className="flex items-baseline gap-1">
-//                 <span className="text-xs font-bold text-gray-400 mr-1">INR</span>
-//                 ₹{finalPayable.toLocaleString()}
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="mt-12 bg-white/50 p-4 rounded-2xl flex gap-4 items-center border border-pink-100">
-//              <div className="bg-green-100 text-green-600 p-2 rounded-full"><ShieldCheck size={20}/></div>
-//              <p className="text-[10px] leading-relaxed text-gray-500 font-medium">
-//                100% Secure Checkout. <br/>
-//                <span className="font-bold text-gray-800 underline uppercase italic">30-Day Happiness Guarantee</span>
-//              </p>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
 "use client";
 
-import { useCart } from "@/context/CartContext";
-import EmptyCart from "./components/EmptyCart";
-import CartItem from "./components/CartItem";
-import CartSummary from "./components/CartSummary";
-// import LoginModal from "@/components/LoginModal";
-import { useState } from "react";
+import React, { useState } from 'react';
+import { X, Tag, Gift, Bookmark, ChevronRight, ChevronDown, Check } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import LoginModal from "../authPage/LoginModal";
+import { useEffect } from "react";
+import Link from "next/link";
 
 export default function CartPage() {
-  const { cartItems } = useCart();
+  const { cartItems, updateQty, removeItem, updateSize } = useCart();
+  const { user } = useAuth();
+
+  const [showMoreOffers, setShowMoreOffers] = useState(false);
+  const [selectedItems, setSelectedItems] = useState({});
+
+  useEffect(() => {
+    const initialSelection = {};
+    cartItems.forEach(item => {
+      initialSelection[item.id] = true;
+    });
+    setSelectedItems(initialSelection);
+  }, [cartItems]);
+  const [selectedDonation, setSelectedDonation] = useState(null);
+  const [isDonationChecked, setIsDonationChecked] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [openLogin, setOpenLogin] = useState(false);
 
+
+  const categories = [
+    'All', 'Lip Balm', 'Bedsheets', 'Handbags', 'Doormats',
+    'Shampoo', 'Day Cream', 'Hair Accessory', 'Jewellery Set'
+  ];
+
+  const toggleItemSelection = (id) => {
+    setSelectedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleAllSelection = () => {
+    const allSelected = cartItems.every(item => selectedItems[item.id]);
+    const newSelection = {};
+    cartItems.forEach(item => {
+      newSelection[item.id] = !allSelected;
+    });
+    setSelectedItems(newSelection);
+  };
+
+  const removeSelectedItems = async () => {
+    for (const item of cartItems) {
+      if (selectedItems[item.id]) {
+        await removeItem(item.id);
+      }
+    }
+  };
+
+  const moveToWishlist = () => {
+    alert('Selected items will be moved to wishlist!');
+    removeSelectedItems();
+  };
+
+  const handleQuantityChange = async (itemId, newQty) => {
+    if (newQty >= 1 && newQty <= 10) {
+      await updateQty(itemId, newQty);
+    }
+  };
+
+  const selectedCount = cartItems.filter(item => selectedItems[item.id]).length;
+  const totalMRP = cartItems.reduce((sum, item) => sum + (item.mrp * item.quantity), 0);
+  const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const discount = totalMRP - totalPrice;
+  const donationAmount = isDonationChecked && selectedDonation ? selectedDonation : 0;
+  const finalAmount = totalPrice + donationAmount;
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-4">Your cart is empty</h2>
+          <p className="text-gray-600">Add some products to get started!</p>
+        </div>
+      </div>
+    );
+  }
+  console.log(cartItems);
+
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      {cartItems.length === 0 ? (
-        <EmptyCart />
-      ) : (
-        <div className="grid md:grid-cols-3 gap-10">
-          <div className="md:col-span-2 space-y-6">
-            {cartItems.map((item) => (
-              <CartItem key={item.id} item={item} />
-            ))}
+    <div className="min-h-screen bg-white">
+      {/* Header Progress */}
+      <div className="border-b">
+        <div className="container max-w-7xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm tracking-wider">BAG</span>
+                <div className="w-12 h-0.5 bg-pink-500"></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-0.5 border-t-2 border-dashed border-gray-300"></div>
+                <span className="font-semibold text-sm tracking-wider text-gray-400">ADDRESS</span>
+                <div className="w-12 h-0.5 border-t-2 border-dashed border-gray-300"></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-0.5 border-t-2 border-dashed border-gray-300"></div>
+                <span className="font-semibold text-sm tracking-wider text-gray-400">PAYMENT</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                <Check className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-sm font-semibold">100% SECURE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container max-w-7xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Section - Cart Items */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Delivery Address */}
+            <div className="bg-gray-50 p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-sm mb-1">
+                    <span className="text-gray-600">Deliver to: </span>
+                    <span className="font-semibold">{user?.name || 'Guest'}</span>
+                    <span className="font-semibold">, {user?.pincode || '000000'}</span>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {user?.address || 'Please add delivery address'}
+                  </div>
+                </div>
+                <button className="border border-pink-500 text-pink-500 hover:bg-pink-50 font-semibold text-xs px-6 py-2 transition-colors">
+                  CHANGE ADDRESS
+                </button>
+              </div>
+            </div>
+
+            {/* Available Offers */}
+            <div className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200 p-4 rounded-md">
+              <div className="flex items-start gap-3">
+                <Tag className="w-5 h-5 text-gray-600 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-sm mb-2">Available Offers</h3>
+                  <p className="text-sm text-gray-600">
+                    7.5% Assured Cashback* on a minimum spend of ₹100. T&C
+                  </p>
+                  {showMoreOffers && (
+                    <div className="mt-2 space-y-2">
+                      <p className="text-sm text-gray-600">
+                        10% Instant Discount on ICICI Bank Credit Cards on a min spend of ₹3000. TCA
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Flat ₹200 Cashback on Paytm Wallet on a min spend of ₹1999. Code: PAYTM200
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setShowMoreOffers(!showMoreOffers)}
+                    className="text-pink-500 font-semibold text-sm mt-2 flex items-center gap-1 hover:text-pink-600"
+                  >
+                    {showMoreOffers ? 'Show Less' : 'Show More'}
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showMoreOffers ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Selection Controls */}
+            <div className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="select-all"
+                  checked={cartItems.every(item => selectedItems[item.id])}
+                  onChange={toggleAllSelection}
+                  className="w-4 h-4 rounded border-gray-300 text-pink-500 focus:ring-pink-500 cursor-pointer"
+                />
+                <label htmlFor="select-all" className="font-semibold text-sm cursor-pointer">
+                  {selectedCount}/{cartItems.length} ITEMS SELECTED
+                </label>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={removeSelectedItems}
+                  className="text-sm font-semibold text-gray-700 hover:text-gray-900 disabled:opacity-50"
+                  disabled={selectedCount === 0}
+                >
+                  REMOVE
+                </button>
+                <button
+                  onClick={moveToWishlist}
+                  className="text-sm font-semibold text-gray-700 hover:text-gray-900 disabled:opacity-50"
+                  disabled={selectedCount === 0}
+                >
+                  MOVE TO WISHLIST
+                </button>
+              </div>
+            </div>
+
+            {/* Product Cards */}
+            <div className="space-y-4">
+              {cartItems.map(item => (
+                <div key={item.id} className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200 p-4 rounded-md relative">
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex gap-4">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems[item.id] || false}
+                        onChange={() => toggleItemSelection(item.id)}
+                        className="absolute top-2 left-2 z-10 w-4 h-4 rounded border-gray-300 text-pink-500 focus:ring-pink-500 bg-white cursor-pointer"
+                      />
+                      <Link href={`/product/${item.slug}`}>
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-28 h-36 object-cover cursor-pointer hover:opacity-90 transition"
+                        />
+                      </Link>
+                    </div>
+
+                    <div className="flex-1">
+                      <Link href={`/product/${item.slug}`}>
+                        <h3 className="font-semibold text-sm mb-1 hover:text-pink-500 cursor-pointer transition-colors">
+                          {item.brand}
+                        </h3>
+                      </Link>
+
+                      <Link href={`/product/${item.slug}`}>
+                        <p className="text-sm text-gray-600 mb-1 hover:text-pink-500 cursor-pointer transition-colors">
+                          {item.name}
+                        </p>
+                      </Link>
+                      <p className="text-xs text-gray-500 mb-3">Sold by: {item.seller}</p>
+
+                      <div className="flex gap-4 mb-3">
+                        <select
+                          value={item.size}
+                          onChange={(e) => updateSize(item.id, e.target.value)}
+                          className="h-9 text-sm border-0 border-b border-gray-300 focus:outline-none focus:border-gray-500"
+                        >
+                          {item.availableSizes?.map((size) => (
+                            <option key={size} value={size}>
+                              Size: {size}
+                            </option>
+                          ))}
+                        </select>
+
+                        <select
+                          value={item.quantity}
+                          onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value))}
+                          className="h-9 text-sm border-0 border-b border-gray-300 focus:outline-none focus:border-gray-500"
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                            <option key={num} value={num}>Qty: {num}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-semibold">₹{item.price}</span>
+                        {item.discount > 0 && (
+                          <>
+                            <span className="text-sm text-gray-400 line-through">₹{item.mrp}</span>
+                            <span className="text-sm text-orange-500 font-semibold">{item.discount}% OFF</span>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <div className="w-4 h-4 rounded-full border border-gray-400 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                        </div>
+                        <span>{item.returnText || '3 days return available'}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
+                        <Check className="w-4 h-4 text-green-600" />
+                        <span>Delivery by {item.deliveryDate}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add More From Wishlist */}
+            <button className="w-full border p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-3">
+                <Bookmark className="w-5 h-5 text-gray-600" />
+                <span className="font-semibold text-sm">Add More From Wishlist</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            </button>
+
+            {/* You may also like */}
+            <div className="pt-8 border-t">
+              <h3 className="text-xl font-semibold mb-4">You may also like:</h3>
+
+              <div className="flex flex-wrap gap-2 mb-6">
+                {categories.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === category
+                      ? 'bg-pink-500 text-white'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:border-gray-400'
+                      }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="aspect-square bg-gray-100 overflow-hidden">
+                    <img
+                      src={`https://images.unsplash.com/photo-${1580910051328 + i}-2569ce89d5db?w=300&h=300&fit=crop`}
+                      alt="Product"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <CartSummary
-            openLogin={() => setOpenLogin(true)}
-          />
-        </div>
-      )}
+          {/* Right Sidebar */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Coupons */}
+            <div className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200 p-4 rounded-md">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-gray-600" />
+                  <h3 className="font-semibold text-sm">COUPONS</h3>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Apply Coupons</span>
+                <button
+                  className="bg-pink-500 hover:bg-pink-600 text-white font-semibold text-xs px-6 py-2 transition-colors"
+                  onClick={() => alert('Coupon applied!')}
+                >
+                  APPLY
+                </button>
+              </div>
+            </div>
 
+            {/* Gifting */}
+            <div className="bg-pink-50 shadow-sm hover:shadow-md transition-shadow duration-200 p-4 rounded-md">
+              <h3 className="font-semibold text-xs mb-3 text-gray-700">GIFTING & PERSONALISATION</h3>
+              <div className="flex gap-3">
+                <Gift className="w-12 h-12 text-pink-400 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-semibold text-sm mb-1">Buying for a loved one?</p>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Gift Packaging and personalised message on card. Only for ₹35
+                  </p>
+                  <button className="bg-pink-500 hover:bg-pink-600 text-white font-semibold text-xs w-full py-2 transition-colors">
+                    ADD GIFT PACKAGE
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Donation */}
+            <div className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200 p-4 rounded-md">
+              <h3 className="font-semibold text-xs mb-3 text-gray-700">SUPPORT TRANSFORMATIVE SOCIAL WORK IN INDIA</h3>
+              <div className="flex items-start gap-2 mb-3">
+                <input
+                  type="checkbox"
+                  id="donation"
+                  checked={isDonationChecked}
+                  onChange={(e) => setIsDonationChecked(e.target.checked)}
+                  className="w-4 h-4 mt-0.5 rounded border-gray-300 text-pink-500 focus:ring-pink-500 cursor-pointer"
+                />
+                <label htmlFor="donation" className="text-sm cursor-pointer">
+                  Donate and make a difference
+                </label>
+              </div>
+
+              {isDonationChecked && (
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  {[10, 20, 50, 100].map(amount => (
+                    <button
+                      key={amount}
+                      onClick={() => setSelectedDonation(amount)}
+                      className={`py-2 px-3 rounded-full text-sm font-medium border transition-colors ${selectedDonation === amount
+                        ? 'bg-pink-500 text-white border-pink-500'
+                        : 'bg-white border-gray-300 text-gray-700 hover:border-pink-500'
+                        }`}
+                    >
+                      ₹{amount}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button className="text-pink-500 text-xs font-semibold hover:text-pink-600">
+                Know More
+              </button>
+            </div>
+
+            {/* Price Details */}
+            <div className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200 p-4 rounded-md">
+              <h3 className="font-semibold text-xs mb-4 text-gray-700">PRICE DETAILS ({cartItems.length} Items)</h3>
+
+              <div className="space-y-3 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Total MRP</span>
+                  <span>₹{totalMRP.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Discount on MRP</span>
+                  <span className="text-green-600">- ₹{discount.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Coupon Discount</span>
+                  <button className="text-pink-500 text-xs font-semibold hover:text-pink-600">
+                    Apply Coupon
+                  </button>
+                </div>
+
+                <div className="flex justify-between text-sm items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">Platform Fee</span>
+                    <button className="text-pink-500 text-xs font-semibold hover:text-pink-600">
+                      Know More
+                    </button>
+                  </div>
+                  <span className="text-green-600 font-semibold">FREE</span>
+                </div>
+
+                {isDonationChecked && selectedDonation && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Donation</span>
+                    <span>₹{donationAmount}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total Amount</span>
+                  <span className="font-semibold text-lg">₹{finalAmount.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Place Order */}
+            <div className="sticky top-4">
+              <p className="text-xs text-gray-500 mb-3">
+                By placing the order, you agree to Glovia Glamour's{' '}
+                <a href="/terms" className="text-pink-500 font-semibold">Terms of Use</a>
+                {' '}and{' '}
+                <a href="/privacy" className="text-pink-500 font-semibold">Privacy Policy</a>
+              </p>
+              <button
+                className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 text-base transition-colors"
+                onClick={() => {
+                  if (!user) {
+                    setOpenLogin(true);
+                    return;
+                  }
+
+                  window.location.href = '/checkout';
+                }}
+              >
+                PLACE ORDER
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       <LoginModal
         isOpen={openLogin}
         onClose={() => setOpenLogin(false)}
       />
+
     </div>
   );
 }

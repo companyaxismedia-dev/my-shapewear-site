@@ -3,9 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import { ChevronRight, Star, X, ShoppingCart, Zap } from "lucide-react";
-import { useCart } from "@/context/CartContext";
-import { useRouter } from "next/navigation";
+import { ChevronRight, Star } from "lucide-react";
+import { ProductDetailsModal } from "@/app/bra/page";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -21,19 +20,26 @@ const API_BASE =
     : "https://my-shapewear-site.onrender.com";
 
 /* ================= CATEGORY MAP ================= */
+/* Frontend category → Backend category */
 
 const categoryMap = {
   bra: "bra",
   panties: "panties",
   lingerie: "lingerie",
+  curvy: "lingerie",        // ✅ mapped
   shapewear: "shapewear",
+  "tummy-control": "shapewear", // ✅ mapped
 };
+
+/* ================= HOME SECTIONS ================= */
 
 const homeSections = [
   { id: "bra", title: "Trending Bras", path: "/bra", count: 8 },
   { id: "panties", title: "Comfy Panties", path: "/panties", count: 8 },
   { id: "lingerie", title: "Lingerie Sets", path: "/lingerie", count: 8 },
+  { id: "curvy", title: "Curvy Collection", path: "/curvy", count: 8 },
   { id: "shapewear", title: "Shapewear Styles", path: "/shapewear", count: 8 },
+  { id: "tummy-control", title: "Tummy Control", path: "/tummy-control", count: 8 },
 ];
 
 export default function AutoSliceSlider() {
@@ -47,15 +53,17 @@ export default function AutoSliceSlider() {
 
       for (const section of homeSections) {
         try {
+          const backendCategory = categoryMap[section.id];
+
           const res = await fetch(
-            `${API_BASE}/api/products?category=${categoryMap[section.id]}&limit=20`
+            `${API_BASE}/api/products?category=${backendCategory}&limit=20`
           );
+
           const result = await res.json();
 
-          data[section.id] = result.success
-            ? result.products.filter((p) => p.isActive)
-            : [];
-        } catch {
+          data[section.id] = result.success ? result.products : [];
+        } catch (error) {
+          console.error("Slider fetch error:", error);
           data[section.id] = [];
         }
       }
@@ -70,7 +78,7 @@ export default function AutoSliceSlider() {
   if (loading) return null;
 
   return (
-    <div className="flex flex-col gap-14 py-12 bg-white">
+    <div className="flex flex-col gap-12 py-10 bg-white">
       {homeSections.map((section) => {
         const products =
           productsData[section.id]?.slice(0, section.count) || [];
@@ -79,8 +87,9 @@ export default function AutoSliceSlider() {
 
         return (
           <div key={section.id} className="w-full">
+            {/* Header */}
             <div className="flex justify-between items-center mb-6 px-4">
-              <h2 className="text-xl md:text-2xl font-black uppercase border-l-4 border-[#ed4e7e] pl-4">
+              <h2 className="text-xl md:text-2xl font-black text-gray-800 uppercase italic border-l-4 border-[#ed4e7e] pl-4">
                 {section.title}
               </h2>
 
@@ -92,19 +101,20 @@ export default function AutoSliceSlider() {
               </a>
             </div>
 
+            {/* Slider */}
             <Swiper
               modules={[Autoplay, Navigation, Pagination]}
-              spaceBetween={16}
+              spaceBetween={15}
               loop
-              autoplay={{ delay: 3500 }}
-              navigation
-              pagination={{ clickable: true }}
+              autoplay={{ delay: 4000, disableOnInteraction: false }}
               breakpoints={{
-                320: { slidesPerView: 1.4 },
-                640: { slidesPerView: 2.5 },
-                1024: { slidesPerView: 4 },
+                320: { slidesPerView: 1.5 },
+                768: { slidesPerView: 3 },
+                1024: { slidesPerView: 4.5 },
               }}
-              className="px-4 pb-12"
+              pagination={{ clickable: true }}
+              navigation
+              className="homePageSwiper px-4 pb-12"
             >
               {products.map((product) => (
                 <SwiperSlide key={product._id}>
@@ -125,6 +135,15 @@ export default function AutoSliceSlider() {
           onClose={() => setSelectedProduct(null)}
         />
       )}
+
+      <style jsx global>{`
+        .homePageSwiper {
+          padding-bottom: 40px !important;
+        }
+        .homePageSwiper .swiper-pagination {
+          bottom: 8px !important;
+        }
+      `}</style>
     </div>
   );
 }
@@ -134,40 +153,79 @@ export default function AutoSliceSlider() {
 function ProductCard({ product, onOpenDetails }) {
   const variant = product?.variants?.[0] || {};
 
-  const primaryImage =
-    variant?.images?.find((img) => img.isPrimary) ||
-    variant?.images?.[0];
+  // const imagePath = variant?.images?.[0];
 
-  const image =
-    typeof primaryImage === "string"
-      ? `${API_BASE}${primaryImage}`
-      : primaryImage?.url
-      ? `${API_BASE}${primaryImage.url}`
-      : "/placeholder.jpg";
+  // const image = imagePath
+  //   ? imagePath.startsWith("http")
+  //     ? imagePath
+  //     : `${API_BASE}${imagePath}`
+  //   : "/placeholder.jpg";
+  const imagePath = variant?.images?.[0];
 
-  const sizeObj = variant?.sizes?.[0] || {};
-  const price = sizeObj?.price || product?.minPrice || 0;
-  const mrp = sizeObj?.mrp || product?.mrp || null;
+let image = "/placeholder.jpg";
 
-  const discount =
-    mrp && price
-      ? Math.round(((mrp - price) / mrp) * 100)
-      : null;
+if (imagePath) {
+  if (typeof imagePath === "string") {
+    image = imagePath.startsWith("http")
+      ? imagePath
+      : `${API_BASE}${imagePath}`;
+  } else if (typeof imagePath === "object") {
+    const path = imagePath.url || imagePath.path;
+    if (path) {
+      image = path.startsWith("http")
+        ? path
+        : `${API_BASE}${path}`;
+    }
+  }
+}
+
+
+  /* ===== PRICE + MRP FIX (SIZE BASED) ===== */
+
+const firstSize = variant?.sizes?.[0] || {};
+
+const price =
+  firstSize?.price ||
+  product?.minPrice ||
+  product?.price ||
+  0;
+
+const oldPrice =
+  firstSize?.mrp ||
+  product?.mrp ||
+  null;
+
+const discount =
+  oldPrice && price
+    ? Math.round(((oldPrice - price) / oldPrice) * 100)
+    : null;
+
+/* ===== SIZES ===== */
+
+const sizes =
+  variant?.sizes?.map((s) => s.size) || [];
+
+/* ===== RATING ===== */
+
+const rating = product?.rating || 4.4;
+const reviews = product?.numReviews || 150;
+
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm border flex flex-col h-full">
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full">
+
       <div
-        className="relative aspect-[3/4] overflow-hidden cursor-pointer"
+        className="relative aspect-[3/4] overflow-hidden bg-gray-50 cursor-pointer"
         onClick={onOpenDetails}
       >
         <img
           src={image}
           alt={product.name}
-          className="w-full h-full object-cover hover:scale-105 transition"
+          className="w-full h-full object-cover object-top hover:scale-110 transition"
         />
 
         {discount && (
-          <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-[10px] px-2 py-1 font-bold rounded">
+          <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-[10px] px-2 py-0.5 font-bold rounded">
             {discount}% OFF
           </div>
         )}
@@ -178,137 +236,48 @@ function ProductCard({ product, onOpenDetails }) {
           {product.name}
         </h3>
 
+        {/* Rating */}
         <div className="flex items-center gap-1 mb-1">
           <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
-          <span className="text-[10px] font-bold">
-            {product.rating || 0}
+          <span className="text-[10px] font-bold text-[#ed4e7e]">
+            {rating}
           </span>
           <span className="text-[9px] text-gray-400">
-            ({product.numReviews || 0})
+            ({reviews})
           </span>
         </div>
 
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm font-black">
+          <span className="text-sm font-black text-gray-900">
             ₹{price}
           </span>
 
-          {mrp && (
-            <span className="text-[10px] line-through text-gray-400">
-              ₹{mrp}
+          {oldPrice && (
+            <span className="text-[10px] text-gray-400 line-through">
+              ₹{oldPrice}
             </span>
           )}
         </div>
 
+        {sizes.length > 0 && (
+          <div className="flex gap-1 mb-3">
+            {sizes.slice(0, ).map((size) => (
+              <span
+                key={size}
+                className="flex-1 text-center border text-[10px] py-1 rounded font-bold text-gray-600"
+              >
+                {size}
+              </span>
+            ))}
+          </div>
+        )}
+
         <button
           onClick={onOpenDetails}
-          className="mt-auto w-full bg-[#ed4e7e] text-white py-2 text-xs font-bold uppercase rounded"
+          className="mt-auto w-full bg-[#ed4e7e] text-white py-2 text-xs font-bold uppercase rounded active:scale-95 transition"
         >
           ADD TO CART
         </button>
-      </div>
-    </div>
-  );
-}
-
-/* ================= MODAL ================= */
-
-function ProductDetailsModal({ product, onClose }) {
-  const { addToCart } = useCart();
-  const router = useRouter();
-
-  const [variant, setVariant] = useState(product?.variants?.[0]);
-  const [size, setSize] = useState("");
-
-  const primaryImage =
-    variant?.images?.find((img) => img.isPrimary) ||
-    variant?.images?.[0];
-
-  const image =
-    typeof primaryImage === "string"
-      ? `${API_BASE}${primaryImage}`
-      : primaryImage?.url
-      ? `${API_BASE}${primaryImage.url}`
-      : "/placeholder.jpg";
-
-  const selectedSize =
-    variant?.sizes?.find((s) => s.size === size);
-
-  const handleAdd = () => {
-    if (!size) return alert("Select size");
-
-    addToCart({
-      id: product._id,
-      name: product.name,
-      price: selectedSize?.price,
-      image,
-      size,
-      quantity: 1,
-    });
-
-    alert("Added to cart");
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white max-w-4xl w-full rounded-xl flex flex-col md:flex-row relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4"
-        >
-          <X size={20} />
-        </button>
-
-        <div className="md:w-1/2">
-          <img src={image} className="w-full h-full object-cover" />
-        </div>
-
-        <div className="md:w-1/2 p-6 space-y-6">
-          <h2 className="text-xl font-black uppercase">
-            {product.name}
-          </h2>
-
-          <div className="text-2xl font-black text-[#ed4e7e]">
-            ₹{selectedSize?.price || product.minPrice}
-          </div>
-
-          <div>
-            <p className="text-xs font-bold uppercase mb-2">
-              Select Size
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {variant?.sizes?.map((s) => (
-                <button
-                  key={s.size}
-                  onClick={() => setSize(s.size)}
-                  className={`px-4 py-2 border rounded ${
-                    size === s.size
-                      ? "bg-[#ed4e7e] text-white"
-                      : ""
-                  }`}
-                >
-                  {s.size}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={handleAdd}
-            className="w-full bg-[#ed4e7e] text-white py-3 font-bold uppercase"
-          >
-            <ShoppingCart size={16} className="inline mr-2" />
-            Add To Cart
-          </button>
-
-          <button
-            onClick={() => router.push(`/product/${product.slug}`)}
-            className="w-full bg-black text-white py-3 font-bold uppercase"
-          >
-            <Zap size={16} className="inline mr-2" />
-            Buy Now
-          </button>
-        </div>
       </div>
     </div>
   );
