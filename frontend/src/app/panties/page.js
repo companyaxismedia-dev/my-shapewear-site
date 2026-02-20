@@ -24,6 +24,10 @@ const API_BASE =
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
+/* =====================================================
+   PANTY PAGE — EXACT SAME STRUCTURE AS BRA PAGE
+===================================================== */
+
 export default function PantyPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
@@ -120,6 +124,9 @@ export default function PantyPage() {
   );
 }
 
+/* =====================================================
+   SAME getImageUrl HELPER
+===================================================== */
 
 const getImageUrl = (imagePath) => {
   if (!imagePath) return "/fallback.jpg";

@@ -7,7 +7,7 @@ const OrderSchema = new mongoose.Schema({
     name: { 
       type: String, 
       trim: true,
-      default: "Customer" 
+      default: "user" 
     },
 
     // Phone: Validation message ke saath
