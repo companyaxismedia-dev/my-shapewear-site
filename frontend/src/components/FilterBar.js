@@ -142,8 +142,12 @@ const getApiBase = () => {
                    used to fetch subcategories dynamically from backend
                    * subCategory section ONLY shows when 2+ subcategories exist
    =============================================================== */
-export default function FilterBar({ filters, setFilters, setPage, category }) {
-
+export default function FilterBar({
+  filters = {},
+  setFilters = () => {},
+  setPage = () => {},
+  category,
+}) {
   /* --- Dynamic data from backend --- */
   const [backendColors, setBackendColors] = useState([]);
   const [backendSizes, setBackendSizes] = useState([]);
