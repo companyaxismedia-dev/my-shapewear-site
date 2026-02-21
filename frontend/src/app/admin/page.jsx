@@ -235,7 +235,7 @@ export default function Dashboard() {
                         <td className="py-3 pr-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                              {product.image ? (
+                              {product.image ? (  
                                 <img
                                   src={product.image}
                                   alt={product.name}

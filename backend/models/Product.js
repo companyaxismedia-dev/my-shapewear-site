@@ -118,26 +118,26 @@ const productSchema = new mongoose.Schema(
   {
     /* BASIC */
     /* BASIC */
-name: { type: String, required: true },
-slug: { type: String, unique: true, index: true },
-brand: { type: String, index: true },
+    name: { type: String, required: true },
+    slug: { type: String, unique: true, index: true },
+    brand: { type: String, index: true },
 
-category: {
-  type: String,
-  required: true,
-  enum: [
-    "bra",
-    "panties",
-    "lingerie",
-    "shapewear",
-    "curvy",
-    "tummy-control",
-    "non-padded"
-  ],
-  index: true
-},
+    category: {
+      type: String,
+      required: true,
+      enum: [
+        "bra",
+        "panties",
+        "lingerie",
+        "shapewear",
+        "curvy",
+        "tummy-control",
+        "non-padded"
+      ],
+      index: true
+    },
 
-subCategory: { type: String, index: true },
+    subCategory: { type: String, index: true },
 
 
     shortDescription: String,

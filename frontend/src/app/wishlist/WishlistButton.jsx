@@ -12,7 +12,7 @@ export default function WishlistButton({ onLoginOpen }) {
     return (
       <button
         onClick={onLoginOpen}
-        className="relative p-1 hover:text-pink-600 transition"
+        className="relative p-1 hover:text-pink-600 transition cursor-pointer"
       >
         <Heart size={22} />
       </button>

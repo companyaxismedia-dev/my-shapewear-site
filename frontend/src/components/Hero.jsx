@@ -119,3 +119,63 @@ aspect-ratio: auto !important; /* Remove the forced 2/3 ratio */
     </section>
   );
 }
+
+
+
+
+// "use client";
+
+// import { Swiper, SwiperSlide } from "swiper/react";
+// import { Autoplay, Navigation, Pagination, EffectFade } from "swiper/modules";
+
+// import "swiper/css";
+// import "swiper/css/navigation";
+// import "swiper/css/pagination";
+// import "swiper/css/effect-fade";
+
+// const banners = [
+//   { desktop: "/hero-image/Banner-1.jpeg", mobile: "/hero-image/banner1mobile.jpeg", alt: "Banner 1" },
+//   { desktop: "/hero-image/Banner-2.jpeg", mobile: "/hero-image/banner2mobile.jpeg", alt: "Banner 2" },
+// ];
+
+// export default function Hero() {
+//   return (
+//     <section className="relative w-full bg-white">
+
+//       {/* 🔥 FIXED HERO HEIGHT (NO JUMP) */}
+//       <div className="w-full relative overflow-hidden min-h-[220px] md:min-h-[420px]">
+
+//         <Swiper
+//           modules={[Autoplay, Navigation, Pagination, EffectFade]}
+//           effect="fade"
+//           fadeEffect={{ crossFade: true }}
+//           loop={banners.length > 2}
+//           speed={1000}
+//           autoplay={
+//             banners.length > 1
+//               ? { delay: 5000, disableOnInteraction: false }
+//               : false
+//           }
+//           pagination={{ clickable: true }}
+//           navigation={true}
+//           className="hero-swiper w-full"
+//         >
+//           {banners.map((item, index) => (
+//             <SwiperSlide key={index}>
+//               <picture className="block w-full">
+//                 <source srcSet={item.mobile} media="(max-width: 767px)" />
+//                 <img
+//                   src={item.desktop}
+//                   alt={item.alt}
+//                   loading={index === 0 ? "eager" : "lazy"}
+//                   className="w-full h-auto block"
+//                 />
+//               </picture>
+//             </SwiperSlide>
+//           ))}
+//         </Swiper>
+
+//       </div>
+//     </section>
+//   );
+// }

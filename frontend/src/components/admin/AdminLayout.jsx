@@ -36,7 +36,14 @@ const navItems = [
     title: "My Shop",
     icon: Store,
     children: [
-      { title: "Products", href: "/admin/products" },
+      {
+        title: "Products",
+        children: [
+          { title: "All Products", href: "/admin/products" },
+          { title: "Add Product", href: "/admin/products/add" },
+          { title: "Categories", href: "/admin/products/categories" },
+        ],
+      },
       { title: "Orders", href: "/admin/orders" },
       { title: "Customers", href: "/admin/customers" },
     ],
@@ -78,9 +85,18 @@ export function AdminSidebar({ collapsed, onToggle }) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState(["My Shop"]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedSubItems, setExpandedSubItems] = useState([]);
 
   const toggleExpanded = (title) => {
     setExpandedItems((prev) =>
+      prev.includes(title)
+        ? prev.filter((t) => t !== title)
+        : [...prev, title]
+    );
+  };
+
+  const toggleSubExpanded = (title) => {
+    setExpandedSubItems((prev) =>
       prev.includes(title)
         ? prev.filter((t) => t !== title)
         : [...prev, title]
@@ -182,19 +198,56 @@ export function AdminSidebar({ collapsed, onToggle }) {
                     {!collapsed && expandedItems.includes(item.title) && (
                       <ul className="mt-0.5 ml-4 border-l border-border pl-3 space-y-0.5">
                         {item.children.map((child) => (
-                          <li key={child.href}>
-                            <Link
-                              href={child.href}
-                              className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors",
-                                isActive(child.href)
-                                  ? "admin-nav-active"
-                                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                              )}
-                            >
-                              <ChevronRight className="w-3 h-3 flex-shrink-0" />
-                              {child.title}
-                            </Link>
+                          <li key={child.title}>
+                            {child.children ? (
+                              <div>
+                                <button
+                                  onClick={() => toggleSubExpanded(child.title)}
+                                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted"
+                                >
+                                  <ChevronRight
+                                    className={cn(
+                                      "w-3 h-3 transition-transform",
+                                      expandedSubItems.includes(child.title) && "rotate-90"
+                                    )}
+                                  />
+                                  <span className="flex-1 text-left">{child.title}</span>
+                                </button>
+
+                                {expandedSubItems.includes(child.title) && (
+                                  <ul className="ml-4 mt-1 border-l border-border pl-3 space-y-1">
+                                    {child.children.map((sub) => (
+                                      <li key={sub.href}>
+                                        <Link
+                                          href={sub.href}
+                                          className={cn(
+                                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm",
+                                            isActive(sub.href)
+                                              ? "admin-nav-active"
+                                              : "text-muted-foreground hover:bg-muted"
+                                          )}
+                                        >
+                                          {sub.title}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            ) : (
+                              <Link
+                                href={child.href}
+                                className={cn(
+                                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm",
+                                  isActive(child.href)
+                                    ? "admin-nav-active"
+                                    : "text-muted-foreground hover:bg-muted"
+                                )}
+                              >
+                                <ChevronRight className="w-3 h-3" />
+                                {child.title}
+                              </Link>
+                            )}
                           </li>
                         ))}
                       </ul>

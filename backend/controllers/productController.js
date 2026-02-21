@@ -155,81 +155,81 @@ exports.getProducts = async (req, res) => {
       .limit(limit)
       .lean();
 
-    res.json({
-      success: true,
-      products,
-      page,
-      pages: Math.ceil(total / limit),
-      totalProducts: total,
-    });
+      res.json({
+        success: true,
+        products,
+        page,
+        pages: Math.ceil(total / limit),
+        totalProducts: total,
+      });
 
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-/* ======================================================
-   GET PRODUCT BY ID
-====================================================== */
-exports.getProductById = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-
-    if (!product || !product.isActive) {
-      return res.status(404).json({
+    } catch (error) {
+      res.status(500).json({
         success: false,
-        message: "Product not found",
+        message: error.message,
       });
     }
+  };
 
-    res.json({
-      success: true,
-      product,
-    });
+  /* ======================================================
+    GET PRODUCT BY ID
+  ====================================================== */
+  exports.getProductById = async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id);
 
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: "Invalid Product ID",
-    });
-  }
-};
+      if (!product || !product.isActive) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
 
-/* ======================================================
-   GET PRODUCT BY SLUG
-====================================================== */
-exports.getProductBySlug = async (req, res) => {
-  try {
-    const product = await Product.findOne({
-      slug: req.params.slug,
-      isActive: true,
-    });
+      res.json({
+        success: true,
+        product,
+      });
 
-    if (!product) {
-      return res.status(404).json({
+    } catch (error) {
+      res.status(400).json({
         success: false,
-        message: "Product not found",
+        message: "Invalid Product ID",
       });
     }
+  };
 
-    res.json({
-      success: true,
-      product,
-    });
+  /* ======================================================
+    GET PRODUCT BY SLUG
+  ====================================================== */
+  exports.getProductBySlug = async (req, res) => {
+    try {
+      const product = await Product.findOne({
+        slug: req.params.slug,
+        isActive: true,
+      });
 
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
 
-/* ======================================================
-   CREATE PRODUCT (ADMIN)
+      res.json({
+        success: true,
+        product,
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  /* ======================================================
+    CREATE PRODUCT (ADMIN)
 ====================================================== */
 exports.createProduct = async (req, res) => {
   try {

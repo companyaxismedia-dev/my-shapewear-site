@@ -26,7 +26,7 @@ const generateToken = (id) => {
 ====================================================== */
 exports.registerUser = async (req, res) => {
   try {
-    const { name, email, phone, password, otp } = req.body;
+    const { name, email, phone, password, otp, role } = req.body;
 
     if (!name || !email || !phone || !password || !otp) {
       return res.status(400).json({ message: "All fields and OTP required" });
@@ -60,6 +60,8 @@ exports.registerUser = async (req, res) => {
       email: userEmail,
       phone,
       password,
+        role: role || "user",
+
     });
 
     await record.deleteOne();
