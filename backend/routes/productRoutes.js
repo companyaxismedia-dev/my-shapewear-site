@@ -104,6 +104,49 @@ router.get("/category/:category", async (req, res) => {
   }
 });
 
+/* ======================================================
+   🔥 FILTER OPTIONS (ALL COLORS + SIZES)
+====================================================== */
+
+router.get("/filters", async (req, res) => {
+  try {
+    const products = await Product.find({
+      isActive: true,
+    });
+
+    const colors = new Set();
+    const sizes = new Set();
+
+    products.forEach((product) => {
+      product.variants?.forEach((variant) => {
+
+        // COLORS
+        if (variant.color) {
+          colors.add(variant.color);
+        }
+
+        // SIZES
+        variant.sizes?.forEach((s) => {
+          if (s.size) sizes.add(s.size);
+        });
+
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      colors: [...colors],
+      sizes: [...sizes],
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 /* 🔹 GET PRODUCT BY SLUG */
 router.get("/slug/:slug", getProductBySlug);
 

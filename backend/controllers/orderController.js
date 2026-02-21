@@ -3,18 +3,22 @@ require("dotenv").config();
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const User = require("../models/User");
+const Offer = require("../models/Offer");
 
 const { Resend } = require("resend");
-const resend = new Resend(process.env.RESEND_API_KEY);
+
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 /* =====================================================
-   1️⃣ CREATE ORDER FROM CART (AMAZON STYLE – LOGIN USER)
+   1️⃣ CREATE ORDER FROM CART (WITH OFFER SUPPORT)
 ===================================================== */
 exports.createOrder = async (req, res) => {
   try {
-    const { paymentId, paymentType, addressId } = req.body;
+    const { paymentId, paymentType, addressId, offerCode } = req.body;
 
-    /* ---------- FETCH USER ---------- */
+    /* ---------- USER ---------- */
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -24,8 +28,10 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    /* ---------- FETCH CART ---------- */
-    const cart = await Cart.findOne({ userId: req.user._id });
+    /* ---------- CART ---------- */
+    const cart = await Cart.findOne({
+      user: req.user._id,
+    }).populate("items.product");
 
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
@@ -34,16 +40,100 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    /* ---------- FETCH ADDRESS ---------- */
+    /* ---------- ADDRESS ---------- */
     const address =
-      user.addresses?.find((a) => a._id.toString() === addressId) ||
-      user.addresses?.find((a) => a.isDefault === true);
+      user.addresses?.find(
+        (a) => a._id.toString() === addressId
+      ) || user.addresses?.find((a) => a.isDefault === true);
 
     if (!address) {
       return res.status(400).json({
         success: false,
         message: "Delivery address nahi mila",
       });
+    }
+
+    /* ---------- PRODUCTS ---------- */
+    const orderProducts = cart.items.map((item) => {
+      if (!item.product) {
+        throw new Error("Product missing in cart");
+      }
+
+      return {
+        productId: item.product._id,
+        name: item.product.name,
+        price: item.product.minPrice || 0,
+        quantity: item.qty,
+        size: item.size || "Standard",
+        img: item.product.thumbnail || "",
+      };
+    });
+
+    /* ---------- TOTAL ---------- */
+    const totalAmount = orderProducts.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    /* ---------- OFFER LOGIC ---------- */
+    let discountAmount = 0;
+    let finalAmount = totalAmount;
+    let appliedOfferCode = null;
+
+    if (offerCode) {
+      const offer = await Offer.findOne({
+        code: offerCode.toUpperCase(),
+      });
+
+      if (!offer) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid offer code",
+        });
+      }
+
+      if (!offer.isValidOffer()) {
+        return res.status(400).json({
+          success: false,
+          message: "Offer expired or inactive",
+        });
+      }
+
+      if (totalAmount < offer.minOrderValue) {
+        return res.status(400).json({
+          success: false,
+          message: `Minimum order ₹${offer.minOrderValue} required`,
+        });
+      }
+
+      // percentage discount
+      if (offer.discountType === "percentage") {
+        discountAmount =
+          (totalAmount * offer.discountValue) / 100;
+
+        if (
+          offer.maxDiscount &&
+          discountAmount > offer.maxDiscount
+        ) {
+          discountAmount = offer.maxDiscount;
+        }
+      }
+
+      // flat discount
+      if (offer.discountType === "flat") {
+        discountAmount = offer.discountValue;
+      }
+
+      finalAmount = Math.max(
+        totalAmount - discountAmount,
+        0
+      );
+
+      appliedOfferCode = offer.code;
+
+      // increase usage count
+      offer.usedCount += 1;
+      await offer.save();
     }
 
     /* ---------- CREATE ORDER ---------- */
@@ -59,15 +149,13 @@ exports.createOrder = async (req, res) => {
         pincode: address.pincode,
       },
 
-      products: cart.items.map((item) => ({
-        name: item.name,
-        price: item.price,
-        quantity: item.qty,
-        size: item.size || "Standard",
-        img: item.image,
-      })),
+      products: orderProducts,
 
-      totalAmount: cart.bill,
+      totalAmount,
+      offerCode: appliedOfferCode,
+      discountAmount,
+      finalAmount,
+
       paymentId: paymentId || "N/A",
       paymentType: paymentType || "COD",
 
@@ -77,69 +165,111 @@ exports.createOrder = async (req, res) => {
 
     const savedOrder = await order.save();
 
-    /* ---------- CLEAR CART (AMAZON RULE) ---------- */
-    await Cart.deleteOne({ userId: req.user._id });
+   /* ---------- STOCK REDUCE (FIXED VERSION) ---------- */
+for (const item of cart.items) {
+  const product = item.product;
+
+  if (!product) continue;
+
+  for (const variant of product.variants) {
+    for (const size of variant.sizes) {
+      if (size.name === item.size) {
+        size.stock = Math.max(0, size.stock - item.qty);
+      }
+    }
+  }
+
+  await product.save();
+}
+
+
+    /* ---------- CLEAR CART ---------- */
+    await Cart.deleteOne({ user: req.user._id });
 
     /* ---------- ADMIN EMAIL ---------- */
-    resend.emails
-      .send({
-        from: process.env.OTP_FROM_EMAIL,
-        to: [process.env.OTP_FROM_EMAIL],
-        subject: `🛒 New Order ₹${cart.bill}`,
-        html: `
-          <h2>New Order Received</h2>
-          <p><b>Order ID:</b> ${savedOrder._id}</p>
-          <p><b>Phone:</b> ${address.phone}</p>
-          <p><b>Amount:</b> ₹${cart.bill}</p>
-        `,
-      })
-      .catch(() => {});
+    if (resend && process.env.OTP_FROM_EMAIL) {
+      resend.emails
+        .send({
+          from: process.env.OTP_FROM_EMAIL,
+          to: [process.env.OTP_FROM_EMAIL],
+          subject: `🛒 New Order ₹${finalAmount}`,
+          html: `
+            <h2>New Order Received</h2>
+            <p><b>Order ID:</b> ${savedOrder._id}</p>
+            <p><b>Phone:</b> ${address.phone}</p>
+            <p><b>Total:</b> ₹${totalAmount}</p>
+            <p><b>Discount:</b> ₹${discountAmount}</p>
+            <p><b>Final:</b> ₹${finalAmount}</p>
+          `,
+        })
+        .catch(() => {});
+    }
 
     return res.status(201).json({
       success: true,
       message: "Order placed successfully",
       orderId: savedOrder._id,
+      totalAmount,
+      discountAmount,
+      finalAmount,
     });
+
   } catch (error) {
-    console.error("ORDER ERROR:", error);
+    console.error("CREATE ORDER ERROR:", error);
+
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: error.message || "Internal Server Error",
     });
   }
 };
 
 /* =====================================================
-   2️⃣ MY ORDERS (LOGIN USER)
+   2️⃣ MY ORDERS
 ===================================================== */
 exports.getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.user._id }).sort({
-      createdAt: -1,
+    const orders = await Order.find({
+      userId: req.user._id,
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      orders,
     });
 
-    res.status(200).json({ success: true, orders });
-  } catch {
-    res.status(500).json({ success: false, message: "Server error" });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
 /* =====================================================
-   3️⃣ TRACK ORDER (GUEST / USER)
+   3️⃣ TRACK ORDER
 ===================================================== */
 exports.trackOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
     if (!order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
     }
 
-    res.status(200).json({ success: true, order });
+    return res.status(200).json({
+      success: true,
+      order,
+    });
+
   } catch {
-    res.status(500).json({ success: false, message: "Invalid Order ID" });
+    return res.status(500).json({
+      success: false,
+      message: "Invalid Order ID",
+    });
   }
 };
 
@@ -148,10 +278,20 @@ exports.trackOrder = async (req, res) => {
 ===================================================== */
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, orders });
+    const orders = await Order.find().sort({
+      createdAt: -1,
+    });
+
+    return res.status(200).json({
+      success: true,
+      orders,
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -165,23 +305,32 @@ exports.updateOrderStatus = async (req, res) => {
     const order = await Order.findById(orderId);
 
     if (!order) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
     }
 
     order.status = status;
-    if (trackingId) order.trackingId = trackingId;
+
+    if (trackingId) {
+      order.trackingId = trackingId;
+    }
 
     order.statusHistory.push({ status });
+
     await order.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Order updated",
       order,
     });
-  } catch {
-    res.status(500).json({ success: false, message: "Server error" });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };

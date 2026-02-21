@@ -1,13 +1,19 @@
 const express = require("express");
 const router = express.Router();
+
 const { protect } = require("../middleware/authMiddleware");
 
 const {
   addAddress,
   getAddresses,
+  updateAddress,
   deleteAddress,
   setDefaultAddress,
 } = require("../controllers/addressController");
+
+/* =====================================================
+   ADDRESS ROUTES (AMAZON STYLE)
+===================================================== */
 
 /* ===============================
    ADD NEW ADDRESS
@@ -22,6 +28,12 @@ router.post("/address", protect, addAddress);
 router.get("/address", protect, getAddresses);
 
 /* ===============================
+   UPDATE ADDRESS (IMPORTANT)
+   PUT /api/users/address/:id
+=============================== */
+router.put("/address/:id", protect, updateAddress);
+
+/* ===============================
    DELETE ADDRESS
    DELETE /api/users/address/:id
 =============================== */
@@ -29,8 +41,8 @@ router.delete("/address/:id", protect, deleteAddress);
 
 /* ===============================
    SET DEFAULT ADDRESS
-   PUT /api/users/address/default/:id
+   PATCH /api/users/address/default/:id
 =============================== */
-router.put("/address/default/:id", protect, setDefaultAddress);
+router.patch("/address/default/:id", protect, setDefaultAddress);
 
 module.exports = router;

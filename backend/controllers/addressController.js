@@ -10,29 +10,43 @@ exports.addAddress = async (req, res) => {
     const {
       fullName,
       phone,
+      altPhone,
       pincode,
       city,
       state,
       addressLine,
+      landmark,
+      addressType,
       isDefault,
     } = req.body;
 
     if (!fullName || !phone || !pincode || !city || !state || !addressLine) {
-      return res.status(400).json({ message: "All address fields required" });
+      return res.status(400).json({
+        success: false,
+        message: "All required fields missing",
+      });
     }
 
-    // Agar default hai → baaki sab false
+    // first address auto default
+    if (user.addresses.length === 0) {
+      req.body.isDefault = true;
+    }
+
+    // if new default → old false
     if (isDefault) {
-      user.addresses.forEach((addr) => (addr.isDefault = false));
+      user.addresses.forEach((a) => (a.isDefault = false));
     }
 
     user.addresses.push({
       fullName,
       phone,
+      altPhone: altPhone || "",
       pincode,
       city,
       state,
       addressLine,
+      landmark: landmark || "",
+      addressType: addressType || "Home",
       isDefault: isDefault || false,
     });
 
@@ -43,8 +57,11 @@ exports.addAddress = async (req, res) => {
       message: "Address added",
       addresses: user.addresses,
     });
-  } catch (error) {
-    res.status(500).json({ message: "Add address failed" });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Add address failed",
+    });
   }
 };
 
@@ -54,12 +71,46 @@ exports.addAddress = async (req, res) => {
 exports.getAddresses = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
+
     res.status(200).json({
       success: true,
       addresses: user.addresses,
     });
-  } catch (error) {
-    res.status(500).json({ message: "Fetch address failed" });
+  } catch {
+    res.status(500).json({ success: false });
+  }
+};
+
+/* ===============================
+   UPDATE ADDRESS (AMAZON STYLE)
+=============================== */
+exports.updateAddress = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    const address = user.addresses.id(req.params.id);
+
+    if (!address) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found",
+      });
+    }
+
+    Object.assign(address, req.body);
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Address updated",
+      addresses: user.addresses,
+    });
+  } catch {
+    res.status(500).json({
+      success: false,
+      message: "Update failed",
+    });
   }
 };
 
@@ -71,17 +122,26 @@ exports.deleteAddress = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     user.addresses = user.addresses.filter(
-      (addr) => addr._id.toString() !== req.params.id
+      (a) => a._id.toString() !== req.params.id
     );
+
+    // auto set first as default
+    if (user.addresses.length > 0 &&
+        !user.addresses.some((a) => a.isDefault)) {
+      user.addresses[0].isDefault = true;
+    }
 
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: "Address removed",
+      message: "Address deleted",
     });
-  } catch (error) {
-    res.status(500).json({ message: "Delete address failed" });
+  } catch {
+    res.status(500).json({
+      success: false,
+      message: "Delete failed",
+    });
   }
 };
 
@@ -92,17 +152,20 @@ exports.setDefaultAddress = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
 
-    user.addresses.forEach((addr) => {
-      addr.isDefault = addr._id.toString() === req.params.id;
+    user.addresses.forEach((a) => {
+      a.isDefault = a._id.toString() === req.params.id;
     });
 
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: "Default address updated",
+      message: "Default updated",
     });
-  } catch (error) {
-    res.status(500).json({ message: "Set default failed" });
+  } catch {
+    res.status(500).json({
+      success: false,
+      message: "Default update failed",
+    });
   }
 };

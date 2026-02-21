@@ -2,13 +2,13 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 /* =========================================
-   PROTECT MIDDLEWARE
+   🔐 PROTECT MIDDLEWARE
 ========================================= */
-exports.protect = async (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
     let token;
 
-    // 1️⃣ Check token in headers
+    // 1️⃣ Token check from header
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
@@ -16,7 +16,7 @@ exports.protect = async (req, res, next) => {
       token = req.headers.authorization.split(" ")[1];
     }
 
-    // 2️⃣ If no token
+    // 2️⃣ No token
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -27,7 +27,7 @@ exports.protect = async (req, res, next) => {
     // 3️⃣ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 4️⃣ Get user from DB
+    // 4️⃣ Fetch user
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
@@ -37,9 +37,10 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // 5️⃣ Attach user
     req.user = user;
 
-    next(); // ✅ MUST be called only once
+    return next(); // 🔥 IMPORTANT
   } catch (error) {
     console.error("JWT Error:", error.message);
 
@@ -51,22 +52,34 @@ exports.protect = async (req, res, next) => {
 };
 
 /* =========================================
-   ADMIN MIDDLEWARE
+   👑 ADMIN MIDDLEWARE
 ========================================= */
-exports.admin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({
+const admin = (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied: Admins only",
+      });
+    }
+
+    return next(); // 🔥 IMPORTANT
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: "Not authorized",
+      message: "Admin middleware error",
     });
   }
-
-  if (req.user.role !== "admin") {
-    return res.status(403).json({
-      success: false,
-      message: "Access denied: Admins only",
-    });
-  }
-
-  next();
 };
+
+/* =========================================
+   EXPORT (IMPORTANT FIX)
+========================================= */
+module.exports = { protect, admin };
