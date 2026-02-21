@@ -1,28 +1,71 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-/* ===============================
-   📦 ADDRESS SUB-SCHEMA
-================================ */
+/* =====================================================
+   📦 ADDRESS SUB SCHEMA (AMAZON STYLE)
+===================================================== */
 const addressSchema = new mongoose.Schema(
   {
-    fullName: { type: String, required: true, trim: true },
-    phone: { type: String, trim: true },
-    pincode: { type: String, required: true, trim: true },
-    city: { type: String, required: true, trim: true },
-    state: { type: String, required: true, trim: true },
-    addressLine: { type: String, required: true, trim: true },
-    isDefault: { type: Boolean, default: false },
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    pincode: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    city: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    state: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    addressLine: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    landmark: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    isDefault: {
+      type: Boolean,
+      default: false,
+    },
   },
   { _id: true }
 );
 
-/* ===============================
+/* =====================================================
    👤 USER SCHEMA
-================================ */
+===================================================== */
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
     email: {
       type: String,
@@ -32,7 +75,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    // ✅ OPTIONAL PHONE (Google Safe)
+    /* OPTIONAL PHONE (GOOGLE LOGIN SAFE) */
     phone: {
       type: String,
       unique: true,
@@ -61,12 +104,14 @@ const userSchema = new mongoose.Schema(
 
     addresses: [addressSchema],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-/* =================================================
-   🔐 HASH PASSWORD
-================================================= */
+/* =====================================================
+   🔐 HASH PASSWORD (SAFE VERSION)
+===================================================== */
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
 
@@ -74,26 +119,30 @@ userSchema.pre("save", async function () {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-/* =================================================
-   🔐 MATCH PASSWORD
-================================================= */
+/* =====================================================
+   🔑 MATCH PASSWORD
+===================================================== */
 userSchema.methods.matchPassword = async function (enteredPassword) {
-  return bcrypt.compare(enteredPassword, this.password);
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
-/* =================================================
+/* =====================================================
    🔒 REMOVE PASSWORD FROM RESPONSE
-================================================= */
+===================================================== */
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
   return obj;
 };
 
-/* =================================================
-   🔄 INDEX DEFINITIONS (ONLY HERE)
-================================================= */
+/* =====================================================
+   🚀 INDEXES (FAST SEARCH)
+===================================================== */
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ phone: 1 }, { unique: true, sparse: true });
 
-module.exports = mongoose.model("User", userSchema);
+/* =====================================================
+   EXPORT SAFE (IMPORTANT)
+===================================================== */
+module.exports =
+  mongoose.models.User || mongoose.model("User", userSchema);

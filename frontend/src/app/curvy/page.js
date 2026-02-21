@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import FilterBar from "@/components/FilterBar";
+import TopFilters from "@/components/TopFilters";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import {
@@ -28,86 +30,134 @@ export default function CurvyPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({});
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE}/api/products?category=curvy&limit=50`
-        );
-        const data = await res.json();
-        if (data.success) setProducts(data.products);
-      } catch (error) {
-        console.error("Error fetching curvy:", error);
-      } finally {
-        setLoading(false);
+  const fetchProducts = async () => {
+
+    setLoading(true);   // ⭐ YAHI ADD KARNA HAI
+
+    try {
+      const cleanFilters = Object.fromEntries(
+  Object.entries(filters).filter(([_, v]) => v !== "")
+);
+
+const query = new URLSearchParams({
+  ...cleanFilters,
+  category: "curvy",
+  page,
+  limit: 20,
+}).toString();
+
+      const res = await fetch(
+        `${API_BASE}/api/products?${query}`
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setProducts(data.products);
       }
-    };
-    fetchProducts();
-  }, []);
+    } catch (error) {
+      console.error("Error fetching curvy:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProducts();
+}, [filters, page]);
 
   return (
-    <div className="min-h-screen bg-white font-sans overflow-x-hidden text-[#ed4e7e]">
+    <div className="min-h-screen bg-white font-sans overflow-x-hidden text-black">
       <div className="w-full sticky top-0 z-50 bg-white border-b border-pink-50 shadow-sm">
-        <Navbar />
-      </div>
+  <Navbar />
+</div>
 
-      {/* FILTER HEADER */}
-      <div className="px-4 py-3 border-b border-pink-100 flex justify-between items-center bg-white sticky top-[64px] z-40">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest">
-            Sort By:
-          </span>
-          <select className="text-[10px] font-bold uppercase outline-none bg-transparent cursor-pointer">
-            <option>Low to High</option>
-            <option>High to Low</option>
-            <option>New Arrivals</option>
-          </select>
-        </div>
-        <div className="flex gap-4">
-          <button className="flex items-center gap-1 text-[10px] font-bold uppercase">
-            <span className="w-2 h-2 bg-[#ed4e7e] inline-block"></span> Size
-          </button>
-          <button className="flex items-center gap-2 text-[10px] font-bold uppercase border border-[#ed4e7e] px-3 py-1 rounded-sm">
-            <Filter size={12} /> Show Filters
-          </button>
-        </div>
-      </div>
+<div className="max-w-[1400px] mx-auto flex gap-6 px-4">
 
-      <div className="max-w-[1600px] mx-auto flex">
-        <aside className="hidden lg:block w-64 p-6 border-r border-pink-50 sticky top-[120px] h-[calc(100vh-120px)] overflow-y-auto no-scrollbar">
-          <h2 className="font-bold text-[10px] mb-6 tracking-widest uppercase">
-            Refine Your Selection
+  {/* LEFT SIDEBAR */}
+  <aside className="hidden lg:block">
+    <FilterBar
+      filters={filters}
+      setFilters={setFilters}
+      setPage={setPage}
+    />
+  </aside>
+
+  {/* RIGHT SIDE (MYNTRA STRUCTURE) */}
+  <div className="flex-1">
+
+    {/* ⭐ TOP FILTERS YAHAN AAYEGA */}
+    <div className="flex items-center justify-between border-b">
+
+  <TopFilters
+    filters={filters}
+    setFilters={setFilters}
+    setPage={setPage}
+  />
+
+  {/* SORT */}
+  <div className="relative group mr-4">
+    <button className="border px-4 py-2 text-sm w-[240px] text-left flex justify-between">
+      Sort by : <span className="font-semibold">Recommended</span>
+      <ChevronDown size={16} />
+    </button>
+
+    <div className="hidden group-hover:block absolute right-0 bg-white border shadow-lg w-[240px] z-50">
+      {[
+        "Recommended",
+        "What's New",
+        "Popularity",
+        "Better Discount",
+        "Price: High to Low",
+        "Price: Low to High",
+        "Customer Rating",
+      ].map((s) => (
+        <button
+          key={s}
+          onClick={() =>
+            setFilters((prev) => ({ ...prev, sort: s }))
+          }
+          className="block w-full text-left px-4 py-3 hover:bg-gray-50 text-sm"
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  </div>
+
+</div>
+
+    {/* PRODUCTS */}
+    <main className="p-4">
+      {loading ? (
+        <p className="text-center">Loading products...</p>
+      ) : products.length === 0 ? (
+        <div className="text-center py-20">
+          <h2 className="text-lg font-bold text-gray-700">
+            No products found 😔
           </h2>
-          {["Size", "Color", "Discount", "Padded", "Price Range", "Material"].map(
-            (f) => (
-              <div
-                key={f}
-                className="mb-4 flex justify-between items-center cursor-pointer border-b border-pink-50 pb-2"
-              >
-                <span className="text-[11px] font-bold uppercase">{f}</span>
-                <ChevronDown size={14} />
-              </div>
-            )
-          )}
-        </aside>
+          <p className="text-sm text-gray-500 mt-2">
+            Try changing filters
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {products.map((item) => (
+            <ProductCard
+              key={item._id}
+              item={item}
+              onOpenDetails={() => setSelectedProduct(item)}
+            />
+          ))}
+        </div>
+      )}
+    </main>
 
-        <main className="flex-1 p-4">
-          {loading ? (
-            <p className="text-center">Loading products...</p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-              {products.map((item) => (
-                <ProductCard
-                  key={item._id}
-                  item={item}
-                  onOpenDetails={() => setSelectedProduct(item)}
-                />
-              ))}
-            </div>
-          )}
-        </main>
-      </div>
+  </div>
+</div>
 
       {selectedProduct && (
         <ProductDetailsModal

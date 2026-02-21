@@ -14,11 +14,14 @@ import {
   Tag,
 } from "lucide-react";
 import SimilarProducts from "@/components/SimilarProducts";
+import ColorTooltip from "@/components/product/ColorTooltip";
+import SizeChartModal from "@/components/product/SizeChartModal";
+import CalculateSizeModal from "@/components/product/CalculateSizeModal";
 
 const API_BASE =
   typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1")
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1")
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
@@ -26,14 +29,16 @@ export default function ProductPage() {
   const { slug } = useParams();
   const router = useRouter();
   const { addToCart } = useCart();
-
   const [product, setProduct] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [activeImage, setActiveImage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [hoveredColor, setHoveredColor] = useState(null);
+  const [showSizeChart, setShowSizeChart] = useState(false);
+  const [showCalcSize, setShowCalcSize] = useState(false);
 
-  /* ================= FETCH ================= */
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -66,7 +71,7 @@ export default function ProductPage() {
   if (loading) return <div className="p-10">Loading...</div>;
   if (!product) return <div className="p-10">Product Not Found</div>;
 
-  /* ================= PRICE ================= */
+  // price section 
   const price = selectedSize?.price || product.minPrice;
   const mrp = selectedSize?.mrp || product.mrp;
   const discount =
@@ -80,7 +85,7 @@ export default function ProductPage() {
 
       <div className="w-full max-w-[1600px] mx-auto px-4 lg:px-10 py-8 grid grid-cols-1 lg:grid-cols-2 gap-12">
 
-        {/* ================= LEFT IMAGE (UNCHANGED) ================= */}
+        {/* ================= LEFT IMAGE ================= */}
         <div className="flex flex-col-reverse lg:flex-row gap-4">
 
           <div className="flex lg:flex-col gap-3">
@@ -137,52 +142,107 @@ export default function ProductPage() {
           </div>
 
           {/* COLORS */}
-          {product.variants?.length > 0 && (
-            <div>
-              <h3 className="font-semibold mb-2">SELECT COLOR</h3>
-              <div className="flex gap-3">
-                {product.variants.map((v, i) => (
+          <div className="flex gap-3 flex-wrap ">
+            {product.variants.map((variant, i) => {
+              const img =
+                variant.images?.[0]?.url
+                  ? API_BASE + variant.images[0].url
+                  : "/placeholder.jpg";
+
+              return (
+                <div
+                  key={i}
+                  className="relative "
+                  onMouseEnter={() =>
+                    setHoveredColor({
+                      color: variant.color,
+                      image: img,
+                    })
+                  }
+                  onMouseLeave={() => setHoveredColor(null)}
+                >
+                  {hoveredColor?.color === variant.color && (
+                    <ColorTooltip
+                      color={variant.color}
+                      image={img}
+                    />
+                  )}
+
                   <button
-                    key={i}
                     onClick={() => {
-                      setSelectedVariant(v);
-                      setSelectedSize(v.sizes?.[0]);
-                      setActiveImage(API_BASE + v.images?.[0]?.url);
+                      setSelectedVariant(variant);
+                      setActiveImage(img);
+                      setSelectedSize(variant.sizes?.[0]);
                     }}
-                    className={`w-9 h-9 rounded-full border-2 ${
-                      selectedVariant?.color === v.color
-                        ? "border-black"
-                        : "border-gray-300"
-                    }`}
-                    style={{ background: v.colorCode || "#ddd" }}
+                    className={`w-10 h-10 rounded-full cursor-pointer border-2 ${selectedVariant?.color === variant.color
+                      ? "border-black"
+                      : "border-gray-300"
+                      }`}
+                    style={{ backgroundColor: variant.colorCode || "#ddd" }}
                   />
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
+              );
+            })}
+          </div>
 
           {/* SIZE */}
           {selectedVariant?.sizes?.length > 0 && (
-            <div>
-              <h3 className="font-semibold mb-3">SELECT SIZE</h3>
-              <div className="flex flex-wrap gap-3">
-                {selectedVariant.sizes.map((s, i) => (
-                  <button
-                    key={i}
-                    disabled={s.stock === 0}
-                    onClick={() => setSelectedSize(s)}
-                    className={`w-12 h-12 rounded-full border ${
-                      selectedSize?.size === s.size
-                        ? "bg-black text-white"
-                        : ""
-                    }`}
-                  >
-                    {s.size}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+  <div className="mt-1">
+
+    {/* TITLE */}
+    <h3 className="font-semibold text-[15px] mb-3 tracking-wide">
+      SELECT SIZE
+    </h3>
+
+    {/* SIZE BUTTONS */}
+    <div className="flex flex-wrap gap-3">
+      {selectedVariant.sizes.map((s, i) => (
+        <button
+          key={i}
+          disabled={s.stock === 0}
+          onClick={() => setSelectedSize(s)}
+          className={`
+            w-12 h-12
+            rounded-full
+            border
+            text-sm
+            font-medium
+            transition
+            ${
+              selectedSize?.size === s.size
+                ? "bg-black text-white border-black"
+                : "border-gray-300 hover:border-black"
+            }
+            ${s.stock === 0 ? "opacity-40 cursor-not-allowed" : ""}
+          `}
+        >
+          {s.size}
+        </button>
+      ))}
+    </div>
+
+    {/* SIZE LINKS (Myntra Style) */}
+    <div className="flex items-center gap-3 mt-4 text-pink-600 text-[13px] font-medium tracking-wide">
+      <button
+        onClick={() => setShowSizeChart(true)}
+        className="hover:underline"
+      >
+        SIZE CHART
+      </button>
+
+      <span className="text-gray-400">|</span>
+
+      <button
+        onClick={() => setShowCalcSize(true)}
+        className="hover:underline"
+      >
+        CALCULATE YOUR SIZE
+      </button>
+    </div>
+
+  </div>
+)}
+
 
           {/* BUTTONS */}
           <div className="flex gap-4">
@@ -289,7 +349,7 @@ export default function ProductPage() {
               ))}
               <button
                 onClick={() => router.push(`/product/${slug}/reviews`)}
-                className="text-pink-600 flex items-center gap-1"
+                className="text-pink-600 flex items-center cursor-pointer gap-1"
               >
                 View All Reviews <ChevronRight size={16} />
               </button>
@@ -299,6 +359,14 @@ export default function ProductPage() {
       </div>
 
       <SimilarProducts currentProduct={product} />
+      {showSizeChart && (
+        <SizeChartModal onClose={() => setShowSizeChart(false)} />
+      )}
+
+      {showCalcSize && (
+        <CalculateSizeModal onClose={() => setShowCalcSize(false)} />
+      )}
+
     </div>
   );
 }

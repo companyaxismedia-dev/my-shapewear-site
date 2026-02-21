@@ -164,6 +164,14 @@ app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
 /* ================= USERS ================= */
 app.use("/api/users", require("./routes/userAddressRoutes"));
 
+/* ================= admins pannel ================= */
+app.use("/api/admin", require("./routes/adminRoutes"));
+
+/* ================= offer  ================= */
+app.use("/api/offers", require("./routes/offerRoutes"));
+
+
+
 /* ======================================================
    ❌ 404 HANDLER
 ====================================================== */

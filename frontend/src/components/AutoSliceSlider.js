@@ -20,15 +20,14 @@ const API_BASE =
     : "https://my-shapewear-site.onrender.com";
 
 /* ================= CATEGORY MAP ================= */
-/* Frontend category → Backend category */
 
 const categoryMap = {
   bra: "bra",
   panties: "panties",
   lingerie: "lingerie",
-  curvy: "lingerie",        // ✅ mapped
+  curvy: "lingerie",
   shapewear: "shapewear",
-  "tummy-control": "shapewear", // ✅ mapped
+  "tummy-control": "shapewear",
 };
 
 /* ================= HOME SECTIONS ================= */
@@ -47,12 +46,12 @@ export default function AutoSliceSlider() {
   const [productsData, setProductsData] = useState({});
   const [loading, setLoading] = useState(true);
 
+  /* ================= FAST PARALLEL FETCH ================= */
+
   useEffect(() => {
     const loadProducts = async () => {
-      const data = {};
-
-      for (const section of homeSections) {
-        try {
+      try {
+        const requests = homeSections.map(async (section) => {
           const backendCategory = categoryMap[section.id];
 
           const res = await fetch(
@@ -61,15 +60,25 @@ export default function AutoSliceSlider() {
 
           const result = await res.json();
 
-          data[section.id] = result.success ? result.products : [];
-        } catch (error) {
-          console.error("Slider fetch error:", error);
-          data[section.id] = [];
-        }
-      }
+          return {
+            id: section.id,
+            products: result.success ? result.products : [],
+          };
+        });
 
-      setProductsData(data);
-      setLoading(false);
+        const results = await Promise.all(requests);
+
+        const data = {};
+        results.forEach((r) => {
+          data[r.id] = r.products;
+        });
+
+        setProductsData(data);
+      } catch (err) {
+        console.error("Slider fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadProducts();
@@ -84,6 +93,10 @@ export default function AutoSliceSlider() {
           productsData[section.id]?.slice(0, section.count) || [];
 
         if (!products.length) return null;
+
+        /* ===== SWIPER SAFE CONDITIONS ===== */
+        const enableLoop = products.length >= 6;
+        const enableNav = products.length > 1;
 
         return (
           <div key={section.id} className="w-full">
@@ -104,16 +117,23 @@ export default function AutoSliceSlider() {
             {/* Slider */}
             <Swiper
               modules={[Autoplay, Navigation, Pagination]}
+              observer={true}
+              observeParents={true}
+              watchOverflow={true}
               spaceBetween={15}
-              loop
-              autoplay={{ delay: 4000, disableOnInteraction: false }}
+              loop={enableLoop}
+              autoplay={
+                enableLoop
+                  ? { delay: 4000, disableOnInteraction: false }
+                  : false
+              }
               breakpoints={{
                 320: { slidesPerView: 1.5 },
                 768: { slidesPerView: 3 },
                 1024: { slidesPerView: 4.5 },
               }}
               pagination={{ clickable: true }}
-              navigation
+              navigation={enableNav}
               className="homePageSwiper px-4 pb-12"
             >
               {products.map((product) => (
@@ -153,67 +173,51 @@ export default function AutoSliceSlider() {
 function ProductCard({ product, onOpenDetails }) {
   const variant = product?.variants?.[0] || {};
 
-  // const imagePath = variant?.images?.[0];
-
-  // const image = imagePath
-  //   ? imagePath.startsWith("http")
-  //     ? imagePath
-  //     : `${API_BASE}${imagePath}`
-  //   : "/placeholder.jpg";
   const imagePath = variant?.images?.[0];
 
-let image = "/placeholder.jpg";
+  // FIXED PLACEHOLDER (no 404)
+  let image = "/images/placeholder.jpg";
 
-if (imagePath) {
-  if (typeof imagePath === "string") {
-    image = imagePath.startsWith("http")
-      ? imagePath
-      : `${API_BASE}${imagePath}`;
-  } else if (typeof imagePath === "object") {
-    const path = imagePath.url || imagePath.path;
-    if (path) {
-      image = path.startsWith("http")
-        ? path
-        : `${API_BASE}${path}`;
+  if (imagePath) {
+    if (typeof imagePath === "string") {
+      image = imagePath.startsWith("http")
+        ? imagePath
+        : `${API_BASE}${imagePath}`;
+    } else if (typeof imagePath === "object") {
+      const path = imagePath.url || imagePath.path;
+      if (path) {
+        image = path.startsWith("http")
+          ? path
+          : `${API_BASE}${path}`;
+      }
     }
   }
-}
 
+  const firstSize = variant?.sizes?.[0] || {};
 
-  /* ===== PRICE + MRP FIX (SIZE BASED) ===== */
+  const price =
+    firstSize?.price ||
+    product?.minPrice ||
+    product?.price ||
+    0;
 
-const firstSize = variant?.sizes?.[0] || {};
+  const oldPrice =
+    firstSize?.mrp ||
+    product?.mrp ||
+    null;
 
-const price =
-  firstSize?.price ||
-  product?.minPrice ||
-  product?.price ||
-  0;
+  const discount =
+    oldPrice && price
+      ? Math.round(((oldPrice - price) / oldPrice) * 100)
+      : null;
 
-const oldPrice =
-  firstSize?.mrp ||
-  product?.mrp ||
-  null;
+  const sizes = variant?.sizes?.map((s) => s.size) || [];
 
-const discount =
-  oldPrice && price
-    ? Math.round(((oldPrice - price) / oldPrice) * 100)
-    : null;
-
-/* ===== SIZES ===== */
-
-const sizes =
-  variant?.sizes?.map((s) => s.size) || [];
-
-/* ===== RATING ===== */
-
-const rating = product?.rating || 4.4;
-const reviews = product?.numReviews || 150;
-
+  const rating = product?.rating || 4.4;
+  const reviews = product?.numReviews || 150;
 
   return (
     <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full">
-
       <div
         className="relative aspect-[3/4] overflow-hidden bg-gray-50 cursor-pointer"
         onClick={onOpenDetails}
@@ -221,6 +225,7 @@ const reviews = product?.numReviews || 150;
         <img
           src={image}
           alt={product.name}
+          loading="lazy"
           className="w-full h-full object-cover object-top hover:scale-110 transition"
         />
 
@@ -236,7 +241,6 @@ const reviews = product?.numReviews || 150;
           {product.name}
         </h3>
 
-        {/* Rating */}
         <div className="flex items-center gap-1 mb-1">
           <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
           <span className="text-[10px] font-bold text-[#ed4e7e]">
@@ -261,7 +265,7 @@ const reviews = product?.numReviews || 150;
 
         {sizes.length > 0 && (
           <div className="flex gap-1 mb-3">
-            {sizes.slice(0, ).map((size) => (
+            {sizes.slice(0, 4).map((size) => (
               <span
                 key={size}
                 className="flex-1 text-center border text-[10px] py-1 rounded font-bold text-gray-600"
