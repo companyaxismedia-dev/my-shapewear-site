@@ -25,6 +25,16 @@ const API_BASE =
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
+
+const getImageUrl = (url) => {
+  if (!url) return "/placeholder.jpg";
+  if (url.startsWith("data:image")) return url;    // base64 image
+  if (url.startsWith("http")) return url;     // already full url
+  return API_BASE + url;       // backend path
+
+};
+
+
 export default function ProductPage() {
   const { slug } = useParams();
   const router = useRouter();
@@ -55,8 +65,11 @@ export default function ProductPage() {
           const firstSize = firstVariant?.sizes?.[0];
           setSelectedSize(firstSize);
 
+          // const firstImg = firstVariant?.images?.[0]?.url;
+          // setActiveImage(firstImg ? API_BASE + firstImg : "/placeholder.jpg");
+
           const firstImg = firstVariant?.images?.[0]?.url;
-          setActiveImage(firstImg ? API_BASE + firstImg : "/placeholder.jpg");
+          setActiveImage(getImageUrl(firstImg));
         }
       } catch (e) {
         console.error(e);
@@ -92,8 +105,10 @@ export default function ProductPage() {
             {selectedVariant?.images?.map((img, i) => (
               <img
                 key={i}
-                src={`${API_BASE}${img.url}`}
-                onMouseEnter={() => setActiveImage(`${API_BASE}${img.url}`)}
+                // src={`${API_BASE}${img.url}`}
+                // onMouseEnter={() => setActiveImage(`${API_BASE}${img.url}`)}
+                src={getImageUrl(img.url)}
+                onMouseEnter={() => setActiveImage(getImageUrl(img.url))}
                 className="w-20 h-24 object-cover cursor-pointer"
               />
             ))}
@@ -144,10 +159,12 @@ export default function ProductPage() {
           {/* COLORS */}
           <div className="flex gap-3 flex-wrap ">
             {product.variants.map((variant, i) => {
-              const img =
-                variant.images?.[0]?.url
-                  ? API_BASE + variant.images[0].url
-                  : "/placeholder.jpg";
+              // const img =
+              //   variant.images?.[0]?.url
+              //     ? API_BASE + variant.images[0].url
+              //     : "/placeholder.jpg";
+
+              const img = getImageUrl(variant.images?.[0]?.url);
 
               return (
                 <div
@@ -187,61 +204,60 @@ export default function ProductPage() {
 
           {/* SIZE */}
           {selectedVariant?.sizes?.length > 0 && (
-  <div className="mt-1">
+            <div className="mt-1">
 
-    {/* TITLE */}
-    <h3 className="font-semibold text-[15px] mb-3 tracking-wide">
-      SELECT SIZE
-    </h3>
+              {/* TITLE */}
+              <h3 className="font-semibold text-[15px] mb-3 tracking-wide">
+                SELECT SIZE
+              </h3>
 
-    {/* SIZE BUTTONS */}
-    <div className="flex flex-wrap gap-3">
-      {selectedVariant.sizes.map((s, i) => (
-        <button
-          key={i}
-          disabled={s.stock === 0}
-          onClick={() => setSelectedSize(s)}
-          className={`
+              {/* SIZE BUTTONS */}
+              <div className="flex flex-wrap gap-3">
+                {selectedVariant.sizes.map((s, i) => (
+                  <button
+                    key={i}
+                    disabled={s.stock === 0}
+                    onClick={() => setSelectedSize(s)}
+                    className={`
             w-12 h-12
             rounded-full
             border
             text-sm
             font-medium
             transition
-            ${
-              selectedSize?.size === s.size
-                ? "bg-black text-white border-black"
-                : "border-gray-300 hover:border-black"
-            }
+            ${selectedSize?.size === s.size
+                        ? "bg-black text-white border-black"
+                        : "border-gray-300 hover:border-black"
+                      }
             ${s.stock === 0 ? "opacity-40 cursor-not-allowed" : ""}
           `}
-        >
-          {s.size}
-        </button>
-      ))}
-    </div>
+                  >
+                    {s.size}
+                  </button>
+                ))}
+              </div>
 
-    {/* SIZE LINKS (Myntra Style) */}
-    <div className="flex items-center gap-3 mt-4 text-pink-600 text-[13px] font-medium tracking-wide">
-      <button
-        onClick={() => setShowSizeChart(true)}
-        className="hover:underline"
-      >
-        SIZE CHART
-      </button>
+              {/* SIZE LINKS (Myntra Style) */}
+              <div className="flex items-center gap-3 mt-4 text-pink-600 text-[13px] font-medium tracking-wide">
+                <button
+                  onClick={() => setShowSizeChart(true)}
+                  className="hover:underline"
+                >
+                  SIZE CHART
+                </button>
 
-      <span className="text-gray-400">|</span>
+                <span className="text-gray-400">|</span>
 
-      <button
-        onClick={() => setShowCalcSize(true)}
-        className="hover:underline"
-      >
-        CALCULATE YOUR SIZE
-      </button>
-    </div>
+                <button
+                  onClick={() => setShowCalcSize(true)}
+                  className="hover:underline"
+                >
+                  CALCULATE YOUR SIZE
+                </button>
+              </div>
 
-  </div>
-)}
+            </div>
+          )}
 
 
           {/* BUTTONS */}

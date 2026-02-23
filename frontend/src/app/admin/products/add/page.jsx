@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus, Trash2, ChevronRight, Bold, Italic, Underline,
@@ -130,6 +130,7 @@ function Toggle({ checked, onChange, label, desc }) {
 // ─────────────────────────────────────────────────────────
 //  RICH TEXT TOOLBAR
 // ─────────────────────────────────────────────────────────
+
 function RichToolbar({ editorRef }) {
   const exec = (cmd, val) => {
     if (!editorRef.current) return;
@@ -190,6 +191,20 @@ function SizeDropdown({ selected, onChange }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const filtered = ALL_SIZES.filter(s => s.toLowerCase().includes(search.toLowerCase()));
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggle = (size) => {
     onChange(selected.includes(size)
@@ -199,7 +214,7 @@ function SizeDropdown({ selected, onChange }) {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -225,7 +240,7 @@ function SizeDropdown({ selected, onChange }) {
       )}
 
       {open && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-card border border-border rounded-lg shadow-lg">
+        <div className="absolute top-full left-0 right-0 z-[9999] mt-1 bg-white border border-gray-300 rounded-lg shadow-xl">
           <div className="p-2 border-b border-border">
             <input
               className={cn(inp, "text-xs")}
@@ -248,11 +263,15 @@ function SizeDropdown({ selected, onChange }) {
                     : "hover:bg-muted text-foreground"
                 )}
               >
-                <div className={cn(
-                  "w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0",
-                  selected.includes(size) ? "bg-primary border-primary" : "border-border"
-                )}>
-                  {selected.includes(size) && <Check className="w-2.5 h-2.5 text-white" />}
+                <div
+                  className={cn(
+                    "w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0",
+                    selected.includes(size)
+                      ? "bg-black border-black"
+                      : "border-gray-400 bg-white"
+                  )}
+                >
+                  {selected.includes(size) && <Check className="w-2.5 h-2.5 text-white stroke-[3]" />}
                 </div>
                 {size}
               </button>
@@ -288,11 +307,37 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
   //   e.target.value = "";
   // };
 
-  const toBase64 = (file) =>
-    new Promise((resolve, reject) => {
+  // const toBase64 = (file) =>
+  //   new Promise((resolve, reject) => {
+  //     const reader = new FileReader();
+  //     reader.onload = () => resolve(reader.result);
+  //     reader.onerror = reject;
+  //     reader.readAsDataURL(file);
+  //   });
+
+  const compressImage = (file, maxWidth = 1200, quality = 0.7) =>
+    new Promise((resolve) => {
+      const img = new Image();
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
+
+      reader.onload = (e) => {
+        img.src = e.target.result;
+      };
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const scale = maxWidth / img.width;
+
+        canvas.width = img.width > maxWidth ? maxWidth : img.width;
+        canvas.height =
+          img.width > maxWidth ? img.height * scale : img.height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+
       reader.readAsDataURL(file);
     });
 
@@ -305,12 +350,14 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
 
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      // const base64 = await new Promise((resolve, reject) => {
+      //   const reader = new FileReader();
+      //   reader.onload = () => resolve(reader.result);
+      //   reader.onerror = reject;
+      //   reader.readAsDataURL(file);
+      // });
+
+      const base64 = await compressImage(file);
 
       newImages.push({
         url: base64,
@@ -434,9 +481,31 @@ export default function AddProduct() {
     vUpdate(variantId, "sizeDetails", updated);
   };
 
+  // const handleSizeSelect = (variantId, sizes) => {
+  //   ensureSizeDetails(variantId, sizes);
+  //   vUpdate(variantId, "selectedSizes", sizes);
+  // };
+
   const handleSizeSelect = (variantId, sizes) => {
-    ensureSizeDetails(variantId, sizes);
-    vUpdate(variantId, "selectedSizes", sizes);
+    setVariants(prev =>
+      prev.map(v => {
+        if (v.id !== variantId) return v;
+
+        const updatedDetails = { ...v.sizeDetails };
+
+        sizes.forEach(s => {
+          if (!updatedDetails[s]) {
+            updatedDetails[s] = makeSizeDetail();
+          }
+        });
+
+        return {
+          ...v,
+          selectedSizes: sizes,
+          sizeDetails: updatedDetails,
+        };
+      })
+    );
   };
 
   // Image helpers per variant
@@ -634,7 +703,7 @@ export default function AddProduct() {
           >
             <div className="space-y-4">
               {variants.map((variant, vIdx) => (
-                <div key={variant.id} className="border border-border rounded-xl overflow-hidden">
+                <div key={variant.id} className="border border-border rounded-xl relative  overflow-visible">
                   {/* Variant header */}
                   <div className="flex items-center gap-3 px-4 py-3 bg-muted/40 cursor-pointer"
                     onClick={() => vUpdate(variant.id, "isExpanded", !variant.isExpanded)}>
