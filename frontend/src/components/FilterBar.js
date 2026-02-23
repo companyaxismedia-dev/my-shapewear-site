@@ -118,6 +118,14 @@ FALLBACK_COLORS.forEach((c) => {
 /* ===== DISCOUNTS ===== */
 const DISCOUNTS = [10, 20, 30, 40, 50, 60, 70, 80, 90];
 
+// RATING
+const RATINGS = [4.5, 4, 3.5, 3];
+const getRatingColor = (rating) => {
+  if (rating >= 4.5) return "#14958f"; // best rating (green)
+  if (rating >= 4) return "#1aa260";   // green
+  if (rating >= 3.5) return "#f5a623"; // orange
+  return "#ff6f61";                    // red
+};
 /* ===== API BASE ===== */
 const getApiBase = () => {
   if (
@@ -349,14 +357,23 @@ export default function FilterBar({
     }));
   };
 
-  /* --- Discount radio -> backend "discount" param (single number) --- */
-  const handleDiscount = (value) => {
-    setPage(1);
-    setFilters((prev) => ({
-      ...prev,
-      discount: prev.discount === String(value) ? "" : String(value),
-    }));
-  };
+ /* --- Rating radio -> backend "rating" param --- */
+const handleRating = (value) => {
+  setPage(1);
+  setFilters((prev) => ({
+    ...prev,
+    rating: prev.rating === String(value) ? "" : String(value),
+  }));
+};
+
+/* --- Discount radio -> backend "discount" param --- */
+const handleDiscount = (value) => {
+  setPage(1);
+  setFilters((prev) => ({
+    ...prev,
+    discount: prev.discount === String(value) ? "" : String(value),
+  }));
+};
 
   /* --- Clear all --- */
   const clearAll = () => {
@@ -385,7 +402,8 @@ export default function FilterBar({
   return (
     <div
       style={{
-        width: 250,
+        width: 252,
+        minWidth: 252,
         backgroundColor: "#fff",
         borderRight: "1px solid #e8e8e8",
         position: "sticky",
@@ -1020,11 +1038,74 @@ export default function FilterBar({
         </div>
       </FilterSection>
 
-
+      {/* ==============================
+    CUSTOMER RATING
+================================ */}
+<FilterSection
+  title="CUSTOMER RATING"
+  collapsed={collapsed.rating}
+  onToggle={() => toggleCollapse("rating")}
+>
+  <div style={{ padding: "0 16px 16px" }}>
+    {RATINGS.map((r) => {
+      const selected = filters.rating === String(r);
+      return (
+        <label
+          key={r}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "6px 0",
+            cursor: "pointer",
+            fontSize: 14,
+            color: "#282c3f",
+            fontWeight: selected ? 600 : 400,
+          }}
+        >
+          <input
+            type="radio"
+            name="rating"
+            checked={selected}
+            onChange={() => handleRating(r)}
+            style={{
+              width: 18,
+              height: 18,
+              accentColor: "#ff3f6c",
+              cursor: "pointer",
+              margin: 0,
+            }}
+          />
+<span
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    lineHeight: 1,
+  }}
+>
+  {r}
+  <span
+    style={{
+      color: getRatingColor(r),
+      fontSize: 14,
+      fontWeight: 700,
+    }}
+  >
+    ★
+  </span>
+  & above
+</span> 
+       </label>
+      );
+    })}
+  </div>
+</FilterSection>
       {/* ==============================
           DISCOUNT RANGE (Radio)
           -> sends "discount" to backend (single number)
           ============================== */}
+          
       <FilterSection
         title="DISCOUNT RANGE"
         collapsed={collapsed.discount}

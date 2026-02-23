@@ -1,13 +1,17 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import { useRouter } from "next/navigation";
 import FilterBar from "@/components/FilterBar";
 import TopFilters from "@/components/TopFilters";
+
 import { useCart } from "@/context/CartContext";
-import { useRouter } from "next/navigation";
+import { useWishlist } from "@/context/WishlistContext";
+import { useAuth } from "@/context/AuthContext";
+import Footer from "@/components/Footer";
+
 import {
   Heart,
-  Filter,
   ChevronDown,
   Star,
   X,
@@ -15,150 +19,333 @@ import {
   Zap,
   ChevronsDown,
 } from "lucide-react";
-import { useWishlist } from "@/context/WishlistContext";
-import { useAuth } from "@/context/AuthContext";
-import Footer from "@/components/Footer";
 
+/* ===== API BASE ===== */
 const API_BASE =
   typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1")
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1")
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
-export default function PaddedBraPage() {
+/* visible initially, rest behind "+ N more" -- handled by TopFilters component */
+
+
+/* ===================================================================
+   MAIN PAGE COMPONENT
+   =================================================================== */
+export default function BraPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showNavbar, setShowNavbar] = useState(true);
   const [filters, setFilters] = useState({});
   const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  /* --- Sort --- */
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sort, setSort] = useState("Recommended");
+
+  /* =========================
+     FETCH PRODUCTS
+     ========================= */
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const cleanFilters = Object.fromEntries(
+          Object.entries(filters).filter(([_, v]) => v !== "")
+        );
+
+        const query = new URLSearchParams({
+          ...cleanFilters,
+          category: "bra",
+          page,
+          limit: 20,
+          ...(sort === "Price: Low to High" && { sort: "price_asc" }),
+          ...(sort === "Price: High to Low" && { sort: "price_desc" }),
+          ...(sort === "Better Discount" && { sort: "discount_desc" }),
+          ...(sort === "Customer Rating" && { sort: "rating" }),
+          ...(sort === "What's New" && { sort: "newest" }),
+          ...(sort === "Popularity" && { sort: "popularity" }),
+        }).toString();
+
+        const res = await fetch(`${API_BASE}/api/products?${query}`);
+        const data = await res.json();
+
+        if (data.success) {
+          setProducts(data.products);
+          setTotalItems(data.total || data.products.length);
+        }
+      } catch (error) {
+        console.error("Error fetching bras:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [filters, page, sort]);
+
+  /* --- close sort dropdown on outside click --- */
+  useEffect(() => {
+    const handler = (e) => {
+      if (!e.target.closest("[data-sort-dropdown]")) {
+        setSortOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   useEffect(() => {
-  const fetchProducts = async () => {
+  let lastScrollY = window.scrollY;
 
-    setLoading(true);   // ⭐ YAHI ADD KARNA HAI
+  const handleScroll = () => {
+    if (window.scrollY > lastScrollY && window.scrollY > 80) {
+  setShowNavbar(false);
+} else {
+  setShowNavbar(true);
+}
 
-    try {
-      const cleanFilters = Object.fromEntries(
-  Object.entries(filters).filter(([_, v]) => v !== "")
-);
-
-const query = new URLSearchParams({
-  ...cleanFilters,
-  category: "bra",
-  page,
-  limit: 20,
-}).toString();
-
-      const res = await fetch(
-        `${API_BASE}/api/products?${query}`
-      );
-
-      const data = await res.json();
-
-      if (data.success) {
-        setProducts(data.products);
-      }
-    } catch (error) {
-      console.error("Error fetching bras:", error);
-    } finally {
-      setLoading(false);
-    }
+    lastScrollY = window.scrollY;
   };
 
-  fetchProducts();
-}, [filters, page]);
+  window.addEventListener("scroll", handleScroll);
 
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+
+
+  /* ===================================================================
+     RENDER
+     =================================================================== */
   return (
-    <div className="min-h-screen bg-white font-sans overflow-x-hidden text-black">
-      <div className="w-full sticky top-0 z-50 bg-white border-b border-pink-50 shadow-sm">
+    <div style={{ minHeight: "100vh", backgroundColor: "#fff", fontFamily: "'Assistant', Arial, sans-serif", color: "#282c3f" }}>
+    
+    <div
+  style={{
+    position: "sticky",
+    top: 0,
+    zIndex: 999,
+    transition: "transform 0.3s ease",
+    transform: showNavbar ? "translateY(0)" : "translateY(-100%)",
+  }}
+>
   <Navbar />
 </div>
 
-<div className="max-w-[1400px] mx-auto flex gap-6 px-4">
 
-  {/* LEFT SIDEBAR */}
-  <aside className="hidden lg:block">
-    <FilterBar
-      filters={filters}
-      setFilters={setFilters}
-      setPage={setPage}
-    />
-  </aside>
+      {/* ===== MAIN LAYOUT (Myntra style: fixed left sidebar + right content) ===== */}
+      <div
+  style={{
+    display: "flex",
+    width: "100%",
+    margin: 0,
+  }}
+>
 
-  {/* RIGHT SIDE (MYNTRA STRUCTURE) */}
-  <div className="flex-1">
+        {/* ====================
+            LEFT SIDEBAR (always visible, fixed on left like Myntra)
+            ==================== */}
+        <aside style={{ flexShrink: 0 }}>
+          <FilterBar
+            filters={filters}
+            setFilters={setFilters}
+            setPage={setPage}
+            category="bra"
+          />
+        </aside>
 
-    {/* ⭐ TOP FILTERS YAHAN AAYEGA */}
-    <div className="flex items-center justify-between border-b">
+        {/* ====================
+            RIGHT SIDE (top filters + products)
+            ==================== */}
+        <div style={{ flex: 1, minWidth: 0 }}>
 
-  <TopFilters
-    filters={filters}
-    setFilters={setFilters}
-    setPage={setPage}
-  />
-
-  {/* SORT */}
-  <div className="relative group mr-4">
-    <button className="border px-4 py-2 text-sm w-[240px] text-left flex justify-between">
-      Sort by : <span className="font-semibold">Recommended</span>
-      <ChevronDown size={16} />
-    </button>
-
-    <div className="hidden group-hover:block absolute right-0 bg-white border shadow-lg w-[240px] z-50">
-      {[
-        "Recommended",
-        "What's New",
-        "Popularity",
-        "Better Discount",
-        "Price: High to Low",
-        "Price: Low to High",
-        "Customer Rating",
-      ].map((s) => (
-        <button
-          key={s}
-          onClick={() =>
-            setFilters((prev) => ({ ...prev, sort: s }))
-          }
-          className="block w-full text-left px-4 py-3 hover:bg-gray-50 text-sm"
-        >
-          {s}
-        </button>
-      ))}
-    </div>
-  </div>
-
-</div>
-
-    {/* PRODUCTS */}
-    <main className="p-4">
-      {loading ? (
-        <p className="text-center">Loading products...</p>
-      ) : products.length === 0 ? (
-        <div className="text-center py-20">
-          <h2 className="text-lg font-bold text-gray-700">
-            No products found 😔
-          </h2>
-          <p className="text-sm text-gray-500 mt-2">
-            Try changing filters
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-          {products.map((item) => (
-            <ProductCard
-              key={item._id}
-              item={item}
-              onOpenDetails={() => setSelectedProduct(item)}
+          {/* ---- TOP FILTER BAR (Myntra chip style) + Sort ---- */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              borderBottom: "1px solid #e8e8e8",
+              padding: "0 16px",
+              minHeight: 48,
+              gap: 8,
+            }}
+          >
+            {/* TopFilters component */}
+            <TopFilters
+              filters={filters}
+              setFilters={setFilters}
+              setPage={setPage}
             />
-          ))}
+
+            {/* Sort dropdown */}
+            <div style={{ position: "relative", flexShrink: 0, paddingTop: 8 }} data-sort-dropdown>
+              <button
+                onClick={() => setSortOpen(!sortOpen)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  border: "1px solid #e8e8e8",
+                  padding: "8px 14px",
+                  fontSize: 13,
+                  width: 240,
+                  backgroundColor: "#fff",
+                  cursor: "pointer",
+                  color: "#282c3f",
+                }}
+              >
+                <span>
+                  Sort by : <strong>{sort}</strong>
+                </span>
+                <ChevronDown size={14} />
+              </button>
+
+              {sortOpen && (
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "100%",
+                    backgroundColor: "#fff",
+                    border: "1px solid #e8e8e8",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                    width: 240,
+                    zIndex: 100,
+                  }}
+                >
+                  {[
+                    "Recommended",
+                    "What's New",
+                    "Popularity",
+                    "Better Discount",
+                    "Price: High to Low",
+                    "Price: Low to High",
+                    "Customer Rating",
+                  ].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        setSort(s);
+                        setSortOpen(false);
+                      }}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "10px 16px",
+                        fontSize: 14,
+                        color: sort === s ? "#ff3f6c" : "#282c3f",
+                        fontWeight: sort === s ? 700 : 400,
+                        backgroundColor: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ---- PRODUCTS GRID ---- */}
+          <main style={{ padding: 16 }}>
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "80px 0" }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  border: "3px solid #e8e8e8",
+                  borderTop: "3px solid #ff3f6c",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                  margin: "0 auto 12px",
+                }} />
+                <p style={{ color: "#94969f", fontSize: 14 }}>Loading products...</p>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              </div>
+            ) : products.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "80px 0" }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: "#282c3f" }}>
+                  No products found
+                </h2>
+                <p style={{ fontSize: 14, color: "#94969f", marginTop: 8 }}>
+                  Try changing or clearing your filters
+                </p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                  gap: 16,
+                }}
+              >
+                {products.map((item) => (
+                  <ProductCard
+                    key={item._id}
+                    item={item}
+                    onOpenDetails={() => setSelectedProduct(item)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* ---- PAGINATION ---- */}
+            {!loading && products.length > 0 && (
+              <div style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 8,
+                padding: "32px 0",
+              }}>
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  style={{
+                    padding: "8px 20px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    border: "1px solid #e8e8e8",
+                    backgroundColor: page <= 1 ? "#f5f5f5" : "#fff",
+                    color: page <= 1 ? "#d4d5d9" : "#282c3f",
+                    cursor: page <= 1 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Previous
+                </button>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#282c3f", padding: "0 12px" }}>
+                  Page {page}
+                </span>
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={products.length < 20}
+                  style={{
+                    padding: "8px 20px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    border: "1px solid #e8e8e8",
+                    backgroundColor: products.length < 20 ? "#f5f5f5" : "#fff",
+                    color: products.length < 20 ? "#d4d5d9" : "#282c3f",
+                    cursor: products.length < 20 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </main>
         </div>
-      )}
-    </main>
+      </div>
 
-  </div>
-</div>
-
+      {/* ===== PRODUCT DETAILS MODAL ===== */}
       {selectedProduct && (
         <ProductDetailsModal
           product={selectedProduct}
@@ -171,359 +358,551 @@ const query = new URLSearchParams({
 }
 
 
+/* ===================================================================
+   IMAGE URL HELPER
+   =================================================================== */
 const getImageUrl = (imagePath) => {
   if (!imagePath) return "/fallback.jpg";
-
-  // If already full URL
   if (typeof imagePath === "string") {
     if (imagePath.startsWith("http")) return imagePath;
     return `${API_BASE}${imagePath}`;
   }
-
-  // If backend sends object
   if (typeof imagePath === "object") {
     const path = imagePath.url || imagePath.path;
     if (!path) return "/fallback.jpg";
-
     if (path.startsWith("http")) return path;
     return `${API_BASE}${path}`;
   }
-
   return "/fallback.jpg";
 };
 
 
+/* ===================================================================
+   PRODUCT CARD (Myntra Bra style)
+   =================================================================== */
 function ProductCard({ item, onOpenDetails }) {
   const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
-  const { user } = useAuth();
-  const { addToCart } = useCart();
-
+const { user } = useAuth();
+const { addToCart } = useCart();
   const [showSizes, setShowSizes] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+const isWishlisted = wishlist.some((p) => p.id === item._id);  const cardRef = React.useRef(null);
 
-  const cardRef = React.useRef(null);
+  const image = getImageUrl(item.variants?.[0]?.images?.[0]);
 
-  // const image =
-  //   item.variants?.[0]?.images?.[0]
-  //     ? `${API_BASE}${item.variants[0].images[0]}`
-  //     : "/fallback.jpg";
-  const image = getImageUrl(
-    item.variants?.[0]?.images?.[0]
-  );
-
-
-  const isWishlisted = wishlist.some((p) => p.id === item._id);
-
-  /* ================= CLOSE ON OUTSIDE CLICK ================= */
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        cardRef.current &&
-        !cardRef.current.contains(event.target)
-      ) {
+      if (cardRef.current && !cardRef.current.contains(event.target)) {
         setShowSizes(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const handleWishlist = () => {
-    if (!user) {
-      alert("Please login to use wishlist");
-      return;
-    }
-    isWishlisted
-      ? removeFromWishlist(item._id)
-      : toggleWishlist({ id: item._id, ...item });
-  };
 
   const handleSizeSelect = (size) => {
     const variant = item.variants?.[0];
 
-    addToCart({
-      productId: item._id,
-      name: item.name,
-      price: variant?.price || item.price,
-      image,
-      size,
-      quantity: 1,
-    });
-
+addToCart({
+  productId: item._id,
+  name: item.name,
+  price: variant?.price || item.minPrice,
+  image,
+  size,
+  quantity: 1,
+});
     setShowSizes(false);
-
-    /* ===== SUCCESS MESSAGE ===== */
     setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-    }, 1500);
+    setTimeout(() => setShowSuccess(false), 1500);
   };
 
   return (
     <div
       ref={cardRef}
-      className="group flex flex-col bg-white border border-pink-50 relative rounded-sm overflow-hidden shadow-sm h-full transition-all hover:shadow-md"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "#fff",
+        border: "1px solid #e8e8e8",
+        overflow: "hidden",
+        position: "relative",
+        transition: "box-shadow 0.2s",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.08)")}
+      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "none")}
     >
-      {/* ================= IMAGE SECTION ================= */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-[#fff5f8]">
-
-        {/* IMAGE */}
+      {/* IMAGE */}
+      <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden", backgroundColor: "#f5f5f6" }}>
         <img
           src={image}
           alt={item.name}
           onClick={onOpenDetails}
-          className={`cursor-pointer w-full h-full object-cover object-top transition-all duration-500 group-hover:scale-105 ${showSizes ? "blur-sm scale-105" : ""
-            }`}
+          style={{
+            cursor: "pointer",
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "top",
+            transition: "transform 0.4s",
+            filter: showSizes ? "blur(3px)" : "none",
+            transform: showSizes ? "scale(1.05)" : "scale(1)",
+          }}
+          onMouseEnter={(e) => { if (!showSizes) e.currentTarget.style.transform = "scale(1.05)"; }}
+          onMouseLeave={(e) => { if (!showSizes) e.currentTarget.style.transform = "scale(1)"; }}
         />
 
         {/* DISCOUNT */}
         {item.discount > 0 && (
-          <div className="absolute top-0 left-0 bg-[#ed4e7e] text-white text-[9px] px-2 py-0.5 font-bold z-10">
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            backgroundColor: "#ff905a",
+            color: "#fff",
+            fontSize: 10,
+            fontWeight: 700,
+            padding: "2px 8px",
+            zIndex: 10,
+          }}>
             {item.discount}% OFF
           </div>
         )}
 
         {/* WISHLIST */}
         <button
-          onClick={handleWishlist}
-          className="absolute top-2 right-2 z-20 bg-white p-1 rounded-full shadow hover:scale-110 transition"
+onClick={() => {
+  if (!user) return alert("Please login to use wishlist");
+
+  isWishlisted
+    ? removeFromWishlist(item._id)
+    : toggleWishlist({ id: item._id, ...item });
+}}          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            zIndex: 20,
+            backgroundColor: "#fff",
+            border: "none",
+            borderRadius: "50%",
+            width: 30,
+            height: 30,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+          }}
         >
           <Heart
-            size={18}
+            size={16}
             fill={isWishlisted ? "#ed4e7e" : "none"}
             stroke="#ed4e7e"
           />
         </button>
 
-        {/* ================= SIZE OVERLAY ================= */}
-        <div
-          className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${showSizes
-            ? "opacity-100 visible"
-            : "opacity-0 invisible"
-            }`}
-        >
-          <div className="bg-white/95 backdrop-blur-md p-5 rounded-xl shadow-2xl transform transition-all duration-300 scale-100">
+        {/* RATING BADGE */}
+        {item.rating > 0 && (
+          <div style={{
+            position: "absolute",
+            bottom: 8,
+            left: 8,
+            backgroundColor: "rgba(255,255,255,0.95)",
+            borderRadius: 2,
+            padding: "2px 6px",
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
+            fontSize: 12,
+            fontWeight: 700,
+            color: "#282c3f",
+            zIndex: 10,
+          }}>
+            {item.rating}
+            <Star size={10} fill="#14958f" stroke="14958f" />
+            <span style={{ color: "#94969f", fontWeight: 400, fontSize: 11 }}>
+              | {item.numReviews || 0}
+            </span>
+          </div>
+        )}
 
-            <p className="text-xs font-bold uppercase mb-3 text-center text-[#ed4e7e] tracking-wider">
-              SELECT SIZE
-            </p>
-
-            <div className="flex gap-3 flex-wrap justify-center">
-              {item.variants?.[0]?.sizes?.map((s, i) => (
-                <button
-                  key={i}
-                  disabled={s.stock === 0}
-                  onClick={() => handleSizeSelect(s.size)}
-                  className="px-3 py-1 border border-[#ed4e7e] text-[#ed4e7e] rounded text-xs font-medium hover:bg-[#ed4e7e] hover:text-white transition duration-200"
-                >
-                  {s.size}
-                </button>
-              ))}
+        {/* SIZE OVERLAY */}
+        {showSizes && (
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(255,255,255,0.9)",
+            backdropFilter: "blur(4px)",
+            zIndex: 15,
+          }}>
+            <div style={{ textAlign: "center" }}>
+              <p style={{
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                color: "#ed4e7e",
+                letterSpacing: "1.5px",
+                marginBottom: 12,
+              }}>
+                SELECT SIZE
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", padding: "0 12px" }}>
+                {item.variants?.[0]?.sizes?.map((s, i) => (
+                  <button
+                    key={i}
+                    disabled={s.stock === 0}
+                    onClick={() => handleSizeSelect(s.size)}
+                    style={{
+                      padding: "4px 10px",
+                      border: "1px solid #ed4e7e",
+                      color: s.stock === 0 ? "#d4d5d9" : "#ed4e7e",
+                      backgroundColor: "transparent",
+                      borderColor: s.stock === 0 ? "#d4d5d9" : "#ed4e7e",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: s.stock === 0 ? "not-allowed" : "pointer",
+                      borderRadius: 2,
+                    }}
+                  >
+                    {s.size}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* ================= SUCCESS POP ================= */}
+        {/* SUCCESS POP */}
         {showSuccess && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-4 py-2 rounded-full shadow-lg animate-bounce">
-            Added to Bag ✓
+          <div style={{
+            position: "absolute",
+            bottom: 12,
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: "#282c3f",
+            color: "#fff",
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "6px 14px",
+            borderRadius: 20,
+            zIndex: 20,
+            whiteSpace: "nowrap",
+          }}>
+            Added to Bag
           </div>
         )}
       </div>
 
-      {/* ================= DETAILS ================= */}
-      <div className="p-3 flex flex-col flex-grow bg-white">
-        <h3 className="text-[10px] font-bold truncate uppercase mb-1">
+      {/* DETAILS */}
+      <div style={{ padding: 10, display: "flex", flexDirection: "column", flex: 1, backgroundColor: "#fff" }}>
+        <h3 style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#282c3f",
+          margin: "0 0 2px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          textTransform: "uppercase",
+        }}>
           {item.name}
         </h3>
 
-        <div className="flex gap-2 mt-1">
-          <span className="font-black text-black">
-            ₹{item.minPrice}
+        <p style={{
+          fontSize: 12,
+          color: "#535766",
+          margin: "0 0 6px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}>
+          {item.subCategory || "Bra"}
+        </p>
+
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#282c3f" }}>
+            Rs. {item.minPrice}
           </span>
           {item.mrp > item.minPrice && (
-            <span className="text-xs line-through text-gray-400">
-              ₹{item.mrp}
-            </span>
+            <>
+              <span style={{ fontSize: 12, color: "#94969f", textDecoration: "line-through" }}>
+                Rs. {item.mrp}
+              </span>
+              <span style={{ fontSize: 12, color: "#ff905a", fontWeight: 600 }}>
+                ({item.discount}% OFF)
+              </span>
+            </>
           )}
         </div>
 
-
-        <div className="flex items-center gap-1 mt-1.5 mb-3">
-          <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
-          <span className="text-[10px] font-bold">
-            {item.rating}
-          </span>
-          <span className="text-[10px] text-pink-300">
-            ({item.numReviews})
-          </span>
-        </div>
-
-        {/* ADD TO CART BUTTON */}
-        <div className="mt-auto w-full px-1 pb-1">
-          <button
-            onClick={() => setShowSizes(true)}
-            className="cursor-pointer w-full bg-[#ed4e7e] text-white py-2.5 text-[12px] font-bold uppercase tracking-widest rounded-sm shadow-sm flex items-center justify-center active:scale-95 transition-all hover:scale-105"
-          >
-            ADD TO CART
-          </button>
-        </div>
+        {/* ADD TO BAG */}
+        <button
+          onClick={() => setShowSizes(true)}
+          style={{
+            marginTop: "auto",
+            paddingTop: 8,
+            width: "100%",
+            padding: "8px 0",
+            fontSize: 12,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.5px",
+            color: "#faf5f6",
+            backgroundColor: "#ed4e7e",
+            border: "1px solid #ed4e7e",
+            cursor: "pointer",
+          }}
+        >
+          ADD TO BAG
+        </button>
       </div>
     </div>
   );
 }
 
 
-
+/* ===================================================================
+   PRODUCT DETAILS MODAL
+   =================================================================== */
 export function ProductDetailsModal({ product, onClose }) {
   const { addToCart } = useCart();
-  const router = useRouter();
-
   const [variant, setVariant] = useState(product.variants?.[0]);
   const [size, setSize] = useState("");
+  const router = useRouter();
 
-  // const image =
-  //   variant?.images?.[0]
-  //     ? `${API_BASE}${variant.images[0]}`
-  //     : "/fallback.jpg";
-  const image = getImageUrl(
-    variant?.images?.[0]
-  );
+  const image = getImageUrl(variant?.images?.[0]); // ⭐ YE LINE ADD KARO
 
-
-  const handleCartAdd = () => {
-    if (!size) return alert("Select size");
-
-    addToCart({
-      productId: product._id,
-      size,
-      quantity: 1,
-    });
-
-    alert("Added to cart");
-  };
-
-  const handleBuyNow = () => {
-    handleCartAdd();
-    router.push("/cart");
-  };
 
   const handleShowMore = () => {
-    router.push(`/product/${product.slug}`); // ✅ Navigate using slug
-  };
+  router.push(`/product/${product.slug}`);
+};
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[90vh]">
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 200,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(4px)",
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 860,
+          backgroundColor: "#fff",
+          borderRadius: 8,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "row",
+          maxHeight: "90vh",
+          position: "relative",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* CLOSE */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-50 p-2 bg-white rounded-full hover:rotate-90 transition"
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            zIndex: 50,
+            backgroundColor: "#fff",
+            border: "none",
+            borderRadius: "50%",
+            width: 36,
+            height: 36,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+          }}
         >
-          <X size={24} />
+          <X size={20} />
         </button>
 
-        <div className="md:w-1/2 bg-[#fff5f8]">
+        {/* IMAGE SIDE */}
+        <div style={{ width: "50%", backgroundColor: "#f5f5f6", flexShrink: 0 }}>
           <img
             src={image}
-            className="w-full h-full object-cover"
             alt={product.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </div>
 
-        <div className="md:w-1/2 p-6 space-y-6 overflow-y-auto">
-          <h1 className="text-2xl font-black uppercase">
+        {/* DETAILS SIDE */}
+        <div style={{ width: "50%", padding: 24, overflowY: "auto", display: "flex", flexDirection: "column", gap: 20 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#282c3f", textTransform: "uppercase", margin: 0 }}>
             {product.name}
           </h1>
 
-          <div className="flex items-center gap-2">
-  <span className="text-2xl font-black text-[#ed4e7e]">
-    ₹{
-      variant?.sizes?.find((s) => s.size === size)?.price ||
-      variant?.sizes?.[0]?.price ||
-      product.minPrice ||
-      0
-    }
-  </span>
-
-  {product.mrp > product.minPrice && (
-    <span className="line-through text-gray-400">
-      ₹{product.mrp}
-    </span>
-  )}
-</div>
-
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ fontSize: 24, fontWeight: 700, color: "#ed4e7e" }}>
+              Rs. {
+                variant?.sizes?.find((s) => s.size === size)?.price ||
+                variant?.sizes?.[0]?.price ||
+                product.minPrice || 0
+              }
+            </span>
+            {product.mrp > product.minPrice && (
+              <span style={{ fontSize: 16, color: "#94969f", textDecoration: "line-through" }}>
+                Rs. {product.mrp}
+              </span>
+            )}
+          </div>
 
           {/* COLOR */}
-          <div>
-            <p className="text-xs font-bold uppercase mb-2">
-              Select Color
-            </p>
-            <div className="flex gap-2">
-              {product.variants?.map((v, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    setVariant(v);
-                    setSize("");
-                  }}
-                  className={`px-3 py-1 border rounded transition ${variant?.color === v.color
-                      ? "bg-[#ed4e7e] text-white border-[#ed4e7e]"
-                      : "hover:scale-105"
-                    }`}>
-
-                  {v.color}
-                </button>
-              ))}
+          {product.variants?.length > 1 && (
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", marginBottom: 8, color: "#282c3f" }}>
+                Select Color
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {product.variants.map((v, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setVariant(v); setSize(""); }}
+                    style={{
+                      padding: "6px 14px",
+                      border: variant?.color === v.color ? "2px solid #ed4e7e" : "1px solid #d4d5d9",
+                      backgroundColor: variant?.color === v.color ? "#fff0f3" : "#fff",
+                      color: "#282c3f",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      borderRadius: 2,
+                    }}
+                  >
+                    {v.color}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* SIZE */}
           <div>
-            <p className="text-xs font-bold uppercase mb-2">
+            <p style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", marginBottom: 8, color: "#282c3f" }}>
               Select Size
             </p>
-            <div className="flex gap-2 flex-wrap">
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {variant?.sizes?.map((s) => (
                 <button
                   key={s.size}
                   onClick={() => setSize(s.size)}
-                  className={`px-4 py-2 border rounded transition ${size === s.size
-                    ? "bg-[#ed4e7e] text-white"
-                    : "hover:scale-105"
-                    }`}                >
+                  style={{
+                    padding: "8px 16px",
+                    border: size === s.size ? "2px solid #ed4e7e" : "1px solid #d4d5d9",
+                    backgroundColor: size === s.size ? "#fff0f3" : "#fff",
+                    color: "#282c3f",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    borderRadius: 2,
+                  }}
+                >
                   {s.size}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* ACTION BUTTONS */}
+          {/* ACTIONS */}
           <button
-            onClick={handleCartAdd}
-            className="w-full bg-[#ed4e7e] text-white py-3 font-bold uppercase hover:scale-105 transition"
+onClick={() => {
+  if (!size) return alert("Select size");
+
+  addToCart({
+    productId: product._id,
+    size,
+    quantity: 1,
+  });
+
+  alert("Added to cart");
+}}            style={{
+              width: "100%",
+              padding: "14px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              color: "#fff",
+              backgroundColor: "#ed4e7e",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
           >
-            <ShoppingCart size={16} className="inline mr-2" />
-            Add to Cart
+            <ShoppingCart size={16} />
+            ADD TO BAG
           </button>
 
           <button
-            onClick={handleBuyNow}
-            className="w-full bg-black text-white py-3 font-bold uppercase hover:scale-105 transition"
+            style={{
+              width: "100%",
+              padding: "14px 0",
+              fontSize: 14,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.5px",
+              color: "#282c3f",
+              backgroundColor: "#fff",
+              border: "1px solid #d4d5d9",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
           >
-            <Zap size={16} className="inline mr-2" />
-            Buy Now
+            <Zap size={16} />
+            BUY NOW
           </button>
 
-          {/* ✅ SHOW MORE DETAILS BUTTON */}
           <button
-            onClick={handleShowMore}
-            className="w-full flex items-center justify-center gap-2 border border-[#ed4e7e] text-[#ed4e7e] py-3 font-bold uppercase hover:bg-[#ed4e7e] hover:text-white transition-all duration-300 group"
-          >
-            Show More Details
-            <ChevronsDown className="group-hover:translate-y-1 transition-transform duration-300" />
-          </button>
+  onClick={handleShowMore}
+  style={{
+    width: "100%",
+    padding: "14px 0",
+    fontSize: 14,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    color: "#ed4e7e",
+    backgroundColor: "#fff",
+    border: "1px solid #ed4e7e",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    transition: "all 0.3s ease",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.backgroundColor = "#ed4e7e";
+    e.currentTarget.style.color = "#fff";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.backgroundColor = "#fff";
+    e.currentTarget.style.color = "#ed4e7e";
+  }}
+>
+  Show More Details
+  <ChevronsDown size={16} />
+</button>
         </div>
       </div>
     </div>
