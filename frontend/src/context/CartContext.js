@@ -13,11 +13,12 @@ const API_BASE =
     ? "http://localhost:5000"
     : "https://my-shapewear-site.onrender.com";
 
-const getToken = () => localStorage.getItem("token");
+// const getToken = () => localStorage.getItem("token");
 
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
+  const token = user?.token;
 
   /* ================= LOAD CART ================= */
   useEffect(() => {
@@ -75,22 +76,32 @@ export const CartProvider = ({ children }) => {
 
   const fetchCart = async () => {
     const res = await axios.get(`${API_BASE}/api/cart`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
+      headers: { Authorization: `Bearer ${user?.token}` },
     });
 
     const formatted = res.data.items.map((item) => {
       const product = item.product;
 
-      const price = product.price || 0;
-      const mrp = product.mrp || price;
+      // find selected variant
+      const selectedVariant =
+        product.variants?.find(v => v.color === item.color) ||
+        product.variants?.[0];
+
+      // find selected size
+      const selectedSizeObj =
+        selectedVariant?.sizes?.find(s => s.size === item.size) ||
+        selectedVariant?.sizes?.[0];
+
+      const price = selectedSizeObj?.price || product.minPrice || 0;
+      const mrp = selectedSizeObj?.mrp || product.mrp || price;
       const discount =
         mrp > price
           ? Math.round(((mrp - price) / mrp) * 100)
           : 0;
 
       const image =
-        product.images?.[0] ||
-        product.variants?.[0]?.images?.[0] ||
+        product.thumbnail ||
+        selectedVariant?.images?.[0]?.url ||
         "/fallback.jpg";
 
       //       let image = "";
@@ -110,9 +121,9 @@ export const CartProvider = ({ children }) => {
       // }
 
       // 🔥 Find correct variant using cart color
-      const selectedVariant = product.variants?.find(
-        (v) => v.color === item.color
-      ) || product.variants?.[0];
+      // const selectedVariant = product.variants?.find(
+      //   (v) => v.color === item.color
+      // ) || product.variants?.[0];
 
       // 🔥 Extract size list from that variant
       const availableSizes =
@@ -141,7 +152,7 @@ export const CartProvider = ({ children }) => {
     });
 
     setCartItems(formatted);
-    };
+  };
 
 
   /* ================= MERGE GUEST ================= */
@@ -159,7 +170,7 @@ export const CartProvider = ({ children }) => {
           size: item.size,
           color: item.color,
         },
-        { headers: { Authorization: `Bearer ${getToken()}` } }
+        { headers: { Authorization: `Bearer ${user?.token}` } }
       );
     }
 
@@ -172,9 +183,9 @@ export const CartProvider = ({ children }) => {
       await axios.post(
         `${API_BASE}/api/cart`,
         { productId, qty: quantity, size, color },
-        { headers: { Authorization: `Bearer ${getToken()}` } }
+        { headers: { Authorization: `Bearer ${user?.token}` } }
       );
-      fetchCart();
+      await fetchCart();
     } else {
       const updated = [...cartItems, { productId, size, quantity, color }];
       setCartItems(updated);
@@ -188,9 +199,9 @@ export const CartProvider = ({ children }) => {
       await axios.put(
         `${API_BASE}/api/cart/${itemId}`,
         { quantity },
-        { headers: { Authorization: `Bearer ${getToken()}` } }
+        { headers: { Authorization: `Bearer ${user?.token}` } }
       );
-      fetchCart();
+      await fetchCart();
     } else {
       const updated = cartItems.map((item) =>
         item.id === itemId ? { ...item, quantity } : item
@@ -201,21 +212,21 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateSize = async (itemId, size) => {
-    if (user) {
-      await axios.put(
-        `${API_BASE}/api/cart/size/${itemId}`,
-        { size },
-        { headers: { Authorization: `Bearer ${getToken()}` } }
-      );
-      fetchCart();
-    } else {
-      const updated = cartItems.map((item) =>
-        item.id === itemId ? { ...item, size } : item
-      );
-      setCartItems(updated);
-      localStorage.setItem("guestCart", JSON.stringify(updated));
-    }
-  };
+  if (!user) return;
+
+  try {
+    await axios.put(
+      `${API_BASE}/api/cart/size/${itemId}`,
+      { size },
+      { headers: { Authorization: `Bearer ${user?.token}` } }
+    );
+
+    await fetchCart();
+  } catch (err) {
+    alert(err?.response?.data?.message || "Size update failed");
+    console.log(err?.response?.data);
+  }
+};
 
 
   /* ================= REMOVE ================= */
@@ -223,9 +234,9 @@ export const CartProvider = ({ children }) => {
     if (user) {
       await axios.delete(
         `${API_BASE}/api/cart/${itemId}`,
-        { headers: { Authorization: `Bearer ${getToken()}` } }
+        { headers: { Authorization: `Bearer ${user?.token}` } }
       );
-      fetchCart();
+      await fetchCart();
     } else {
       const updated = cartItems.filter((item) => item.id !== itemId);
       setCartItems(updated);

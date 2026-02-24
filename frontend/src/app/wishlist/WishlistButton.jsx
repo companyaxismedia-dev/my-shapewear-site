@@ -30,3 +30,24 @@ export default function WishlistButton({ onLoginOpen }) {
     </Link>
   );
 }
+
+// {wishlistCount > 0 && (
+//   <span className="
+//     absolute
+//     -top-1
+//     -right-1
+//     bg-pink-600
+//     text-white
+//     text-[9px]
+//     w-4
+//     h-4
+//     rounded-full
+//     flex
+//     items-center
+//     justify-center
+//     font-bold
+//     leading-none
+//   ">
+//     {wishlistCount}
+//   </span>
+// )}

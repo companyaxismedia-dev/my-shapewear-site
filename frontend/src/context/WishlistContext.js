@@ -13,7 +13,7 @@ export function WishlistProvider({ children }) {
 
   const API_BASE =
     typeof window !== "undefined" &&
-    window.location.hostname === "localhost"
+      window.location.hostname === "localhost"
       ? "http://localhost:5000"
       : "https://my-shapewear-site.onrender.com";
 
@@ -53,7 +53,7 @@ export function WishlistProvider({ children }) {
 
   /* ================= TOGGLE WISHLIST ================= */
 
-  const toggleWishlist = async (productId) => {
+  const toggleWishlist = async (product) => {
     if (!user || !user.token) {
       alert("Please login first");
       return;
@@ -62,7 +62,7 @@ export function WishlistProvider({ children }) {
     try {
       await axios.post(
         `${API_BASE}/api/wishlist/toggle`,
-        { productId },
+        { productId: product._id },
         {
           headers: {
             Authorization: `Bearer ${user.token}`,
@@ -70,13 +70,13 @@ export function WishlistProvider({ children }) {
         }
       );
 
-      // Optimistic update (better UX)
       setWishlist((prev) => {
-        const exists = prev.find((p) => p._id === productId);
+        const exists = prev.find((p) => p._id === product._id);
+
         if (exists) {
-          return prev.filter((p) => p._id !== productId);
+          return prev.filter((p) => p._id !== product._id);
         }
-        return [...prev, { _id: productId }];
+        return [...prev, product];
       });
     } catch (err) {
       console.error("Toggle wishlist error:", err?.response?.data || err);

@@ -16,7 +16,8 @@ if (req.query.category) {
 }
 
 if (req.query.subCategory) {
-  filter.subCategory = req.query.subCategory;
+  const subCats = req.query.subCategory.split(",");
+  filter.subCategory = { $in: subCats };
 }
 
 /* ================= SEARCH ================= */

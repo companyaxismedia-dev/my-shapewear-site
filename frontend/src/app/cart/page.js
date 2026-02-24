@@ -7,9 +7,11 @@ import { useAuth } from '@/context/AuthContext';
 import LoginModal from "../authPage/LoginModal";
 import { useEffect } from "react";
 import Link from "next/link";
+import { useWishlist } from '@/context/WishlistContext';
 
 export default function CartPage() {
   const { cartItems, updateQty, removeItem, updateSize } = useCart();
+  const { toggleWishlist } = useWishlist();
   const { user } = useAuth();
 
   const [showMoreOffers, setShowMoreOffers] = useState(false);
@@ -54,11 +56,23 @@ export default function CartPage() {
     }
   };
 
-  const moveToWishlist = () => {
-    alert('Selected items will be moved to wishlist!');
-    removeSelectedItems();
-  };
+  const moveToWishlist = async () => {
+    for (const item of cartItems) {
+      if (selectedItems[item.id]) {
+        await toggleWishlist({
+          _id: item.productId,
+          name: item.name,
+          brand: item.brand,
+          thumbnail: item.image,
+          minPrice: item.price,
+          mrp: item.mrp,
+          discount: item.discount,
+        });
 
+        await removeItem(item.id);
+      }
+    }
+  };
   const handleQuantityChange = async (itemId, newQty) => {
     if (newQty >= 1 && newQty <= 10) {
       await updateQty(itemId, newQty);
@@ -250,21 +264,34 @@ export default function CartPage() {
                           className="h-9 text-sm border-0 border-b border-gray-300 focus:outline-none focus:border-gray-500"
                         >
                           {item.availableSizes?.map((size) => (
+                            // <option key={size} value={size}>
+                            //   Size: {size}
+                            // </option>
                             <option key={size} value={size}>
-                              Size: {size}
+                              {size}
                             </option>
                           ))}
                         </select>
 
-                        <select
-                          value={item.quantity}
-                          onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value))}
-                          className="h-9 text-sm border-0 border-b border-gray-300 focus:outline-none focus:border-gray-500"
-                        >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                            <option key={num} value={num}>Qty: {num}</option>
-                          ))}
-                        </select>
+                        <div className="flex items-center border border-gray-300 h-9">
+                          {item.quantity > 1 && (
+                            <button
+                              onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                              className="w-9 h-full border-r border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                            >
+                              -
+                            </button>
+                          )}
+                          <span className="w-9 h-full flex items-center justify-center text-sm">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                            className="w-9 h-full border-l border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-3 mb-2">
