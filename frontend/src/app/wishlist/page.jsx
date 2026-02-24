@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -8,29 +8,34 @@ import Image from "next/image";
 import { Trash2, Heart } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useCart } from "@/context/CartContext";
 
 export default function WishlistPage() {
-  const { user } = useAuth();
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showSizeModal, setShowSizeModal] = useState(false);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { addToCart } = useCart();
 
   const {
     wishlist,
-    loading,
+    loading: wishlistLoading,
     removeFromWishlist,
     clearWishlist,
   } = useWishlist();
 
   /* ================= REDIRECT FIX ================= */
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user) {
       router.replace("/");
     }
-  }, [user, router]);
+  }, [authLoading, user, router]);
 
+  if (authLoading) return null;
   if (!user) return null;
-
   /* ================= LOADING STATE ================= */
-  if (loading) {
+  if (wishlistLoading) {
     return (
       <div className="min-h-screen bg-white">
         <Navbar />
@@ -89,62 +94,215 @@ export default function WishlistPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {wishlist.map((item) => (
-            <div
-              key={item.id}
-              className="border rounded-xl overflow-hidden bg-white hover:shadow-xl transition group"
-            >
-              <div className="relative">
-                <Image
-                  src={item.img || item.image}
-                  alt={item.name}
-                  width={400}
-                  height={550}
-                  className="w-full object-cover"
-                />
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {wishlist.map((item) => {
+            const image =
+              item.thumbnail ||
+              item.variants?.[0]?.images?.[0]?.url ||
+              "/fallback.jpg";
 
-                {/* Remove Button */}
-                <button
-                  onClick={() => removeFromWishlist(item.id)}
-                  className="absolute top-3 right-3 bg-white p-2 rounded-full shadow hover:bg-red-50 transition"
-                >
-                  <Trash2 size={16} className="text-red-500" />
-                </button>
+            return (
+              <div
+                key={item._id}
+                className="border border-gray-200 bg-white relative group"
+              >
+                {/* IMAGE */}
+                {/* IMAGE */}
+                <div className="relative w-full aspect-[3/4] overflow-hidden bg-[#f5f5f5]">
 
-                {/* Offer Badge */}
-                {item.offer && (
-                  <span className="absolute bottom-2 right-2 bg-pink-600 text-white text-[10px] px-2 py-1 font-semibold">
-                    {item.offer}
-                  </span>
-                )}
-              </div>
+                  <Image
+                    src={
+                      item.thumbnail ||
+                      item?.variants?.[0]?.images?.[0]?.url ||
+                      "/fallback.jpg"
+                    }
+                    alt={item.name}
+                    fill
+                    className="object-cover object-top"
+                    sizes="(max-width:768px) 50vw, (max-width:1200px) 33vw, 20vw"
+                  />
 
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="text-sm text-gray-800 line-clamp-2 mb-2">
-                  {item.name}
-                </h3>
+                  {/* REMOVE BUTTON */}
+                  <button
+                    onClick={() => removeFromWishlist(item._id)}
+                    className="absolute top-2 right-2 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
+                  >
+                    ✕
+                  </button>
 
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="font-bold text-gray-900">
-                    ₹{item.price}
-                  </span>
-
-                  {item.oldPrice && (
-                    <span className="text-xs text-gray-400 line-through">
-                      ₹{item.oldPrice}
-                    </span>
-                  )}
                 </div>
 
-                <button className="w-full bg-pink-600 text-white text-xs py-2 rounded hover:bg-pink-700 transition">
-                  ADD TO CART
+                {/* DETAILS */}
+                <div className="p-3">
+                  <h3 className="text-sm truncate">{item.name}</h3>
+
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="font-bold">₹{item.minPrice}</span>
+
+                    {item.mrp > item.minPrice && (
+                      <>
+                        <span className="text-xs text-gray-400 line-through">
+                          ₹{item.mrp}
+                        </span>
+                        <span className="text-xs text-pink-600">
+                          {item.discount > 0 && (
+                            <span className="text-orange-500 text-xs">
+                              ({item.discount}% OFF)
+                            </span>
+                          )}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* MOVE TO BAG */}
+                <button
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setShowSizeModal(true);
+                  }}
+                  className="w-full border-t py-3 text-pink-600 font-semibold text-sm hover:bg-pink-50"
+                >
+                  MOVE TO BAG
                 </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
+
         </div>
+        {showSizeModal && selectedItem && (
+          <div className="fixed inset-0 bg-black/50 z-[999] flex items-center justify-center p-3">
+
+            {/* MODAL */}
+            <div className="
+      bg-white
+      w-full
+      max-w-[520px]
+      rounded-md
+      shadow-2xl
+      relative
+      overflow-hidden
+    ">
+
+              {/* CLOSE */}
+              <button
+                onClick={() => {
+                  setShowSizeModal(false);
+                  setSelectedSize(null);
+                }}
+                className="absolute top-4 right-4 text-gray-500 hover:text-black text-3xl leading-none"
+              >
+                ×
+              </button>
+
+              {/* HEADER */}
+              <div className="flex gap-3 p-5 sm:p-6">
+
+                <img
+                  src={
+                    selectedItem.thumbnail ||
+                    selectedItem?.variants?.[0]?.images?.[0]?.url
+                  }
+                  className="w-16 h-20 object-cover rounded-sm"
+                />
+
+                <div className="flex-1 pr-8">
+                  <h3 className="text-[24px] sm:text-[26px] font-medium text-[#282c3f] leading-6 line-clamp-2">
+                    {selectedItem.name}
+                  </h3>
+
+                  <div className="mt-2 flex items-center gap-2 text-[28px]">
+                    <span className="font-bold text-[#282c3f]">
+                      ₹{selectedItem.minPrice}
+                    </span>
+
+                    {selectedItem.mrp > selectedItem.minPrice && (
+                      <>
+                        <span className="text-gray-400 line-through text-[22px]">
+                          ₹{selectedItem.mrp}
+                        </span>
+                        <span className="text-[#ff905a] font-semibold text-[22px]">
+                          ({selectedItem.discount}% OFF)
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* DIVIDER */}
+              <div className="border-t border-gray-200" />
+
+              {/* SIZE SECTION */}
+              <div className="p-5 sm:p-6">
+
+                <h4 className="text-[40px] font-semibold text-[#282c3f] mb-4">
+                  Select Size
+                </h4>
+
+                <div className="flex flex-wrap gap-3">
+
+                  {selectedItem.variants?.[0]?.sizes?.map((s) => (
+                    <button
+                      key={s.size}
+                      onClick={() => setSelectedSize(s.size)}
+                      className={`
+                w-12 h-12 rounded-full border text-sm font-semibold
+                transition-all
+                ${selectedSize === s.size
+                          ? "border-[#ff3f6c] text-[#ff3f6c] bg-white"
+                          : "border-gray-300 text-gray-700 hover:border-[#ff3f6c]"
+                        }
+              `}
+                    >
+                      {s.size}
+                    </button>
+                  ))}
+
+                </div>
+
+                {/* DONE BUTTON */}
+                <button
+                  disabled={!selectedSize}
+                  onClick={() => {
+                    addToCart({
+                      productId: selectedItem._id,
+                      name: selectedItem.name,
+                      price: selectedItem.minPrice,
+                      image:
+                        selectedItem.thumbnail ||
+                        selectedItem?.variants?.[0]?.images?.[0]?.url,
+                      size: selectedSize,
+                      quantity: 1,
+                    });
+
+                    removeFromWishlist(selectedItem._id);
+                    setShowSizeModal(false);
+                    setSelectedSize(null);
+                  }}
+                  className="
+            mt-6
+            w-full
+            h-[52px]
+            rounded
+            text-white
+            text-lg
+            font-semibold
+            transition
+            bg-[#ff3f6c]
+            hover:bg-[#ff527b]
+            disabled:bg-gray-300
+            disabled:cursor-not-allowed
+          "
+                >
+                  Done
+                </button>
+
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <Footer />

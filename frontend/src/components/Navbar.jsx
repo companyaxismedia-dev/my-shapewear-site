@@ -1,23 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import LinkNav from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import {
-  ShoppingCart,
-  User,
-  Heart,
-  Menu,
-  HelpCircle,
-  Package,
-  X,
-  ChevronDown,
-  Store,
-  Smartphone,
-  ContactIcon,
-  SearchIcon,
-  LogOut,
-} from "lucide-react";
+import { ShoppingCart, User, Menu, HelpCircle, Package, X, ChevronDown, Store, Smartphone, ContactIcon, LogOut } from "lucide-react";
 import SearchSection from "./SearchSection";
 import LoginModal from "@/app/authPage/LoginModal";
 import RegisterModal from "@/app/authPage/RegisterModal";
@@ -26,19 +12,23 @@ import WishlistButton from "@/app/wishlist/WishlistButton";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
-export default function Navbar() {
+export default function Navbar({ onLoginToggle }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isBraHovered, setIsBraHovered] = useState(false);
   const [mobileBraOpen, setMobileBraOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const {user, logout} = useAuth();
+  const { user, logout } = useAuth();
 
+  useEffect(() => {
+    if (onLoginToggle) {
+      onLoginToggle(loginOpen);
+    }
+  }, [loginOpen, onLoginToggle]);
 
-  const { cart } = useCart();
-  const cartCount = cart ? cart.reduce((acc, item) => acc + item.qty, 0) : 0;
-
+  const { cartItems } = useCart();
+  const cartCount = cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
   const braCategories = {
     styles: [
       { name: "Padded Bras", path: "/bra/padded" },
@@ -105,7 +95,7 @@ export default function Navbar() {
               </LinkNav>
               <LinkNav href="/stores" className="flex items-center gap-1 hover:text-pink-600">
                 <Store size={12} /> Our Stores
-              </LinkNav> 
+              </LinkNav>
             </div>
           </div>
         </div>
@@ -152,9 +142,11 @@ export default function Navbar() {
                 <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
                 <LinkNav href="/cart" className="relative p-1">
                   <ShoppingCart size={22} />
-                  <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                    {cartCount}
-                  </span>
+                  {cartCount > 0 && (
+                    <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                      {cartCount}
+                    </span>
+                  )}
                 </LinkNav>
               </div>
             </div>
@@ -313,29 +305,29 @@ export default function Navbar() {
               <div className="flex items-center gap-3">
                 <User size={20} fill="white" />
                 <div className="flex items-center gap-1 font-medium text-[15px]">
-                  {user?(
+                  {user ? (
                     <span>
                       Hi, {user.name}
                     </span>
-                  ):(
+                  ) : (
                     <>
-                    <button
-                    onClick={() => {
-                      setMenuOpen(false)
-                      setLoginOpen(true)
-                    }}
-                    className="hover:underline">
-                    Login
-                  </button>
-                  <span>&</span>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false)
-                      setRegisterOpen(true)
-                    }}
-                    className="hover:underline">
-                    SignUp
-                  </button></>
+                      <button
+                        onClick={() => {
+                          setMenuOpen(false)
+                          setLoginOpen(true)
+                        }}
+                        className="hover:underline">
+                        Login
+                      </button>
+                      <span>&</span>
+                      <button
+                        onClick={() => {
+                          setMenuOpen(false)
+                          setRegisterOpen(true)
+                        }}
+                        className="hover:underline">
+                        SignUp
+                      </button></>
                   )}
                 </div>
               </div>
@@ -387,10 +379,10 @@ export default function Navbar() {
               <LinkNav href="/help" className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
                 <HelpCircle size={18} /> Help
               </LinkNav>
-              <button onClick= {()=>{
+              <button onClick={() => {
                 logout();
-                 setMenuOpen(false)
-              }} 
+                setMenuOpen(false)
+              }}
                 className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" >
                 <LogOut size={18} /> Logout
               </button>

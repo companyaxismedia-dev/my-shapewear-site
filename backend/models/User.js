@@ -135,11 +135,13 @@ userSchema.methods.toJSON = function () {
   return obj;
 };
 
+// db.users.dropIndexes()
 /* =====================================================
    🚀 INDEXES (FAST SEARCH)
 ===================================================== */
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ phone: 1 }, { unique: true, sparse: true });
+
+// userSchema.index({ email: 1 }, { unique: true });
+// userSchema.index({ phone: 1 }, { unique: true, sparse: true });
 
 /* =====================================================
    EXPORT SAFE (IMPORTANT)

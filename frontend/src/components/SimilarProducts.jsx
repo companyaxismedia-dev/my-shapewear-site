@@ -127,7 +127,6 @@ export default function SimilarProductsAdvanced({ currentProduct }) {
                   </div>
                 )}
 
-
                 <img
                   src={image}
                   alt={item.name}
