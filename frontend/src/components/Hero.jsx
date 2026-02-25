@@ -29,7 +29,7 @@ export default function Hero() {
           modules={[Autoplay, Navigation, Pagination, EffectFade]}
           effect="fade"
           fadeEffect={{ crossFade: true }}
-          loop={true}
+          loop={false}
           speed={1000}
           autoplay={{ delay: 5000, disableOnInteraction: false }}
           pagination={{
