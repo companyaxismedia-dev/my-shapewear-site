@@ -347,10 +347,14 @@ export default function AutoSliceSlider() {
         const requests = homeSections.map(async (section) => {
           const backendCategory = categoryMap[section.id];
 
-          const res = await fetch(
-            `${API_BASE}/api/products?category=${backendCategory}&limit=20`
-          );
+          // const res = await fetch(
+          //   `${API_BASE}/api/products?category=${backendCategory}&limit=4`
+          // );
 
+          const res = await fetch(
+  `${API_BASE}/api/products?category=${backendCategory}&limit=8`,
+  { cache: "force-cache" }
+);
           const result = await res.json();
 
           return {
@@ -377,8 +381,9 @@ export default function AutoSliceSlider() {
     loadProducts();
   }, []);
 
-  if (loading) return null;
-
+if (loading) {
+  return <div className="py-20 text-center">Loading...</div>;
+}
   return (
     <div className="flex flex-col gap-12 py-10 bg-white">
       {homeSections.map((section) => {
@@ -410,11 +415,12 @@ export default function AutoSliceSlider() {
               modules={[Autoplay, Navigation]}
               spaceBetween={15}
               loop={enableLoop}
-              autoplay={
-                enableLoop
-                  ? { delay: 4000, disableOnInteraction: false }
-                  : false
-              }
+              // autoplay={
+              //   enableLoop
+              //     ? { delay: 4000, disableOnInteraction: false }
+              //     : false
+              // }
+              autoplay={false}
               breakpoints={{
                 320: { slidesPerView: 1.5 },
                 768: { slidesPerView: 3 },
@@ -448,26 +454,36 @@ export default function AutoSliceSlider() {
 
 
 function ProductCard({ product, onOpenDetails }) {
-  const variant = product?.variants?.[0] || {};
+  // const variant = product?.variants?.[0] || {};
   const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
 
   const isWishlisted = wishlist.some((p) => p._id === product._id);
 
-  const imagePath = variant?.images?.[0]?.url;
-  let image = "/images/placeholder.jpg";
+  // const imagePath = variant?.images?.[0]?.url;
+  // // let image = "/images/placeholder.jpg";
+  // const image = product.thumbnail || "/images/placeholder.jpg";
 
-  if (imagePath) {
-    image = imagePath.startsWith("http")
-      ? imagePath
-      : imagePath.startsWith("data:image")
-        ? imagePath
-        : `${API_BASE}${imagePath}`;
-  }
+  // if (imagePath) {
+  //   image = imagePath.startsWith("http")
+  //     ? imagePath
+  //     : imagePath.startsWith("data:image")
+  //       ? imagePath
+  //       : `${API_BASE}${imagePath}`;
+  // }
 
-  const firstSize = variant?.sizes?.[0] || {};
-  const price = firstSize?.price || product?.minPrice || 0;
-  const oldPrice = firstSize?.mrp || product?.mrp || null;
+  let image = product.thumbnail || "/images/placeholder.jpg";
+
+if (image && !image.startsWith("http") && !image.startsWith("data:image")) {
+  image = `${API_BASE}${image}`;
+}
+
+  // const firstSize = variant?.sizes?.[0] || {};
+  // const price = firstSize?.price || product?.minPrice || 0;
+  // const oldPrice = firstSize?.mrp || product?.mrp || null;
+
+  const price = product?.minPrice || 0;
+const oldPrice = product?.mrp || null;
 
   const discount =
     oldPrice && price

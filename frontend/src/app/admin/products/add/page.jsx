@@ -338,7 +338,8 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        resolve(canvas.toDataURL("image/jpeg", quality));
+        // resolve(canvas.toDataURL("image/jpeg", quality));
+        resolve(file);
       };
 
       reader.readAsDataURL(file);

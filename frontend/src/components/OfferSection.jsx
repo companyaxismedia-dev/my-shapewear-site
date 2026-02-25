@@ -20,7 +20,7 @@ export default function OfferSection() {
               className="absolute animate-heart-pop text-pink-300/70"
               style={{
                 top: "0",
-                left: window.innerWidth < 768 ? `${i * 6.5}%` : `${i * 7.5}%`,
+                left: `${i * 7}%`,
                 animationDelay: `${i * 0.4}s`,
                 fontSize: `${(i % 3) * 5 + 20}px`,
               }}
