@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
 import { GoogleLogin } from "@react-oauth/google";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /* ================= REUSABLE INPUT ================= */
 export function AuthInput({
