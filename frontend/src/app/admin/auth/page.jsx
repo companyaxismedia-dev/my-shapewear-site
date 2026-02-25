@@ -20,7 +20,7 @@ export default function AdminAuth() {
 
   // ===== LOGIN =====
   const signin = async () => {
-    const res = await fetch(`${API}/api/auth/login`, {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export default function AdminAuth() {
 
   // ===== SIGNUP STEP 1 =====
   const sendOTP = async () => {
-    const res = await fetch(`${API}/api/otp/send`, {
+    const res = await fetch(`${API_BASE}/api/otp/send`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

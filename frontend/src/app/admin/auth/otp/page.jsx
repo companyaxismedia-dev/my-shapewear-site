@@ -15,7 +15,7 @@ export default function OTPPage() {
       sessionStorage.getItem("signupData")
     );
 
-    const res = await fetch(`${API}/api/auth/register`, {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
