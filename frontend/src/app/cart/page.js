@@ -8,14 +8,17 @@ import LoginModal from "../authPage/LoginModal";
 import { useEffect } from "react";
 import Link from "next/link";
 import { useWishlist } from '@/context/WishlistContext';
+import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
   const { cartItems, updateQty, removeItem, updateSize } = useCart();
   const { toggleWishlist } = useWishlist();
   const { user } = useAuth();
-
+  const router = useRouter();
   const [showMoreOffers, setShowMoreOffers] = useState(false);
   const [selectedItems, setSelectedItems] = useState({});
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const initialSelection = {};
@@ -55,12 +58,22 @@ export default function CartPage() {
       }
     }
   };
-
   const moveToWishlist = async () => {
+    if (!user) {
+      setOpenLogin(true);
+      return;
+    }
+
     for (const item of cartItems) {
       if (selectedItems[item.id]) {
+
+        const productId =
+          typeof item.productId === "object"
+            ? item.productId._id
+            : item.productId;
+
         await toggleWishlist({
-          _id: item.productId,
+          _id: productId,
           name: item.name,
           brand: item.brand,
           thumbnail: item.image,
@@ -73,6 +86,46 @@ export default function CartPage() {
       }
     }
   };
+
+  const handleRemoveSingleItem = async () => {
+    if (!selectedProduct) return;
+
+    await removeItem(selectedProduct.id);
+
+    setShowMoveModal(false);
+    setSelectedProduct(null);
+  };
+
+  const handleMoveSingleToWishlist = async () => {
+    if (!selectedProduct) return;
+
+    if (!user) {
+      setOpenLogin(true);
+      return;
+    }
+
+    const productId =
+      typeof selectedProduct.productId === "object"
+        ? selectedProduct.productId._id
+        : selectedProduct.productId;
+
+    await toggleWishlist({
+      _id: productId,
+      name: selectedProduct.name,
+      brand: selectedProduct.brand,
+      thumbnail: selectedProduct.image,
+      minPrice: selectedProduct.price,
+      mrp: selectedProduct.mrp,
+      discount: selectedProduct.discount,
+    });
+
+    await removeItem(selectedProduct.id);
+
+    setShowMoveModal(false);
+    setSelectedProduct(null);
+  };
+
+
   const handleQuantityChange = async (itemId, newQty) => {
     if (newQty >= 1 && newQty <= 10) {
       await updateQty(itemId, newQty);
@@ -200,14 +253,14 @@ export default function CartPage() {
               <div className="flex gap-4">
                 <button
                   onClick={removeSelectedItems}
-                  className="text-sm font-semibold text-gray-700 hover:text-gray-900 disabled:opacity-50"
+                  className="text-sm font-semibold text-gray-600 hover:text-black disabled:opacity-50 cursor-pointer"
                   disabled={selectedCount === 0}
                 >
                   REMOVE
                 </button>
                 <button
                   onClick={moveToWishlist}
-                  className="text-sm font-semibold text-gray-700 hover:text-gray-900 disabled:opacity-50"
+                  className="text-sm font-semibold text-gray-600 hover:text-black disabled:opacity-50 cursor-pointer"
                   disabled={selectedCount === 0}
                 >
                   MOVE TO WISHLIST
@@ -220,10 +273,14 @@ export default function CartPage() {
               {cartItems.map(item => (
                 <div key={item.id} className="bg-white shadow-sm hover:shadow-md transition-shadow duration-200 p-4 rounded-md relative">
                   <button
-                    onClick={() => removeItem(item.id)}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                    // onClick={() => removeItem(item.id)}
+                    onClick={() => {
+                      setSelectedProduct(item);
+                      setShowMoveModal(true);
+                    }}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 cursor-pointer"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-5 h-5 text-bold" />
                   </button>
 
                   <div className="flex gap-4">
@@ -322,13 +379,15 @@ export default function CartPage() {
             </div>
 
             {/* Add More From Wishlist */}
-            <button className="w-full border p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-              <div className="flex items-center gap-3">
-                <Bookmark className="w-5 h-5 text-gray-600" />
-                <span className="font-semibold text-sm">Add More From Wishlist</span>
-              </div>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
-            </button>
+            <Link href="/wishlist">
+              <button className="cursor-pointer w-full border p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <Bookmark className="w-5 h-5 text-gray-600" />
+                  <span className="font-semibold text-sm">Add More From Wishlist</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+            </Link>
 
             {/* You may also like */}
             <div className="pt-8 border-t">
@@ -512,6 +571,62 @@ export default function CartPage() {
           </div>
         </div>
       </div>
+      {showMoveModal && selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => {
+              setShowMoveModal(false);
+              setSelectedProduct(null);
+            }}
+          ></div>
+
+          {/* Modal */}
+          <div className="relative bg-white w-[420px] rounded-md shadow-xl">
+            <div className="flex items-start justify-between p-4 border-b">
+              <div className="flex gap-3">
+                <img
+                  src={selectedProduct.image}
+                  alt={selectedProduct.name}
+                  className="w-16 h-20 object-cover rounded"
+                />
+                <div>
+                  <h2 className="font-semibold text-sm">Move from Bag</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Are you sure you want to move this item from bag?
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowMoveModal(false);
+                  setSelectedProduct(null);
+                }}
+              >
+                <X className="w-5 h-5 text-gray-500 hover:text-gray-700" />
+              </button>
+            </div>
+
+            <div className="flex text-sm font-semibold">
+              <button
+                onClick={handleRemoveSingleItem}
+                className="flex-1 py-3 border-r hover:bg-gray-50"
+              >
+                REMOVE
+              </button>
+
+              <button
+                onClick={handleMoveSingleToWishlist}
+                className="flex-1 py-3 text-pink-500 hover:bg-pink-50"
+              >
+                MOVE TO WISHLIST
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <LoginModal
         isOpen={openLogin}
         onClose={() => setOpenLogin(false)}

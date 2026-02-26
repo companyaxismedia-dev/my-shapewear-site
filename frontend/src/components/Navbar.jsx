@@ -143,7 +143,7 @@ export default function Navbar({ onLoginToggle }) {
                 <LinkNav href="/cart" className="relative p-1">
                   <ShoppingCart size={22} />
                   {cartCount > 0 && (
-                    <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                    <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-pulse">
                       {cartCount}
                     </span>
                   )}
