@@ -23,7 +23,7 @@ export default function WishlistButton({ onLoginOpen }) {
     <Link href="/wishlist" className="relative p-1">
       <Heart size={22} className="hover:text-pink-600 transition" />
       {wishlistCount > 0 && (
-        <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-pulse">
+        <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-pulse">
           {wishlistCount}
         </span>
       )}

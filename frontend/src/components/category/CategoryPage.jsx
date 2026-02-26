@@ -5,11 +5,11 @@ import FilterBar from "@/components/FilterBar";
 import TopFilters from "@/components/TopFilters";
 import Footer from "@/components/Footer";
 
-import {ChevronDown,} from "lucide-react";
+import { ChevronDown, } from "lucide-react";
 import { ProductCard } from "./ProductCard";
 import { ProductDetailsModal } from "./ProductDetailsModal";
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function CategoryPage({ category }) {
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -22,7 +22,16 @@ export default function CategoryPage({ category }) {
     const [isLoginActive, setIsLoginActive] = useState(false);
 
     const [sortOpen, setSortOpen] = useState(false);
-    const [sort, setSort] = useState("Recommended");    
+    const [sort, setSort] = useState("Recommended");
+    const [filterMeta, setFilterMeta] = useState(null);
+
+    useEffect(() => {
+        fetch(`${API_BASE}/api/products/filters`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) setFilterMeta(data);
+            });
+    }, []);
 
     useEffect(() => {
         setPage(1);
@@ -51,6 +60,8 @@ export default function CategoryPage({ category }) {
 
                 const res = await fetch(`${API_BASE}/api/products?${query}`);
                 const data = await res.json();
+                // console.log(data)
+
 
                 if (data.success) {
                     setProducts(data.products);
@@ -64,7 +75,7 @@ export default function CategoryPage({ category }) {
         };
 
         fetchProducts();
-    }, [filters, page, sort]);
+    }, [filters, page, sort, category]);
 
     useEffect(() => {
         const handler = (e) => {
@@ -100,12 +111,10 @@ export default function CategoryPage({ category }) {
     return (
         <div className="min-h-screen bg-white text-[#282c3f] font-sans relative">
 
-            <div className={`transition-all duration-500 ${isLoginActive ? "blur-md brightness-75 pointer-events-none" : ""}`}>
-
-                <div className={`sticky top-0 z-[999] transition-transform duration-300 ${showNavbar ? "translate-y-0" : "-translate-y-full"
-                    }`}>
-                    <Navbar onLoginToggle={(val) => setIsLoginActive(val)} />
-                </div>
+    <div className="min-h-screen bg-white font-sans overflow-x-hidden text-black">
+      <div className="w-full sticky top-0 z-50 bg-white border-b border-pink-50 shadow-sm">
+  <Navbar />
+</div>
                 <div className="flex w-full m-0">
                     {/* LEFT SIDEBAR */}
                     <aside className="shrink-0 hidden md:block border-r border-gray-100">
@@ -187,14 +196,27 @@ export default function CategoryPage({ category }) {
                                         <ProductCard
                                             key={item._id}
                                             item={item}
-                                            onOpenDetails={() => setSelectedProduct(item)}
-                                        />
-                                    ))}
+                                            onOpenDetails={async () => {
+                                                try {
+                                                    const res = await fetch(
+                                                        `${API_BASE}/api/products/${item._id}`
+                                                    );
+                                                    const data = await res.json();
+
+                                                    if (data.success) {
+                                                        console.log(item)
+                                                        setSelectedProduct(data.product);
+                                                    }
+                                                } catch (err) {
+                                                    console.error("Modal fetch error:", err);
+                                                }
+                                            }}
+                                        />))}
                                 </div>
                             )}
 
                             {/* PAGINATION */}
-                            {!loading && products.length > 0 && (
+                            {/* {!loading && products.length > 0 && (
                                 <div className="flex justify-center items-center gap-2 py-8">
                                     <button
                                         disabled={page <= 1}
@@ -220,7 +242,7 @@ export default function CategoryPage({ category }) {
                                         Next
                                     </button>
                                 </div>
-                            )}
+                            )} */}
                         </main>
                     </div>
                 </div>

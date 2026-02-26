@@ -14,7 +14,8 @@ export default function SimilarProductsAdvanced({ currentProduct }) {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/products?limit=200`);
+        const res = await fetch(`${API_BASE}/api/products`);
+        // const res = await fetch(`${API_BASE}/api/products/similar/${product._id}`)
         const data = await res.json();
         if (data.success) setAllProducts(data.products);
       } catch (err) {
