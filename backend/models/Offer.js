@@ -45,7 +45,7 @@ const offerSchema = new mongoose.Schema(
       default: 0,
     },
 
-    /* MAX DISCOUNT */
+    /* MAX DISCOUNT (ONLY FOR %) */
     maxDiscount: {
       type: Number,
       default: null,
@@ -94,33 +94,36 @@ const offerSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
 /* ======================================================
-   🔥 AUTO FORMAT CODE (FIXED - NO NEXT)
+   🔥 AUTO FORMAT BEFORE SAVE
 ====================================================== */
-
 offerSchema.pre("save", function () {
   if (this.code) {
     this.code = this.code.toUpperCase().trim();
   }
 
-  // auto deactivate expired
+  // auto deactivate expired offers
   if (this.endDate && this.endDate < new Date()) {
     this.isActive = false;
   }
 });
 
 /* ======================================================
-   📊 INDEXING
+   📊 INDEXING (FAST QUERY)
 ====================================================== */
 offerSchema.index({ code: 1 });
 offerSchema.index({ isActive: 1 });
 offerSchema.index({ endDate: 1 });
 
 /* ======================================================
-   🧠 METHOD → CHECK IF OFFER VALID
+   🧠 CHECK IF OFFER VALID
 ====================================================== */
 offerSchema.methods.isValidOffer = function () {
   const now = new Date();
@@ -135,6 +138,23 @@ offerSchema.methods.isValidOffer = function () {
 
   return true;
 };
+
+/* ======================================================
+   🎨 FRONTEND FRIENDLY VIRTUALS
+   (Clovia / Myntra style display)
+====================================================== */
+offerSchema.virtual("offerText").get(function () {
+  if (this.discountType === "flat") {
+    return `₹${this.discountValue} OFF`;
+  }
+  return `${this.discountValue}% OFF`;
+});
+
+offerSchema.virtual("expiryText").get(function () {
+  return this.endDate
+    ? new Date(this.endDate).toDateString()
+    : "Limited time offer";
+});
 
 /* ======================================================
    🔥 EXPORT MODEL

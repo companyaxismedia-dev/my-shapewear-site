@@ -1,113 +1,150 @@
-import { createContext, useState, useCallback } from 'react';
+"use client";
+
+import { createContext, useState, useEffect, useCallback } from "react";
+import { API_BASE } from "@/lib/api";
 
 export const AccountContext = createContext();
 
 export function AccountProvider({ children }) {
-  const [user, setUser] = useState({
-    id: 1,
-    name: 'Priya Sharma',
-    email: 'priya@example.com',
-    phone: '+91 9876543210',
-    birthday: '1995-05-15',
-    anniversary: '2020-03-20',
-    profession: 'Doctor',
-    industry: 'Healthcare',
-    kids: '1',
-    language: 'Hindi',
-    password: '••••••••',
-    gender: 'Female',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-  });
-
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      label: 'Home',
-      name: 'Priya Sharma',
-      phone: '+91 9876543210',
-      address: 'Flat 101, Sunshine Apartments',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      pincode: '400001',
-      isDefault: true,
-    },
-  ]);
-
+  const [user, setUser] = useState(null);
+  const [addresses, setAddresses] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [coupons, setCoupons] = useState([
-    {
-      id: 1,
-      code: 'FIRST50',
-      discount: '50% OFF',
-      minPurchase: 'Min purchase ₹500',
-      expiry: 'Dec 31, 2024',
-      used: false,
-    },
-    {
-      id: 2,
-      code: 'SUMMER20',
-      discount: '₹200 OFF',
-      minPurchase: 'Min purchase ₹1000',
-      expiry: 'Sep 30, 2024',
-      used: false,
-    },
-  ]);
+  /* ================= FETCH ACCOUNT DATA ================= */
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
 
-  const [wallet, setWallet] = useState({
-    balance: 2500,
-    currency: 'INR',
-    transactions: [],
-  });
+        if (!storedUser?.token) {
+          setLoading(false);
+          return;
+        }
 
-  const [bankDetails, setBankDetails] = useState({
-    accountHolder: '',
-    accountNumber: '',
-    bankName: '',
-    branchName: '',
-    ifscCode: '',
-  });
+        const headers = {
+          Authorization: `Bearer ${storedUser.token}`,
+        };
 
-  const [notifications, setNotifications] = useState({
-    whatsapp: true,
-    sms: false,
-    push: true,
-    email: true,
-  });
+        /* ===== USER ===== */
+        setUser(storedUser);
 
+        /* ===== ADDRESS ===== */
+        const addrRes = await fetch(
+          `${API_BASE}/api/users/address`,
+          { headers }
+        );
+
+        const addrData = await addrRes.json();
+
+        if (addrData?.success) {
+          setAddresses(addrData.addresses || []);
+        }
+
+        /* ===== ORDERS ===== */
+        const orderRes = await fetch(
+          `${API_BASE}/api/orders`,
+          { headers }
+        );
+
+        const orderData = await orderRes.json();
+
+        if (orderData?.success) {
+          setOrders(orderData.orders || []);
+        }
+
+      } catch (err) {
+        console.error("Account fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  /* ================= USER UPDATE ================= */
   const updateUserProfile = useCallback((updatedData) => {
-    setUser(prev => ({ ...prev, ...updatedData }));
+    setUser((prev) => ({ ...prev, ...updatedData }));
   }, []);
 
-  const addAddress = useCallback((newAddress) => {
-    setAddresses(prev => [...prev, { ...newAddress, id: Date.now() }]);
+  /* ================= ADDRESS ACTIONS ================= */
+
+  const addAddress = useCallback(async (newAddress) => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+
+      if (!storedUser?.token) return;
+
+      const res = await fetch(`${API_BASE}/api/users/address`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${storedUser.token}`,
+        },
+        body: JSON.stringify({
+          fullName: newAddress.name,
+          phone: newAddress.phone,
+          addressLine: newAddress.address,
+          city: newAddress.city,
+          state: newAddress.state,
+          pincode: newAddress.pincode,
+          label: newAddress.label,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data?.success) {
+        setAddresses(data.addresses || []);
+      }
+    } catch (err) {
+      console.error("Add address error:", err);
+    }
   }, []);
 
-  const deleteAddress = useCallback((id) => {
-    setAddresses(prev => prev.filter(addr => addr.id !== id));
+  const deleteAddress = useCallback(async (id) => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      if (!storedUser?.token) return;
+
+      await fetch(`${API_BASE}/api/users/address/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${storedUser.token}`,
+        },
+      });
+
+      setAddresses((prev) =>
+        prev.filter((a) => a._id !== id)
+      );
+    } catch (err) {
+      console.error("Delete address error:", err);
+    }
   }, []);
 
-  const updateBankDetails = useCallback((details) => {
-    setBankDetails(details);
+  /* ================= PLACEHOLDER (future APIs) ================= */
+
+  const updateBankDetails = useCallback((data) => {
+    console.log("Bank update (backend later)", data);
   }, []);
 
   const toggleNotification = useCallback((type) => {
-    setNotifications(prev => ({ ...prev, [type]: !prev[type] }));
+    console.log("Notification toggle (backend later)", type);
   }, []);
 
   const value = {
     user,
-    updateUserProfile,
     addresses,
+    orders,
+    loading,
+
+    updateUserProfile,
+
     addAddress,
     deleteAddress,
-    orders,
-    coupons,
-    wallet,
-    bankDetails,
+
     updateBankDetails,
-    notifications,
     toggleNotification,
   };
 

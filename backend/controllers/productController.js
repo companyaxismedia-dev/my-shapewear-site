@@ -7,85 +7,85 @@ exports.getProducts = async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.max(Number(req.query.limit) || 12, 1);
-
+     
     const filter = { isActive: true };
 
-    /* ================= CATEGORY ================= */
-    if (req.query.category) {
-      filter.category = req.query.category;
-    }
+/* ================= CATEGORY ================= */
+if (req.query.category) {
+  filter.category = req.query.category;
+}
 
-    if (req.query.subCategory) {
-      const subCats = req.query.subCategory.split(",");
-      filter.subCategory = { $in: subCats };
-    }
+if (req.query.subCategory) {
+  const subCats = req.query.subCategory.split(",");
+  filter.subCategory = { $in: subCats };
+}
 
-    /* ================= SEARCH ================= */
-    if (req.query.keyword) {
-      const regex = new RegExp(req.query.keyword, "i");
+/* ================= SEARCH ================= */
+if (req.query.keyword) {
+  const regex = new RegExp(req.query.keyword, "i");
 
-      filter.$or = [
-        { name: regex },
-        { brand: regex },
-        { "variants.color": regex },
-      ];
-    }
+  filter.$or = [
+    { name: regex },
+    { brand: regex },
+    { "variants.color": regex },
+  ];
+}
 
-    /* ================= PRICE RANGE ================= */
-    if (req.query.minPrice || req.query.maxPrice) {
-      filter.minPrice = {};
+/* ================= PRICE RANGE ================= */
+if (req.query.minPrice || req.query.maxPrice) {
+  filter.minPrice = {};
 
-      if (req.query.minPrice) {
-        filter.minPrice.$gte = Number(req.query.minPrice);
-      }
+  if (req.query.minPrice) {
+    filter.minPrice.$gte = Number(req.query.minPrice);
+  }
 
-      if (req.query.maxPrice) {
-        filter.minPrice.$lte = Number(req.query.maxPrice);
-      }
-    }
+  if (req.query.maxPrice) {
+    filter.minPrice.$lte = Number(req.query.maxPrice);
+  }
+}
 
-    /* ================= COLOR (MULTI SUPPORT) ================= */
-    if (req.query.color) {
-      const colors = req.query.color.split(",");
-      filter["variants.color"] = { $in: colors };
-    }
+/* ================= COLOR (MULTI SUPPORT) ================= */
+if (req.query.color) {
+  const colors = req.query.color.split(",");
+  filter["variants.color"] = { $in: colors };
+}
 
-    /* ================= SIZE (MULTI SUPPORT) ================= */
-    if (req.query.size) {
-      const sizes = req.query.size.split(",");
+/* ================= SIZE (MULTI SUPPORT) ================= */
+if (req.query.size) {
+  const sizes = req.query.size.split(",");
 
-      filter.variants = {
+  filter.variants = {
+    $elemMatch: {
+      sizes: {
         $elemMatch: {
-          sizes: {
-            $elemMatch: {
-              size: { $in: sizes },
-              stock: { $gt: 0 },
-            },
-          },
+          size: { $in: sizes },
+          stock: { $gt: 0 },
         },
-      };
-    }
+      },
+    },
+  };
+}
 
-    /* ================= RATING ================= */
-    if (req.query.rating) {
-      filter.rating = { $gte: Number(req.query.rating) };
-    }
+/* ================= RATING ================= */
+if (req.query.rating) {
+  filter.rating = { $gte: Number(req.query.rating) };
+}
 
-    /* ================= DISCOUNT ================= */
-    if (req.query.discount) {
-      filter.discount = { $gte: Number(req.query.discount) };
-    }
+/* ================= DISCOUNT ================= */
+if (req.query.discount) {
+  filter.discount = { $gte: Number(req.query.discount) };
+}
 
-    /* ================= FLAGS ================= */
-    if (req.query.featured === "true") filter.isFeatured = true;
-    if (req.query.bestSeller === "true") filter.isBestSeller = true;
-    if (req.query.newArrival === "true") filter.isNewArrival = true;
+/* ================= FLAGS ================= */
+if (req.query.featured === "true") filter.isFeatured = true;
+if (req.query.bestSeller === "true") filter.isBestSeller = true;
+if (req.query.newArrival === "true") filter.isNewArrival = true;
 
-    /* ================= STOCK ================= */
-    if (req.query.inStock === "true") {
+/* ================= STOCK ================= */
+if (req.query.inStock === "true") {
 
-      filter.totalStock = { $gt: 0 };
-    }
+  filter.totalStock = { $gt: 0 };
+}
 
     /* ================= SORTING ================= */
     let sortOption = { createdAt: -1 };
@@ -117,81 +117,81 @@ exports.getProducts = async (req, res) => {
       .limit(limit)
       .lean();
 
-    res.json({
-      success: true,
-      products,
-      page,
-      pages: Math.ceil(total / limit),
-      totalProducts: total,
-    });
+      res.json({
+        success: true,
+        products,
+        page,
+        pages: Math.ceil(total / limit),
+        totalProducts: total,
+      });
 
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-/* ======================================================
-  GET PRODUCT BY ID
-====================================================== */
-exports.getProductById = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-
-    if (!product || !product.isActive) {
-      return res.status(404).json({
+    } catch (error) {
+      res.status(500).json({
         success: false,
-        message: "Product not found",
+        message: error.message,
       });
     }
+  };
 
-    res.json({
-      success: true,
-      product,
-    });
+  /* ======================================================
+    GET PRODUCT BY ID
+  ====================================================== */
+  exports.getProductById = async (req, res) => {
+    try {
+      const product = await Product.findById(req.params.id);
 
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: "Invalid Product ID",
-    });
-  }
-};
+      if (!product || !product.isActive) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
 
-/* ======================================================
-  GET PRODUCT BY SLUG
-====================================================== */
-exports.getProductBySlug = async (req, res) => {
-  try {
-    const product = await Product.findOne({
-      slug: req.params.slug,
-      isActive: true,
-    });
+      res.json({
+        success: true,
+        product,
+      });
 
-    if (!product) {
-      return res.status(404).json({
+    } catch (error) {
+      res.status(400).json({
         success: false,
-        message: "Product not found",
+        message: "Invalid Product ID",
       });
     }
+  };
 
-    res.json({
-      success: true,
-      product,
-    });
+  /* ======================================================
+    GET PRODUCT BY SLUG
+  ====================================================== */
+  exports.getProductBySlug = async (req, res) => {
+    try {
+      const product = await Product.findOne({
+        slug: req.params.slug,
+        isActive: true,
+      });
 
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+      if (!product) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
 
-/* ======================================================
-  CREATE PRODUCT (ADMIN)
+      res.json({
+        success: true,
+        product,
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  /* ======================================================
+    CREATE PRODUCT (ADMIN)
 ====================================================== */
 exports.createProduct = async (req, res) => {
   try {

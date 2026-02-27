@@ -1,167 +1,157 @@
-// import { useAccount } from '../../hooks/useAccount';
-// import { ShoppingBag } from 'lucide-react';
-
-// export default function OrderHistory() {
-//   const { orders } = useAccount();
-
-//   if (orders.length === 0) {
-//     return (
-//       <div className="space-y-6">
-//         <h2 className="text-3xl font-bold text-gray-900">Order History</h2>
-
-//         <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-lg">
-//           <ShoppingBag size={64} className="text-gray-300 mb-4" />
-//           <h3 className="text-2xl font-semibold text-gray-800 mb-2">No Orders Yet</h3>
-//           <p className="text-gray-600 mb-6">You haven't placed any orders yet</p>
-//           <a
-//             href="/"
-//             className="bg-pink-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-pink-700 transition"
-//           >
-//             Continue Shopping
-//           </a>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="space-y-6">
-//       <h2 className="text-3xl font-bold text-gray-900">Order History</h2>
-
-//       <div className="space-y-4">
-//         {orders.map((order) => (
-//           <div key={order.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition">
-//             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-//               <div>
-//                 <p className="text-sm text-gray-600">Order ID</p>
-//                 <p className="font-semibold text-gray-900">{order.id}</p>
-//               </div>
-//               <div>
-//                 <p className="text-sm text-gray-600">Date</p>
-//                 <p className="font-semibold text-gray-900">{order.date}</p>
-//               </div>
-//               <div>
-//                 <p className="text-sm text-gray-600">Total</p>
-//                 <p className="font-semibold text-gray-900">₹{order.total}</p>
-//               </div>
-//               <button className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition">
-//                 View Details
-//               </button>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
-
-
 "use client";
 
-import { useAccount } from "@/hooks/useAccount";
+import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
+import { API_BASE } from "@/lib/api";
 
 export default function OrderHistory() {
-  const { orders } = useAccount();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!orders?.length) {
+  /* ================= FETCH ORDERS ================= */
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem("user"));
+
+        if (!stored?.token) {
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch(`${API_BASE}/orders`, {
+          headers: {
+            Authorization: `Bearer ${stored.token}`,
+          },
+        });
+
+        const data = await res.json();
+        setOrders(data?.orders || []);
+      } catch (err) {
+        console.error("Order fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
+  /* ================= LOADING ================= */
+  if (loading) {
     return (
-      <div className="w-full flex flex-col items-center">
-
-        <h2 className="text-2xl font-bold text-gray-800 mb-8 w-full max-w-6xl">
-          Order History
-        </h2>
-
-        {/* CENTER BOX */}
-<div className="w-full max-w-6xl border border-pink-100 bg-pink-50 p-4">
-  <div className="bg-white border border-pink-100 min-h-[280px] flex flex-col items-center justify-center py-8">
-
-    <div className="flex flex-col items-center text-center">
-
-      <ShoppingBag
-        size={56}
-        className="text-black mb-3"
-        strokeWidth={1.8}
-      />
-
-      <h3 className="text-4xl font-bold text-black mb-2">
-        No Item's
-      </h3>
-
-      <p className="text-gray-500 text-lg mb-5 leading-snug">
-        You haven't placed any orders yet.
-      </p>
-
-      <button
-        onClick={() => (window.location.href = "/")}
-        className="
-          bg-pink-600
-          text-white
-          font-semibold
-          text-[22px]
-          px-12
-          py-2.5
-          rounded-sm
-          hover:bg-pink-600
-          transition-none
-        "
-      >
-        Continue Shopping
-      </button>
-
-    </div>
-
-  </div>
-</div>
-
+      <div className="text-center py-10 text-gray-500">
+        Loading orders...
       </div>
     );
   }
 
+  /* ================= EMPTY STATE ================= */
+  if (!orders.length) {
+    return (
+      <div className="w-full flex flex-col items-center py-12">
+        <ShoppingBag size={50} className="mb-3" />
+        <h2 className="text-2xl font-bold mb-2">No Orders Yet</h2>
+        <p className="text-gray-500 mb-4">
+          You haven't placed any order.
+        </p>
+
+        <button
+          onClick={() => (window.location.href = "/")}
+          className="bg-pink-600 text-white px-6 py-2 rounded"
+        >
+          Continue Shopping
+        </button>
+      </div>
+    );
+  }
+
+  /* ================= ORDER LIST ================= */
   return (
-    <div className="w-full flex flex-col items-center">
-      <h2 className="text-2xl font-bold text-gray-800 mb-8 w-full max-w-6xl">
+    <div className="w-full">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
         Order History
       </h2>
 
-      <div className="space-y-4 w-full max-w-6xl">
+      <div className="space-y-4">
         {orders.map((order) => (
           <div
-            key={order.id}
-            className="bg-gray-50 rounded-lg p-6 border border-gray-200 hover:border-pink-200 transition"
+            key={order._id}
+            className="border border-gray-200 bg-white rounded-lg p-4 hover:shadow-sm transition"
           >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            {/* TOP INFO */}
+            <div className="flex justify-between border-b pb-3 mb-3">
               <div>
-                <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                <p className="text-xs text-gray-500 uppercase">
                   Order ID
                 </p>
-                <p className="text-sm font-medium text-gray-800">
-                  {order.id}
-                </p>
+                <p className="text-sm font-semibold">{order._id}</p>
               </div>
 
               <div>
-                <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                <p className="text-xs text-gray-500 uppercase">
                   Date
                 </p>
-                <p className="text-sm font-medium text-gray-800">
-                  {order.date}
+                <p className="text-sm font-semibold">
+                  {new Date(order.createdAt).toLocaleDateString("en-IN")}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs text-gray-500 uppercase font-semibold mb-1">
+                <p className="text-xs text-gray-500 uppercase">
                   Total
                 </p>
-                <p className="text-sm font-medium text-gray-800">
-                  ₹{order.total}
+                <p className="text-sm font-semibold text-pink-600">
+                  ₹{order.totalAmount || order.total}
                 </p>
               </div>
+            </div>
 
-              <div className="flex justify-start md:justify-end">
-                <button className="text-pink-600 hover:text-pink-700 font-medium text-sm transition">
-                  View Details
-                </button>
+            {/* PRODUCTS */}
+            <div className="space-y-3">
+              {(order.items || []).map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex gap-3 items-center">
+
+                    {/* PRODUCT IMAGE */}
+                    <img
+                      src={item.image || "/image/placeholder.png"}
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded border"
+                    />
+
+                    <div>
+                      <p className="font-medium text-sm text-gray-800">
+                        {item.name}
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        Qty: {item.quantity}
+                      </p>
+
+                      {/* DELIVERY STATUS */}
+                      <p className="text-xs text-green-600 font-medium mt-1">
+                        Delivered
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* REORDER BUTTON */}
+                  <button className="text-sm border border-pink-500 text-pink-600 px-3 py-1 rounded hover:bg-pink-50">
+                    Reorder
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* TRACKING STYLE */}
+            <div className="mt-4 pt-3 border-t">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                Order Delivered Successfully
               </div>
             </div>
           </div>

@@ -46,7 +46,7 @@ exports.addAddress = async (req, res) => {
       state,
       addressLine,
       landmark: landmark || "",
-      addressType: addressType || "Home",
+      addressType: addressType || "HOME",
       isDefault: isDefault || false,
     });
 

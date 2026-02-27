@@ -1,8 +1,11 @@
 const Offer = require("../models/Offer");
 
+/* ======================================================
+   🎯 VALIDATE COUPON
+====================================================== */
 exports.validateOffer = async (req, res) => {
   try {
-    const { code, cartTotal } = req.body;
+    const { code, cartTotal = 0 } = req.body;
 
     if (!code) {
       return res.status(400).json({
@@ -47,13 +50,63 @@ exports.validateOffer = async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       success: true,
       discount,
       finalTotal: cartTotal - discount,
+      offer,
     });
 
   } catch (err) {
+    console.error("Validate Offer Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+/* ======================================================
+   🎁 GET ALL ACTIVE OFFERS (FRONTEND)
+====================================================== */
+exports.getOffers = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const offers = await Offer.find({
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    }).sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      offers,
+    });
+
+  } catch (err) {
+    console.error("Get Offers Error:", err);
+    res.status(500).json({
+      success: false,
+      offers: [],
+    });
+  }
+};
+
+/* ======================================================
+   ➕ CREATE OFFER (POSTMAN / ADMIN)
+====================================================== */
+exports.createOffer = async (req, res) => {
+  try {
+    const offer = await Offer.create(req.body);
+
+    res.status(201).json({
+      success: true,
+      offer,
+    });
+
+  } catch (err) {
+    console.error("Create Offer Error:", err);
     res.status(500).json({
       success: false,
       message: err.message,

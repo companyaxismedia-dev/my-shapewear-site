@@ -1,95 +1,113 @@
-// import { useAccount } from '../../hooks/useAccount';
-// import { Copy, Trash2 } from 'lucide-react';
-
-// export default function MyCoupons() {
-//   const { coupons } = useAccount();
-
-//   return (
-//     <div className="space-y-6">
-//       <h2 className="text-3xl font-bold text-gray-900">My Coupons</h2>
-
-//       <div className="space-y-4">
-//         {coupons.map((coupon) => (
-//           <div key={coupon.id} className="border-2 border-pink-200 rounded-lg p-6 bg-gradient-to-r from-pink-50 to-white hover:shadow-md transition">
-//             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-//               <div className="flex-1">
-//                 <h3 className="text-2xl font-bold text-pink-600 mb-2">{coupon.discount}</h3>
-//                 <div className="space-y-2">
-//                   <div className="flex items-center gap-2">
-//                     <code className="bg-white border-2 border-gray-300 px-3 py-1 rounded font-mono font-semibold text-gray-800">
-//                       {coupon.code}
-//                     </code>
-//                     <button className="p-1 hover:bg-gray-100 rounded transition" title="Copy coupon code">
-//                       <Copy size={18} className="text-gray-600" />
-//                     </button>
-//                   </div>
-//                   <p className="text-sm text-gray-600">{coupon.minPurchase}</p>
-//                   <p className="text-xs text-gray-500">Expiry: {coupon.expiry}</p>
-//                 </div>
-//               </div>
-//               <button className="text-red-500 hover:text-red-700 transition p-2">
-//                 <Trash2 size={20} />
-//               </button>
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
 "use client";
 
-import { useAccount } from "@/hooks/useAccount";
+import { useEffect, useState } from "react";
 import { Copy } from "lucide-react";
+import { API_BASE } from "@/lib/api";
 
 export default function MyCoupons() {
-  const { coupons } = useAccount();
+  const [coupons, setCoupons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState("");
+
+  /* ================= FETCH COUPONS ================= */
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/offers`);
+        const data = await res.json();
+
+        const offers =
+          Array.isArray(data?.offers) ? data.offers : [];
+
+        setCoupons(offers);
+      } catch (err) {
+        console.log("Coupon fetch error", err);
+        setCoupons([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCoupons();
+  }, []);
+
+  /* ================= COPY CODE ================= */
+  const copyCode = async (code) => {
+    if (!code) return;
+
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(code);
+
+      setTimeout(() => setCopied(""), 1500);
+    } catch (err) {
+      console.log("Copy failed");
+    }
+  };
+
+  if (loading) {
+    return <p className="text-gray-500 text-sm">Loading coupons...</p>;
+  }
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+      {/* TITLE */}
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">
         My coupon || Clovia
       </h2>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
 
-        {coupons?.map((coupon) => (
+        {coupons.length === 0 && (
+          <p className="text-gray-500 text-sm">No coupons available</p>
+        )}
+
+        {coupons.map((coupon) => (
           <div
-            key={coupon.id}
+            key={coupon._id}
             className="border border-gray-300 bg-white w-full"
           >
             <div className="flex">
 
               {/* LEFT DISCOUNT BLOCK */}
-              <div className="w-[220px] min-h-[130px] border-r border-gray-300 flex items-center justify-center">
-                <p className="text-pink-600 font-semibold text-[34px] leading-none text-center">
-                  {coupon.discount}
+              <div className="w-[160px] min-h-[75px] border-r border-gray-300 flex items-center justify-center">
+                <p className="text-pink-600 font-semibold text-[18px] leading-tight text-center">
+                  {coupon.discountType === "percentage"
+                    ? `${coupon.discountValue}% OFF`
+                    : `₹${coupon.discountValue} OFF`}
                 </p>
               </div>
 
               {/* RIGHT CONTENT */}
-              <div className="flex-1 flex justify-between p-5">
+              <div className="flex-1 flex justify-between px-3 py-2">
 
                 <div>
-                  <div className="inline-block border border-dashed border-gray-400 px-3 py-1 text-sm font-medium mb-3">
+                  {/* CODE */}
+                  <div className="inline-block border border-dashed border-gray-400 px-2 py-[2px] text-[13px] font-medium mb-1">
                     Code: {coupon.code}
                   </div>
 
-                  <p className="text-gray-700 text-lg mb-2">
-                    {coupon.minPurchase}
+                  {/* MIN PURCHASE */}
+                  <p className="text-gray-700 text-[14px] mb-[2px]">
+                    Minimum purchase value: ₹
+                    {coupon.minOrderValue || 0}
                   </p>
 
-                  <p className="text-gray-500 italic text-lg">
-                    {coupon.expiry}
+                  {/* EXPIRY */}
+                  <p className="text-gray-500 italic text-[14px]">
+                    Expiry:{" "}
+                    {coupon.endDate
+                      ? new Date(coupon.endDate).toLocaleDateString("en-IN")
+                      : "Limited time offer"}
                   </p>
                 </div>
 
-                {/* COPY ICON RIGHT */}
-                <button className="text-pink-500 hover:text-pink-600 self-start">
-                  <Copy size={22} />
+                {/* COPY ICON */}
+                <button
+                  onClick={() => copyCode(coupon.code)}
+                  className="text-pink-500 hover:text-pink-600 self-start"
+                >
+                  <Copy size={18} />
                 </button>
 
               </div>
@@ -97,8 +115,14 @@ export default function MyCoupons() {
             </div>
           </div>
         ))}
-
       </div>
+
+      {/* COPY MESSAGE */}
+      {copied && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white px-5 py-1 rounded text-sm">
+          Saved to clipboard
+        </div>
+      )}
     </div>
   );
 }

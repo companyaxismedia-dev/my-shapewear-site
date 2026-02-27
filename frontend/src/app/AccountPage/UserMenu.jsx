@@ -36,7 +36,6 @@ export default function UserMenu({ openLogin, openRegister }) {
       >
         <User size={22} />
       </button>
-
       {/* HOVER GAP BRIDGE */}
       {/* <div className="absolute flex top-full right-0 w4 h-3 bg-transparent"></div> */}
 
