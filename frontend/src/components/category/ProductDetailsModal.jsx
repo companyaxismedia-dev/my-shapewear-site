@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import {X,ShoppingCart,Zap,ChevronsDown,} from "lucide-react";
+import { X, ShoppingCart, Zap, ChevronsDown, } from "lucide-react";
 import { getImageUrl } from "./helpers";
 
 export function ProductDetailsModal({ product, onClose }) {
@@ -19,16 +19,40 @@ export function ProductDetailsModal({ product, onClose }) {
     // const image = getImageUrl(
     //     variant?.images?.[0]
     // );
+    //     const image = getImageUrl(
+    //     variant?.images?.[0]
+    // );
+
+
     const image = getImageUrl(
-    variant?.images?.[0]
-);
+        variant?.images?.[0]?.url || variant?.images?.[0]
+    );
+
+    // const handleCartAdd = () => {
+    //     if (!size) return alert("Select size");
+
+    //     addToCart({
+    //         productId: product._id,
+    //         size,
+    //         quantity: 1,
+    //     });
+
+    //     alert("Added to cart");
+    // };
 
 
     const handleCartAdd = () => {
         if (!size) return alert("Select size");
 
+        const selectedSize =
+            variant?.sizes?.find((s) => s.size === size);
+
         addToCart({
             productId: product._id,
+            name: product.name,
+            image,
+            price: selectedSize?.price || product.minPrice,
+            mrp: product.mrp,
             size,
             quantity: 1,
         });
@@ -50,11 +74,11 @@ export function ProductDetailsModal({ product, onClose }) {
             <div className="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[90vh]">
                 <div>
                     <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 z-50 p-2 bg-white rounded-full cursor-pointer hover:rotate-90 transition"
-                >
-                    <X size={24} />
-                </button>
+                        onClick={onClose}
+                        className="absolute top-4 right-4 z-50 p-2 bg-white rounded-full cursor-pointer hover:rotate-90 transition"
+                    >
+                        <X size={24} />
+                    </button>
                 </div>
 
                 <div className="md:w-1/2 bg-[#fff5f8]">
@@ -72,10 +96,17 @@ export function ProductDetailsModal({ product, onClose }) {
 
                     <div className="flex items-center gap-2">
                         <span className="text-2xl font-black text-[#ed4e7e]">
-                            ₹{
+                            {/* ₹{
                                 variant?.sizes?.find((s) => s.size === size)?.price ||
                                 variant?.sizes?.[0]?.price ||
                                 product.minPrice ||
+                                0
+                            } */}
+
+                            ₹{
+                                variant?.sizes?.find((s) => s.size === size)?.price ??
+                                variant?.sizes?.[0]?.price ??
+                                product?.minPrice ??
                                 0
                             }
                         </span>
@@ -108,7 +139,8 @@ export function ProductDetailsModal({ product, onClose }) {
                                         : "hover:scale-105"
                                         }`}>
 
-                                    {v.color}
+                                    {/* {v.color} */}
+                                    {v.color || `Color ${i + 1}`}
                                 </button>
                             ))}
                         </div>
@@ -119,7 +151,8 @@ export function ProductDetailsModal({ product, onClose }) {
                             Select Size
                         </p>
                         <div className="flex gap-2 flex-wrap">
-                            {variant?.sizes?.map((s) => (
+                            {/* {variant?.sizes?.map((s) => ( */}
+                            {(variant?.sizes || []).map((s) => (
                                 <button
                                     key={s.size}
                                     onClick={() => setSize(s.size)}

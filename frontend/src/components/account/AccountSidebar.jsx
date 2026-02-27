@@ -35,7 +35,7 @@ export default function AccountSidebar({ activeSection, onSectionChange }) {
 
   const handleLogout = () => {
     logout();                 // localStorage clear
-    router.push("/login");    // redirect
+    router.push("/");    // redirect
   };
 
   return (

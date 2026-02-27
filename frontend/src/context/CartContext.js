@@ -6,12 +6,7 @@ import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
 
-const API_BASE =
-  typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1")
-    ? "http://localhost:5000"
-    : "https://my-shapewear-site.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // const getToken = () => localStorage.getItem("token");
 
@@ -27,8 +22,67 @@ export const CartProvider = ({ children }) => {
         await mergeGuestCart();
         await fetchCart();
       } else {
-        const guest = localStorage.getItem("guestCart");
-        if (guest) setCartItems(JSON.parse(guest));
+        const guest = JSON.parse(localStorage.getItem("guestCart") || "[]");
+
+        if (!guest.length) {
+          setCartItems([]);
+          return;
+        }
+
+        const formatted = await Promise.all(
+          guest.map(async (item, index) => {
+            const res = await axios.get(
+              `${API_BASE}/api/products/${item.productId}`
+            );
+
+            const product = res.data.product || res.data;
+
+            const selectedVariant =
+              product.variants?.find(v => v.color === item.color) ||
+              product.variants?.[0];
+
+            const selectedSizeObj =
+              selectedVariant?.sizes?.find(s => s.size === item.size) ||
+              selectedVariant?.sizes?.[0];
+
+            const price = selectedSizeObj?.price || product.minPrice || 0;
+            const mrp = selectedSizeObj?.mrp || product.mrp || price;
+
+            const discount =
+              mrp > price
+                ? Math.round(((mrp - price) / mrp) * 100)
+                : 0;
+
+            const image =
+              product.thumbnail ||
+              selectedVariant?.images?.[0]?.url ||
+              "/fallback.jpg";
+
+            const availableSizes =
+              selectedVariant?.sizes?.map((s) => s.size) || [];
+
+            return {
+              id: `guest-${index}`, // simple id for guest
+              productId: product._id,
+              slug: product.slug,
+              name: product.name,
+              brand: product.brand || "Glovia",
+              price,
+              mrp,
+              discount,
+              image,
+              quantity: item.quantity,
+              size: item.size,
+              color: item.color,
+              seller: "Glovia Glamour",
+              deliveryDate: "5-7 Business Days",
+              returnText: "3 days return available",
+              availableSizes,
+            };
+          })
+        );
+
+        setCartItems(formatted);
       }
     };
 
@@ -104,28 +158,6 @@ export const CartProvider = ({ children }) => {
         selectedVariant?.images?.[0]?.url ||
         "/fallback.jpg";
 
-      //       let image = "";
-
-      // if (product.images?.length > 0) {
-      //   image = product.images[0];
-      // } else if (product.variants?.length > 0) {
-      //   for (const variant of product.variants) {
-      //     if (variant.images?.length > 0) {
-      //       image = variant.images[0];
-      //       break;
-      //     }
-      //   }
-      // }
-      // if (!image) {
-      //   image = "https://via.placeholder.com/300";
-      // }
-
-      // 🔥 Find correct variant using cart color
-      // const selectedVariant = product.variants?.find(
-      //   (v) => v.color === item.color
-      // ) || product.variants?.[0];
-
-      // 🔥 Extract size list from that variant
       const availableSizes =
         selectedVariant?.sizes?.map((s) => s.size) || [];
 
@@ -212,21 +244,21 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateSize = async (itemId, size) => {
-  if (!user) return;
+    if (!user) return;
 
-  try {
-    await axios.put(
-      `${API_BASE}/api/cart/size/${itemId}`,
-      { size },
-      { headers: { Authorization: `Bearer ${user?.token}` } }
-    );
+    try {
+      await axios.put(
+        `${API_BASE}/api/cart/size/${itemId}`,
+        { size },
+        { headers: { Authorization: `Bearer ${user?.token}` } }
+      );
 
-    await fetchCart();
-  } catch (err) {
-    alert(err?.response?.data?.message || "Size update failed");
-    console.log(err?.response?.data);
-  }
-};
+      await fetchCart();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Size update failed");
+      console.log(err?.response?.data);
+    }
+  };
 
 
   /* ================= REMOVE ================= */

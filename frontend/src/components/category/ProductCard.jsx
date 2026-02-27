@@ -17,10 +17,9 @@ export function ProductCard({ item, onOpenDetails }) {
     const isWishlisted = wishlist.some((p) => p._id === item._id);
     const cardRef = useRef(null);
 
-    // const image = getImageUrl(item.variants?.[0]?.images?.[0]);
     const image = getImageUrl(
-  item.variants?.[0]?.images?.[0]?.url
-);
+        item.variants?.[0]?.images?.[0]?.url
+    );
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -54,22 +53,21 @@ export function ProductCard({ item, onOpenDetails }) {
         >
             {/* IMAGE CONTAINER */}
             <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f5f6]">
+                {/* <img
+                    src={item.thumbnail}
+                    // {...console.log(item)}
+                    alt={item.name}
+                    onClick={onOpenDetails}
+                    className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"
+                        }`}
+                /> */}
                 <img
-                    src={image}
+                    src={getImageUrl(item.thumbnail)}
                     alt={item.name}
                     onClick={onOpenDetails}
                     className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"
                         }`}
                 />
-
-                {/* DISCOUNT BADGE */}
-                {/* {item.discount > 0 && (
-                    <div className="absolute top-0 left-0 bg-[#ff905a] text-white text-[10px] font-bold px-2 py-0.5 z-10">
-                        {item.discount}% OFF
-                    </div>
-                )} */}
-
-                {/* WISHLIST BUTTON */}
                 <button
                     onClick={() => {
                         if (!user) return alert("Please login to use wishlist");

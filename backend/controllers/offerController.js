@@ -45,7 +45,6 @@ exports.validateOffer = async (req, res) => {
       discount = offer.discountValue;
     } else {
       discount = (cartTotal * offer.discountValue) / 100;
-
       if (offer.maxDiscount) {
         discount = Math.min(discount, offer.maxDiscount);
       }

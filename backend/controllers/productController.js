@@ -111,6 +111,7 @@ if (req.query.inStock === "true") {
     const total = await Product.countDocuments(filter);
 
     const products = await Product.find(filter)
+      .select("name slug thumbnail minPrice mrp discount rating numReviews")
       .sort(sortOption)
       .skip((page - 1) * limit)
       .limit(limit)

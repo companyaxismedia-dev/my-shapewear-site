@@ -12,12 +12,15 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
-const API_BASE =
-  typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1")
-    ? "http://localhost:5000"
-    : "https://my-shapewear-site.onrender.com";
+// const API_BASE =
+//   typeof window !== "undefined" &&
+//     (window.location.hostname === "localhost" ||
+//       window.location.hostname === "127.0.0.1")
+//     ? "http://localhost:5000"
+//     : "https://my-shapewear-site.onrender.com";
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 
 // ─────────────────────────────────────────────────────────
 //  CONSTANTS
@@ -391,7 +394,7 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
           <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border border-border bg-muted">
             <img src={img.url} alt={img.altText || ""} className="w-full h-full object-cover" />
             {img.isPrimary && (
-              <span className="absolute top-1 left-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground">
+              <span className="absolute top-1 left-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground bg-black z-[999] text-green-500">
                 Primary
               </span>
             )}
@@ -400,7 +403,7 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
                 <button
                   type="button"
                   onClick={() => onSetPrimary(i)}
-                  className="px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-medium"
+                  className="px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-medium bg-black z-[999] text-red-500"
                 >
                   Set Primary
                 </button>
@@ -408,7 +411,7 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
               <button
                 type="button"
                 onClick={() => onRemove(i)}
-                className="px-1.5 py-0.5 rounded-md bg-destructive text-destructive-foreground text-[10px] font-medium"
+                className="px-1.5 py-0.5 rounded-md bg-destructive text-destructive-foreground text-[10px] font-medium bg-black z-[999] text-white"
               >
                 Remove
               </button>

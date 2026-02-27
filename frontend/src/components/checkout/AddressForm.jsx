@@ -212,65 +212,65 @@ export default function AddressForm({
           </div>
         </div>
 
-{/* TYPE */}
-<div className="space-y-3">
-  <p className="text-[12px] font-bold uppercase text-[#535766]">
-    Save Address As
-  </p>
+        {/* TYPE */}
+        <div className="space-y-3">
+          <p className="text-[12px] font-bold uppercase text-[#535766]">
+            Save Address As
+          </p>
 
-  <div className="flex gap-6 text-sm">
+          <div className="flex gap-6 text-sm">
 
-    {/* HOME */}
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input
-        type="radio"
-        name="type"
-        value="HOME"
-        defaultChecked={
-          !editingAddress ||
-          editingAddress?.addressType === "HOME"
-        }
-      />
-      Home
-    </label>
+            {/* HOME */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="type"
+                value="HOME"
+                defaultChecked={
+                  !editingAddress ||
+                  editingAddress?.addressType === "HOME"
+                }
+              />
+              Home
+            </label>
 
-    {/* OFFICE */}
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input
-        type="radio"
-        name="type"
-        value="OFFICE"
-        defaultChecked={
-          editingAddress?.addressType === "OFFICE"
-        }
-      />
-      Office
-    </label>
+            {/* OFFICE */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="type"
+                value="OFFICE"
+                defaultChecked={
+                  editingAddress?.addressType === "OFFICE"
+                }
+              />
+              Office
+            </label>
 
-    {/* OTHER */}
-    <label className="flex items-center gap-2 cursor-pointer">
-      <input
-        type="radio"
-        name="type"
-        value="OTHER"
-        defaultChecked={
-          editingAddress?.addressType === "OTHER"
-        }
-      />
-      Other
-    </label>
+            {/* OTHER */}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="type"
+                value="OTHER"
+                defaultChecked={
+                  editingAddress?.addressType === "OTHER"
+                }
+              />
+              Other
+            </label>
 
-  </div>
+          </div>
 
-  <label className="text-sm flex items-center gap-2 cursor-pointer">
-    <input
-      type="checkbox"
-      name="isDefault"
-      defaultChecked={editingAddress?.isDefault}
-    />
-    Make default address
-  </label>
-</div>
+          <label className="text-sm flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              name="isDefault"
+              defaultChecked={editingAddress?.isDefault}
+            />
+            Make default address
+          </label>
+        </div>
       </div>
 
       {/* FOOTER */}
@@ -286,11 +286,10 @@ export default function AddressForm({
         <button
           type="submit"
           disabled={loading}
-          className={`flex-1 h-12 rounded-sm text-sm font-bold uppercase transition ${
-            loading
+          className={`flex-1 h-12 rounded-sm text-sm font-bold uppercase transition ${loading
               ? "bg-[#ff9bb3] cursor-not-allowed"
               : "bg-[#ff3f6c] hover:bg-[#ff527b] text-white"
-          }`}
+            }`}
         >
           {loading ? "Saving..." : "Save"}
         </button>

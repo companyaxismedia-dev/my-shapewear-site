@@ -47,7 +47,7 @@ export default function CategorySlider() {
             768: { slidesPerView: 3, spaceBetween: 15 },
             1024: { slidesPerView: 5, spaceBetween: 20 },
           }}
-          pagination={{ clickable: true }}
+          pagination={false}
           navigation={categoryBanners.length > 1}
           className="categorySwiper"
         >
