@@ -38,13 +38,13 @@ export default function HomeHero() {
 
       {/* ================= HERO BANNER IMAGE ================= */}
       <div className="relative w-full">
-        <Image
-          src="/hero-image/home-12.jpeg"
+        <img
+          src="/hero-image/home-122.jpeg"
           alt="Bootybloom Home Banner"
           width={1920}
           height={850}
-          priority
-          className="w-full h-auto object-cover"
+          // priority
+          className="w-full h-auto block select-none"
         />
       </div>
 

@@ -3,24 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 import {
-  Home,
-  Store,
-  ShoppingCart,
-  Settings2,
-  BarChart3,
-  Layers,
-  Tag,
-  Settings,
-  HelpCircle,
-  Search,
-  ChevronDown,
-  ChevronRight,
-  Menu,
-  X,
-  User,
-  ChevronUp,
+  Home, Store, ShoppingCart, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle, 
+  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -319,7 +304,7 @@ export function AdminLayout({ children }) {
           sidebarCollapsed ? "lg:ml-16" : "ml-0 lg:ml-64"
         )}
       >
-        <header className="sticky top-0 z-10 h-16 bg-card border-b border-border flex items-center px-4 gap-4">
+        <header className="sticky top-0 z-10 h-16 bg-card border-b border-border flex items-center px-4 gap-4 backdrop-blur-md">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="p-2 rounded-lg hover:bg-muted text-muted-foreground"

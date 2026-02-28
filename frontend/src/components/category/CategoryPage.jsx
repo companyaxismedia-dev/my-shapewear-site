@@ -111,10 +111,10 @@ export default function CategoryPage({ category }) {
     return (
         <div className="min-h-screen bg-white text-[#282c3f] font-sans relative">
 
-    <div className="min-h-screen bg-white font-sans overflow-x-hidden text-black">
-      <div className="w-full sticky top-0 z-50 bg-white border-b border-pink-50 shadow-sm">
-  <Navbar />
-</div>
+            <div className="min-h-screen bg-white font-sans overflow-x-hidden text-black">
+                <div className="w-full sticky top-0 z-50 bg-white border-b border-pink-50 shadow-sm">
+                    <Navbar />
+                </div>
                 <div className="flex w-full m-0">
                     {/* LEFT SIDEBAR */}
                     <aside className="shrink-0 hidden md:block border-r border-gray-100">

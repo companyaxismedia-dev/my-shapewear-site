@@ -9,6 +9,7 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  getSimilarProducts
 } = require("../controllers/productController");
 
 const { protect, admin } = require("../middleware/authMiddleware");
@@ -149,6 +150,9 @@ router.get("/filters", async (req, res) => {
 
 /* 🔹 GET PRODUCT BY SLUG */
 router.get("/slug/:slug", getProductBySlug);
+
+/* 🔹 GET SIMILAR PRODUCTS */
+router.get("/similar/:id", getSimilarProducts);
 
 /* 🔹 GET SINGLE PRODUCT BY ID */
 router.get("/:id", getProductById);

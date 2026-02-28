@@ -21,14 +21,25 @@ import CalculateSizeModal from "@/components/product/CalculateSizeModal";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 
+// const getImageUrl = (url) => {
+//   if (!url) return "/placeholder.jpg";
+//   if (url.startsWith("data:image")) return url;    // base64 image
+//   if (url.startsWith("http")) return url;     // already full url
+//   return API_BASE + url;       // backend path
+
+// };
+
+
 const getImageUrl = (url) => {
   if (!url) return "/placeholder.jpg";
-  if (url.startsWith("data:image")) return url;    // base64 image
-  if (url.startsWith("http")) return url;     // already full url
-  return API_BASE + url;       // backend path
 
+  // supports BOTH image + video base64
+  if (url.startsWith("data:")) return url;
+
+  if (url.startsWith("http")) return url;
+
+  return API_BASE + url;
 };
-
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -96,7 +107,7 @@ export default function ProductPage() {
         {/* ================= LEFT IMAGE ================= */}
         <div className="flex flex-col-reverse lg:flex-row gap-4">
 
-          <div className="flex lg:flex-col gap-3">
+          {/* <div className="flex lg:flex-col gap-3">
             {selectedVariant?.images?.map((img, i) => (
               <img
                 key={i}
@@ -107,13 +118,69 @@ export default function ProductPage() {
                 className="w-20 h-24 object-cover cursor-pointer"
               />
             ))}
+          </div> */}
+
+          <div className="flex lg:flex-col gap-3">
+
+            {/* FIRST IMAGE */}
+            {selectedVariant?.images?.[0] && (
+              <img
+                src={getImageUrl(selectedVariant.images[0].url)}
+                onMouseEnter={() =>
+                  setActiveImage(getImageUrl(selectedVariant.images[0].url))
+                }
+                className="w-20 h-24 object-cover cursor-pointer"
+              />
+            )}
+
+            {/* VIDEO — ALWAYS SECOND */}
+            {selectedVariant?.video && (
+              <video
+                src={getImageUrl(selectedVariant.video)}
+                onMouseEnter={() =>
+                  setActiveImage(getImageUrl(selectedVariant.video))
+                }
+                className="w-20 h-24 object-cover cursor-pointer"
+                muted
+              />
+            )}
+
+            {/* REMAINING IMAGES */}
+            {selectedVariant?.images?.slice(1).map((img, i) => (
+              <img
+                key={i}
+                src={getImageUrl(img.url)}
+                onMouseEnter={() => setActiveImage(getImageUrl(img.url))}
+                className="w-20 h-24 object-cover cursor-pointer"
+              />
+            ))}
+
           </div>
 
           <div className="flex-1 overflow-hidden rounded">
-            <img
+            {/* <img
               src={activeImage}
               className="w-full max-h-[700px] object-cover"
-            />
+            /> */}
+
+            {activeImage?.includes(".mp4") ||
+              activeImage?.includes("video") ? (
+
+              <video
+                src={activeImage}
+                controls
+                autoPlay
+                className="w-full max-h-[700px] object-cover"
+              />
+
+            ) : (
+
+              <img
+                src={activeImage}
+                className="w-full max-h-[700px] object-cover"
+              />
+
+            )}
           </div>
         </div>
 
@@ -186,12 +253,32 @@ export default function ProductPage() {
                       setActiveImage(img);
                       setSelectedSize(variant.sizes?.[0]);
                     }}
-                    className={`w-10 h-10 rounded-full cursor-pointer border-2 ${selectedVariant?.color === variant.color
-                      ? "border-black"
-                      : "border-gray-300"
+                    className={`w-10 h-10 rounded-full cursor-pointer border-2 overflow-hidden ${selectedVariant?.color === variant.color
+                        ? "border-black"
+                        : "border-gray-300"
                       }`}
-                    style={{ backgroundColor: variant.colorCode || "#ddd" }}
-                  />
+                  >
+                    {variant.colorCode?.startsWith("http") ||
+                      variant.colorCode?.startsWith("data:") ? (
+
+                      // IMAGE THUMBNAIL
+                      <img
+                        src={getImageUrl(variant.colorCode)}
+                        className="w-full h-full object-cover"
+                        alt={variant.color}
+                      />
+
+                    ) : (
+
+                      // COLOR CIRCLE
+                      <div
+                        className="w-full h-full"
+                        style={{ backgroundColor: variant.colorCode || "#ddd" }}
+                      />
+
+                    )}
+                  </button>
+
                 </div>
               );
             })}
@@ -213,8 +300,7 @@ export default function ProductPage() {
                     key={i}
                     disabled={s.stock === 0}
                     onClick={() => setSelectedSize(s)}
-                    className={`
-            w-12 h-12
+                    className={`w-12 h-12
             rounded-full
             border
             text-sm

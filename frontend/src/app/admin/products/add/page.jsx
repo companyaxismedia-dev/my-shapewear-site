@@ -12,19 +12,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
-// const API_BASE =
-//   typeof window !== "undefined" &&
-//     (window.location.hostname === "localhost" ||
-//       window.location.hostname === "127.0.0.1")
-//     ? "http://localhost:5000"
-//     : "https://my-shapewear-site.onrender.com";
-
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-
-// ─────────────────────────────────────────────────────────
-//  CONSTANTS
-// ─────────────────────────────────────────────────────────
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const CATEGORIES = [
   { value: "bra", label: "Bra" },
   { value: "panties", label: "Panties" },
@@ -45,16 +33,12 @@ const ALL_SIZES = [
   "28DD", "30DD", "32DD", "34DD", "36DD", "38DD",
   "28E", "30E", "32E", "34E", "36E",
 ];
-
-// ─────────────────────────────────────────────────────────
-//  HELPERS
-// ─────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2);
 
 const makeVariant = () => ({
   id: uid(),
   color: "",
-  colorCode: "#10b981",
+  colorCode: "",
   video: "",
   images: [], // { url, altText, isPrimary, order }
   selectedSizes: [], // size strings chosen via checkbox
@@ -70,10 +54,6 @@ const makeOffer = () => ({
 });
 
 const makePincode = () => ({ id: uid(), pincode: "", codAvailable: true, estimatedDays: "3" });
-
-// ─────────────────────────────────────────────────────────
-//  SHARED UI
-// ─────────────────────────────────────────────────────────
 const inp =
   "w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all";
 
@@ -111,29 +91,18 @@ function Toggle({ checked, onChange, label, desc }) {
         <p className="text-sm font-medium text-foreground">{label}</p>
         {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
       </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={cn(
-          "relative inline-flex w-11 h-6 rounded-full transition-colors flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-          checked ? "bg-primary" : "bg-muted border border-border"
-        )}
-      >
-        <span className={cn(
-          "absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all",
-          checked ? "left-[22px]" : "left-1"
-        )} />
-      </button>
+      <label className="inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          className="sr-only peer"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+        <div className={cn("toggle-track")} />
+      </label>
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────
-//  RICH TEXT TOOLBAR
-// ─────────────────────────────────────────────────────────
-
 function RichToolbar({ editorRef }) {
   const exec = (cmd, val) => {
     if (!editorRef.current) return;
@@ -186,10 +155,6 @@ function RichToolbar({ editorRef }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────
-//  SIZE CHECKBOX DROPDOWN
-// ─────────────────────────────────────────────────────────
 function SizeDropdown({ selected, onChange }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -294,10 +259,6 @@ function SizeDropdown({ selected, onChange }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────
-//  IMAGE UPLOAD AREA
-// ─────────────────────────────────────────────────────────
 function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
   const fileRef = useRef(null);
 
@@ -317,6 +278,8 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
   //     reader.onerror = reject;
   //     reader.readAsDataURL(file);
   //   });
+
+
 
   const compressImage = (file, maxWidth = 1200, quality = 0.7) =>
     new Promise((resolve) => {
@@ -378,7 +341,6 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
   return (
     <div>
       <div className="grid grid-cols-3 gap-2">
-        {/* Upload slot */}
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
@@ -389,7 +351,6 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
         </button>
         <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFile} className="hidden" />
 
-        {/* Image previews */}
         {images.map((img, i) => (
           <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border border-border bg-muted">
             <img src={img.url} alt={img.altText || ""} className="w-full h-full object-cover" />
@@ -425,13 +386,18 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────
-//  MAIN PAGE
-// ─────────────────────────────────────────────────────────
-export default function AddProduct() {
+// export default function AddProduct() {
+export function AddProductForm({
+  mode = "add",
+  initialData = null,
+  onClose = null,
+  onSuccess = null,
+}) {
   const router = useRouter();
   const productDetailsRef = useRef(null);
+
+
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Basic fields
@@ -443,8 +409,6 @@ export default function AddProduct() {
   });
 
   const [productDetails, setProductDetails] = useState("");
-
-  // Dynamic arrays
   const [features, setFeatures] = useState([""]);
   const [materialCare, setMaterialCare] = useState([""]);
   const [sizeAndFits, setSizeAndFits] = useState([{ key: "", value: "" }]);
@@ -452,20 +416,16 @@ export default function AddProduct() {
   const [variants, setVariants] = useState([makeVariant()]);
   const [offers, setOffers] = useState([]);
   const [pincodes, setPincodes] = useState([]);
+  const [uploadedVideo, setUploadedVideo] = useState({});
+  // const [thumbnailImage, setThumbnailImage] = useState({});
 
   const setField = (f, v) => setForm(p => ({ ...p, [f]: v }));
-
-  // String array helpers
   const strUpdate = (setter, i, v) => setter(p => p.map((x, j) => j === i ? v : x));
   const strAdd = (setter) => setter(p => [...p, ""]);
   const strRemove = (setter, i) => setter(p => p.filter((_, j) => j !== i));
-
-  // KV helpers
   const kvUpdate = (setter, i, f, v) => setter(p => p.map((x, j) => j === i ? { ...x, [f]: v } : x));
   const kvAdd = (setter) => setter(p => [...p, { key: "", value: "" }]);
   const kvRemove = (setter, i) => setter(p => p.filter((_, j) => j !== i));
-
-  // Variant helpers
   const vUpdate = (id, f, v) => setVariants(p => p.map(x => x.id === id ? { ...x, [f]: v } : x));
   const vGet = (id) => variants.find(v => v.id === id);
 
@@ -477,17 +437,103 @@ export default function AddProduct() {
     });
   };
 
+
+  useEffect(() => {
+    if (!initialData) return;
+
+    const p = initialData;
+
+    setForm({
+      name: p.name || "",
+      brand: p.brand || "",
+      category: p.category || "",
+      subCategory: p.subCategory || "",
+      shortDescription: p.shortDescription || "",
+      thumbnail: p.thumbnail || "",
+      isFeatured: p.isFeatured,
+      isBestSeller: p.isBestSeller,
+      isNewArrival: p.isNewArrival,
+      isActive: p.isActive,
+      metaTitle: p.metaTitle || "",
+      metaDescription: p.metaDescription || "",
+      metaKeywords: (p.metaKeywords || []).join(","),
+    });
+
+    setProductDetails(p.productDetails || "");
+    setFeatures(p.features || [""]);
+    setMaterialCare(p.materialCare || [""]);
+
+    setSizeAndFits(
+      p.sizeAndFits?.map(s => ({
+        key: s.label,
+        value: s.value,
+      })) || [{ key: "", value: "" }]
+    );
+
+    setSpecifications(p.specifications || []);
+
+    setVariants(
+      p.variants.map(v => ({
+        id: uid(),
+        color: v.color,
+        colorCode: v.colorCode,
+        video: v.video || "",
+        images: v.images || [],
+        selectedSizes: v.sizes?.map(s => s.size) || [],
+        sizeDetails: Object.fromEntries(
+          (v.sizes || []).map(s => [
+            s.size,
+            {
+              sku: s.sku,
+              price: s.price,
+              mrp: s.mrp,
+              stock: s.stock,
+              isActive: s.isActive,
+            },
+          ])
+        ),
+        isExpanded: true,
+      }))
+    );
+
+    setOffers(p.offers || []);
+    setPincodes(p.serviceablePincodes || []);
+  }, [initialData]);
+
+  useEffect(() => {
+  if (productDetailsRef.current) {
+    productDetailsRef.current.innerHTML = productDetails || "";
+  }
+}, [productDetails]);
+
+
+  const uploadFile = async (file) => {
+    const token = localStorage.getItem("adminToken");
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    const res = await fetch(`${API_BASE}/api/admin/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: fd,
+    });
+
+    const data = await res.json();
+
+    if (!data.success) throw new Error("Upload failed");
+
+    return data.url; // backend returns uploaded url
+  };
+
   const ensureSizeDetails = (variantId, sizes) => {
     const v = vGet(variantId);
     const updated = { ...v.sizeDetails };
     sizes.forEach(s => { if (!updated[s]) updated[s] = makeSizeDetail(); });
     vUpdate(variantId, "sizeDetails", updated);
   };
-
-  // const handleSizeSelect = (variantId, sizes) => {
-  //   ensureSizeDetails(variantId, sizes);
-  //   vUpdate(variantId, "selectedSizes", sizes);
-  // };
 
   const handleSizeSelect = (variantId, sizes) => {
     setVariants(prev =>
@@ -510,8 +556,6 @@ export default function AddProduct() {
       })
     );
   };
-
-  // Image helpers per variant
   const vImgAdd = (id, img) => vUpdate(id, "images", [...vGet(id).images, img]);
   const vImgRemove = (id, i) => {
     const imgs = vGet(id).images.filter((_, j) => j !== i);
@@ -543,6 +587,7 @@ export default function AddProduct() {
       variants: variants.map(v => ({
         color: v.color,
         colorCode: v.colorCode,
+        // colorThumbnail: v.colorThumbnail,
         video: v.video || undefined,
         images: v.images.map((img, i) => ({
           ...img,
@@ -568,14 +613,19 @@ export default function AddProduct() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${API_BASE}/api/products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        mode === "edit"
+          ? `${API_BASE}/api/admin/products/${initialData._id}`
+          : `${API_BASE}/api/products`,
+        {
+          method: mode === "edit" ? "PUT" : "POST",
+          // method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
       const data = await res.json();
 
       if (!res.ok || !data.success) {
@@ -583,7 +633,13 @@ export default function AddProduct() {
       }
 
       toast.success(isDraft ? "Draft saved successfully!" : "Product created successfully!");
-      router.push("/admin/products");
+      // router.push("/admin/products");
+      if (mode === "edit") {
+        onSuccess?.();
+        onClose?.();
+      } else {
+        router.push("/admin/products");
+      }
     } catch (err) {
       toast.error(err.message || "Something went wrong");
       console.error("Product creation error:", err);
@@ -591,8 +647,6 @@ export default function AddProduct() {
       setIsSubmitting(false);
     }
   };
-
-  // ─────────────────────────────────────────────────────
   return (
     <AdminLayout>
       {/* ── Page Header ── */}
@@ -604,16 +658,14 @@ export default function AddProduct() {
           <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-primary font-medium">Add New Product</span>
         </nav>
-        <h1 className="text-2xl font-bold text-foreground">Add New Product</h1>
+<h1 className="text-2xl font-bold text-foreground">
+  {mode === "edit" ? "Edit Product" : "Add New Product"}
+</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Add a new product to your store</p>
       </div>
 
-      {/* ── Layout ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* ══════════════ LEFT COLUMN ══════════════ */}
         <div className="lg:col-span-2 space-y-5">
-
-          {/* ── Name and Description ── */}
           <Card title="Name and Description">
             <div className="space-y-4">
               <div className="flex gap-4">
@@ -633,8 +685,6 @@ export default function AddProduct() {
                   value={form.shortDescription}
                   onChange={e => setField("shortDescription", e.target.value)} />
               </Field>
-
-              {/* Product Details - Rich Text */}
               <Field label="Product Details">
                 <div className="border border-border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-ring">
                   <div
@@ -652,8 +702,6 @@ export default function AddProduct() {
                   <RichToolbar editorRef={productDetailsRef} />
                 </div>
               </Field>
-
-              {/* Features - bullet points */}
               <Field label="Key Features" hint="Each entry becomes a bullet point on the product page">
                 <div className="space-y-2">
                   {features.map((f, i) => (
@@ -676,8 +724,6 @@ export default function AddProduct() {
               </Field>
             </div>
           </Card>
-
-          {/* ── Category ── */}
           <Card title="Category">
             <div className="flex gap-4">
               <Field label="Product Category" required half>
@@ -692,8 +738,6 @@ export default function AddProduct() {
               </Field>
             </div>
           </Card>
-
-          {/* ── Variants ── */}
           <Card
             title="Variants"
             subtitle="Each variant = one color with its own images & sizes"
@@ -711,8 +755,18 @@ export default function AddProduct() {
                   <div className="flex items-center gap-3 px-4 py-3 bg-muted/40 cursor-pointer"
                     onClick={() => vUpdate(variant.id, "isExpanded", !variant.isExpanded)}>
                     <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", !variant.isExpanded && "-rotate-90")} />
-                    <div className="w-4 h-4 rounded-full border-2 border-white shadow-sm flex-shrink-0"
-                      style={{ backgroundColor: variant.colorCode || "#10b981" }} />
+                    {variant.colorCode?.startsWith("data:") ||
+                      variant.colorCode?.startsWith("http") ? (
+                      <img
+                        src={variant.colorCode}
+                        className="w-4 h-4 rounded-full border-2 border-white shadow-sm object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-4 h-4 rounded-full border-2 border-white shadow-sm flex-shrink-0"
+                        style={{ backgroundColor: variant.colorCode || "#ffffff" }}
+                      />
+                    )}
                     <span className="text-sm font-medium text-foreground flex-1 truncate">
                       {variant.color || `Color Variant ${vIdx + 1}`}
                     </span>
@@ -729,7 +783,7 @@ export default function AddProduct() {
                   {variant.isExpanded && (
                     <div className="p-5 space-y-5">
                       {/* Color row */}
-                      <div className="flex gap-4">
+                      {/* <div className="flex gap-4">
                         <Field label="Color Name" required half>
                           <input className={inp} placeholder="e.g. Midnight Black"
                             value={variant.color} onChange={e => vUpdate(variant.id, "color", e.target.value)} />
@@ -743,19 +797,185 @@ export default function AddProduct() {
                               onChange={e => vUpdate(variant.id, "colorCode", e.target.value)} />
                           </div>
                         </Field>
+                      </div> */}
+
+                      <div className="flex gap-4">
+
+                        {/* COLOR NAME */}
+                        <Field label="Color Name" required half>
+                          <input
+                            className={inp}
+                            placeholder="e.g. Midnight Black"
+                            value={variant.color}
+                            onChange={(e) =>
+                              vUpdate(variant.id, "color", e.target.value)
+                            }
+                          />
+                        </Field>
+
+                        {/* COLOR CODE OR THUMBNAIL */}
+                        <Field label="Color Code / Thumbnail" half>
+
+                          {!(
+                            variant.colorCode?.startsWith("data:") ||
+                            variant.colorCode?.startsWith("http")
+                          ) ? (
+
+                            /* ===== NO IMAGE STATE ===== */
+                            <div className="flex items-center gap-3">
+
+                              {/* COLOR PICKER */}
+                              <input
+                                type="color"
+                                value={variant.colorCode}
+                                onChange={(e) =>
+                                  vUpdate(variant.id, "colorCode", e.target.value)
+                                }
+                                className="w-10 h-10 rounded-lg border border-border cursor-pointer flex-shrink-0 p-0.5 bg-background"
+                              />
+
+                              {/* COLOR CODE INPUT */}
+                              <input
+                                className={`${inp} w-36`}
+                                placeholder="#10b981"
+                                value={variant.colorCode}
+                                onChange={(e) =>
+                                  vUpdate(variant.id, "colorCode", e.target.value)
+                                }
+                              />
+
+                              {/* CLEAN FILE INPUT */}
+                              <label className="px-3 py-2 border rounded-lg cursor-pointer text-sm whitespace-nowrap">
+                                Choose File
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+
+                                    const url = await uploadFile(file);
+
+                                    // save image URL in variant
+                                    vUpdate(variant.id, "colorCode", url);
+
+                                    // setThumbnailImage((prev) => ({
+                                    //   ...prev,
+                                    //   [variant.id]: file,
+                                    // }));
+                                  }}
+                                />
+                              </label>
+
+                            </div>
+
+                          ) : (
+
+                            /* ===== IMAGE UPLOADED STATE ===== */
+                            <div className="flex items-start pl-2">
+
+                              <div className="relative w-24 h-24 rounded-lg border overflow-hidden">
+                                <img
+                                  src={variant.colorCode}
+                                  alt="thumbnail"
+                                  className="w-full h-full object-cover"
+                                />
+
+                                {/* REMOVE ICON */}
+                                <button
+                                  type="button"
+                                  className="absolute top-1 right-1 bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-black"
+                                  onClick={() => {
+                                    vUpdate(variant.id, "colorCode", "");
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+
+                            </div>
+
+                          )}
+
+                        </Field>
                       </div>
 
-                      <Field label="Video URL (Optional)">
+                      {/* <Field label="Video URL (Optional)">
                         <input className={inp} placeholder="https://cdn.example.com/video.mp4"
                           value={variant.video} onChange={e => vUpdate(variant.id, "video", e.target.value)} />
-                      </Field>
+                      </Field> */}
 
+                      {/* Upload Video */}
+                      <Field label="Upload Video">
+
+                        {/* IF NO FILE SELECTED */}
+                        {!uploadedVideo?.[variant.id] ? (
+                          <input
+                            type="file"
+                            accept="video/*"
+                            className={inp}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+
+                              const url = await uploadFile(file);
+
+                              // save URL in variant (IMPORTANT)
+                              vUpdate(variant.id, "video", url);
+
+                              setUploadedVideo((prev) => ({
+                                ...prev,
+                                [variant.id]: file,
+                              }));
+                            }}
+                          />
+                        ) : (
+
+                          /* FILE SELECTED BOX */
+                          <div className={`${inp} flex items-center justify-between px-3`}>
+                            <span className="truncate">
+                              {uploadedVideo[variant.id].name}
+                            </span>
+
+                            <button
+                              type="button"
+                              className="text-sm text-red-500 hover:text-red-700"
+                              onClick={() => {
+                                setUploadedVideo((prev) => {
+                                  const copy = { ...prev };
+                                  delete copy[variant.id];
+                                  return copy;
+                                });
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+
+                        )}
+
+                      </Field>
+                      {/* URL shows only if NO upload */}
+                      {!uploadedVideo[variant.id] && (
+                        <Field label="Video URL (Optional)">
+                          <input
+                            className={inp}   // 👈 SAME STYLE
+                            placeholder="https://cdn.example.com/video.mp4"
+                            value={variant.video}
+                            onChange={(e) =>
+                              vUpdate(variant.id, "video", e.target.value)
+                            }
+                          />
+                        </Field>
+                      )}
                       {/* Images */}
                       <Field label="Variant Images">
                         <ImageUploadArea
                           images={variant.images}
                           onAdd={(img) => vImgAdd(variant.id, img)}
                           onRemove={(i) => vImgRemove(variant.id, i)}
+
                           onSetPrimary={(i) => vImgSetPrimary(variant.id, i)}
                         />
                       </Field>
@@ -816,13 +1036,15 @@ export default function AddProduct() {
                                           value={d.stock} onChange={e => updateSizeDetail(variant.id, size, "stock", e.target.value)} />
                                       </td>
                                       <td className="px-3 py-2">
-                                        <button type="button" role="switch" aria-checked={d.isActive}
-                                          onClick={() => updateSizeDetail(variant.id, size, "isActive", !d.isActive)}
-                                          className={cn("relative inline-flex w-10 h-5 rounded-full transition-colors",
-                                            d.isActive ? "bg-primary" : "bg-muted border border-border")}>
-                                          <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all",
-                                            d.isActive ? "left-5" : "left-0.5")} />
-                                        </button>
+                                        <label className="inline-flex items-center cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={d.isActive}
+                                            onChange={(e) => updateSizeDetail(variant.id, size, "isActive", e.target.checked)}
+                                          />
+                                          <div className="toggle-track" />
+                                        </label>
                                       </td>
                                     </tr>
                                   );
@@ -1004,11 +1226,7 @@ export default function AddProduct() {
             )}
           </Card>
         </div>
-
-        {/* ══════════════ RIGHT COLUMN ══════════════ */}
         <div className="space-y-5">
-
-          {/* ── Product Flags ── */}
           <Card title="Product Status">
             <div className="divide-y divide-border">
               <Toggle checked={form.isActive} onChange={v => setField("isActive", v)} label="Active" desc="Visible to customers" />
@@ -1030,8 +1248,6 @@ export default function AddProduct() {
               )}
             </Field>
           </Card>
-
-          {/* ── SEO ── */}
           <Card title="SEO">
             <div className="space-y-3">
               <Field label="Meta Title">
@@ -1051,8 +1267,6 @@ export default function AddProduct() {
               </Field>
             </div>
           </Card>
-
-          {/* ── Action Buttons ── */}
           <div className="admin-card p-4">
             <div className="space-y-2">
               <button type="button" onClick={() => handleSubmit(false)} disabled={isSubmitting}
@@ -1069,4 +1283,9 @@ export default function AddProduct() {
       </div>
     </AdminLayout>
   );
+}
+
+
+export default function AddProduct() {
+  return <AddProductForm />;
 }

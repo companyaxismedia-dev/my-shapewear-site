@@ -169,7 +169,7 @@ export function ProductDetailsModal({ product, onClose }) {
                     {/* ACTION BUTTONS */}
                     <button
                         onClick={handleCartAdd}
-                        className="w-full bg-[#ed4e7e] text-white py-3 font-bold uppercase hover:scale-105 transition"
+                        className="w-full bg-[#ed4e7e] text-white py-3 font-bold uppercase hover:scale-105 transition rounded-md"
                     >
                         <ShoppingCart size={16} className="inline mr-2" />
                         Add to Cart
@@ -177,7 +177,7 @@ export function ProductDetailsModal({ product, onClose }) {
 
                     <button
                         onClick={handleBuyNow}
-                        className="w-full bg-black text-white py-3 font-bold uppercase hover:scale-105 transition"
+                        className="w-full bg-black text-white py-3 font-bold uppercase hover:scale-105 transition rounded-md"
                     >
                         <Zap size={16} className="inline mr-2" />
                         Buy Now
@@ -186,7 +186,7 @@ export function ProductDetailsModal({ product, onClose }) {
                     {/* ✅ SHOW MORE DETAILS BUTTON */}
                     <button
                         onClick={handleShowMore}
-                        className="w-full flex items-center justify-center gap-2 border border-[#ed4e7e] text-[#ed4e7e] py-3 font-bold uppercase hover:bg-[#ed4e7e] hover:text-white transition-all duration-300 group"
+                        className="w-full flex items-center justify-center gap-2 border border-[#ed4e7e] rounded-md text-[#ed4e7e] py-3 font-bold uppercase hover:bg-[#ed4e7e] hover:text-white transition-all duration-300 group"
                     >
                         Show More Details
                         <ChevronsDown className="group-hover:translate-y-1 transition-transform duration-300" />

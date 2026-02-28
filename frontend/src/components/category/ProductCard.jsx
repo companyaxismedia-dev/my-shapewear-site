@@ -45,7 +45,7 @@ export function ProductCard({ item, onOpenDetails }) {
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 1500);
     };
-
+    console.log("ITEM DATA:", item);
     return (
         <div
             ref={cardRef}
@@ -85,9 +85,19 @@ export function ProductCard({ item, onOpenDetails }) {
 
                 {/* RATING BADGE */}
                 {item.rating > 0 && (
-                    <div className="absolute bottom-2 left-2 bg-white/95 rounded-sm px-1.5 py-0.5 flex items-center gap-1 text-[12px] font-bold text-[#282c3f] z-10">
+                    <div className="absolute bottom-2 left-2 bg-white px-2 py-0.5 text-xs font-semibold rounded  shadow-sm z-10 flex items-center gap-1">
                         {item.rating}
-                        <Star size={10} className="fill-[#14958f] stroke-[#14958f]" />
+                        {/* <Star size={10} className="fill-[#14958f] stroke-[#14958f]" /> */}
+                        <span
+                            className={
+                                item.rating >= 3
+                                    ? "text-[#14958f]"
+                                    : "text-yellow-500"
+                            }
+                        >
+                            ★
+                        </span>
+
                         <span className="text-[#94969f] font-normal text-[11px]">
                             | {item.numReviews || 0}
                         </span>
@@ -134,7 +144,7 @@ export function ProductCard({ item, onOpenDetails }) {
                     {item.name}
                 </h3>
                 <p className="text-[12px] text-[#535766] mb-1.5 truncate">
-                    {item.subCategory || "Bra"}
+                    {item.shortDescription}
                 </p>
 
                 <div className="flex items-baseline gap-1.5">
@@ -150,7 +160,7 @@ export function ProductCard({ item, onOpenDetails }) {
                 {/* ADD TO BAG BUTTON */}
                 <button
                     onClick={() => setShowSizes(true)}
-                    className="mt-auto w-full py-2 text-[12px] font-bold uppercase tracking-wider text-white bg-[#ed4e7e] border border-[#ed4e7e] cursor-pointer hover:bg-[#d43d6a] transition-colors"
+                    className="mt-auto w-full py-2 text-[12px] rounded-md font-bold uppercase tracking-wider text-white bg-[#ed4e7e] border border-[#ed4e7e] cursor-pointer hover:bg-[#d43d6a] transition-colors"
                 >
                     ADD TO BAG
                 </button>
