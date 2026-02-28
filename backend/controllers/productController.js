@@ -111,7 +111,7 @@ if (req.query.inStock === "true") {
     const total = await Product.countDocuments(filter);
 
     const products = await Product.find(filter)
-      .select("name slug thumbnail minPrice mrp discount rating numReviews")
+      .select("name slug thumbnail minPrice mrp discount rating numReviews shortDescription")
       .sort(sortOption)
       .skip((page - 1) * limit)
       .limit(limit)
@@ -348,6 +348,107 @@ exports.deleteProduct = async (req, res) => {
     res.json({
       success: true,
       message: "Product deactivated successfully",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+//  GET SIMILAR PRODUCTS 
+exports.getSimilarProducts = async (req, res) => {
+  try {
+    const current = await Product.findById(req.params.id).lean();
+
+    if (!current) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+    // exclding current product
+
+    // const candidates = await Product.find({
+    //   _id: { $ne: current._id },
+    //   isActive: true,
+    // }).lean();
+    const candidates = await Product.find(
+      {
+        _id: { $ne: current._id },
+        isActive: true,
+      },
+      "name category minPrice slug variants rating brand"
+    )
+      .limit(80)
+      .lean();
+
+    const tokenize = (text = "") =>
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "")
+        .split(" ")
+        .filter((w) => w.length > 2);
+
+    const currentTokens = tokenize(current.name);
+
+    let scored = candidates.map((p) => {
+      let score = 0;
+
+      if (p.category === current.category) {
+        score += 6;
+      }
+      const pTokens = tokenize(p.name);
+
+      const matchedWords = currentTokens.filter((w) =>
+        pTokens.includes(w)
+      );
+
+      score += matchedWords.length * 4;
+      if (
+        p.minPrice &&
+        current.minPrice &&
+        Math.abs(p.minPrice - current.minPrice) <= 500
+      ) {
+        score += 3;
+      }
+
+      return {
+        ...p,
+        finalScore: score,
+      };
+    });
+
+    // match products logic
+    let similar = scored
+      .filter((p) => p.finalScore > 0)
+      .sort((a, b) => b.finalScore - a.finalScore)
+      .slice(0, 12);
+
+    // random products logic 
+    // if (!similar.length) {
+    //   similar = candidates
+    //     .sort(() => 0.5 - Math.random())
+    //     .slice(0, 12);
+    // }
+    if (!similar.length) {
+      similar = await Product.aggregate([
+        {
+          $match: {
+            _id: { $ne: current._id },
+            isActive: true,
+          },
+        },
+        { $sample: { size: 12 } },
+      ]);
+    }
+
+    res.json({
+      success: true,
+      products: similar,
     });
 
   } catch (error) {

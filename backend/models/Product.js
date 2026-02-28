@@ -205,6 +205,7 @@ productSchema.index({ category: 1, subCategory: 1 });
 productSchema.index({ minPrice: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ "variants.color": 1 });
+productSchema.index({ isActive: 1, category: 1, minPrice: 1 });
 
 /* ======================================================
    AUTO SLUG

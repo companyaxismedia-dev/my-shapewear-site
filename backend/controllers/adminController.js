@@ -109,20 +109,75 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+exports.uploadFile = async (req, res) => {
+  try {
+    if (!req.file)
+      return res.status(400).json({ success:false });
+
+    // TEMP: base64 save (later cloudinary)
+    const base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+
+    res.json({
+      success: true,
+      url: base64,
+    });
+  } catch (err) {
+    res.status(500).json({ success:false, message: err.message });
+  }
+};
+
+// exports.getAllProducts = async (req, res) => {
+//   try {
+//     const page = Number(req.query.page) || 1;
+//     const limit = 20;
+
+//     const products = await Product.find()
+//       .sort({ createdAt:-1 })
+//       .skip((page-1)*limit)
+//       .limit(limit);
+
+//     res.json({ success:true, products });
+
+//   } catch (err) {
+//     res.status(500).json({ success:false, message: err.message });
+//   }
+// };
+
 exports.getAllProducts = async (req, res) => {
   try {
     const page = Number(req.query.page) || 1;
-    const limit = 20;
+    const limit = Number(req.query.limit) || 20;
+    const keyword = req.query.keyword || "";
+    const categories = req.query.category
+      ? req.query.category.split(",")
+      : [];
 
-    const products = await Product.find()
-      .sort({ createdAt:-1 })
-      .skip((page-1)*limit)
+    const filter = {};
+
+    if (keyword) {
+      filter.name = { $regex: keyword, $options: "i" };
+    }
+
+    if (categories.length) {
+      filter.category = { $in: categories };
+    }
+
+    const total = await Product.countDocuments(filter);
+
+    const products = await Product.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
       .limit(limit);
 
-    res.json({ success:true, products });
-
+    res.json({
+      success: true,
+      products,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -173,6 +228,55 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ success:false, message: err.message });
   }
 };
+
+
+
+/* ======================================================
+   🗑 DELETE MULTIPLE PRODUCTS
+====================================================== */
+exports.deleteManyProducts = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !ids.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No products selected",
+      });
+    }
+
+    await Product.updateMany(
+      { _id: { $in: ids } },
+      { isActive: false }
+    );
+
+    res.json({
+      success: true,
+      message: "Products deleted successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+
+// exports.deleteManyProducts = async (req, res) => {
+//   try {
+//     const { ids } = req.body;
+
+//     await Product.updateMany(
+//       { _id: { $in: ids } },
+//       { isActive: false }
+//     );
+
+//     res.json({ success: true });
+//   } catch (err) {
+//     res.status(500).json({ success:false, message: err.message });
+//   }
+// };
 
 /* ======================================================
    📦 INVENTORY

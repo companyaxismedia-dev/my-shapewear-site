@@ -1,0 +1,163 @@
+/* Admin area styles - scoped to admin layout import only */
+:root {
+  --admin-bg: #ffffff;
+  --card-bg: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  --muted: #6b7280;
+  --border: #e6e9ef;
+  --primary: #0ea5a4; /* teal-ish */
+  --primary-foreground: #ffffff;
+  --accent: #7c3aed;
+  --danger: #ef4444;
+  --glass: rgba(15, 23, 42, 0.04);
+  --shadow: 0 6px 18px rgba(12, 15, 20, 0.06);
+}
+
+/* Container & Cards */
+.admin-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: visible; /* allow dropdowns / popovers to escape card */
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.admin-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(12,15,20,0.08); }
+.admin-card .p-5 { padding: 1.25rem; }
+
+/* Head area inside cards */
+.admin-card > .border-b { background: transparent; }
+.admin-card h2 { font-size: 0.95rem; margin: 0; color: #0f172a; }
+.admin-card p { color: var(--muted); margin: 0.125rem 0 0; }
+
+/* Inputs and textareas inside admin area */
+.admin-card input[type="text"],
+.admin-card input[type="number"],
+.admin-card input[type="search"],
+.admin-card select,
+.admin-card textarea,
+.admin-card input[type="email"] {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #0f172a;
+  box-shadow: none;
+  transition: box-shadow .18s ease, border-color .12s ease, transform .12s ease;
+}
+.admin-card input:focus, .admin-card textarea:focus, .admin-card select:focus {
+  outline: none;
+  border-color: rgba(14,165,164,0.9);
+  box-shadow: 0 6px 18px rgba(14,165,164,0.08);
+  transform: translateY(-1px);
+}
+.admin-card textarea { min-height: 96px; resize: vertical; }
+
+/* Buttons */
+.admin-card button { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease; }
+.admin-card button:active { transform: translateY(1px); }
+.admin-card button:hover { opacity: 0.98; }
+
+.btn-primary {
+  background: linear-gradient(90deg,var(--primary), #06b6d4);
+  color: var(--primary-foreground);
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(14,165,164,0.12);
+}
+.btn-primary:hover { filter: brightness(0.95); transform: translateY(-2px); }
+
+.btn-muted {
+  background: #f8fafc; color: #0f172a; border: 1px solid var(--border); padding: 0.45rem 0.9rem; border-radius: 10px;
+}
+.btn-destructive { background: var(--danger); color: #fff; padding: 0.45rem 0.75rem; border-radius: 8px; border: none; }
+.btn-destructive:hover { filter: brightness(0.9); }
+
+/* Toggle switch: target role="switch" used in Toggle component */
+[role="switch"] {
+  display: inline-flex; align-items: center; padding: 0; border-radius: 999px; position: relative; border: 1px solid var(--border);
+  background: linear-gradient(180deg,#f8fafc,#ffffff);
+  min-width: 44px; height: 26px; /* consistent track sizing controlled by admin CSS */
+}
+[role="switch"] span {
+  width: 18px; height: 18px; border-radius: 50%; display: block; background: #fff;
+  box-shadow: 0 4px 10px rgba(12,15,20,0.12); margin-left: 4px;
+  position: absolute; left: 4px;
+  transition: left .18s cubic-bezier(.2,.9,.2,1), background .18s ease, transform .12s ease;
+}
+[role="switch"][aria-checked="true"] { background: linear-gradient(90deg,var(--primary), #06b6d4); border-color: rgba(14,165,164,0.7); }
+[role="switch"][aria-checked="true"] span { left: calc(100% - 22px); }
+
+/* Image upload area & thumbnails */
+.admin-card .grid { gap: 0.5rem; }
+.admin-card .aspect-square { position: relative; border-radius: 12px; overflow: hidden; }
+.admin-card .aspect-square img { width:100%; height:100%; object-fit:cover; display:block; transition: transform .28s ease; }
+.admin-card .aspect-square:hover img { transform: scale(1.04); }
+.admin-card .aspect-square .group-hover\:opacity-100 { transition: opacity .18s ease; }
+.admin-card .aspect-square .absolute { transition: opacity .18s ease; }
+.admin-card .aspect-square .PrimaryBadge {
+  position: absolute; top:8px; left:8px; padding:4px 8px; border-radius:999px; background:rgba(0,0,0,0.6); color:#fff; font-size:11px; font-weight:600;
+}
+.admin-card .aspect-square .controls { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:8px; opacity:0; background:linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.35)); }
+.admin-card .aspect-square:hover .controls { opacity:1; }
+.admin-card .controls button { padding:6px 8px; border-radius:8px; font-size:12px; }
+.admin-card .controls .set-primary { background: linear-gradient(90deg,#22c55e,#16a34a); color:#fff; }
+.admin-card .controls .remove { background: rgba(239,68,68,0.92); color:#fff; }
+
+/* Dropdown and search inside size picker */
+.admin-card .relative input[type="search"], .admin-card .relative input[type="text"] { padding-right: 2.5rem; }
+.admin-card .dropdown { border-radius: 10px; border:1px solid var(--border); background:#fff; box-shadow:0 12px 30px rgba(12,15,20,0.06); }
+.admin-card .dropdown button { text-align:left; }
+
+/* Rich toolbar */
+.admin-card .flex.items-center.gap-0\.5 { background: rgba(15,23,42,0.02); padding:6px; border-radius:8px; }
+.admin-card .flex.items-center.gap-0\.5 button { background:transparent; border:none; padding:6px; border-radius:6px; }
+.admin-card .flex.items-center.gap-0\.5 button:hover { background: rgba(15,23,42,0.04); }
+
+/* Small helpers */
+.muted-small { color: var(--muted); font-size: 0.85rem; }
+.help-text { color: #475569; font-size: 0.82rem; }
+
+/* Toggle track/knob using peer pattern - works with .sr-only + .peer input */
+.toggle-track {
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  background: #f1f5f9; /* neutral track */
+  border-radius: 999px;
+  position: relative;
+  border: 1px solid var(--border);
+  transition: background .16s ease, border-color .12s ease;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(12,15,20,0.12);
+  transition: transform .18s cubic-bezier(.2,.9,.2,1);
+}
+/* when the hidden checkbox (peer) is checked, style the track and move knob */
+input.peer:checked + .toggle-track {
+  background: var(--primary);
+  border-color: rgba(14,165,164,0.7);
+}
+input.peer:checked + .toggle-track::after {
+  transform: translateX(18px);
+}
+/* focus ring */
+input.peer:focus + .toggle-track {
+  box-shadow: 0 6px 18px rgba(14,165,164,0.08);
+}
+
+/* Responsive tweaks */
+@media (max-width: 640px) {
+  .admin-card { border-radius: 8px; }
+  .admin-card .p-5 { padding: 0.85rem; }
+}

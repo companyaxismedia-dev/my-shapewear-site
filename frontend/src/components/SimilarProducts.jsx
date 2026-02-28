@@ -3,30 +3,62 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-export default function SimilarProductsAdvanced({ currentProduct }) {
+export default function SimilarProducts({ currentProduct }) {
   const router = useRouter();
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* ================= FETCH ================= */
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/products`);
-        // const res = await fetch(`${API_BASE}/api/products/similar/${product._id}`)
-        const data = await res.json();
-        if (data.success) setAllProducts(data.products);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const getImageUrl = (url) => {
+    if (!url) return "/placeholder.jpg";
+    if (url.startsWith("data:image")) return url;
+    if (url.startsWith("http")) return url;
+    return API_BASE + url;
+  };
 
-    fetchProducts();
-  }, []);
+  /* ================= FETCH ================= */
+  // useEffect(() => {
+  //   const fetchProducts = async () => {
+  //     try {
+  //       // const res = await fetch(`${API_BASE}/api/products/similar/${currentProduct._id}`)
+  //       const res = await fetch(`${API_BASE}/api/products/similar/${currentProduct._id}`)
+  //       // const res = await fetch(`${API_BASE}/api/products/similar/${product._id}`)
+  //       const data = await res.json();
+  //       if (data.success) setAllProducts(data.products);
+  //     } catch (err) {
+  //       console.error(err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchProducts();
+  // }, []);
+
+  useEffect(() => {
+  if (!currentProduct?._id) return;
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/products/similar/${currentProduct._id}`
+      );
+
+      const data = await res.json();
+
+      if (data.success) {
+        setAllProducts(data.products || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProducts();
+}, [currentProduct]);
 
   /* ================= TOKENIZER ================= */
   const tokenize = (text = "") =>
@@ -40,38 +72,12 @@ export default function SimilarProductsAdvanced({ currentProduct }) {
   const similarProducts = useMemo(() => {
     if (!currentProduct || !allProducts.length) return [];
 
-    const currentTokens = tokenize(currentProduct.name);
-
     return allProducts
       .filter((p) => p._id !== currentProduct._id)
-      .map((product) => {
-        const productTokens = tokenize(product.name);
-
-        const matchedWords = currentTokens.filter((w) =>
-          productTokens.includes(w)
-        );
-
-        const wordScore = matchedWords.length * 3;
-        const categoryBoost =
-          product.category === currentProduct.category ? 5 : 0;
-
-        const intersection = matchedWords.length;
-        const union = new Set([
-          ...currentTokens,
-          ...productTokens,
-        ]).size;
-
-        const jaccard = union > 0 ? (intersection / union) * 10 : 0;
-
-        return {
-          ...product,
-          finalScore: wordScore + categoryBoost + jaccard,
-        };
-      })
-      .filter((p) => p.finalScore > 5)
-      .sort((a, b) => b.finalScore - a.finalScore)
       .slice(0, 12);
   }, [currentProduct, allProducts]);
+
+  // const similarProducts = allProducts;
 
   if (loading || !similarProducts.length) return null;
 
@@ -88,7 +94,8 @@ export default function SimilarProductsAdvanced({ currentProduct }) {
 
           const image =
             firstVariant?.images?.[0]?.url
-              ? API_BASE + firstVariant.images[0].url
+              // ? API_BASE + firstVariant.images[0].url
+              ? getImageUrl(firstVariant?.images?.[0]?.url)
               : "/placeholder.jpg";
 
           const price = firstSize?.price || item.minPrice || 0;
@@ -114,7 +121,7 @@ export default function SimilarProductsAdvanced({ currentProduct }) {
                     <span
                       className={
                         item.rating >= 3
-                          ? "text-green-600"
+                          ? "text-[#14958f]"
                           : "text-yellow-500"
                       }
                     >

@@ -2,24 +2,8 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import {
-  TrendingUp,
-  ShoppingCart,
-  Package,
-  Users,
-  ArrowRight,
-  AlertTriangle,
-  ChevronRight,
-} from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
+import { TrendingUp,ShoppingCart,Package,Users,ArrowRight,AlertTriangle,ChevronRight,} from "lucide-react";
+import {ResponsiveContainer,AreaChart,Area,XAxis,YAxis,CartesianGrid,Tooltip,} from "recharts";
 import { cn } from "@/lib/utils";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
