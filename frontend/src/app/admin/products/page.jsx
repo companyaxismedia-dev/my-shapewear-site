@@ -10,13 +10,11 @@ import {
     Pencil,
     ChevronDown,
 } from "lucide-react";
-import { toast } from "sonner"; 
+import { toast } from "sonner";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
-import EditProductModal from "@/components/admin/modals/EditProductModal";
-import ExportProductsModal from "@/components/admin/modals/ExportProductsModal";
 
 const API_BASE =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -36,9 +34,6 @@ export default function ProductListPage() {
     const [selectedIds, setSelectedIds] = useState([]);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
-    const [editOpen, setEditOpen] = useState(false);
-    const [editProduct, setEditProduct] = useState(null);
-    const [exportOpen, setExportOpen] = useState(false);
 
 
     /* ================= FETCH ================= */
@@ -95,60 +90,44 @@ export default function ProductListPage() {
         }
     };
 
-const confirmDelete = async () => {
-  try {
-    const token = localStorage.getItem("adminToken");
+    const confirmDelete = async () => {
+        try {
+            const token = localStorage.getItem("adminToken");
 
-    if (deleteTarget) {
-      // SINGLE DELETE
-      await fetch(
-        `${API_BASE}/api/admin/products/${deleteTarget}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
+            if (deleteTarget) {
+                // SINGLE DELETE
+                await fetch(
+                    `${API_BASE}/api/admin/products/${deleteTarget}`,
+                    {
+                        method: "DELETE",
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+            } else {
+                // BULK DELETE
+                await fetch(
+                    `${API_BASE}/api/admin/products/delete-many`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ ids: selectedIds }),
+                    }
+                );
+            }
+
+            toast.success("Deleted successfully");
+
+            setDeleteOpen(false);
+            setDeleteTarget(null);
+            setSelectedIds([]);
+
+            fetchProducts();
+        } catch {
+            toast.error("Delete failed");
         }
-      );
-    } else {
-      // BULK DELETE
-      await fetch(
-        `${API_BASE}/api/admin/products/delete-many`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ ids: selectedIds }),
-        }
-      );
-    }
-
-    toast.success("Deleted successfully");
-
-    setDeleteOpen(false);
-    setDeleteTarget(null);
-    setSelectedIds([]);
-
-    fetchProducts();
-  } catch {
-    toast.error("Delete failed");
-  }
-};
-    /* ================= EDIT ================= */
-    const saveEdit = async (values) => {
-        const token = localStorage.getItem("adminToken");
-
-        await fetch(`${API_BASE}/api/admin/products/${editProduct._id}`, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(values),
-        });
-
-        setEditOpen(false);
-        fetchProducts();
     };
 
     /* ================= UI ================= */
@@ -181,12 +160,7 @@ const confirmDelete = async () => {
                         <Trash2 size={15} /> Delete Product
                     </button>
 
-                    <button
-                        onClick={() => setExportOpen(true)}
-                        className="btn-muted px-4 py-2 text-sm"
-                    >
-                        Export Products
-                    </button>
+
                 </div>
 
                 <div className="flex gap-2 items-center">
@@ -267,18 +241,18 @@ const confirmDelete = async () => {
                             <tr key={p._id} className="border-b">
                                 <td className="p-3">
                                     <input
-  type="checkbox"
-  checked={selectedIds.includes(p._id)}
-  onChange={(e) => {
-    if (e.target.checked) {
-      setSelectedIds((prev) => [...prev, p._id]);
-    } else {
-      setSelectedIds((prev) =>
-        prev.filter((id) => id !== p._id)
-      );
-    }
-  }}
-/>
+                                        type="checkbox"
+                                        checked={selectedIds.includes(p._id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelectedIds((prev) => [...prev, p._id]);
+                                            } else {
+                                                setSelectedIds((prev) =>
+                                                    prev.filter((id) => id !== p._id)
+                                                );
+                                            }
+                                        }}
+                                    />
                                 </td>
 
                                 <td className="p-3 flex items-center gap-3">
@@ -304,8 +278,7 @@ const confirmDelete = async () => {
 
                                         <button
                                             onClick={() => {
-                                                setEditProduct(p);
-                                                setEditOpen(true);
+                                                router.push(`/admin/products/edit/${p._id}`);
                                             }}
                                             className="btn-muted px-3 flex gap-1"
                                         >
@@ -314,7 +287,7 @@ const confirmDelete = async () => {
 
                                         <button
                                             onClick={() => {
-                                                  setSelectedIds([]);
+                                                setSelectedIds([]);
                                                 setDeleteTarget(p._id);
                                                 setDeleteOpen(true);
                                             }}
@@ -348,18 +321,6 @@ const confirmDelete = async () => {
                 open={deleteOpen}
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={confirmDelete}
-            />
-
-            <EditProductModal
-                open={editOpen}
-                product={editProduct}
-                onClose={() => setEditOpen(false)}
-                onSave={saveEdit}
-            />
-
-            <ExportProductsModal
-                open={exportOpen}
-                onClose={() => setExportOpen(false)}
             />
         </AdminLayout>
     );

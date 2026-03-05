@@ -321,7 +321,7 @@ export function AdminLayout({ children }) {
             <span>/</span>
             <span className="text-foreground font-medium">Dashboard</span>
           </nav>
-
+            
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-sm w-48 lg:w-64">
               <Search className="w-4 h-4" />

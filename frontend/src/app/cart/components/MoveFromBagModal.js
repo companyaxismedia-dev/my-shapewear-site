@@ -25,7 +25,7 @@ export default function MoveFromBagModal({
         <div className="flex items-start justify-between p-4 border-b">
           <div className="flex gap-3">
             <img
-              src={product.image}
+              src={`${API_BASE}${product.image}`}
               alt={product.name}
               className="w-16 h-20 object-cover rounded"
             />

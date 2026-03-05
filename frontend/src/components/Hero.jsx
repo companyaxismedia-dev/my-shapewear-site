@@ -84,9 +84,9 @@ export default function Hero() {
         }
 
         /* DESKTOP DOTS STYLING */
-        .swiper-pagination-bullet { 
-          background: #9d577a !important; 
-          opacity: 0.6; 
+        .swiper-pagination-bullet {
+          background: #9d577a !important;
+          opacity: 0.6;
           width: 8px;
           height: 8px;
         }
@@ -119,9 +119,6 @@ aspect-ratio: auto !important; /* Remove the forced 2/3 ratio */
     </section>
   );
 }
-
-
-
 
 // "use client";
 

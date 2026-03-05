@@ -79,7 +79,7 @@ if (req.query.discount) {
 /* ================= FLAGS ================= */
 if (req.query.featured === "true") filter.isFeatured = true;
 if (req.query.bestSeller === "true") filter.isBestSeller = true;
-if (req.query.newArrival === "true") filter.isNewArrival = true;
+if (req.query.isNewArrival === "true") filter.isNewArrival = true;
 
 /* ================= STOCK ================= */
 if (req.query.inStock === "true") {
@@ -111,7 +111,19 @@ if (req.query.inStock === "true") {
     const total = await Product.countDocuments(filter);
 
     const products = await Product.find(filter)
-      .select("name slug thumbnail minPrice mrp discount rating numReviews shortDescription")
+      .select("name slug thumbnail variants minPrice mrp discount rating numReviews shortDescription")
+//       .select({
+//   name: 1,
+//   slug: 1,
+//   thumbnail: 1,
+//   minPrice: 1,
+//   mrp: 1,
+//   discount: 1,
+//   rating: 1,
+//   numReviews: 1,
+//   shortDescription: 1,
+//   "variants.images.url": 1,
+// })
       .sort(sortOption)
       .skip((page - 1) * limit)
       .limit(limit)

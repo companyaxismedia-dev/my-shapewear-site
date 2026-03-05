@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 
 import { Heart, Star, } from "lucide-react";
 import { getImageUrl } from "./helpers";
+import Image from "next/image";
 
 
 export function ProductCard({ item, onOpenDetails }) {
@@ -17,9 +18,18 @@ export function ProductCard({ item, onOpenDetails }) {
     const isWishlisted = wishlist.some((p) => p._id === item._id);
     const cardRef = useRef(null);
 
+    // for the simgle image to show 
     const image = getImageUrl(
         item.variants?.[0]?.images?.[0]?.url
     );
+
+    // for the sliding image effect to be on the home page 
+    const images =
+        item?.variants?.[0]?.images?.length
+            ? item.variants[0].images.map((img) =>
+                getImageUrl(img.url)
+            )
+            : [getImageUrl(item.thumbnail)];
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -61,13 +71,45 @@ export function ProductCard({ item, onOpenDetails }) {
                     className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"
                         }`}
                 /> */}
-                <img
+                <Image
                     src={getImageUrl(item.thumbnail)}
+                    fill
+                    sizes="(max-width:768px) 100vw, 33vw"
                     alt={item.name}
+                    loading="lazy"
                     onClick={onOpenDetails}
                     className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"
                         }`}
-                />
+                /> 
+
+                {/* <Swiper
+                    modules={[Autoplay]}
+                    slidesPerView={1}
+                    loop={images.length > 1}
+                    autoplay={
+                        images.length > 1
+                            ? { delay: 2200, disableOnInteraction: false }
+                            : false
+                    }
+                    allowTouchMove={false}
+                    nested={true}
+                    className="w-full h-full"
+                >
+                    {images.map((img, index) => (
+                        <SwiperSlide key={index}>
+                            <img
+                                src={img}
+                                alt={item.name}
+                                onClick={onOpenDetails}
+                                className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes
+                                        ? "blur-sm scale-105"
+                                        : "group-hover:scale-105"
+                                    }`}
+                            />
+                        </SwiperSlide>
+                    ))}
+                </Swiper> */}
+
                 <button
                     onClick={() => {
                         if (!user) return alert("Please login to use wishlist");
