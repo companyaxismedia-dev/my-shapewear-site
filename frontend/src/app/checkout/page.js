@@ -70,10 +70,15 @@ export default function CheckoutPage() {
       const list = addrData?.addresses || [];
       setAddresses(list);
 
+      // ⭐ THIS WAS MISSING
       const defaultAddr = list.find((a) => a.isDefault);
-      setSelectedAddressId(
-        defaultAddr?._id || list?.[0]?._id || ""
-      );
+
+      const selected =
+        defaultAddr?._id || list?.[0]?._id || "";
+
+      setSelectedAddressId(selected);
+      localStorage.setItem("selectedAddressId", selected);
+      closeModal();
 
       setCartItems(cartData?.items || []);
     } catch (err) {
@@ -121,6 +126,8 @@ export default function CheckoutPage() {
 
   const handleSelectAddress = async (id) => {
     setSelectedAddressId(id);
+
+    localStorage.setItem("selectedAddressId", id);
 
     setHighlightContinue(true);
     setTimeout(() => setHighlightContinue(false), 1200);
@@ -207,7 +214,7 @@ export default function CheckoutPage() {
       alert("Please select delivery address");
       return;
     }
-    window.location.href = "/payment";
+    window.location.href = `/payment?address=${selectedAddressId}`;
   };
 
   if (loading)

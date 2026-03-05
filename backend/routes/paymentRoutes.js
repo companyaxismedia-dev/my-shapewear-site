@@ -5,8 +5,12 @@ const crypto = require("crypto");
 
 // --- IMPORTANT: Agar .env kaam nahi kar raha, toh yahan direct string dalein ---
 // Par dhyan rahe: Quotes "" hona zaroori hai!
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "rzp_live_S8qV0g09nn545L";
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "A7KQQTkz5uSK7Kh30BuvYBIj";
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+
+if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+  throw new Error("Razorpay keys missing in .env");
+}
 
 // Razorpay Instance Setup
 const razorpay = new Razorpay({
@@ -21,7 +25,7 @@ const razorpay = new Razorpay({
 router.post("/create-order", async (req, res) => {
   const { amount } = req.body;
 
-  if (!amount) {
+  if (!amount || Number(amount) <= 0) {
     return res.status(400).json({ success: false, message: "Amount is required" });
   }
 
@@ -50,6 +54,18 @@ router.post("/create-order", async (req, res) => {
  */
 router.post("/verify", async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  // 🔥 ADD THIS HERE
+  if (
+    !razorpay_order_id ||
+    !razorpay_payment_id ||
+    !razorpay_signature
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid payment data",
+    });
+  }
 
   try {
     // Validation logic

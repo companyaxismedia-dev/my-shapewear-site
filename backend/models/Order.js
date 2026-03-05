@@ -84,37 +84,66 @@ const OrderSchema = new mongoose.Schema(
     ],
 
     /* ================= TOTAL ================= */
-totalAmount: {
-  type: Number,
-  required: true,
-  min: 0,
-},
+    totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
-/* ================= OFFER / COUPON ================= */
-offerCode: {
-  type: String,
-  default: null,
-},
+    /* ================= OFFER / COUPON ================= */
+    offerCode: {
+      type: String,
+      default: null,
+    },
 
-discountAmount: {
-  type: Number,
-  default: 0,
-},
+    discountAmount: {
+      type: Number,
+      default: 0,
+    },
 
-finalAmount: {
-  type: Number,
-  required: true,
-  min: 0,
-},
+    
 
+    finalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    /* ================= FRONTEND FEATURES ================= */
+
+    offersEarned: {
+      type: [String],
+      default: [],
+    },
+
+    trackingEvents: [
+      {
+        status: {
+          type: String,
+          default: "",
+        },
+        time: {
+          type: String,
+          default: "",
+        },
+        date: {
+          type: String,
+          default: "",
+        },
+      },
+    ],
 
     /* ================= LOGISTICS ================= */
+
     trackingId: {
       type: String,
       default: "",
       index: true,
     },
 
+    courier: String,
+    trackingUrl: String,
+    estimatedDelivery: Date,
     /* ================= ORDER STATUS ================= */
     status: {
       type: String,
@@ -146,14 +175,25 @@ finalAmount: {
           type: Date,
           default: Date.now,
         },
+        reason: {
+          type: String,
+          default: "",
+        },
       },
     ],
 
+    
     /* ================= PAYMENT ================= */
     paymentType: {
       type: String,
-      enum: ["Online", "COD"],
-      default: "Online",
+      enum: ["COD", "UPI", "CARD"],
+      default: "COD",
+    },
+
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Paid", "Failed"],
+      default: "Pending",
     },
 
     paymentId: {
