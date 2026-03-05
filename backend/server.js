@@ -8,15 +8,12 @@ const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const { default: connectDB } = require("./config/db");
 
+// const cache  = new NodeCache();  
 dotenv.config();
 
 const app = express();
 
-/* ======================================================
-   🔐 SECURITY MIDDLEWARE
-====================================================== */
-
-app.set("trust proxy", 1);
+// app.set("trust proxy", 1);
 
 app.use(
   helmet({
@@ -26,7 +23,6 @@ app.use(
 
 app.use(compression());
 
-/* ================= RATE LIMIT ================= */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 1000,
@@ -39,17 +35,9 @@ const limiter = rateLimit({
 });
 
 app.use("/api", limiter);
-
-/* ======================================================
-   📦 BODY PARSER
-====================================================== */
-
-app.use(express.json({ limit: "15mb" }));
+app.use(express.json({limit: "15mb"}));
 app.use(express.urlencoded({ extended: true }));
 
-/* ======================================================
-   🌍 CORS CONFIGURATION
-====================================================== */
 
 const allowedOrigins = [
   "http://localhost:3000",
@@ -77,10 +65,6 @@ app.use(
   })
 );
 
-/* ======================================================
-   📝 REQUEST LOGGER
-====================================================== */
-
 app.use((req, res, next) => {
   console.log(
     `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
@@ -105,10 +89,6 @@ app.use((req, res, next) => {
 //   });
 connectDB();
 
-/* ======================================================
-   🖼 STATIC FILE SERVING
-====================================================== */
-
 app.use(
   "/image",
   express.static(path.join(__dirname, "../frontend/public/image"))
@@ -118,10 +98,6 @@ app.use(
   "/uploads",
   express.static(path.join(__dirname, "uploads"))
 );
-
-/* ======================================================
-   🛣 ROOT + HEALTH CHECK
-====================================================== */
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -134,49 +110,18 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK" });
 });
 
-/* ======================================================
-   📦 ROUTES
-====================================================== */
-
-/* ================= AUTH ================= */
 app.use("/api/otp", require("./routes/otpRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
-/* ================= PRODUCTS ================= */
-/*
-   Supports:
-   - Multiple variants
-   - Pincode check
-   - Review system
-   - Offer validation
-   - Advanced filtering
-*/
 app.use("/api/products", require("./routes/productRoutes"));
-
-/* ================= CART ================= */
 app.use("/api/cart", require("./routes/cartRoutes"));
-
-/* ================= WISHLIST ================= */
 app.use("/api/wishlist", require("./routes/wishlistRoutes"));
-
-/* ================= ORDERS ================= */
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
-
-/* ================= USERS ================= */
 app.use("/api/users", require("./routes/userAddressRoutes"));
-
-/* ================= admins pannel ================= */
 app.use("/api/admin", require("./routes/adminRoutes"));
-
-/* ================= offer  ================= */
 app.use("/api/offers", require("./routes/offerRoutes"));
 
-
-
-/* ======================================================
-   ❌ 404 HANDLER
-====================================================== */
 
 app.use((req, res) => {
   res.status(404).json({
@@ -184,10 +129,6 @@ app.use((req, res) => {
     message: `Route ${req.originalUrl} not found`,
   });
 });
-
-/* ======================================================
-   🔥 GLOBAL ERROR HANDLER
-====================================================== */
 
 app.use((err, req, res, next) => {
   console.error("🔥 SERVER ERROR:", err.message);
@@ -198,10 +139,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-/* ======================================================
-   🚀 START SERVER
-====================================================== */
-
+// cache.clear();
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {

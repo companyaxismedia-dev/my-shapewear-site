@@ -1,14 +1,14 @@
-
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Navigation } from "swiper/modules";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { ChevronRight, Heart, Star } from "lucide-react";
 import { ProductDetailsModal } from "./category/ProductDetailsModal";
 
 import "swiper/css";
 import "swiper/css/navigation";
+import "swiper/css/pagination";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -18,7 +18,7 @@ const categoryMap = {
   bra: "bra",
   panties: "panties",
   lingerie: "lingerie",
-  curvy: "lingerie",
+  curvy: "curvy",
   shapewear: "shapewear",
   "tummy-control": "shapewear",
 };
@@ -36,6 +36,8 @@ export default function AutoSliceSlider() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsData, setProductsData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [hoveredProductId, setHoveredProductId] = useState({});
+  const swiperRefs = useRef({});
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -43,7 +45,7 @@ export default function AutoSliceSlider() {
         const requests = homeSections.map(async (section) => {
           const backendCategory = categoryMap[section.id];
           const res = await fetch(
-            `${API_BASE}/api/products?category=${backendCategory}&limit=10`,
+            `${API_BASE}/api/products?category=${backendCategory}&isNewArrival=true&limit=10`,
             { cache: "force-cache" }
           );
           const result = await res.json();
@@ -71,13 +73,33 @@ export default function AutoSliceSlider() {
 
     loadProducts();
   }, []);
+  // product hover swipper handler and to pause the autoplay
+  const handleProductHover = (productId, sectionId) => {
+    setHoveredProductId((prev) => ({
+      ...prev,
+      [sectionId]: productId,
+    }));
+    if (swiperRefs.current[sectionId]) {
+      swiperRefs.current[sectionId].autoplay.stop();
+    }
+  };
+  // resuming the Swiper autoplay for this section when hover ends
+  const handleProductHoverEnd = (sectionId) => {
+    setHoveredProductId((prev) => ({
+      ...prev,
+      [sectionId]: null,
+    }));
+    if (swiperRefs.current[sectionId]) {
+      swiperRefs.current[sectionId].autoplay.start();
+    }
+  };
 
   if (loading) {
     return <div className="py-20 text-center">Loading...</div>;
   }
   return (
     <div className="flex flex-col gap-12 py-10 bg-white">
-      {homeSections.map((section) => {
+      {homeSections.map((section, index) => {
         const products =
           productsData[section.id]?.slice(0, section.count) || [];
 
@@ -85,6 +107,7 @@ export default function AutoSliceSlider() {
 
         const enableLoop = products.length >= 5;
         const enableNav = products.length > 1;
+        const reverseDirection = index % 2 === 1; // different direction
 
         return (
           <div key={section.id} className="w-full">
@@ -108,22 +131,26 @@ export default function AutoSliceSlider() {
               loop={enableLoop}
               autoplay={
                 enableLoop
-                  ? { delay: 4000, disableOnInteraction: false }
+                  ? { delay: 4000, disableOnInteraction: false, reverseDirection }
                   : false
               }
-              // autoplay={false}
+              onInit={(swiper) => {
+                swiperRefs.current[section.id] = swiper;
+              }}
               breakpoints={{
                 320: { slidesPerView: 1.5 },
                 768: { slidesPerView: 3 },
                 1024: { slidesPerView: 4.5 },
               }}
-              // pagination={{ clickable: true }}
               navigation={enableNav}
               className="homePageSwiper px-4">
               {products.map((product) => (
                 <SwiperSlide key={product._id}>
                   <ProductCard
                     product={product}
+                    isHovered={hoveredProductId[section.id] === product._id}
+                    onProductHover={() => handleProductHover(product._id, section.id)}
+                    onProductHoverEnd={() => handleProductHoverEnd(section.id)}
                     onOpenDetails={async () => {
                       try {
                         const res = await fetch(
@@ -157,24 +184,18 @@ export default function AutoSliceSlider() {
 }
 
 
-function ProductCard({ product, onOpenDetails }) {
-  // const variant = product?.variants?.[0] || {};
+function ProductCard({
+  product,
+  isHovered,
+  onProductHover,
+  onProductHoverEnd,
+  onOpenDetails
+}) {
   const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
+  const imageCarouselRef = useRef(null);
 
   const isWishlisted = wishlist.some((p) => p._id === product._id);
-
-  // const imagePath = variant?.images?.[0]?.url;
-  // // let image = "/images/placeholder.jpg";
-  // const image = product.thumbnail || "/images/placeholder.jpg";
-
-  // if (imagePath) {
-  //   image = imagePath.startsWith("http")
-  //     ? imagePath
-  //     : imagePath.startsWith("data:image")
-  //       ? imagePath
-  //       : `${API_BASE}${imagePath}`;
-  // }
 
   let image = product.thumbnail || "/images/placeholder.jpg";
 
@@ -182,9 +203,17 @@ function ProductCard({ product, onOpenDetails }) {
     image = `${API_BASE}${image}`;
   }
 
-  // const firstSize = variant?.sizes?.[0] || {};
-  // const price = firstSize?.price || product?.minPrice || 0;
-  // const oldPrice = firstSize?.mrp || product?.mrp || null;
+  // Prepare images for carousel
+  const images = product?.variants?.[0]?.images?.length > 0
+    ? product.variants[0].images
+      .filter((img) => img?.url)
+      .map((img) => {
+        const url = img.url;
+        return url.startsWith("http") || url.startsWith("data:image")
+          ? url
+          : `${API_BASE}${url}`;
+      })
+    : [image];
 
   const price = product?.minPrice || 0;
   const oldPrice = product?.mrp || null;
@@ -203,14 +232,45 @@ function ProductCard({ product, onOpenDetails }) {
       {/* IMAGE */}
       <div
         className="relative aspect-[3/4] overflow-hidden bg-gray-50 cursor-pointer"
+        onMouseEnter={onProductHover}
+        onMouseLeave={onProductHoverEnd}
         onClick={onOpenDetails}
       >
-        <img
-          src={image}
-          alt={product.name}
-          loading="lazy"
-          className="w-full h-full object-cover object-top hover:scale-110 transition"
-        />
+        {isHovered && images.length > 1 ? (
+          <Swiper
+            ref={imageCarouselRef}
+            modules={[Autoplay, Pagination]}
+            slidesPerView={1}
+            loop={true}
+            autoplay={{
+              delay: 2200,
+              disableOnInteraction: false,
+            }}
+            pagination={{ clickable: true }}
+            allowTouchMove={false}
+            className="w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {images.map((img, index) => (
+              <SwiperSlide key={index} onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={img}
+                  alt={product.name}
+                  loading="lazy"
+                  className="w-full h-full object-cover object-top transition"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        ) : (
+          <img
+            src={image}
+            alt={product.name}
+            loading="lazy"
+            className="w-full h-full object-cover object-top hover:scale-110 transition"
+          />
+        )}
 
         {/* WISHLIST BUTTON */}
         <button

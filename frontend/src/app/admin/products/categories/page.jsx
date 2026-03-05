@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
-import EditProductModal from "@/components/admin/modals/EditProductModal";
+// import EditProductModal from "@/components/admin/modals/EditProductModal";
 import ExportProductsModal from "@/components/admin/modals/ExportProductsModal";
 
 const API_BASE =
@@ -265,7 +265,7 @@ export default function ProductListPage() {
                     </thead>
 
                     <tbody>
-                        {products.map((p,ind) => (
+                        {products.map((p, ind) => (
                             <tr key={p._id} className="border-b">
                                 <td className="p-3">
                                     <input
@@ -284,7 +284,7 @@ export default function ProductListPage() {
                                 </td>
 
                                 <td className="p-3">
-                                    {ind+1}
+                                    {ind + 1}
                                 </td>
                                 <td className="p-3 flex items-center gap-3">
                                     <img
@@ -307,7 +307,7 @@ export default function ProductListPage() {
                                             <MoreVertical size={14} />
                                         </button> */}
 
-                                        <button
+                                        {/* <button
                                             onClick={() => {
                                                 setEditProduct(p);
                                                 setEditOpen(true);
@@ -315,7 +315,16 @@ export default function ProductListPage() {
                                             className="btn-muted px-3 flex gap-1"
                                         >
                                             <Pencil size={14} /> Edit
+                                        </button> */}
+                                        <button
+                                            onClick={() => {
+                                                router.push(`/admin/products/edit/${p._id}`);
+                                            }}
+                                            className="btn-muted px-3 flex gap-1"
+                                        >
+                                            <Pencil size={14} /> Edit
                                         </button>
+
 
                                         <button
                                             onClick={() => {
@@ -355,12 +364,6 @@ export default function ProductListPage() {
                 onConfirm={confirmDelete}
             />
 
-            <EditProductModal
-                open={editOpen}
-                product={editProduct}
-                onClose={() => setEditOpen(false)}
-                onSave={saveEdit}
-            />
 
             <ExportProductsModal
                 open={exportOpen}

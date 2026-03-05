@@ -21,15 +21,6 @@ import CalculateSizeModal from "@/components/product/CalculateSizeModal";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 
-// const getImageUrl = (url) => {
-//   if (!url) return "/placeholder.jpg";
-//   if (url.startsWith("data:image")) return url;    // base64 image
-//   if (url.startsWith("http")) return url;     // already full url
-//   return API_BASE + url;       // backend path
-
-// };
-
-
 const getImageUrl = (url) => {
   if (!url) return "/placeholder.jpg";
 
