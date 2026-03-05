@@ -17,9 +17,7 @@ exports.getDashboard = async (req, res) => {
       { $group: { _id: null, total: { $sum: "$totalAmount" } } },
     ]);
 
-    const recentOrders = await Order.find()
-      .sort({ createdAt: -1 })
-      .limit(5);
+    const recentOrders = await Order.find().sort({ createdAt: -1 }).limit(5);
 
     const lowStock = await Product.find({
       totalStock: { $lt: 5 },
@@ -38,7 +36,7 @@ exports.getDashboard = async (req, res) => {
       lowStock,
     });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -55,12 +53,12 @@ exports.getSalesGraph = async (req, res) => {
           sales: { $sum: "$totalAmount" },
         },
       },
-      { $sort: { "_id": 1 } },
+      { $sort: { _id: 1 } },
     ]);
 
     res.json({ success: true, data });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -68,61 +66,175 @@ exports.getSalesGraph = async (req, res) => {
    🛒 PRODUCTS
 ====================================================== */
 
+// exports.createProduct = async (req, res) => {
+//   try {
+//     const data = req.body;
+
+//     if (!data.name || !data.category || !data.variants?.length) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Name, category & variants required",
+//       });
+//     }
+
+//     const slug = data.name
+//       .toLowerCase()
+//       .replace(/[^a-z0-9 ]/g, "")
+//       .replace(/\s+/g, "-");
+
+//     const exists = await Product.findOne({ slug });
+
+//     if (exists) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Product already exists",
+//       });
+//     }
+
+//     const product = await Product.create({
+//       ...data,
+//       slug,
+//       isActive: true,
+//     });
+
+//     res.status(201).json({
+//       success: true,
+//       product,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
+
 exports.createProduct = async (req, res) => {
   try {
-    const data = req.body;
+    let data = req.body;
+
+    // Parse JSON fields if sent as string (from FormData)
+    const jsonFields = [
+      "variants",
+      "features",
+      "materialCare",
+      "sizeAndFits",
+      "specifications",
+      "metaKeywords",
+      "offers",
+      "serviceablePincodes",
+    ];
+
+    jsonFields.forEach((field) => {
+      if (typeof data[field] === "string") {
+        try {
+          data[field] = JSON.parse(data[field]);
+        } catch (e) {
+          console.error(`Error parsing ${field}:`, e);
+          data[field] = [];
+        }
+      }
+    });
 
     if (!data.name || !data.category || !data.variants?.length) {
       return res.status(400).json({
-        success:false,
-        message:"Name, category & variants required",
+        success: false,
+        message: "Name, category & variants required",
       });
     }
 
+    // Generate slug
     const slug = data.name
       .toLowerCase()
       .replace(/[^a-z0-9 ]/g, "")
       .replace(/\s+/g, "-");
 
     const exists = await Product.findOne({ slug });
-
     if (exists) {
       return res.status(400).json({
-        success:false,
-        message:"Product already exists",
+        success: false,
+        message: "Product already exists",
+      });
+    }
+
+    /* =========================================
+       HANDLE VARIANT-WISE FILE UPLOADS
+    ========================================== */
+    // Keep a set of initialized variants to avoid over-clearing if there are multiple images for one variant
+    const clearedImageVariants = new Set();
+
+    if (req.files?.length) {
+      req.files.forEach((file) => {
+        const fieldName = file.fieldname;
+        // examples: images_0, video_1
+
+        const match = fieldName.match(/(images|video)_(\d+)/);
+
+        if (match) {
+          const type = match[1]; // images or video
+          const variantIndex = parseInt(match[2]);
+
+          if (!data.variants[variantIndex]) return;
+
+          if (type === "images") {
+            // Because the frontend sends local `blob:...` urls inside the JSON, we need to clear the array first,
+            // but only once per variant, so we don't overwrite multiple legitimate uploads.
+            if (!clearedImageVariants.has(variantIndex)) {
+              data.variants[variantIndex].images = [];
+              clearedImageVariants.add(variantIndex);
+            }
+
+            if (!data.variants[variantIndex].images) {
+              data.variants[variantIndex].images = [];
+            }
+
+            data.variants[variantIndex].images.push({
+              url: file.path.replace(/\\/g, "/"),
+              altText: data.name,
+              isPrimary: data.variants[variantIndex].images.length === 0,
+              order: data.variants[variantIndex].images.length,
+            });
+          }
+
+          if (type === "video") {
+            data.variants[variantIndex].video = file.path.replace(/\\/g, "/");
+          }
+        }
       });
     }
 
     const product = await Product.create({
       ...data,
       slug,
-      isActive:true,
+      isActive: true,
     });
 
     res.status(201).json({
-      success:true,
+      success: true,
       product,
     });
-
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
 exports.uploadFile = async (req, res) => {
   try {
-    if (!req.file)
-      return res.status(400).json({ success:false });
+    if (!req.file) return res.status(400).json({ success: false });
 
-    // TEMP: base64 save (later cloudinary)
-    const base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+    // Multer saves file to uploads/products/images or uploads/products/videos
+    const isVideo = req.file.mimetype.startsWith("video/");
+    const basePath = isVideo
+      ? "/uploads/products/videos/"
+      : "/uploads/products/images/";
+    const url = basePath + req.file.filename;
 
     res.json({
       success: true,
-      url: base64,
+      url: url,
     });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -148,9 +260,7 @@ exports.getAllProducts = async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 20;
     const keyword = req.query.keyword || "";
-    const categories = req.query.category
-      ? req.query.category.split(",")
-      : [];
+    const categories = req.query.category ? req.query.category.split(",") : [];
 
     const filter = {};
 
@@ -166,9 +276,12 @@ exports.getAllProducts = async (req, res) => {
 
     const products = await Product.find(filter)
       .sort({ createdAt: -1 })
+      // .select(
+      //   "name slug category subCategory minPrice maxPrice totalStock thumbnail isActive createdAt",
+      // )
       .skip((page - 1) * limit)
-      .limit(limit);
-
+      .limit(limit)
+      .lean();
     res.json({
       success: true,
       products,
@@ -181,30 +294,161 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
+// exports.updateProduct = async (req, res) => {
+//   try {
+//     const product = await Product.findById(req.params.id);
+
+//     if (!product) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Product not found",
+//       });
+//     }
+
+//     Object.keys(req.body).forEach((key) => {
+//       product[key] = req.body[key];
+//     });
+
+//     await product.save();
+
+//     res.json({
+//       success: true,
+//       product,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
+
+
 exports.updateProduct = async (req, res) => {
   try {
+    let data = req.body;
+
     const product = await Product.findById(req.params.id);
 
     if (!product) {
       return res.status(404).json({
-        success:false,
-        message:"Product not found",
+        success: false,
+        message: "Product not found",
       });
     }
 
-    Object.keys(req.body).forEach((key) => {
-      product[key] = req.body[key];
+    /* =========================================
+       PARSE JSON FIELDS (FROM FORMDATA)
+    ========================================== */
+
+    const jsonFields = [
+      "variants",
+      "features",
+      "materialCare",
+      "sizeAndFits",
+      "specifications",
+      "metaKeywords",
+      "offers",
+      "serviceablePincodes",
+    ];
+
+    jsonFields.forEach((field) => {
+      if (typeof data[field] === "string") {
+        try {
+          data[field] = JSON.parse(data[field]);
+        } catch (e) {
+          console.error(`Error parsing ${field}:`, e);
+          data[field] = [];
+        }
+      }
+    });
+
+    /* =========================================
+       UPDATE SLUG IF NAME CHANGED
+    ========================================== */
+
+    if (data.name && data.name !== product.name) {
+      const slug = data.name
+        .toLowerCase()
+        .replace(/[^a-z0-9 ]/g, "")
+        .replace(/\s+/g, "-");
+
+      const exists = await Product.findOne({
+        slug,
+        _id: { $ne: product._id },
+      });
+
+      if (exists) {
+        return res.status(400).json({
+          success: false,
+          message: "Product with this name already exists",
+        });
+      }
+
+      data.slug = slug;
+    }
+
+    /* =========================================
+       HANDLE VARIANT FILE UPLOADS
+    ========================================== */
+
+    const clearedImageVariants = new Set();
+
+    if (req.files?.length && data.variants?.length) {
+      req.files.forEach((file) => {
+        const fieldName = file.fieldname;
+
+        const match = fieldName.match(/(images|video)_(\d+)/);
+
+        if (match) {
+          const type = match[1];
+          const variantIndex = parseInt(match[2]);
+
+          if (!data.variants[variantIndex]) return;
+
+          if (type === "images") {
+            if (!clearedImageVariants.has(variantIndex)) {
+              data.variants[variantIndex].images = [];
+              clearedImageVariants.add(variantIndex);
+            }
+
+            if (!data.variants[variantIndex].images) {
+              data.variants[variantIndex].images = [];
+            }
+
+            data.variants[variantIndex].images.push({
+              url: `/${file.path.replace(/\\/g, "/")}`,
+              altText: data.name || product.name,
+              isPrimary: data.variants[variantIndex].images.length === 0,
+              order: data.variants[variantIndex].images.length,
+            });
+          }
+
+          if (type === "video") {
+            data.variants[
+              variantIndex
+            ].video =`/${file.path.replace(/\\/g, "/")}`;
+          }
+        }
+      });
+    }
+
+    /* =========================================
+       UPDATE PRODUCT DATA
+    ========================================== */
+
+    Object.keys(data).forEach((key) => {
+      product[key] = data[key];
     });
 
     await product.save();
 
     res.json({
-      success:true,
+      success: true,
       product,
     });
-
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -214,22 +458,19 @@ exports.deleteProduct = async (req, res) => {
 
     if (!product) {
       return res.status(404).json({
-        success:false,
-        message:"Product not found",
+        success: false,
+        message: "Product not found",
       });
     }
 
     product.isActive = false;
     await product.save();
 
-    res.json({ success:true });
-
+    res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
-
-
 
 /* ======================================================
    🗑 DELETE MULTIPLE PRODUCTS
@@ -245,10 +486,7 @@ exports.deleteManyProducts = async (req, res) => {
       });
     }
 
-    await Product.updateMany(
-      { _id: { $in: ids } },
-      { isActive: false }
-    );
+    await Product.updateMany({ _id: { $in: ids } }, { isActive: false });
 
     res.json({
       success: true,
@@ -261,7 +499,6 @@ exports.deleteManyProducts = async (req, res) => {
     });
   }
 };
-
 
 // exports.deleteManyProducts = async (req, res) => {
 //   try {
@@ -290,38 +527,35 @@ exports.updateInventory = async (req, res) => {
 
     if (!product) {
       return res.status(404).json({
-        success:false,
-        message:"Product not found",
+        success: false,
+        message: "Product not found",
       });
     }
 
     if (!product.variants?.[variantIndex]) {
       return res.status(400).json({
-        success:false,
-        message:"Invalid variant index",
+        success: false,
+        message: "Invalid variant index",
       });
     }
 
     if (!product.variants[variantIndex].sizes?.[sizeIndex]) {
       return res.status(400).json({
-        success:false,
-        message:"Invalid size index",
+        success: false,
+        message: "Invalid size index",
       });
     }
 
-    product.variants[variantIndex]
-      .sizes[sizeIndex]
-      .stock = stock;
+    product.variants[variantIndex].sizes[sizeIndex].stock = stock;
 
     await product.save();
 
     res.json({
-      success:true,
-      message:"Inventory updated",
+      success: true,
+      message: "Inventory updated",
     });
-
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -339,21 +573,17 @@ exports.autoBestSeller = async (req, res) => {
           count: { $sum: "$products.quantity" },
         },
       },
-      { $sort:{ count:-1 } },
-      { $limit:5 },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
     ]);
 
     for (const item of bestProducts) {
-      await Product.updateMany(
-        { name:item._id },
-        { isBestSeller:true }
-      );
+      await Product.updateMany({ name: item._id }, { isBestSeller: true });
     }
 
-    res.json({ success:true, bestProducts });
-
+    res.json({ success: true, bestProducts });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -363,13 +593,11 @@ exports.autoBestSeller = async (req, res) => {
 
 exports.getOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-      .sort({ createdAt:-1 });
+    const orders = await Order.find().sort({ createdAt: -1 });
 
-    res.json({ success:true, orders });
-
+    res.json({ success: true, orders });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -381,8 +609,8 @@ exports.updateOrderStatus = async (req, res) => {
 
     if (!order) {
       return res.status(404).json({
-        success:false,
-        message:"Order not found",
+        success: false,
+        message: "Order not found",
       });
     }
 
@@ -394,12 +622,11 @@ exports.updateOrderStatus = async (req, res) => {
     await order.save();
 
     res.json({
-      success:true,
+      success: true,
       order,
     });
-
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -409,14 +636,11 @@ exports.updateOrderStatus = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find()
-      .select("-password")
-      .sort({ createdAt:-1 });
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
 
-    res.json({ success:true, users });
-
+    res.json({ success: true, users });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -426,18 +650,17 @@ exports.toggleUserStatus = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        success:false,
-        message:"User not found",
+        success: false,
+        message: "User not found",
       });
     }
 
     user.isBlocked = !user.isBlocked;
     await user.save();
 
-    res.json({ success:true });
-
+    res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ success:false, message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -448,11 +671,10 @@ exports.toggleUserStatus = async (req, res) => {
 exports.createOffer = async (req, res) => {
   try {
     const offer = await Offer.create(req.body);
-    res.json({ success:true, offer });
-
+    res.json({ success: true, offer });
   } catch (err) {
     res.status(500).json({
-      success:false,
+      success: false,
       message: err.message,
     });
   }
@@ -460,14 +682,12 @@ exports.createOffer = async (req, res) => {
 
 exports.getOffers = async (req, res) => {
   try {
-    const offers = await Offer.find()
-      .sort({ createdAt:-1 });
+    const offers = await Offer.find().sort({ createdAt: -1 });
 
-    res.json({ success:true, offers });
-
+    res.json({ success: true, offers });
   } catch (err) {
     res.status(500).json({
-      success:false,
+      success: false,
       message: err.message,
     });
   }
@@ -476,11 +696,10 @@ exports.getOffers = async (req, res) => {
 exports.deleteOffer = async (req, res) => {
   try {
     await Offer.findByIdAndDelete(req.params.id);
-    res.json({ success:true });
-
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({
-      success:false,
+      success: false,
       message: err.message,
     });
   }

@@ -6,6 +6,7 @@ const path = require("path");
 const helmet = require("helmet");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
+const { default: connectDB } = require("./config/db");
 
 dotenv.config();
 
@@ -91,17 +92,18 @@ app.use((req, res, next) => {
    🗄 DATABASE CONNECTION (Production Safe)
 ====================================================== */
 
-mongoose
-  .connect(process.env.MONGO_URI, {
-    autoIndex: false,
-  })
-  .then(() => {
-    console.log("✅ MongoDB Connected");
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB Error:", err.message);
-    process.exit(1);
-  });
+// mongoose
+//   .connect(process.env.MONGO_URI, {
+//     autoIndex: false,
+//   })
+//   .then(() => {
+//     console.log("✅ MongoDB Connected");
+//   })
+//   .catch((err) => {
+//     console.error("❌ MongoDB Error:", err.message);
+//     process.exit(1);
+//   });
+connectDB();
 
 /* ======================================================
    🖼 STATIC FILE SERVING

@@ -7,11 +7,23 @@ const adminController = require("../controllers/adminController");
 
 router.get("/dashboard", protect, admin, adminController.getDashboard);
 router.get("/sales-graph", protect, admin, adminController.getSalesGraph);
-router.post("/products", protect, admin, adminController.createProduct);
-router.post("/upload",protect,admin,upload.single("file"),adminController.uploadFile);
+router.post(
+  "/products",
+  protect,
+  admin,
+  upload.any(),
+  adminController.createProduct,
+);
+router.post(
+  "/upload",
+  protect,
+  admin,
+  upload.single("file"),
+  adminController.uploadFile,
+);
 
 router.get("/products", protect, admin, adminController.getAllProducts);
-router.put("/products/:id", protect, admin, adminController.updateProduct);
+router.put("/products/:id", protect, admin, upload.any(), adminController.updateProduct);
 router.delete("/products/:id", protect, admin, adminController.deleteProduct);
 router.post("/products/delete-many",protect,admin,adminController.deleteManyProducts);
 
