@@ -3,7 +3,19 @@ import React, { useEffect, useState } from "react";
 import LinkNav from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import { ShoppingCart, User, Menu, HelpCircle, Package, X, ChevronDown, Store, Smartphone, ContactIcon, LogOut } from "lucide-react";
+import {
+  ShoppingCart,
+  User,
+  Menu,
+  HelpCircle,
+  Package,
+  X,
+  ChevronDown,
+  Store,
+  Smartphone,
+  ContactIcon,
+  LogOut,
+} from "lucide-react";
 import SearchSection from "./SearchSection";
 import LoginModal from "@/app/authPage/LoginModal";
 import RegisterModal from "@/app/authPage/RegisterModal";
@@ -28,7 +40,8 @@ export default function Navbar({ onLoginToggle }) {
   }, [loginOpen, onLoginToggle]);
 
   const { cartItems } = useCart();
-  const cartCount = cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  const cartCount =
+    cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
   const braCategories = {
     styles: [
       { name: "Padded Bras", path: "/bra/padded" },
@@ -52,7 +65,7 @@ export default function Navbar({ onLoginToggle }) {
       { name: "Bridal Wear", path: "/bra/bridal" },
       { name: "Maternity Bras", path: "/bra/maternity" },
       { name: "Teenager Bras", path: "/bra/teenager" },
-    ]
+    ],
   };
 
   return (
@@ -68,12 +81,10 @@ export default function Navbar({ onLoginToggle }) {
       `}</style>
 
       <header className="w-full font-sans shadow-sm sticky top-0 z-[100] bg-white">
-
         {/* ================= FIXED TOP HEADER BAR ================= */}
         {/* Changed: Removed max-w-[1400px] and mx-auto to keep items at edges */}
         <div className="hidden md:block text-[10px] font-semibold uppercase">
           <div className="w-full px-4 md:px-8 h-8 flex items-center justify-between text-gray-600 leading-none">
-
             {/* Left Side: Always stays at the far left */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
@@ -89,11 +100,19 @@ export default function Navbar({ onLoginToggle }) {
 
             {/* Right Side: Always stays at the far right */}
             <div className="flex items-center gap-6">
-              <LinkNav href="/track" className="  text-pink-600 ">Track Order</LinkNav>
-              <LinkNav href="/app" className="flex items-center gap-1 hover:text-pink-600">
+              <LinkNav href="/track" className="  text-pink-600 ">
+                Track Order
+              </LinkNav>
+              <LinkNav
+                href="/app"
+                className="flex items-center gap-1 hover:text-pink-600"
+              >
                 <Smartphone size={12} /> Download App
               </LinkNav>
-              <LinkNav href="/stores" className="flex items-center gap-1 hover:text-pink-600">
+              <LinkNav
+                href="/stores"
+                className="flex items-center gap-1 hover:text-pink-600"
+              >
                 <Store size={12} /> Our Stores
               </LinkNav>
             </div>
@@ -103,29 +122,42 @@ export default function Navbar({ onLoginToggle }) {
         {/* ================= MAIN LOGO BAR ================= */}
         <div className="bg-white px-4 md:px-6 lg:px-10 border-b border-gray-50">
           <div className="w-full flex items-center justify-between relative py-2">
-            <div className={`flex items-center z-10 w-[45%] ${isSearchOpen ? 'invisible md:visible' : ''}`}>
-              <button className="lg:hidden text-black p-2 -ml-2 rounded-md active:bg-pink-100" onClick={() => setMenuOpen(true)}>
+            <div
+              className={`flex items-center z-10 w-[45%] ${isSearchOpen ? "invisible md:visible" : ""}`}
+            >
+              <button
+                className="lg:hidden text-black p-2 -ml-2 rounded-md active:bg-pink-100"
+                onClick={() => setMenuOpen(true)}
+              >
                 <Menu size={26} />
               </button>
             </div>
             {/* Logo Section */}
-            <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-[100] ${isSearchOpen ? 'hidden md:flex' : 'flex'}`}>
+            <div
+              className={`absolute inset-0 flex items-center justify-center pointer-events-none z-[100] ${isSearchOpen ? "hidden md:flex" : "flex"}`}
+            >
               <LinkNav href="/" className=" items-center pointer-events-auto">
-                <div className="relative w-30 h-35 lg:w-35 lg:h-30 md:w-30 md:h-35 52 -ml-15 lg:mt-0 md:-ml-45 lg:-ml-1">
+                <div className="relative w-[170px] h-[56px] md:w-[210px] md:h-[70px] lg:w-[240px] lg:h-[80px] -ml-15 lg:mt-0 md:-ml-45 lg:-ml-1">
                   <Image
                     src="/hero-image/glovialogo.png"
                     alt="Glovia Logo"
                     fill
+                    sizes="(max-width: 768px) 170px, (max-width: 1024px) 210px, 240px"
                     priority
-                    className="object-contain over duration-300 hover:scale-105 -ml-7 lg:ml-2 mt-1 lg:mt-[-9]"
+                    className="object-contain duration-300 hover:scale-105 -ml-7 lg:ml-2 mt-1 lg:mt-[-9]"
                   />
                 </div>
               </LinkNav>
             </div>
 
             <div className="flex items-center justify-end sm:gap-1 lg:gap-2 md:gap-2 text-gray-700 z-10 w-[45%]">
-              <SearchSection onToggleMobileSearch={(val) => setIsSearchOpen(val)} />
-              <LinkNav href="/help" className=" hidden sm:flex p-1 hover:text-pink-600 transition">
+              <SearchSection
+                onToggleMobileSearch={(val) => setIsSearchOpen(val)}
+              />
+              <LinkNav
+                href="/help"
+                className=" hidden sm:flex p-1 hover:text-pink-600 transition"
+              >
                 <HelpCircle size={22} />
               </LinkNav>
               {/* <LinkNav href="/login" className="p-1"><User size={22} /></LinkNav> */}
@@ -137,8 +169,13 @@ export default function Navbar({ onLoginToggle }) {
                 <User size={22} />
               </button> */}
 
-              <div className={`flex items-center gap-1 lg:gap-2 ${isSearchOpen ? 'hidden md:flex' : 'flex'}`}>
-                <UserMenu openLogin={() => setLoginOpen(true)} openRegister={() => setRegisterOpen(true)} />
+              <div
+                className={`flex items-center gap-1 lg:gap-2 ${isSearchOpen ? "hidden md:flex" : "flex"}`}
+              >
+                <UserMenu
+                  openLogin={() => setLoginOpen(true)}
+                  openRegister={() => setRegisterOpen(true)}
+                />
                 <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
                 <LinkNav href="/cart" className="relative p-1">
                   <ShoppingCart size={22} />
@@ -156,15 +193,27 @@ export default function Navbar({ onLoginToggle }) {
         {/* ================= DESKTOP NAV ================= */}
         <nav className="hidden lg:block bg-black text-white px-4 md:px-10">
           <div className="w-full flex items-center justify-center gap-6 xl:gap-10 py-3 text-[11px] xl:text-[13px] font-semibold uppercase tracking-wider">
-            <LinkNav href="/" className="text-pink-400 hover:text-white transition-colors">Home</LinkNav>
+            <LinkNav
+              href="/"
+              className="text-pink-400 hover:text-white transition-colors"
+            >
+              Home
+            </LinkNav>
 
             <div
               className="relative group px-3"
               onMouseEnter={() => setIsBraHovered(true)}
               onMouseLeave={() => setIsBraHovered(false)}
             >
-              <LinkNav href="/bra" className="hover:text-pink-400 transition-colors flex items-center gap-1">
-                Bras <ChevronDown size={14} className={`transition-transform duration-300 ${isBraHovered ? "rotate-180" : ""}`} />
+              <LinkNav
+                href="/bra"
+                className="hover:text-pink-400 transition-colors flex items-center gap-1"
+              >
+                Bras{" "}
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform duration-300 ${isBraHovered ? "rotate-180" : ""}`}
+                />
               </LinkNav>
 
               {isBraHovered && (
@@ -179,51 +228,89 @@ export default function Navbar({ onLoginToggle }) {
                   {/* original dropdown (UNCHANGED UI) */}
                   <div className="bg-white text-black shadow-2xl border-t-2 flex animate-in fade-in slide-in-from-top-2">
                     <div className="w-1/4 bg-gray-50 border-r border-gray-100 flex flex-col  uppercase ">
-                      <div className="p-6 border-b border-gray-200 bg-pink-50 text-pink-600">Bra Collections</div>
-                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">Shop By Style</div>
-                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Padding</div>
-                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">By Coverage</div>
-                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">Specific Solutions</div>
+                      <div className="p-6 border-b border-gray-200 bg-pink-50 text-pink-600">
+                        Bra Collections
+                      </div>
+                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">
+                        Shop By Style
+                      </div>
+                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">
+                        By Padding
+                      </div>
+                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">
+                        By Coverage
+                      </div>
+                      <div className="p-4 border-b border-gray-100 hover:bg-white cursor-pointer hover:text-pink-600">
+                        Specific Solutions
+                      </div>
                     </div>
 
                     <div className="w-3/4 grid grid-cols-4 gap-8 p-10 bg-white">
                       <div>
-                        <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Styles</h3>
+                        <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">
+                          Styles
+                        </h3>
                         <ul className="flex flex-col gap-3">
                           {braCategories.styles.map((item) => (
                             <li key={item.name}>
-                              <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block">{item.name}</LinkNav>
+                              <LinkNav
+                                href={item.path}
+                                className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block"
+                              >
+                                {item.name}
+                              </LinkNav>
                             </li>
                           ))}
                         </ul>
                       </div>
                       <div>
-                        <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Padding</h3>
+                        <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">
+                          Padding
+                        </h3>
                         <ul className="flex flex-col gap-3">
                           {braCategories.padding.map((item) => (
                             <li key={item.name}>
-                              <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block ">{item.name}</LinkNav>
+                              <LinkNav
+                                href={item.path}
+                                className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block "
+                              >
+                                {item.name}
+                              </LinkNav>
                             </li>
                           ))}
                         </ul>
                       </div>
                       <div className="flex flex-col gap-8">
                         <div>
-                          <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Coverage</h3>
+                          <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">
+                            Coverage
+                          </h3>
                           <ul className="flex flex-col gap-3">
                             {braCategories.coverage.map((item) => (
                               <li key={item.name}>
-                                <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block ">{item.name}</LinkNav>
+                                <LinkNav
+                                  href={item.path}
+                                  className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block "
+                                >
+                                  {item.name}
+                                </LinkNav>
                               </li>
                             ))}
                           </ul>
                         </div>
                         <div>
-                          <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">Solutions</h3>
+                          <h3 className="font-black text-pink-600 mb-4 text-[13px] border-b-2 border-pink-100 pb-2 uppercase tracking-tight">
+                            Solutions
+                          </h3>
                           <ul className="flex flex-col gap-3">
                             {braCategories.solutions.map((item) => (
                               <li key={item.name}>
-                                <LinkNav href={item.path} className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block ">{item.name}</LinkNav>
+                                <LinkNav
+                                  href={item.path}
+                                  className="hover:text-pink-600 text-[11px] font-bold transition-all hover:translate-x-1 block "
+                                >
+                                  {item.name}
+                                </LinkNav>
                               </li>
                             ))}
                           </ul>
@@ -253,22 +340,28 @@ export default function Navbar({ onLoginToggle }) {
                     <span>Care</span>
                     <span className=" ml-0 text-xl mb-0.5">+</span>
                   </span>
-                ), path: "/care"
+                ),
+                path: "/care",
               },
-
             ].map((link) => (
-              <Link key={link.name} href={link.path} className="hover:text-pink-400 transition-colors">
-                <span className="font-">
-                  {link.name}
-                </span>
+              <Link
+                key={link.name}
+                href={link.path}
+                className="hover:text-pink-400 transition-colors"
+              >
+                <span className="font-">{link.name}</span>
               </Link>
             ))}
 
-            <LinkNav href="/exclusive" className="bg-pink-600 px-3 py-1 rounded-sm whitespace-nowrap">Sales</LinkNav>
+            <LinkNav
+              href="/exclusive"
+              className="bg-pink-600 px-3 py-1 rounded-sm whitespace-nowrap"
+            >
+              Sales
+            </LinkNav>
             {/* <LinkNav href="/track" className="whitespace-nowrap">Track Order</LinkNav>
             <LinkNav href="/contact">Contact</LinkNav>
             <LinkNav href="/help">Help</LinkNav> */}
-
           </div>
         </nav>
 
@@ -276,7 +369,6 @@ export default function Navbar({ onLoginToggle }) {
           Valentine Special: Buy 2 Get 1 Free on Best Sellers
         </div>
       </header>
-
 
       <LoginModal
         isOpen={loginOpen}
@@ -292,42 +384,48 @@ export default function Navbar({ onLoginToggle }) {
         onClose={() => setRegisterOpen(false)}
         openLogin={() => {
           setLoginOpen(true);
-          setRegisterOpen(false)
+          setRegisterOpen(false);
         }}
       />
 
-
       {/* ================= MOBILE DRAWER ================= */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[200] bg-black/60 lg:hidden" onClick={() => setMenuOpen(false)}>
-          <div className="bg-white w-[85%] md:w-[45%] h-full overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[200] bg-black/60 lg:hidden"
+          onClick={() => setMenuOpen(false)}
+        >
+          <div
+            className="bg-white w-[85%] md:w-[45%] h-full overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="bg-[#e50075] p-4 flex items-center justify-between text-white sticky top-0 z-10">
               <div className="flex items-center gap-3">
                 <User size={20} fill="white" />
                 <div className="flex items-center gap-1 font-medium text-[15px]">
                   {user ? (
-                    <span>
-                      Hi, {user.name}
-                    </span>
+                    <span>Hi, {user.name}</span>
                   ) : (
                     <>
                       <button
                         onClick={() => {
-                          setMenuOpen(false)
-                          setLoginOpen(true)
+                          setMenuOpen(false);
+                          setLoginOpen(true);
                         }}
-                        className="hover:underline">
+                        className="hover:underline"
+                      >
                         Login
                       </button>
                       <span>&</span>
                       <button
                         onClick={() => {
-                          setMenuOpen(false)
-                          setRegisterOpen(true)
+                          setMenuOpen(false);
+                          setRegisterOpen(true);
                         }}
-                        className="hover:underline">
+                        className="hover:underline"
+                      >
                         SignUp
-                      </button></>
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -339,22 +437,43 @@ export default function Navbar({ onLoginToggle }) {
             </div>
 
             <div className="p-2 flex flex-col font-bold text-sm uppercase tracking-widest divide-y divide-gray-100">
-              <LinkNav href="/" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Home</LinkNav>
+              <LinkNav
+                href="/"
+                className="px-6 py-5 active:bg-pink-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                Home
+              </LinkNav>
 
               <div className="flex flex-col">
-                <div className="px-6 py-5 active:bg-pink-50 flex justify-between items-center cursor-pointer" onClick={() => setMobileBraOpen(!mobileBraOpen)}>
-                  <span className={mobileBraOpen ? "text-pink-600" : ""}>Bras</span>
-                  <ChevronDown size={18} className={`transition-transform duration-300 ${mobileBraOpen ? "rotate-180 text-pink-600" : ""}`} />
+                <div
+                  className="px-6 py-5 active:bg-pink-50 flex justify-between items-center cursor-pointer"
+                  onClick={() => setMobileBraOpen(!mobileBraOpen)}
+                >
+                  <span className={mobileBraOpen ? "text-pink-600" : ""}>
+                    Bras
+                  </span>
+                  <ChevronDown
+                    size={18}
+                    className={`transition-transform duration-300 ${mobileBraOpen ? "rotate-180 text-pink-600" : ""}`}
+                  />
                 </div>
 
                 {mobileBraOpen && (
                   <div className="bg-gray-50 px-8 py-4 flex flex-col gap-6 lowercase">
                     {Object.entries(braCategories).map(([key, items]) => (
                       <div key={key}>
-                        <h3 className="text-[10px] text-pink-500 font-black uppercase mb-3 tracking-tighter">{key}</h3>
+                        <h3 className="text-[10px] text-pink-500 font-black uppercase mb-3 tracking-tighter">
+                          {key}
+                        </h3>
                         <div className="flex flex-col gap-3 border-l-2 border-pink-100 pl-4">
                           {items.map((sub) => (
-                            <LinkNav key={sub.name} href={sub.path} className="text-gray-600 text-[12px] font-medium" onClick={() => setMenuOpen(false)}>
+                            <LinkNav
+                              key={sub.name}
+                              href={sub.path}
+                              className="text-gray-600 text-[12px] font-medium"
+                              onClick={() => setMenuOpen(false)}
+                            >
                               {sub.name}
                             </LinkNav>
                           ))}
@@ -365,28 +484,71 @@ export default function Navbar({ onLoginToggle }) {
                 )}
               </div>
 
-              <LinkNav href="/panties" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Panties</LinkNav>
-              <LinkNav href="/lingerie" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Lingerie</LinkNav>
-              <LinkNav href="/shapewear" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Shapewear</LinkNav>
-              <LinkNav href="/curvy" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Curvy</LinkNav>
-              <LinkNav href="/tummy-control" className="px-6 py-5 active:bg-pink-50" onClick={() => setMenuOpen(false)}>Tummy Control</LinkNav>
-              <LinkNav href="/track" className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+              <LinkNav
+                href="/panties"
+                className="px-6 py-5 active:bg-pink-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                Panties
+              </LinkNav>
+              <LinkNav
+                href="/lingerie"
+                className="px-6 py-5 active:bg-pink-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                Lingerie
+              </LinkNav>
+              <LinkNav
+                href="/shapewear"
+                className="px-6 py-5 active:bg-pink-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                Shapewear
+              </LinkNav>
+              <LinkNav
+                href="/curvy"
+                className="px-6 py-5 active:bg-pink-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                Curvy
+              </LinkNav>
+              <LinkNav
+                href="/tummy-control"
+                className="px-6 py-5 active:bg-pink-50"
+                onClick={() => setMenuOpen(false)}
+              >
+                Tummy Control
+              </LinkNav>
+              <LinkNav
+                href="/track"
+                className="px-6 py-5 active:bg-pink-50 flex items-center gap-2"
+                onClick={() => setMenuOpen(false)}
+              >
                 <Package size={18} /> Track Order
               </LinkNav>
-              <LinkNav href="/contact" className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+              <LinkNav
+                href="/contact"
+                className="px-6 py-5 active:bg-pink-50 flex items-center gap-2"
+                onClick={() => setMenuOpen(false)}
+              >
                 <ContactIcon size={18} /> Contact Us
               </LinkNav>
-              <LinkNav href="/help" className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+              <LinkNav
+                href="/help"
+                className="px-6 py-5 active:bg-pink-50 flex items-center gap-2"
+                onClick={() => setMenuOpen(false)}
+              >
                 <HelpCircle size={18} /> Help
               </LinkNav>
-              <button onClick={() => {
-                logout();
-                setMenuOpen(false)
-              }}
-                className="px-6 py-5 active:bg-pink-50 flex items-center gap-2" >
+              <button
+                onClick={() => {
+                  logout();
+                  setMenuOpen(false);
+                }}
+                className="px-6 py-5 active:bg-pink-50 flex items-center gap-2"
+              >
                 <LogOut size={18} /> Logout
               </button>
-
             </div>
           </div>
         </div>

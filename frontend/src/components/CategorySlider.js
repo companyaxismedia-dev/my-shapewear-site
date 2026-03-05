@@ -8,25 +8,24 @@ import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import Image from "next/image";
 
 const categoryBanners = [
-  { img: "/image/CategorySlider/tummy-contol.png", path: "/tummy-control" },
-  { img: "/image/CategorySlider/shapewear.png", path: "/shapewear" },
-  { img: "/image/CategorySlider/curvy-1.png", path: "/curvy" },
-  { img: "/image/CategorySlider/bra.png",  path: "/bra" },
-  { img: "/image/CategorySlider/panties.png", path: "/panty" },
+  { img: "/image/CategorySlider/tummy-contol.png", path: "/tummy-control", alt: "Tummy Control" },
+  { img: "/image/CategorySlider/shapewear.png", path: "/shapewear", alt: "Shapewear" },
+  { img: "/image/CategorySlider/curvy-1.png", path: "/curvy", alt: "Curvy" },
+  { img: "/image/CategorySlider/bra.png", path: "/bra", alt: "Bra" },
+  { img: "/image/CategorySlider/panties.png", path: "/panty", alt: "Panty" },
 ];
 
 const MAX_SLIDES_VIEW = 5;
 
 export default function CategorySlider() {
-
   const enableLoop = categoryBanners.length > MAX_SLIDES_VIEW;
 
   return (
     <section className="w-full py-12 bg-white">
       <div className="max-w-[1440px] mx-auto px-4">
-
         <h2 className="text-2xl font-black mb-8 text-gray-800 uppercase italic border-l-4 border-[#ed4e7e] pl-4">
           Shop By Category
         </h2>
@@ -38,9 +37,7 @@ export default function CategorySlider() {
           watchOverflow={true}
           loop={enableLoop}
           autoplay={
-            enableLoop
-              ? { delay: 3500, disableOnInteraction: false }
-              : false
+            enableLoop ? { delay: 3500, disableOnInteraction: false } : false
           }
           breakpoints={{
             320: { slidesPerView: 2, spaceBetween: 10 },
@@ -55,16 +52,16 @@ export default function CategorySlider() {
             <SwiperSlide key={index}>
               <Link href={item.path}>
                 <div className="relative group rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500">
-
                   {/* 🔥 FIXED HEIGHT CONTAINER */}
                   <div className="relative w-full h-[280px] md:h-[320px] bg-gray-100 overflow-hidden">
-
                     {/* 🔥 ABSOLUTE IMAGE (NO LAYOUT SHIFT) */}
-                    <img
+                    <Image
                       src={item.img}
-                      alt={item.title}
-                      loading="lazy"
+                      alt={item.alt}
+                      fill
+                      sizes="(max-width:768px) 100vw, 33vw"
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
                     />
                   </div>
 
@@ -76,13 +73,11 @@ export default function CategorySlider() {
                       Shop Now +
                     </p>
                   </div>
-
                 </div>
               </Link>
             </SwiperSlide>
           ))}
         </Swiper>
-
       </div>
     </section>
   );

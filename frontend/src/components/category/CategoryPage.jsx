@@ -25,13 +25,13 @@ export default function CategoryPage({ category }) {
     const [sort, setSort] = useState("Recommended");
     const [filterMeta, setFilterMeta] = useState(null);
 
-    useEffect(() => {
-        fetch(`${API_BASE}/api/products/filters`)
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) setFilterMeta(data);
-            });
-    }, []);
+    // useEffect(() => {
+    //     fetch(`${API_BASE}/api/products/filters`)
+    //         .then(r => r.json())
+    //         .then(data => {
+    //             if (data.success) setFilterMeta(data);
+    //         });
+    // }, []);
 
     useEffect(() => {
         setPage(1);
@@ -58,7 +58,9 @@ export default function CategoryPage({ category }) {
                     ...(sort === "Popularity" && { sort: "popularity" }),
                 }).toString();
 
-                const res = await fetch(`${API_BASE}/api/products?${query}`);
+                const res = await fetch(`${API_BASE}/api/products?${query}`,
+                    { cache: "force-cache" }
+                );
                 const data = await res.json();
                 // console.log(data)
 

@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 
 import { Heart, Star, } from "lucide-react";
 import { getImageUrl } from "./helpers";
+import Image from "next/image";
 
 
 export function ProductCard({ item, onOpenDetails }) {
@@ -61,9 +62,12 @@ export function ProductCard({ item, onOpenDetails }) {
                     className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"
                         }`}
                 /> */}
-                <img
+                <Image
                     src={getImageUrl(item.thumbnail)}
+                    fill
+                    sizes="(max-width:768px) 100vw, 33vw"
                     alt={item.name}
+                    loading="lazy"
                     onClick={onOpenDetails}
                     className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"
                         }`}

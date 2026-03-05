@@ -11,6 +11,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -32,7 +33,7 @@ const homeSections = [
   { id: "tummy-control", title: "Tummy Control", path: "/tummy-control", count: 8 },
 ];
 
-export default function AutoSliceSlider() {
+export default function   AutoSliceSlider() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsData, setProductsData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -205,8 +206,10 @@ function ProductCard({ product, onOpenDetails }) {
         className="relative aspect-[3/4] overflow-hidden bg-gray-50 cursor-pointer"
         onClick={onOpenDetails}
       >
-        <img
+        <Image
           src={image}
+          fill
+          sizes="(max-width:768px) 100vw, 33vw"
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover object-top hover:scale-110 transition"

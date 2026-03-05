@@ -9,11 +9,18 @@ const nextConfig = {
         pathname: "/image/**",
       },
       {
+        protocol: "http",
+        hostname: "localhost",
+        port: "5000",
+        pathname: "/uploads/**",
+      },
+      {
         protocol: "https",
         hostname: "my-shapewear-site.onrender.com",
         pathname: "/image/**",
       },
     ],
+    dangerouslyAllowLocalIP: true,
   },
 };
 

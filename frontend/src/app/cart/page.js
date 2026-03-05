@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useWishlist } from '@/context/WishlistContext';
 import { useRouter } from 'next/navigation';
+import { API_BASE } from '@/lib/api';
 
 export default function CartPage() {
   const { cartItems, updateQty, removeItem, updateSize } = useCart();
@@ -293,7 +294,7 @@ export default function CartPage() {
                       />
                       <Link href={`/product/${item.slug}`}>
                         <img
-                          src={item.image}
+                          src={`${API_BASE}${item.image}`}
                           alt={item.name}
                           className="w-28 h-36 object-cover cursor-pointer hover:opacity-90 transition"
                         />
@@ -587,7 +588,7 @@ export default function CartPage() {
             <div className="flex items-start justify-between p-4 border-b">
               <div className="flex gap-3">
                 <img
-                  src={selectedProduct.image}
+                  src={`${API_BASE}${selectedProduct.image}`}
                   alt={selectedProduct.name}
                   className="w-16 h-20 object-cover rounded"
                 />
