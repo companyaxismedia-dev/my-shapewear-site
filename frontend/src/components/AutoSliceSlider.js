@@ -11,6 +11,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -45,7 +46,8 @@ export default function AutoSliceSlider() {
         const requests = homeSections.map(async (section) => {
           const backendCategory = categoryMap[section.id];
           const res = await fetch(
-            `${API_BASE}/api/products?category=${backendCategory}&isNewArrival=true&limit=10`,
+            // `${API_BASE}/api/products?category=${backendCategory}&isNewArrival=true&limit=10`,   for new arrival products
+            `${API_BASE}/api/products?category=${backendCategory}&limit=10`,
             { cache: "force-cache" }
           );
           const result = await res.json();
@@ -243,7 +245,7 @@ function ProductCard({
             slidesPerView={1}
             loop={true}
             autoplay={{
-              delay: 2200,
+              delay: 1500,
               disableOnInteraction: false,
             }}
             pagination={{ clickable: true }}
