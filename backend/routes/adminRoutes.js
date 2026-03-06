@@ -23,9 +23,9 @@ router.post(
 );
 
 router.get("/products", protect, admin, adminController.getAllProducts);
+router.post("/products/delete-many", protect, admin, adminController.deleteManyProducts);
 router.put("/products/:id", protect, admin, upload.any(), adminController.updateProduct);
 router.delete("/products/:id", protect, admin, adminController.deleteProduct);
-router.post("/products/delete-many",protect,admin,adminController.deleteManyProducts);
 
 router.patch("/products/:id/inventory", protect, admin, adminController.updateInventory);
 router.post("/products/auto-best-seller", protect, admin, adminController.autoBestSeller);

@@ -439,7 +439,7 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
                 <button
                   type="button"
                   onClick={() => onSetPrimary(i)}
-                  className="px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-medium bg-black z-[999] text-red-500"
+                  className="px-1.5 py-0.5 rounded-md bg-primary text-primary-foreground text-[10px] font-medium bg-black z-[999] text-blue-500"
                 >
                   Set Primary
                 </button>
@@ -447,7 +447,7 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
               <button
                 type="button"
                 onClick={() => onRemove(i)}
-                className="px-1.5 py-0.5 rounded-md bg-destructive text-destructive-foreground text-[10px] font-medium bg-black z-[999] text-white"
+                className="px-1.5 py-0.5 rounded-md bg-destructive text-destructive-foreground text-[10px] font-medium bg-black z-[999] text-red-500"
               >
                 Remove
               </button>
@@ -1669,8 +1669,29 @@ export function ProductForm({
               </div>
             )}
             {watch("thumbnail") && (
-              <div className="mt-2 rounded-lg overflow-hidden border border-border aspect-square w-full max-w-[100px]">
-                <img src={watch("thumbnail")} alt="thumbnail" className="w-full h-full object-cover" />
+              <div className="mt-2 relative group rounded-lg overflow-hidden border border-border aspect-square w-full max-w-[100px]">
+
+                <img
+                  src={watch("thumbnail")}
+                  alt="thumbnail"
+                  className="w-full h-full object-cover"
+                />
+
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+
+                  <button
+                    type="button"
+                    className="px-1.5 py-0.5 rounded-md bg-destructive text-destructive-foreground text-[10px] font-medium bg-black z-[999] text-red-500"
+                    onClick={() => {
+                      setThumbnailFile(null);
+                      setValue("thumbnail", "");
+                    }}
+                  >
+                    Remove
+                  </button>
+
+                </div>
               </div>
             )}
           </Field>

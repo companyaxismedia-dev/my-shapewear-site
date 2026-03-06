@@ -93,10 +93,14 @@ export default function ProductListPage() {
     const confirmDelete = async () => {
         try {
             const token = localStorage.getItem("adminToken");
+            let response;
+
+            console.log("Starting delete process...", { deleteTarget, selectedIds });
 
             if (deleteTarget) {
                 // SINGLE DELETE
-                await fetch(
+                console.log("Deleting single product:", deleteTarget);
+                response = await fetch(
                     `${API_BASE}/api/admin/products/${deleteTarget}`,
                     {
                         method: "DELETE",
@@ -105,7 +109,8 @@ export default function ProductListPage() {
                 );
             } else {
                 // BULK DELETE
-                await fetch(
+                console.log("Deleting multiple products:", selectedIds);
+                response = await fetch(
                     `${API_BASE}/api/admin/products/delete-many`,
                     {
                         method: "POST",
@@ -118,15 +123,40 @@ export default function ProductListPage() {
                 );
             }
 
-            toast.success("Deleted successfully");
+            console.log("Response status:", response.status, "Response ok:", response.ok);
+
+            const data = await response.json();
+            
+            console.log("Response data:", data);
+
+            // Validate response
+            if (!response.ok || !data.success) {
+                console.error("Delete validation failed:", { response: response.ok, success: data.success });
+                throw new Error(data.message || "Delete failed");
+            }
+
+            // Show success message with count
+            const successMessage = deleteTarget 
+                ? "Product deleted successfully! ✓"
+                : `${data.deletedCount || selectedIds.length} product${data.deletedCount > 1 || selectedIds.length > 1 ? 's' : ''} deleted successfully! ✓`;
+            
+            console.log("Showing toast:", successMessage);
+            
+            toast.success(successMessage, {
+                duration: 3000,
+            });
 
             setDeleteOpen(false);
             setDeleteTarget(null);
             setSelectedIds([]);
 
-            fetchProducts();
-        } catch {
-            toast.error("Delete failed");
+            // Refresh after successful delete
+            await fetchProducts();
+        } catch (error) {
+            console.error("Delete error:", error);
+            toast.error(error.message || "Failed to delete product. Please try again.", {
+                duration: 3000,
+            });
         }
     };
 
@@ -309,7 +339,7 @@ export default function ProductListPage() {
                     <button
                         key={i}
                         onClick={() => setPage(i + 1)}
-                        className={`px-3 py-1 rounded ${page === i + 1 ? "bg-primary text-white" : "bg-muted"
+                        className={`px-3 py-1 rounded ${page === i + 1 ? "bg-primary text-black" : "bg-muted"
                             }`}
                     >
                         {i + 1}
