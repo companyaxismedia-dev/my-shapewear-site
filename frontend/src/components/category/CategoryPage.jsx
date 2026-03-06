@@ -59,7 +59,7 @@ export default function CategoryPage({ category }) {
                 }).toString();
 
                 const res = await fetch(`${API_BASE}/api/products?${query}`,
-                    { cache: "force-cache" }
+                    { cache: "no-store" }
                 );
                 const data = await res.json();
                 // console.log(data)
@@ -203,14 +203,28 @@ export default function CategoryPage({ category }) {
                                                     const res = await fetch(
                                                         `${API_BASE}/api/products/${item._id}`
                                                     );
+
+                                                    // Handle 404 - product was deleted
+                                                    if (res.status === 404) {
+                                                        console.warn(`Product ${item._id} was deleted`);
+                                                        // Remove from list
+                                                        setProducts(prev => prev.filter(p => p._id !== item._id));
+                                                        return;
+                                                    }
+
                                                     const data = await res.json();
 
                                                     if (data.success) {
                                                         console.log(item)
                                                         setSelectedProduct(data.product);
+                                                    } else if (res.status === 404 || !data.success) {
+                                                        // Product not found or deleted
+                                                        setProducts(prev => prev.filter(p => p._id !== item._id));
                                                     }
                                                 } catch (err) {
                                                     console.error("Modal fetch error:", err);
+                                                    // Remove product from list if fetch fails
+                                                    setProducts(prev => prev.filter(p => p._id !== item._id));
                                                 }
                                             }}
                                         />))}

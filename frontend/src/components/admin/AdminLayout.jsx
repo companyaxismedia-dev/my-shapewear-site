@@ -20,7 +20,7 @@ const navItems = [
   {
     title: "My Shop",
     icon: Store,
-    basePaths: ["/admin/products","/admin/orders","/admin/customers",],
+    basePaths: ["/admin/products", "/admin/orders", "/admin/customers",],
     children: [
       {
         title: "Products",
@@ -82,12 +82,11 @@ function getParentBreadcrumb(pathname, items) {
     // check for direct href
     if (item.href && pathname === item.href) {
       return item;
-
-      // check fro the children match
-      if (item.children) {
-        const result = getParentBreadcrumb(pathname, item.children);
-        if (result) return result;
-      }
+    }
+    // check fro the children match
+    if (item.children) {
+      const result = getParentBreadcrumb(pathname, item.children);
+      if (result) return result;
     }
   }
 

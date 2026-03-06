@@ -147,25 +147,25 @@ export default function AutoSliceSlider() {
               navigation={enableNav}
               className="homePageSwiper px-4">
               {products.map((product) => (
-                <SwiperSlide key={product._id}>
+                <SwiperSlide key={product._id} className="no-swiping">
                   <ProductCard
                     product={product}
                     isHovered={hoveredProductId[section.id] === product._id}
                     onProductHover={() => handleProductHover(product._id, section.id)}
                     onProductHoverEnd={() => handleProductHoverEnd(section.id)}
-                    onOpenDetails={async () => {
-                      try {
-                        const res = await fetch(
-                          `${API_BASE}/api/products/${product._id}`
-                        );
-                        const data = await res.json();
-
-                        if (data.success) {
-                          setSelectedProduct(data.product);
-                        }
-                      } catch (err) {
-                        console.error("Modal fetch error:", err);
-                      }
+                    onOpenDetails={() => {
+                      // Open modal instantly with product data
+                      setSelectedProduct(product);
+                      
+                      // Fetch detailed product data in background
+                      fetch(`${API_BASE}/api/products/${product._id}`)
+                        .then((res) => res.json())
+                        .then((data) => {
+                          if (data.success) {
+                            setSelectedProduct(data.product);
+                          }
+                        })
+                        .catch((err) => console.error("Modal fetch error:", err));
                     }}
                   />
                 </SwiperSlide>
@@ -233,10 +233,14 @@ function ProductCard({
 
       {/* IMAGE */}
       <div
-        className="relative aspect-[3/4] overflow-hidden bg-gray-50 cursor-pointer"
+        className="relative aspect-[3/4] overflow-hidden bg-gray-50 cursor-pointer no-swiping"
         onMouseEnter={onProductHover}
         onMouseLeave={onProductHoverEnd}
-        onClick={onOpenDetails}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpenDetails();
+        }}
       >
         {isHovered && images.length > 1 ? (
           <Swiper
@@ -244,23 +248,33 @@ function ProductCard({
             modules={[Autoplay, Pagination]}
             slidesPerView={1}
             loop={true}
+            noSwipingClass="no-swiping"
+            simulateTouch={false}
             autoplay={{
               delay: 1500,
               disableOnInteraction: false,
             }}
             pagination={{ clickable: true }}
             allowTouchMove={false}
-            className="w-full h-full"
-            onClick={(e) => e.stopPropagation()}
+            className="w-full h-full no-swiping"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenDetails();
+            }}
           >
             {images.map((img, index) => (
-              <SwiperSlide key={index} onClick={(e) => e.stopPropagation()}>
+              <SwiperSlide key={index} className="no-swiping">
                 <img
                   src={img}
                   alt={product.name}
                   loading="lazy"
-                  className="w-full h-full object-cover object-top transition"
-                  onClick={(e) => e.stopPropagation()}
+                  className="w-full h-full object-cover object-top transition cursor-pointer no-swiping"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenDetails();
+                  }}
                 />
               </SwiperSlide>
             ))}
@@ -270,7 +284,7 @@ function ProductCard({
             src={image}
             alt={product.name}
             loading="lazy"
-            className="w-full h-full object-cover object-top hover:scale-110 transition"
+            className="w-full h-full object-cover object-top hover:scale-110 transition cursor-pointer"
           />
         )}
 

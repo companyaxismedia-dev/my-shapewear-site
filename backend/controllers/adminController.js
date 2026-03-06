@@ -454,7 +454,7 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findByIdAndDelete(req.params.id);
 
     if (!product) {
       return res.status(404).json({
@@ -463,10 +463,7 @@ exports.deleteProduct = async (req, res) => {
       });
     }
 
-    product.isActive = false;
-    await product.save();
-
-    res.json({ success: true });
+    res.json({ success: true, message: "Product deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -486,11 +483,12 @@ exports.deleteManyProducts = async (req, res) => {
       });
     }
 
-    await Product.updateMany({ _id: { $in: ids } }, { isActive: false });
+    const result = await Product.deleteMany({ _id: { $in: ids } });
 
     res.json({
       success: true,
-      message: "Products deleted successfully",
+      message: `${result.deletedCount} products deleted successfully`,
+      deletedCount: result.deletedCount,
     });
   } catch (err) {
     res.status(500).json({
