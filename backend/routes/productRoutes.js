@@ -148,6 +148,43 @@ router.get("/filters", async (req, res) => {
   }
 });
 
+/* 🔹 GET SUBCATEGORIES BY CATEGORY */
+router.get("/subcategories", async (req, res) => {
+  try {
+    const { category } = req.query;
+
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: "Category is required",
+      });
+    }
+
+    const products = await Product.find({
+      category: category,
+      isActive: true,
+    });
+
+    const subCategories = new Set();
+    products.forEach((product) => {
+      if (product.subCategory) {
+        subCategories.add(product.subCategory);
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      subcategories: [...subCategories].map((name) => ({ name })),
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 /* 🔹 GET PRODUCT BY SLUG */
 router.get("/slug/:slug", getProductBySlug);
 

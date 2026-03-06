@@ -186,7 +186,7 @@ exports.createProduct = async (req, res) => {
             }
 
             data.variants[variantIndex].images.push({
-              url: file.path.replace(/\\/g, "/"),
+              url: `/${file.path.replace(/\\/g, "/")}`,
               altText: data.name,
               isPrimary: data.variants[variantIndex].images.length === 0,
               order: data.variants[variantIndex].images.length,
@@ -194,7 +194,7 @@ exports.createProduct = async (req, res) => {
           }
 
           if (type === "video") {
-            data.variants[variantIndex].video = file.path.replace(/\\/g, "/");
+            data.variants[variantIndex].video = `/${file.path.replace(/\\/g, "/")}`;
           }
         }
       });

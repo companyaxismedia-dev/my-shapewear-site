@@ -11,6 +11,7 @@ export const getImageUrl = (img) => {
 
   if (path.startsWith("http")) return path;
   if (path.startsWith("data:image")) return path;
+  if (path.startsWith("blob:")) return path;
 
   return `${API_BASE}${path}`;
 };
