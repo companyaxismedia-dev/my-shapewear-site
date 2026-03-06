@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, Store, ShoppingCart, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle, 
+  Home, Store, ShoppingCart, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle,
   Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp,
 } from "lucide-react";
 
@@ -20,6 +20,7 @@ const navItems = [
   {
     title: "My Shop",
     icon: Store,
+    basePaths: ["/admin/products","/admin/orders","/admin/customers",],
     children: [
       {
         title: "Products",
@@ -64,6 +65,34 @@ const navItems = [
     icon: HelpCircle,
   },
 ];
+
+///helper function fro the dynamic parent menu change in the top 
+function getParentBreadcrumb(pathname, items) {
+  for (const item of items) {
+
+    // check for the basepath match first
+    if (item.basePaths) {
+      const match = item.basePaths.some((base) =>
+        pathname.startsWith(base)
+      );
+
+      if (match) return item;
+    }
+
+    // check for direct href
+    if (item.href && pathname === item.href) {
+      return item;
+
+      // check fro the children match
+      if (item.children) {
+        const result = getParentBreadcrumb(pathname, item.children);
+        if (result) return result;
+      }
+    }
+  }
+
+  return null;
+}
 
 /* ================= SIDEBAR ================= */
 export function AdminSidebar({ collapsed, onToggle }) {
@@ -290,6 +319,8 @@ export function AdminSidebar({ collapsed, onToggle }) {
 /* ================= ADMIN LAYOUT ================= */
 export function AdminLayout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const pathname = usePathname();
+  const parentItem = getParentBreadcrumb(pathname, navItems);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -317,11 +348,21 @@ export function AdminLayout({ children }) {
           </button>
 
           <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Home className="w-4 h-4" />
-            <span>/</span>
-            <span className="text-foreground font-medium">Dashboard</span>
+            {parentItem ? (
+              <>
+                <parentItem.icon className="w-4 h-4" />
+                <span>/</span>
+                <span className="text-foreground font-medium">{parentItem.title}</span>
+              </>
+            ) : (
+              <>
+                <Home className="w-4 h-4" />
+                <span>/</span>
+                <span className="text-foreground font-medium">Dashboa</span>
+              </>
+            )}
           </nav>
-            
+
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-sm w-48 lg:w-64">
               <Search className="w-4 h-4" />
