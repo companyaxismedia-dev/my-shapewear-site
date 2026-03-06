@@ -26,55 +26,65 @@ export const CartProvider = ({ children }) => {
 
     const formatted = await Promise.all(
       guest.map(async (item, index) => {
-        const res = await axios.get(
-          `${API_BASE}/api/products/${item.productId}`,
-        );
+        try {
+          const res = await axios.get(
+            `${API_BASE}/api/products/${item.productId}`,
+          );
 
-        const product = res.data.product || res.data;
+          const product = res.data.product || res.data;
 
-        const selectedVariant =
-          product.variants?.find((v) => v.color === item.color) ||
-          product.variants?.[0];
+          const selectedVariant =
+            product.variants?.find((v) => v.color === item.color) ||
+            product.variants?.[0];
 
-        const selectedSizeObj =
-          selectedVariant?.sizes?.find((s) => s.size === item.size) ||
-          selectedVariant?.sizes?.[0];
+          const selectedSizeObj =
+            selectedVariant?.sizes?.find((s) => s.size === item.size) ||
+            selectedVariant?.sizes?.[0];
 
-        const price = selectedSizeObj?.price || product.minPrice || 0;
-        const mrp = selectedSizeObj?.mrp || product.mrp || price;
+          const price = selectedSizeObj?.price || product.minPrice || 0;
+          const mrp = selectedSizeObj?.mrp || product.mrp || price;
 
-        const discount =
-          mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+          const discount =
+            mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
-        const image =
-          product.thumbnail ||
-          selectedVariant?.images?.[0]?.url ||
-          "/fallback.jpg";
+          const image =
+            product.thumbnail ||
+            selectedVariant?.images?.[0]?.url ||
+            "/fallback.jpg";
 
-        const availableSizes = selectedVariant?.sizes?.map((s) => s.size) || [];
+          const availableSizes = selectedVariant?.sizes?.map((s) => s.size) || [];
 
-        return {
-          id: `guest-${index}`, // simple id for guest
-          productId: product._id,
-          slug: product.slug,
-          name: product.name,
-          brand: product.brand || "Glovia",
-          price,
-          mrp,
-          discount,
-          image,
-          quantity: item.quantity,
-          size: item.size,
-          color: item.color,
-          seller: "Glovia Glamour",
-          deliveryDate: "5-7 Business Days",
-          returnText: "3 days return available",
-          availableSizes,
-        };
+          return {
+            id: `guest-${index}`, // simple id for guest
+            productId: product._id,
+            slug: product.slug,
+            name: product.name,
+            brand: product.brand || "Glovia",
+            price,
+            mrp,
+            discount,
+            image,
+            quantity: item.quantity,
+            size: item.size,
+            color: item.color,
+            seller: "Glovia Glamour",
+            deliveryDate: "5-7 Business Days",
+            returnText: "3 days return available",
+            availableSizes,
+          };
+        } catch (error) {
+          // Product was deleted or not found - filter it out
+          if (error.response?.status === 404) {
+            return null; // Mark for filtering
+          }
+          console.error("Error loading product:", error);
+          return null; // Skip on any error
+        }
       }),
     );
 
-    setCartItems(formatted);
+    // Filter out null items (deleted products)
+    setCartItems(formatted.filter(item => item !== null));
   };
 
   /* ================= LOAD CART ================= */
@@ -131,58 +141,68 @@ export const CartProvider = ({ children }) => {
   // };
 
   const fetchCart = async () => {
-    const res = await axios.get(`${API_BASE}/api/cart`, {
-      headers: { Authorization: `Bearer ${user?.token}` },
-    });
+    try {
+      const res = await axios.get(`${API_BASE}/api/cart`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      });
 
-    const formatted = res.data.items.map((item) => {
-      const product = item.product;
+      const formatted = res.data.items
+        .map((item) => {
+          // Skip deleted products
+          if (!item.product) {
+            return null;
+          }
 
-      // find selected variant
-      const selectedVariant =
-        product.variants?.find((v) => v.color === item.color) ||
-        product.variants?.[0];
+          const product = item.product;
 
-      // find selected size
-      const selectedSizeObj =
-        selectedVariant?.sizes?.find((s) => s.size === item.size) ||
-        selectedVariant?.sizes?.[0];
+          // find selected variant
+          const selectedVariant =
+            product.variants?.find((v) => v.color === item.color) ||
+            product.variants?.[0];
 
-      const price = selectedSizeObj?.price || product.minPrice || 0;
-      const mrp = selectedSizeObj?.mrp || product.mrp || price;
-      const discount =
-        mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+          // find selected size
+          const selectedSizeObj =
+            selectedVariant?.sizes?.find((s) => s.size === item.size) ||
+            selectedVariant?.sizes?.[0];
 
-      const image =
-        product.thumbnail ||
-        selectedVariant?.images?.[0]?.url ||
-        "/fallback.jpg";
+          const price = selectedSizeObj?.price || product.minPrice || 0;
+          const mrp = selectedSizeObj?.mrp || product.mrp || price;
+          const discount =
+            mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
-      const availableSizes = selectedVariant?.sizes?.map((s) => s.size) || [];
+          const image =
+            product.thumbnail ||
+            selectedVariant?.images?.[0]?.url ||
+            "/fallback.jpg";
 
-      return {
-        id: item._id,
-        productId: product._id,
-        slug: product.slug,
-        name: product.name,
-        brand: product.brand || "Glovia",
-        price,
-        mrp,
-        discount,
-        image,
-        quantity: item.qty,
-        size: item.size,
-        color: item.color,
-        seller: "Glovia Glamour",
-        deliveryDate: "5-7 Business Days",
-        returnText: "3 days return available",
+          const availableSizes = selectedVariant?.sizes?.map((s) => s.size) || [];
 
-        // ✅ NOW THIS WILL WORK
-        availableSizes,
-      };
-    });
+          return {
+            id: item._id,
+            productId: product._id,
+            slug: product.slug,
+            name: product.name,
+            brand: product.brand || "Glovia",
+            price,
+            mrp,
+            discount,
+            image,
+            quantity: item.qty,
+            size: item.size,
+            color: item.color,
+            seller: "Glovia Glamour",
+            deliveryDate: "5-7 Business Days",
+            returnText: "3 days return available",
+            availableSizes,
+          };
+        })
+        .filter(item => item !== null); // Remove deleted products
 
-    setCartItems(formatted);
+      setCartItems(formatted);
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+      setCartItems([]);
+    }
   };
 
   /* ================= MERGE GUEST ================= */
