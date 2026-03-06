@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import axios from "axios";
 
+
 import {
     ChevronRight,
     ChevronDown,
@@ -15,9 +16,16 @@ import {
     X,
 } from "lucide-react";
 
-import Navbar from "@/components/Navbar";
+
 import { useOrders } from "@/context/OrderContext";
 import { API_BASE } from "@/lib/api";
+import ManageAccessModal from "@/components/orders/ManageAccessModal";
+import ChangeAddressModal from "@/components/orders/ChangeAddressModal";
+import AddressListModal from "@/components/orders/AddressListModal";
+import AddEditAddressModal from "@/components/orders/AddEditAddressModal";
+import CancelOrderModal from "@/components/orders/CancelOrderModal";
+import ChangePhoneNumberModal from "@/components/orders/ChangePhoneNumberModal";
+
 
 export default function OrderDetail() {
     const { id } = useParams();
@@ -34,6 +42,37 @@ export default function OrderDetail() {
 
     const [showAccess, setShowAccess] = useState(false);
 
+    const [showChangeAddress, setShowChangeAddress] = useState(false)
+    const [showAddressList, setShowAddressList] = useState(false)
+    const [addresses, setAddresses] = useState([])
+
+    const [showAddAddress, setShowAddAddress] = useState(false)
+    const [editAddress, setEditAddress] = useState(null)
+    const [showChangePhone, setShowChangePhone] = useState(false)
+
+
+    const refreshAddresses = async () => {
+
+        try {
+
+            const user = JSON.parse(localStorage.getItem("user"))
+            const token = user?.token
+
+            const res = await axios.get(
+                `${API_BASE}/api/users/address`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            )
+
+            setAddresses(res.data.addresses)
+
+        }
+        catch (err) {
+            console.error("Address refresh error", err)
+        }
+
+    }
     /* ================= FETCH ORDER ================= */
 
     useEffect(() => {
@@ -52,7 +91,29 @@ export default function OrderDetail() {
     }, [id, fetchOrderById]);
 
 
+    /* ================= FETCH ADDRESSES ================= */
 
+    useEffect(() => {
+
+        const fetchAddresses = async () => {
+
+            const user = JSON.parse(localStorage.getItem("user"));
+            const token = user?.token;
+
+            const res = await axios.get(
+                `${API_BASE}/api/users/address`,
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+
+            setAddresses(res.data.addresses);
+
+        };
+
+        fetchAddresses();
+
+    }, []);
     /* ================= CANCEL ORDER ================= */
 
     const handleCancelOrder = async () => {
@@ -83,11 +144,14 @@ export default function OrderDetail() {
     if (!order) {
         return (
             <div className="min-h-screen bg-gray-50">
-                <Navbar />
                 <div className="text-center py-20">Loading order...</div>
             </div>
         );
     }
+
+    const isAddressEditable =
+        order.status === "order placed" ||
+        order.status === "processing";
 
     const getStatusColor = (status) => {
         if (status === "cancelled" || status === "Cancelled") return "text-red-600 bg-red-50";
@@ -97,6 +161,41 @@ export default function OrderDetail() {
 
     const getStatusLabel = (status) =>
         status?.charAt(0).toUpperCase() + status?.slice(1);
+
+    /* ================= UPDATE ORDER ADDRESS ================= */
+
+    const updateOrderAddress = async (addr) => {
+
+        try {
+
+            const user = JSON.parse(localStorage.getItem("user"))
+            const token = user?.token
+
+            if (!token) return
+
+            await axios.put(
+                `${API_BASE}/api/orders/update-address/${id}`,
+                {
+                    name: addr.fullName,
+                    phone: addr.phone,
+                    address: addr.addressLine,
+                    city: addr.city,
+                    pincode: addr.pincode
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            )
+
+        } catch (err) {
+
+            console.error("Order address update error", err)
+
+        }
+
+    }
 
     /* ================= TRACKING STAGES ================= */
 
@@ -123,7 +222,8 @@ export default function OrderDetail() {
     if (order.status === "cancelled") {
         return (
             <div className="min-h-screen bg-gray-50">
-                <Navbar />
+
+
 
                 <div className="max-w-4xl mx-auto py-20 text-center">
 
@@ -149,7 +249,8 @@ export default function OrderDetail() {
     return (
         <div className="min-h-screen bg-gray-50">
 
-            <Navbar />
+
+
 
             {/* Breadcrumb */}
 
@@ -165,11 +266,11 @@ export default function OrderDetail() {
 
             {/* MAIN */}
 
-            <div className="max-w-7xl mx-auto px-4 py-6 grid lg:grid-cols-3 gap-6">
+            <div className="w-full max-w-[1400px] mx-auto px-6 py-6 grid lg:grid-cols-[1.7fr_1fr] gap-6">
 
 
 
-                <div className="lg:col-span-2 space-y-6">
+                <div className="space-y-6">
 
                     {/* TRACK + ACCESS SECTION (Flipkart style) */}
 
@@ -215,7 +316,7 @@ export default function OrderDetail() {
 
                     {/* ORDER HEADER */}
 
-                    <div className="bg-white rounded p-6">
+                    <div className="bg-white rounded p-5 border border-gray-200">
                         <div className="flex justify-between mb-6">
 
                             <div>
@@ -252,7 +353,7 @@ export default function OrderDetail() {
 
                     {/* PRODUCTS */}
 
-                    <div className="bg-white rounded p-6">
+                    <div className="bg-white rounded border border-gray-200 p-5">
                         <h2 className="font-bold text-lg mb-6">Product Details</h2>
 
                         {order?.items?.map((item, i) => (
@@ -423,43 +524,76 @@ export default function OrderDetail() {
                     )}
                 </div>
 
-
-
-
                 {/* Right Section - Price Details */}
                 <div className="space-y-6">
                     {/* Delivery Details */}
-                    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-                        <h2 className="text-base font-bold text-gray-900 mb-6">Delivery details</h2>
-                        <div className="space-y-4">
-                            <div className="flex gap-3">
-                                <MapPin className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <p className="text-sm text-gray-600 leading-relaxed">{order.deliveryAddress?.address}</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-3">
-                                <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <p className="text-sm text-gray-600 leading-relaxed">
-                                        {order.deliveryAddress?.address}
-                                    </p>
+                    <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100 w-full">
+                        <div
 
-                                    <p className="text-sm text-gray-700">
-                                        <span className="font-medium">
-                                            {order.recipientName || "Customer"}
-                                        </span>{" "}
-                                        <span className="text-gray-600">
-                                            {order.recipientPhone}
-                                        </span>
-                                    </p>
+                            className="bg-gray-50 rounded-xl p-5 space-y-4 cursor-pointer hover:bg-gray-100 transition min-h-[80px]"
+                        >
+                            {!isAddressEditable && (
+                                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg mt-3 text-sm">
+                                    Address cannot be changed for this order
                                 </div>
+                            )}
+
+
+                            <div
+                                className="bg-gray-50 rounded-xl p-5 space-y-4 transition min-h-[80px]"
+                            >
+
+                                <div className="flex justify-between items-center">
+
+                                    <div className="flex gap-3">
+
+                                        <MapPin className="w-5 h-5 text-gray-400 mt-1" />
+
+                                        <p className="text-sm text-gray-700 line-clamp-2 leading-relaxed">
+                                            {[
+                                                order.deliveryAddress?.address || order.userInfo?.address,
+                                                order.deliveryAddress?.city || order.userInfo?.city,
+                                            ].filter(Boolean).join(", ")} - {order.deliveryAddress?.pincode || order.userInfo?.pincode}
+                                        </p>
+                                    </div>
+
+                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+
+                                </div>
+
+
+                                <div
+                                    onClick={() => setShowChangePhone(true)}
+                                    className="flex justify-between items-center cursor-pointer"
+                                >
+
+                                    <div className="flex gap-3">
+
+                                        <User className="w-5 h-5 text-gray-400 mt-1" />
+
+                                        <p className="text-sm text-gray-700">
+                                            <span className="font-medium">
+                                                {order.recipientName || order.userInfo?.name || "Customer"}
+                                            </span>{" "}
+                                            {order.recipientPhone || order.userInfo?.phone}
+                                        </p>
+
+
+                                    </div>
+
+                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+
+                                </div>
+
                             </div>
+
+
                         </div>
                     </div>
 
+
                     {/* Price Details */}
-                    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white rounded-lg p-7 shadow-sm border border-gray-100 w-full">
                         <h2 className="text-base font-bold text-gray-900 mb-6">Price details</h2>
                         <div className="space-y-4">
                             {/* Listing Price */}
@@ -551,7 +685,7 @@ export default function OrderDetail() {
                     </div>
 
                     {/* Payment Method */}
-                    <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+                    <div className="bg-white rounded-lg p-7 shadow-sm border border-gray-100 w-full">
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Payment method</span>
                             <div className="flex items-center gap-2">
@@ -602,84 +736,120 @@ export default function OrderDetail() {
                 </div>
             </div >
 
-            {/* Manage Access Modal */}
+            {/* ===== ORDER MODALS ===== */}
 
-            {showAccess && (
+            <ManageAccessModal
+                showAccess={showAccess}
+                setShowAccess={setShowAccess}
+                order={order}
+            />
 
-                <div
-                    onClick={() => setShowAccess(false)}
-                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                >
+            <ChangeAddressModal
+                showChangeAddress={showChangeAddress}
+                setShowChangeAddress={setShowChangeAddress}
+                setShowAddressList={setShowAddressList}
+                order={order}
+                refreshOrder={() => fetchOrderById(id)}
+            />
+            <AddressListModal
+                showAddressList={showAddressList}
+                setShowAddressList={setShowAddressList}
+                addresses={addresses}
+                setEditAddress={setEditAddress}
+                setShowAddAddress={setShowAddAddress}
 
-                    <div className="bg-white rounded-lg p-6 w-[420px]">
+                onSelectAddress={async (addr) => {
 
-                        <div className="flex justify-between items-center mb-4">
+                    await updateOrderAddress(addr)
 
-                            <h2 className="font-semibold text-gray-800">
-                                Order details shared with
-                            </h2>
+                    setOrder(prev => ({
+                        ...prev,
+                        deliveryAddress: {
+                            address: addr.addressLine,
+                            city: addr.city,
+                            pincode: addr.pincode,
+                            state: addr.state
+                        },
+                        recipientName: addr.fullName,
+                        recipientPhone: addr.phone
+                    }))
 
-                            <button
-                                onClick={() => setShowAccess(false)}
-                                className="text-gray-500 hover:text-black"
-                            >
-                                <X size={20} />
-                            </button>
+                    setShowAddressList(false)
 
-                        </div>
+                }}
+            />
 
-                        <p className="text-lg text-gray-700">
-                            {order.recipientPhone}
-                        </p>
+            <AddEditAddressModal
+                showAddAddress={showAddAddress}
+                setShowAddAddress={setShowAddAddress}
+                editAddress={editAddress}
+                setEditAddress={setEditAddress}
+                refreshAddresses={refreshAddresses}
 
-                    </div>
+                onAddressSaved={async (addr) => {
 
-                </div>
+                    await updateOrderAddress(addr)
 
-            )}
+                    setOrder(prev => ({
+                        ...prev,
+                        deliveryAddress: {
+                            address: addr.addressLine,
+                            city: addr.city,
+                            pincode: addr.pincode,
+                            state: addr.state
+                        },
+                        recipientName: addr.fullName,
+                        recipientPhone: addr.phone
+                    }))
+
+                }}
+            />
+            <CancelOrderModal
+                showCancelModal={showCancelModal}
+                setShowCancelModal={setShowCancelModal}
+                cancelReason={cancelReason}
+                setCancelReason={setCancelReason}
+                handleCancelOrder={handleCancelOrder}
+            />
+
+            <ChangePhoneNumberModal
+                showChangePhone={showChangePhone}
+                setShowChangePhone={setShowChangePhone}
+                currentPhone={order.userInfo?.phone}
+                currentName={order.userInfo?.name}
+
+                onPhoneChange={async (data) => {
+
+                    const user = JSON.parse(localStorage.getItem("user"))
+                    const token = user?.token
+
+                    await axios.put(
+                        `${API_BASE}/api/orders/update-address/${id}`,
+                        {
+                            name: data.name,
+                            phone: data.primary
+                        },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`
+                            }
+                        }
+                    )
+
+                    setOrder(prev => ({
+                        ...prev,
+                        userInfo: {
+                            ...prev.userInfo,
+                            name: data.name,
+                            phone: data.primary
+                        }
+                    }))
+
+                }}
+            />
 
 
-            {/* Cancel Modal */}
-            {
-                showCancelModal && (
-                    <div
-                        onClick={() => setShowAccess(false)}
-                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                    >
-                        <div className="bg-white rounded-lg max-w-md w-full p-6 mx-4">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="font-bold text-lg">Cancel Order</h2>
-                                <button
-                                    onClick={() => setShowCancelModal(false)}
-                                    className="text-gray-400 hover:text-gray-600"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            <select
-                                value={cancelReason}
-                                onChange={(e) => setCancelReason(e.target.value)}
-                                className="w-full border border-gray-300 p-3 rounded-lg mb-4 text-gray-700"
-                            >
-                                <option value="">Select reason</option>
-                                <option value="changed-mind">Changed my mind</option>
-                                <option value="found-elsewhere">Found elsewhere</option>
-                                <option value="not-needed">Not needed anymore</option>
-                                <option value="other">Other</option>
-                            </select>
-
-                            <button
-                                disabled={!cancelReason}
-                                onClick={handleCancelOrder}
-                                className="w-full bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Cancel Order
-                            </button>
-                        </div>
-                    </div>
-                )
-            }
         </div >
     );
 }
+

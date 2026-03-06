@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link"; 
 import { ChevronRight, Search } from "lucide-react";
 
-import Navbar from "@/components/Navbar";
+
 
 import { useOrders } from "@/context/OrderContext";
 
@@ -155,8 +155,7 @@ const [searchTerm, setSearchTerm] = useState("");
                     </div>
                 </div>
             )}
-            <Navbar />
-
+           
             {/* Breadcrumb */}
             <div className="bg-white border-b border-gray-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-2 text-sm">

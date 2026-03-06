@@ -92,9 +92,9 @@ exports.createOrder = async (req, res) => {
 
     /* ---------- OFFER LOGIC ---------- */
     let discountAmount = 0;
-let finalAmount = totalAmount;
-let appliedOfferCode = null;
-let offersEarned = [];
+    let finalAmount = totalAmount;
+    let appliedOfferCode = null;
+    let offersEarned = [];
 
     if (offerCode) {
       const offer = await Offer.findOne({
@@ -146,13 +146,13 @@ let offersEarned = [];
       );
 
       appliedOfferCode = offer.code;
-      orderProducts; // ignore
+
 
       if (appliedOfferCode) {
-  offersEarned.push(
-    `Offer ${appliedOfferCode} applied - Saved ₹${discountAmount}`
-  );
-}
+        offersEarned.push(
+          `Offer ${appliedOfferCode} applied - Saved ₹${discountAmount}`
+        );
+      }
 
       // increase usage count
       offer.usedCount += 1;
@@ -161,55 +161,54 @@ let offersEarned = [];
 
     let savedOrder = null;
 
-for (const item of orderProducts) {
+    for (const item of orderProducts) {
 
-  const order = new Order({
+      const order = new Order({
 
-    userId: req.user._id,
+        userId: req.user._id,
 
-    userInfo: {
-      name: address.fullName,
-      phone: address.phone,
-      email: user.email,
-      address: address.addressLine,
-      city: address.city,
-      pincode: address.pincode,
-    },
+        userInfo: {
+          name: address.fullName,
+          phone: address.phone,
+          email: user.email,
+          address: address.addressLine,
+          city: address.city,
+          pincode: address.pincode,
+        },
 
-    products: [item], // 👈 only one product per order
+        products: [item], // 👈 only one product per order
 
-    totalAmount: item.price * item.quantity,
-    offerCode: appliedOfferCode,
-    discountAmount: 0,
-    finalAmount: item.price * item.quantity,
+        totalAmount: item.price * item.quantity,
+        offerCode: appliedOfferCode,
+        discountAmount: discountAmount,
+        finalAmount: finalAmount,
+        offersEarned,
 
-    offersEarned,
+        paymentId: paymentId || "N/A",
+        paymentType: finalPaymentType,
+        paymentStatus:
+          finalPaymentType === "COD"
+            ? "Pending"
+            : paymentId
+              ? "Paid"
+              : "Pending",
 
-    paymentId: paymentId || "N/A",
-    paymentType: finalPaymentType,
-    paymentStatus:
-      finalPaymentType === "COD"
-        ? "Pending"
-        : paymentId
-          ? "Paid"
-          : "Pending",
-
-    status: "Order Placed",
-
-    statusHistory: [{ status: "Order Placed" }],
-
-    trackingEvents: [
-      {
         status: "Order Placed",
-        time: new Date().toLocaleTimeString(),
-        date: new Date().toLocaleDateString(),
-      },
-    ],
 
-  });
+        statusHistory: [{ status: "Order Placed" }],
 
-  savedOrder = await order.save();
-}
+        trackingEvents: [
+          {
+            status: "Order Placed",
+            time: new Date().toLocaleTimeString(),
+            date: new Date().toLocaleDateString(),
+          },
+        ],
+
+      });
+
+      savedOrder = await order.save();
+    }
 
     /* ---------- STOCK REDUCE (FIXED VERSION) ---------- */
     for (const item of cart.items) {
@@ -526,6 +525,51 @@ exports.cancelOrder = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+/* =====================================================
+   8️⃣ UPDATE ORDER DELIVERY ADDRESS
+===================================================== */
+exports.updateOrderAddress = async (req, res) => {
+  try {
+
+    const order = await Order.findOne({
+      _id: req.params.id,
+      userId: req.user._id
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success:false,
+        message:"Order not found"
+      });
+    }
+
+    const { name, phone, address, city, pincode } = req.body;
+
+    order.userInfo.name = name || order.userInfo.name;
+    order.userInfo.phone = phone || order.userInfo.phone;
+    order.userInfo.address = address || order.userInfo.address;
+    order.userInfo.city = city || order.userInfo.city;
+    order.userInfo.pincode = pincode || order.userInfo.pincode;
+
+    await order.save();
+
+    res.status(200).json({
+      success:true,
+      message:"Address updated",
+      order
+    });
+
+  } catch(error) {
+
+    console.error("UPDATE ADDRESS ERROR:", error);
+
+    res.status(500).json({
+      success:false,
+      message:error.message
     });
   }
 };

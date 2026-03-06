@@ -34,12 +34,9 @@ export default function RootLayout({ children }) {
       </head>
 
       <body className="antialiased text-slate-900 bg-[#f0f2f5] touch-manipulation">
-<<<<<<< HEAD
-=======
         
         {/* ✅ SONNER TOASTER FOR NOTIFICATIONS */}
         <ToasterProvider />
->>>>>>> origin/dev-sumit
 
         {/* ✅ GOOGLE PROVIDER ADD KIYA */}
         <GoogleOAuthProvider clientId="559542040158-doovmkf989qnidk43m125itm7ricr9ip.apps.googleusercontent.com">

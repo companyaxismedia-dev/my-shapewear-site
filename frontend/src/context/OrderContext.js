@@ -116,6 +116,8 @@ export const OrderProvider = ({ children }) => {
 
                 deliveryAddress: {
                     address: o.userInfo?.address,
+                    city: o.userInfo?.city,
+                    pincode: o.userInfo?.pincode,
                 },
 
                 recipientName: o.userInfo?.name,

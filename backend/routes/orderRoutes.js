@@ -8,9 +8,12 @@ const {
    trackOrder,
    updateOrderStatus,
    getOrderById,
-   cancelOrder,   // ⭐ ADD THIS
+   cancelOrder,   
+   updateOrderAddress,
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middleware/authMiddleware");
+
+
 
 /* =====================================================
    1️⃣ CREATE ORDER (LOGIN USER)
@@ -53,7 +56,13 @@ router.put("/admin/update-status", protect, admin, updateOrderStatus);
 router.put("/cancel/:id", protect, cancelOrder);
 
 /* =====================================================
-   7️⃣ GET SINGLE ORDER (SUCCESS PAGE)
+   7️7️⃣ UPDATE ORDER ADDRESS
+   PUT /api/orders/update-address/:id
+===================================================== */
+router.put("/update-address/:id", protect, updateOrderAddress);
+
+/* =====================================================
+   8 GET SINGLE ORDER (SUCCESS PAGE)
    GET /api/orders/:id
 ===================================================== */
 router.get("/:id", protect, getOrderById);
