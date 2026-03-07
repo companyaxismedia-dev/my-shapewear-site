@@ -28,9 +28,11 @@ exports.addAddress = async (req, res) => {
     }
 
     // first address auto default
-    if (user.addresses.length === 0) {
-      req.body.isDefault = true;
-    }
+    let defaultAddress = isDefault;
+
+if (user.addresses.length === 0) {
+  defaultAddress = true;
+}
 
     // if new default → old false
     if (isDefault) {
@@ -47,7 +49,7 @@ exports.addAddress = async (req, res) => {
       addressLine,
       landmark: landmark || "",
       addressType: addressType || "HOME",
-      isDefault: isDefault || false,
+      isDefault: defaultAddress || false,
     });
 
     await user.save();

@@ -2,14 +2,18 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  createOrder,
-  getMyOrders,
-  getAllOrders,
-  trackOrder,
-  updateOrderStatus,
+   createOrder,
+   getMyOrders,
+   getAllOrders,
+   trackOrder,
+   updateOrderStatus,
+   getOrderById,
+   cancelOrder,   
+   updateOrderAddress,
 } = require("../controllers/orderController");
-
 const { protect, admin } = require("../middleware/authMiddleware");
+
+
 
 /* =====================================================
    1️⃣ CREATE ORDER (LOGIN USER)
@@ -29,7 +33,9 @@ router.get("/my-orders", protect, getMyOrders);
    3️⃣ TRACK ORDER (GUEST / USER)
    GET /api/orders/track/:id
 ===================================================== */
-router.get("/track/:id", trackOrder);
+router.get("/track/:id", protect, trackOrder);
+
+
 
 /* =====================================================
    4️⃣ ADMIN – GET ALL ORDERS
@@ -42,5 +48,25 @@ router.get("/admin/all", protect, admin, getAllOrders);
    PUT /api/orders/admin/update-status
 ===================================================== */
 router.put("/admin/update-status", protect, admin, updateOrderStatus);
+
+/* =====================================================
+   6️⃣ CANCEL ORDER
+   PUT /api/orders/cancel/:id
+===================================================== */
+router.put("/cancel/:id", protect, cancelOrder);
+
+/* =====================================================
+   7️7️⃣ UPDATE ORDER ADDRESS
+   PUT /api/orders/update-address/:id
+===================================================== */
+router.put("/update-address/:id", protect, updateOrderAddress);
+
+/* =====================================================
+   8 GET SINGLE ORDER (SUCCESS PAGE)
+   GET /api/orders/:id
+===================================================== */
+router.get("/:id", protect, getOrderById);
+
+
 
 module.exports = router;

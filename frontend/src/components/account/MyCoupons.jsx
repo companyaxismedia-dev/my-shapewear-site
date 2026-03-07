@@ -71,7 +71,7 @@ export default function MyCoupons() {
 
               {/* LEFT DISCOUNT BLOCK */}
               <div className="w-[160px] min-h-[75px] border-r border-gray-300 flex items-center justify-center">
-                <p className="text-pink-600 font-semibold text-[18px] leading-tight text-center">
+                <p className="text-pink-600 font-semibold text-[30px] leading-none text-center">
                   {coupon.discountType === "percentage"
                     ? `${coupon.discountValue}% OFF`
                     : `₹${coupon.discountValue} OFF`}

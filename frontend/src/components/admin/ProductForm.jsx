@@ -66,6 +66,10 @@ const makePincode = () => ({ id: uid(), pincode: "", codAvailable: true, estimat
 const inp =
   "w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all";
 
+// Helper function for error styling
+const getInputClass = (hasError) =>
+  cn(inp, hasError && "border-red-500 bg-red-50 focus:ring-red-500");
+
 // Validation Schema
 const productSchema = yup.object().shape({
   name: yup.string().required("Product name is required"),
@@ -154,14 +158,15 @@ function Card({ title, subtitle, children, className, action }) {
   );
 }
 
-function Field({ label, required, hint, children, half }) {
+function Field({ label, required, hint, error, children, half }) {
   return (
     <div className={cn("space-y-1.5", half && "flex-1")}>
-      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+      <label className={cn("text-xs font-medium uppercase tracking-wide", error ? "text-red-600" : "text-muted-foreground")}>
         {label}{required && <span className="text-destructive ml-0.5">*</span>}
       </label>
       {children}
-      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
+      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -240,7 +245,7 @@ function RichToolbar({ editorRef }) {
   );
 }
 
-function SizeDropdown({ selected, onChange }) {
+function SizeDropdown({ selected, onChange, hasError }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const filtered = ALL_SIZES.filter(s => s.toLowerCase().includes(search.toLowerCase()));
@@ -271,7 +276,8 @@ function SizeDropdown({ selected, onChange }) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className={cn(inp, "flex items-center justify-between text-left")}
+        className={getInputClass(hasError)}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
       >
         <span className={selected.length ? "text-foreground" : "text-muted-foreground"}>
           {selected.length ? `${selected.length} size(s) selected` : "Select available sizes..."}
@@ -474,7 +480,8 @@ export function ProductForm({
   const router = useRouter();
   const productDetailsRef = useRef(null);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPublishSubmitting, setIsPublishSubmitting] = useState(false);
+  const [isDraftSubmitting, setIsDraftSubmitting] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState({});
   const [thumbnailFile, setThumbnailFile] = useState(null);
 
@@ -738,37 +745,50 @@ export function ProductForm({
   };
 
   const onSubmit = async (formData, isDraft = false) => {
-    console.log("onSubmit called with:", { formData, isDraft, errors });
+    console.log("onSubmit called with:", { formData, isDraft });
+
+    // Set loading state for the correct button
+    if (isDraft) {
+      setIsDraftSubmitting(true);
+    } else {
+      setIsPublishSubmitting(true);
+    }
 
     // Validate that we have formData
     if (!formData || typeof formData !== 'object') {
       console.error("Invalid formData received:", formData);
       toast.error("Form data is invalid. Please try again.");
+      if (isDraft) setIsDraftSubmitting(false);
+      else setIsPublishSubmitting(false);
       return;
     }
 
     // For non-draft submissions, ensure required fields are present
+    // Draft submissions do NOT require validation
     if (!isDraft) {
       if (!formData.name?.trim()) {
         toast.error("Product name is required");
+        setIsPublishSubmitting(false);
         return;
       }
       if (!formData.brand?.trim()) {
         toast.error("Brand name is required");
+        setIsPublishSubmitting(false);
         return;
       }
       if (!formData.category?.trim()) {
         toast.error("Product category is required");
+        setIsPublishSubmitting(false);
         return;
       }
       if (!formData.productDetails?.trim()) {
         toast.error("Product details are required");
+        setIsPublishSubmitting(false);
         return;
       }
     }
 
     try {
-      setIsSubmitting(true);
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -819,7 +839,8 @@ export function ProductForm({
         isFeatured: formData.isFeatured || false,
         isBestSeller: formData.isBestSeller || false,
         isNewArrival: formData.isNewArrival || false,
-        isActive: isDraft ? false : (formData.isActive !== false),
+        isActive: formData.isActive !== false,
+        status: isDraft ? "draft" : "published",
         metaTitle: formData.metaTitle || "",
         metaDescription: formData.metaDescription || "",
         metaKeywords: formData.metaKeywords || "",
@@ -876,22 +897,31 @@ export function ProductForm({
         throw new Error(data.message || `Failed to ${mode === "edit" ? "update" : "create"} product`);
       }
 
-      toast.success(data.message || `Product ${mode === "edit" ? "updated" : "created"} successfully!`);
+      const successMessage = isDraft
+        ? "Product saved as draft!"
+        : `Product ${mode === "edit" ? "updated" : "created"} successfully!`;
+
+      toast.success(data.message || successMessage);
 
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess(data.product);
       }
 
-      // Redirect to products list
+      // Redirect based on mode
       setTimeout(() => {
-        router.push("/admin/products");
+        if (isDraft && mode === "add") {
+          router.push("/admin/products/drafts");
+        } else {
+          router.push("/admin/products");
+        }
       }, 500);
     } catch (error) {
       console.error("Form submission error:", error);
       toast.error(error.message || "Failed to submit form");
     } finally {
-      setIsSubmitting(false);
+      if (isDraft) setIsDraftSubmitting(false);
+      else setIsPublishSubmitting(false);
     }
   };
 
@@ -906,39 +936,36 @@ export function ProductForm({
         <Card title="Name and Description">
           <div className="space-y-4">
             <div className="flex gap-4">
-              <Field label="Product Name" required half>
+              <Field label="Product Name" required error={errors.name?.message} half>
                 <input
-                  className={cn(inp, errors.name && "border-destructive")}
+                  className={getInputClass(!!errors.name)}
                   placeholder="e.g. Glovia Ultra Comfort Bra"
                   {...register("name")}
                 />
-                {errors.name && <p className="text-xs text-destructive mt-1">{errors.name.message}</p>}
               </Field>
-              <Field label="Brand Name" required half>
+              <Field label="Brand Name" required error={errors.brand?.message} half>
                 <input
-                  className={cn(inp, errors.brand && "border-destructive")}
+                  className={getInputClass(!!errors.brand)}
                   placeholder="e.g. Glovia"
                   {...register("brand")}
                 />
-                {errors.brand && <p className="text-xs text-destructive mt-1">{errors.brand.message}</p>}
               </Field>
             </div>
 
-            <Field label="Short Description">
+            <Field label="Short Description" error={errors.shortDescription?.message}>
               <textarea
-                className={cn(inp, "resize-none h-20")}
+                className={cn(getInputClass(!!errors.shortDescription), "resize-none h-20")}
                 placeholder="Brief summary shown in product listings..."
                 {...register("shortDescription")}
               />
             </Field>
 
-            <Field label="Product Details" required>
+            <Field label="Product Details" required error={errors.productDetails?.message}>
               <textarea
-                className={cn(inp, "resize-none h-32", errors.productDetails && "border-destructive")}
+                className={cn(getInputClass(!!errors.productDetails), "resize-none h-32")}
                 placeholder="Detailed product description, materials, styling notes..."
                 {...register("productDetails")}
               />
-              {errors.productDetails && <p className="text-xs text-destructive mt-1">{errors.productDetails.message}</p>}
             </Field>
 
             <Field label="Key Features" hint="Each entry becomes a bullet point on the product page">
@@ -977,15 +1004,14 @@ export function ProductForm({
         {/* Category */}
         <Card title="Category">
           <div className="flex gap-4">
-            <Field label="Product Category" required half>
+            <Field label="Product Category" required error={errors.category?.message} half>
               <select
-                className={cn(inp, errors.category && "border-destructive")}
+                className={getInputClass(!!errors.category)}
                 {...register("category")}
               >
                 <option value="">Select category...</option>
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
-              {errors.category && <p className="text-xs text-destructive mt-1">{errors.category.message}</p>}
             </Field>
             <Field label="Sub Category" half hint="e.g. Full Coverage, Sports, Lace">
               <input
@@ -1055,19 +1081,16 @@ export function ProductForm({
                 {variant.isExpanded && (
                   <div className="p-5 space-y-5">
                     <div className="flex gap-4">
-                      <Field label="Color Name" required half>
+                      <Field label="Color Name" required error={errors.variants?.[vIdx]?.color?.message} half>
                         <input
-                          className={cn(inp, errors.variants?.[vIdx]?.color && "border-destructive")}
+                          className={getInputClass(!!errors.variants?.[vIdx]?.color)}
                           placeholder="e.g. Midnight Black"
                           value={variant.color}
                           onChange={(e) => vUpdate(variant.id, "color", e.target.value)}
                         />
-                        {errors.variants?.[vIdx]?.color && (
-                          <p className="text-xs text-destructive mt-1">{errors.variants[vIdx].color.message}</p>
-                        )}
                       </Field>
 
-                      <Field label="Color Code / Thumbnail" required half>
+                      <Field label="Color Code / Thumbnail" required error={errors.variants?.[vIdx]?.colorCode?.message} half>
                         {!(
                           variant.colorCode?.startsWith("data:") ||
                           variant.colorCode?.startsWith("http")
@@ -1187,7 +1210,7 @@ export function ProductForm({
                       </Field>
                     )}
 
-                    <Field label="Variant Images">
+                    <Field label="Variant Images" error={errors.variants?.[vIdx]?.images?.message}>
                       <ImageUploadArea
                         images={variant.images}
                         onAdd={(img) => vImgAdd(variant.id, img)}
@@ -1196,10 +1219,11 @@ export function ProductForm({
                       />
                     </Field>
 
-                    <Field label="Available Sizes" hint="Select which sizes are available for this color">
+                    <Field label="Available Sizes" hint="Select which sizes are available for this color" error={errors.variants?.[vIdx]?.selectedSizes?.message}>
                       <SizeDropdown
                         selected={variant.selectedSizes}
                         onChange={(sizes) => handleSizeSelect(variant.id, sizes)}
+                        hasError={!!errors.variants?.[vIdx]?.selectedSizes}
                       />
                     </Field>
 
@@ -1636,13 +1660,13 @@ export function ProductForm({
 
         {/* Thumbnail */}
         <Card title="Thumbnail">
-          <Field label="Thumbnail" hint="Auto-set from first variant image if empty">
+          <Field label="Thumbnail" error={errors.thumbnail?.message} hint="Auto-set from first variant image if empty">
             {/* IF NO FILE SELECTED */}
             {!thumbnailFile ? (
               <input
                 type="file"
                 accept="image/*"
-                className={inp}
+                className={getInputClass(!!errors.thumbnail)}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
@@ -1654,7 +1678,7 @@ export function ProductForm({
               />
             ) : (
               /* FILE SELECTED BOX */
-              <div className={cn(inp, "flex items-center justify-between px-3")}>
+              <div className={cn(getInputClass(!!errors.thumbnail), "flex items-center justify-between px-3")}>
                 <span className="truncate">{thumbnailFile.name}</span>
                 <button
                   type="button"
@@ -1729,26 +1753,42 @@ export function ProductForm({
         {/* Submit Buttons */}
         <div className="admin-card p-4">
           <div className="space-y-2">
-            <button
-              type="button"
-              onClick={handleSubmit((data) => onSubmit(data, false), (errors) => {
-                console.log("Validation errors:", errors);
-                toast.error("Please fill in all required fields");
-              })}
-              disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary border border-border text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PackagePlus className="w-4 h-4" />}
-              {isSubmitting ? "Saving..." : mode === "edit" ? "Update Product" : "Add Product"}
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit((data) => onSubmit(data, true))}
-              disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Save className="w-4 h-4" /> Save as Draft
-            </button>
+            <form onSubmit={handleSubmit((data) => onSubmit(data, false))}>
+              <button
+                type="submit"
+                disabled={isPublishSubmitting || isDraftSubmitting}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary border border-border text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPublishSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PackagePlus className="w-4 h-4" />}
+                {isPublishSubmitting ? "Saving..." : mode === "edit" ? "Update Product" : "Publish Product"}
+              </button>
+
+            </form>
+            {/* {mode === "add" && ( */}
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (isDraftSubmitting || isPublishSubmitting) return;
+                  const draftData = getValues();
+                  await onSubmit(draftData, true);
+                }}
+                disabled={isDraftSubmitting || isPublishSubmitting}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {/* {isDraftSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {isDraftSubmitting ? "Saving..." : "Save as Draft"} */}
+                {isDraftSubmitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {isDraftSubmitting
+                  ? "Saving..."
+                  : mode === "edit"
+                    ? "Update Draft"
+                    : "Save as Draft"}
+              </button>
+            {/* )} */}
           </div>
         </div>
       </div>

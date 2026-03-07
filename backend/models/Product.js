@@ -203,7 +203,7 @@ const productSchema = new mongoose.Schema(
       ref: "User"
     },
 
-    publishedAt: Date,
+    // publishedAt: Date,
 
 
     /* FLAGS */
@@ -233,7 +233,7 @@ productSchema.index({ isActive: 1, category: 1, minPrice: 1 });
 /* ======================================================
    AUTO SLUG
 ====================================================== */
-productSchema.pre("validate", function () {
+productSchema.pre("save", function () {
   if (!this.slug && this.name) {
     this.slug = this.name
       .toLowerCase()
