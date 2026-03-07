@@ -22,8 +22,18 @@ router.post(
   adminController.uploadFile,
 );
 
+// DRAFT ROUTES - MUST BE BEFORE GENERIC :id ROUTES
+router.get("/products/drafts", protect, admin, adminController.getDraftProducts);
+router.get("/products/drafts/:id", protect, admin, adminController.getDraft);
+router.post("/products/drafts/delete-many", protect, admin, adminController.deleteManyDrafts);
+router.delete("/products/drafts/:id", protect, admin, adminController.deleteDraft);
+
+// GENERAL PRODUCTS ROUTES
 router.get("/products", protect, admin, adminController.getAllProducts);
 router.post("/products/delete-many", protect, admin, adminController.deleteManyProducts);
+
+// GENERIC :id ROUTES - MUST BE LAST
+router.put("/products/:id/publish", protect, admin, adminController.publishDraft);
 router.put("/products/:id", protect, admin, upload.any(), adminController.updateProduct);
 router.delete("/products/:id", protect, admin, adminController.deleteProduct);
 

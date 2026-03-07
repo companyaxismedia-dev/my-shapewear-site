@@ -29,12 +29,19 @@ export default function EditProductPage() {
           return;
         }
 
-        // Try the admin endpoint first
+        // Try the admin endpoint first (for published products)
         let res = await fetch(`${API_BASE}/api/admin/products/${productId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // If admin endpoint fails, try the regular products endpoint
+        // If admin endpoint fails, try the drafts endpoint
+        if (!res.ok) {
+          res = await fetch(`${API_BASE}/api/admin/products/drafts/${productId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+
+        // If both fail, try the regular products endpoint
         if (!res.ok) {
           res = await fetch(`${API_BASE}/api/products/${productId}`, {
             headers: { Authorization: `Bearer ${token}` },

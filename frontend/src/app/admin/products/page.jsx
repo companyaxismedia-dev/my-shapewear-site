@@ -177,6 +177,13 @@ export default function ProductListPage() {
                     </button>
 
                     <button
+                        onClick={() => router.push("/admin/products/drafts")}
+                        className="btn-muted px-4 py-2 flex items-center gap-2 text-sm"
+                    >
+                        📋 Draft Products
+                    </button>
+
+                    <button
                         onClick={() => {
                             if (!selectedIds.length) {
                                 toast.error("Select products first");
@@ -185,7 +192,7 @@ export default function ProductListPage() {
                             setDeleteTarget(null);
                             setDeleteOpen(true);
                         }}
-                        className="btn-destructive px-4 py-2 flex items-center gap-2 text-sm"
+                className="btn-destructive px-4 py-2 flex items-center gap-2 text-sm whitespace-nowrap"
                     >
                         <Trash2 size={15} /> Delete Product
                     </button>

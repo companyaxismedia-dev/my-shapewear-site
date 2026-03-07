@@ -8,7 +8,7 @@ exports.getProducts = async (req, res) => {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.max(Number(req.query.limit) || 12, 1);
      
-    const filter = { isActive: true };
+    const filter = { isActive: true, status: "published" };
 
 /* ================= CATEGORY ================= */
 if (req.query.category) {
@@ -152,7 +152,7 @@ if (req.query.inStock === "true") {
     try {
       const product = await Product.findById(req.params.id);
 
-      if (!product || !product.isActive) {
+      if (!product || !product.isActive || product.status !== "published") {
         return res.status(404).json({
           success: false,
           message: "Product not found",
@@ -180,6 +180,7 @@ if (req.query.inStock === "true") {
       const product = await Product.findOne({
         slug: req.params.slug,
         isActive: true,
+        status: "published",
       });
 
       if (!product) {

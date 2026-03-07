@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home, Store, ShoppingCart, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle,
-  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp,
+  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2,LucideUserCircle2
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -27,12 +27,18 @@ const navItems = [
         children: [
           { title: "All Products", href: "/admin/products" },
           { title: "Add Product", href: "/admin/products/add" },
+          {title: "Draft Products", href:"/admin/products/drafts"},
           { title: "Categories", href: "/admin/products/categories" },
         ],
       },
       { title: "Orders", href: "/admin/orders" },
-      { title: "Customers", href: "/admin/customers" },
+      // { title: "Customers", href: "/admin/customers" },
     ],
+  },
+  {
+    title: "Customers",
+    href: "/admin/customers",
+    icon: LucideUserCircle2,
   },
   {
     title: "Shop Management",
@@ -144,7 +150,7 @@ export function AdminSidebar({ collapsed, onToggle }) {
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-border min-h-[64px]">
           <div className="flex-shrink-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center">
-            <ShoppingCart className="w-5 h-5 text-primary-foreground" />
+            <User2 className="w-5 h-5 text-primary-foreground" />
           </div>
           {!collapsed && (
             <span className="font-bold text-base text-foreground truncate">

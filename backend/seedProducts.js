@@ -4,6 +4,7 @@ const fs = require("fs");
 require("dotenv").config();
 
 const Product = require("./models/Product");
+const User = require("./models/User");
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
@@ -23,6 +24,14 @@ async function seedProducts() {
   try {
     await Product.deleteMany();
     console.log("Old products removed");
+
+    // Get or create an admin user for seeding
+    let adminUser = await User.findOne({ role: "admin" });
+    
+    if (!adminUser) {
+      console.log("No admin user found. Please create an admin user first.");
+      process.exit(1);
+    }
 
     const folders = fs.readdirSync(imageBasePath);
 
@@ -68,7 +77,10 @@ async function seedProducts() {
               ]
             }
           ],
-          isFeatured: Math.random() > 0.7
+          isFeatured: Math.random() > 0.7,
+          createdBy: adminUser._id,
+          updatedBy: adminUser._id,
+          status: "published"
         });
 
         await product.save();
