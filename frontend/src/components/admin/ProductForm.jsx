@@ -434,7 +434,7 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
 
         {images.map((img, i) => (
           <div key={i} className="relative group aspect-square rounded-xl overflow-hidden border border-border bg-muted">
-            <img src={img.url} alt={img.altText || ""} className="w-full h-full object-cover" />
+            <img src={img.url.startsWith('http') || img.url.startsWith('blob:') ? img.url : `${API_BASE}${img.url}`} alt={img.altText || ""} className="w-full h-full object-cover" />
             {img.isPrimary && (
               <span className="absolute top-1 left-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground bg-black z-[999] text-green-500">
                 Primary
@@ -1667,13 +1667,19 @@ export function ProductForm({
                 type="file"
                 accept="image/*"
                 className={getInputClass(!!errors.thumbnail)}
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
 
-                  const url = URL.createObjectURL(file);
-                  setValue("thumbnail", url); // Set preview URL
-                  setThumbnailFile(file); // Store file for upload
+                  try {
+                    // Upload thumbnail file immediately
+                    const uploadedUrl = await uploadFile(file);
+                    setValue("thumbnail", uploadedUrl); // Save real file path
+                    setThumbnailFile(file); // Store file for upload
+                  } catch (err) {
+                    console.error("Thumbnail upload error:", err);
+                    toast.error("Failed to upload thumbnail");
+                  }
                 }}
               />
             ) : (
@@ -1696,7 +1702,7 @@ export function ProductForm({
               <div className="mt-2 relative group rounded-lg overflow-hidden border border-border aspect-square w-full max-w-[100px]">
 
                 <img
-                  src={watch("thumbnail")}
+                  src={watch("thumbnail").startsWith('http') || watch("thumbnail").startsWith('blob:') ? watch("thumbnail") : `${API_BASE}${watch("thumbnail")}`}
                   alt="thumbnail"
                   className="w-full h-full object-cover"
                 />
@@ -1807,7 +1813,7 @@ export function ProductForm({
           mode={mode === "edit" ? "edit" : "add"}
           items={[
             { label: "Home", href: "/admin" },
-            { label: "Products", href: "/admin/products" },
+            { label: "MyShop", href: "/admin/products" },
           ]}
         />
 

@@ -2,21 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-    Plus,
-    Trash2,
-    Search,
-    MoreVertical,
-    Pencil,
-    ChevronDown,
-} from "lucide-react";
+import { Plus, Trash2, Search, MoreVertical, Pencil, ChevronDown, } from "lucide-react";
 import { toast } from "sonner";
-
-import { AdminLayout } from "@/components/admin/AdminLayout";
-
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
 // import EditProductModal from "@/components/admin/modals/EditProductModal";
 import ExportProductsModal from "@/components/admin/modals/ExportProductsModal";
+import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 
 const API_BASE =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -153,7 +144,16 @@ export default function ProductListPage() {
 
     /* ================= UI ================= */
     return (
-        <AdminLayout>
+        <>
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Home", href: "/admin" },
+                    { label: "MyShop", href: "" },
+                    { label: "All Categories", href: "/admin/products/categories" },
+                ]}
+                mode={null}
+            />
+
             <h1 className="text-2xl font-bold mb-5">All Categories</h1>
 
             {/* TOP NAV */}
@@ -288,7 +288,7 @@ export default function ProductListPage() {
                                 </td>
                                 <td className="p-3 flex items-center gap-3">
                                     <img
-                                        src={p.thumbnail}
+                                        src={p.image.startsWith("http") ? p.image : `${API_BASE}${p.image}`}
                                         className="w-12 h-12 rounded border object-cover"
                                     />
                                     {p.name}
@@ -369,6 +369,6 @@ export default function ProductListPage() {
                 open={exportOpen}
                 onClose={() => setExportOpen(false)}
             />
-        </AdminLayout>
+        </>
     );
 }

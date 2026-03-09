@@ -2,10 +2,12 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { TrendingUp,ShoppingCart,Package,Users,ArrowRight,AlertTriangle,ChevronRight,} from "lucide-react";
-import {ResponsiveContainer,AreaChart,Area,XAxis,YAxis,CartesianGrid,Tooltip,} from "recharts";
+import { TrendingUp, ShoppingCart, Package, Users, ArrowRight, AlertTriangle, ChevronRight } from "lucide-react";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
-import { AdminLayout } from "@/components/admin/AdminLayout";
+import { useDashboardStats } from "@/components/admin/useDashboardStats";
+import { useRouter } from "next/navigation";
+import { API_BASE } from "@/lib/api";
 
 // ── Stat Card ──────────────────────────────────────────────────────────────
 function StatCard({ title, value, change, positive, icon: Icon, prefix }) {
@@ -54,7 +56,7 @@ function StatusBadge({ status }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+        "inline-flex items-center gap-1  py-0.5 rounded-full text-xs font-medium",
         styles[status] ?? "bg-muted text-muted-foreground"
       )}
     >
@@ -67,25 +69,25 @@ function StatusBadge({ status }) {
 // ── Dashboard Page ─────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [chartPeriod, setChartPeriod] = useState("7days");
+  const router = useRouter();
 
-  // All data empty — will be populated when backend is connected
-  const stats = {
-    totalSales: null,
-    totalOrders: null,
-    totalProducts: null,
-    totalCustomers: null,
-  };
+  // fetch dashboard stats from backend (includes orders/products/customers)
+  const {
+    stats,
+    salesData,
+    loading: statsLoading,
+    salesLoading,
+    error: statsError
+  } = useDashboardStats(0, chartPeriod);
+  // placeholder arrays – these will also eventually come from the API in a
+  // future task, but for now keep them empty so the UI shows the empty state.
+  const recentOrders = stats?.recentOrders || [];
+  const recentProducts = stats?.recentProducts || [];
+  const lowStockProducts = (stats?.lowStock || []).slice(0, 3);
 
-  const salesData = [];
-
-  const recentOrders = [];
-
-  const recentProducts = [];
-
-  const lowStockProducts = [];
 
   return (
-    <AdminLayout>
+    <>
       {/* Page Title */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -99,11 +101,60 @@ export default function Dashboard() {
       </div>
 
       {/* ── Stats Cards ── */}
+      {statsError && (
+        <p className="text-sm text-destructive mb-2">{statsError}</p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Total Sales" value={stats.totalSales ?? "—"} icon={TrendingUp} />
-        <StatCard title="Total Orders" value={stats.totalOrders ?? "—"} icon={ShoppingCart} />
-        <StatCard title="Total Products" value={stats.totalProducts ?? "—"} icon={Package} />
-        <StatCard title="Total Customers" value={stats.totalCustomers ?? "—"} icon={Users} />
+        <StatCard
+          title="Total Sales"
+          // value={`₹ ${
+          //   statsLoading
+          //     ? "..."
+          //     : stats?.totalSales !== null && stats?.totalSales !== undefined
+          //       ? stats.totalSales
+          //       : "—"
+          // }`}
+          value={
+            statsLoading
+              ? "..."
+              : `₹ ${(stats?.totalSales ?? 0).toLocaleString()}`
+          }
+          icon={TrendingUp}
+        />
+
+        <StatCard
+          title="Total Orders"
+          value={
+            statsLoading
+              ? "..."
+              : stats?.totalOrders !== null && stats?.totalOrders !== undefined
+                ? stats.totalOrders
+                : "—"
+          }
+          icon={ShoppingCart}
+        />
+        <StatCard
+          title="Total Products"
+          value={
+            statsLoading
+              ? "..."
+              : stats?.totalProducts !== null && stats?.totalProducts !== undefined
+                ? stats.totalProducts
+                : "—"
+          }
+          icon={Package}
+        />
+        <StatCard
+          title="Total Customers"
+          value={
+            statsLoading
+              ? "..."
+              : stats?.totalCustomers !== null && stats?.totalCustomers !== undefined
+                ? stats.totalCustomers
+                : "—"
+          }
+          icon={Users}
+        />
       </div>
 
       {/* ── Main Grid ── */}
@@ -141,10 +192,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {salesData.length === 0 ? (
+            {salesLoading ? (
               <div className="h-56 flex flex-col items-center justify-center text-muted-foreground gap-2 border-2 border-dashed border-border rounded-lg">
                 <TrendingUp className="w-8 h-8 opacity-30" />
-                <p className="text-sm">No sales data available</p>
+                <p className="text-sm">Loading sales data...</p>
                 <p className="text-xs opacity-70">
                   Connect your backend to see sales overview
                 </p>
@@ -181,7 +232,7 @@ export default function Dashboard() {
               <h2 className="text-base font-semibold text-foreground">
                 Recent Products
               </h2>
-              <button className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+              <button onClick={() => router.push("/admin/products")} className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
                 View All <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -219,9 +270,10 @@ export default function Dashboard() {
                         <td className="py-3 pr-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                              {product.image ? (  
+                              {product.image ? (
                                 <img
-                                  src={product.image}
+                                  // src={product.image}
+                                  src={product.image.startsWith("http") ? product.image : `${API_BASE}${product.image}`}
                                   alt={product.name}
                                   className="w-full h-full object-cover"
                                 />
@@ -262,10 +314,10 @@ export default function Dashboard() {
               <h2 className="text-base font-semibold text-foreground">
                 Recent Orders
               </h2>
-             <Link href="/admin/orders/recent">
-              <button className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
-                View All <ArrowRight className="w-3.5 h-3.5" />
-              </button></Link>
+              <Link href="/admin/orders/recent">
+                <button className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+                  View All <ArrowRight className="w-3.5 h-3.5" />
+                </button></Link>
             </div>
 
             {recentOrders.length === 0 ? (
@@ -323,7 +375,7 @@ export default function Dashboard() {
               <h2 className="text-base font-semibold text-foreground">
                 Low Stock Products
               </h2>
-              <button className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
+              <button onClick={() => router.push("/admin/products/lowstock")} className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
                 View All <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -340,7 +392,7 @@ export default function Dashboard() {
               <div className="space-y-2">
                 {lowStockProducts.map((product) => (
                   <div
-                    key={product.id}
+                    key={product._id}
                     className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer group"
                   >
                     <div className="w-8 h-8 rounded-lg bg-admin-warning-light flex items-center justify-center flex-shrink-0">
@@ -354,7 +406,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-sm font-semibold text-foreground">
-                        {product.left} left
+                        {product.totalStock} left
                       </span>
                       <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                     </div>
@@ -366,6 +418,6 @@ export default function Dashboard() {
         </div>
 
       </div>
-    </AdminLayout>
+    </>
   );
 }

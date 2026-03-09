@@ -2,18 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-    Plus,
-    Trash2,
-    Search,
-    MoreVertical,
-    Pencil,
-    Check,
-} from "lucide-react";
+import {Plus,Trash2,Search,MoreVertical,Pencil,Check,} from "lucide-react";
 import { toast } from "sonner";
-
-import { AdminLayout } from "@/components/admin/AdminLayout";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
+import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 
 const API_BASE =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -153,8 +145,17 @@ export default function DraftProductsPage() {
 
     /* ================= UI ================= */
     return (
-        <AdminLayout>
+        <>
             {/* <div className="w-full min-h-screen bg-background p-3 md:p-5 overflow-x-hidden"> */}
+                        <AdminBreadcrumbs
+                            items={[
+                                { label: "Home", href: "/admin" },
+                                { label: "MyShop", href: "" },
+                                { label: "Draft Products", href: "/admin/products/drafts" },
+                            ]}
+                            mode={null}
+                        />
+            
             <h1 className="text-2xl font-bold mb-5">Draft Products</h1>
 
             {/* TOP NAV */}
@@ -356,6 +357,6 @@ export default function DraftProductsPage() {
                 onConfirm={confirmDelete}
             />
             {/* </div> */}
-        </AdminLayout>
+        </>
     );
 }

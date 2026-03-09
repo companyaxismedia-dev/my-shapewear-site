@@ -5,6 +5,7 @@ export default function DeleteConfirmModal({
   onClose,
   onConfirm,
   title = "Delete Products?",
+  btnName = "Delete",
 }) {
   if (!open) return null;
 
@@ -21,7 +22,7 @@ export default function DeleteConfirmModal({
             Cancel
           </button>
           <button className="btn-destructive" onClick={onConfirm}>
-            Delete
+            {btnName}
           </button>
         </div>
       </div>

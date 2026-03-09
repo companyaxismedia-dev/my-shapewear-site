@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-export default function AdminBreadcrumbs({ items = [], mode }) {
+export default function AdminBreadcrumbs({ items = [], mode="default" }) {
   return (
     <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
       {items.map((item, index) => {

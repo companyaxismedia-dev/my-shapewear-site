@@ -4,34 +4,60 @@ const Order = require("../models/Order");
 const Offer = require("../models/Offer");
 
 
-exports.getDashboard = async (req, res) => {
+// dynamic controller to fetch the counts in the amdin panel
+exports.getCounts = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
+    const sales = await Order.aggregate([
+      { $match: { status: "Order Placed" } },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: "$finalAmount" },
+        }
+      }
+    ])
+
+    const totalSales = sales.length ? sales[0].totalSales : 0;
+    const totalCustomers = await User.countDocuments({ role: "user" });
     const totalProducts = await Product.countDocuments();
     const totalOrders = await Order.countDocuments();
 
-    const sales = await Order.aggregate([
-      { $match: { status: "Delivered" } },
-      { $group: { _id: null, total: { $sum: "$totalAmount" } } },
-    ]);
+    const recentOrdersRaw = await Order.find()
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .select("userInfo.name finalAmount status");
 
-    const recentOrders = await Order.find().sort({ createdAt: -1 }).limit(5);
+    const recentOrders = recentOrdersRaw.map((o) => ({
+      id: "#" + o._id.toString().slice(-10),
+      customer: o.userInfo?.name || "Customer",
+      amount: o.finalAmount,
+      status: o.status,
+    }));
+
+    // fetch last 3 published products for recent products section
+    const recentProductsRaw = await Product.find({ status: "published", isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .select("_id name thumbnail minPrice maxPrice totalStock category variants");
+
+    const recentProducts = recentProductsRaw.map((p) => ({
+      id: p._id.toString(),
+      name: p.name,
+      image: p.thumbnail || (p.variants?.[0]?.images?.[0] || null),
+      price: p.minPrice || p.maxPrice || 0,
+      stock: p.totalStock,
+      category: p.category,
+    }));
 
     const lowStock = await Product.find({
       totalStock: { $lt: 5 },
       isActive: true,
-    });
+    }).sort({ totalStock: 1 })
+      .limit(3);
 
     res.json({
-      success: true,
-      stats: {
-        totalUsers,
-        totalProducts,
-        totalOrders,
-        totalSales: sales[0]?.total || 0,
-      },
-      recentOrders,
-      lowStock,
+      success: true, totalSales, totalCustomers,
+      totalProducts, totalOrders, recentOrders, recentProducts, lowStock
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -40,18 +66,47 @@ exports.getDashboard = async (req, res) => {
 
 exports.getSalesGraph = async (req, res) => {
   try {
-    const data = await Order.aggregate([
-      { $match: { status: "Delivered" } },
+    const { period } = req.query;
+
+    let startDate = new Date();
+    let groupFormat = "%d %b"; // Apr 18
+
+    if (period === "7days") {
+      startDate.setDate(startDate.getDate() - 6);
+    } else {
+      startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    }
+
+    const sales = await Order.aggregate([
       {
-        $group: {
-          _id: { $month: "$createdAt" },
-          sales: { $sum: "$totalAmount" },
+        $match: {
+          // status: "Delivered",
+          status: "Order Placed",
+          createdAt: { $gte: startDate },
         },
       },
-      { $sort: { _id: 1 } },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: groupFormat, date: "$createdAt" },
+          },
+          sales: { $sum: "$finalAmount" || "$totalAmount" },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
     ]);
 
-    res.json({ success: true, data });
+    const formatted = sales.map((s) => ({
+      date: s._id,
+      sales: s.sales,
+    }));
+
+    res.json({
+      success: true,
+      data: formatted,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -138,10 +193,16 @@ exports.createProduct = async (req, res) => {
           if (!data.variants[variantIndex]) return;
 
           if (type === "images") {
-            // Because the frontend sends local `blob:...` urls inside the JSON, we need to clear the array first,
-            // but only once per variant, so we don't overwrite multiple legitimate uploads.
+            // Only clear blob URLs (pending client uploads), keep real file paths from database
             if (!clearedImageVariants.has(variantIndex)) {
-              data.variants[variantIndex].images = [];
+              if (data.variants[variantIndex].images) {
+                // Filter out blob URLs but keep existing file paths
+                data.variants[variantIndex].images = data.variants[variantIndex].images.filter(
+                  img => !img.url?.startsWith('blob:')
+                );
+              } else {
+                data.variants[variantIndex].images = [];
+              }
               clearedImageVariants.add(variantIndex);
             }
 
@@ -160,6 +221,9 @@ exports.createProduct = async (req, res) => {
           if (type === "video") {
             data.variants[variantIndex].video = `/${file.path.replace(/\\/g, "/")}`;
           }
+        } else if (fieldName === "thumbnailFile") {
+          // Handle thumbnail file upload
+          data.thumbnail = `/${file.path.replace(/\\/g, "/")}`;
         }
       });
     }
@@ -237,14 +301,19 @@ exports.getAllProducts = async (req, res) => {
 
     const total = await Product.countDocuments(filter);
 
-    const products = await Product.find(filter)
+    const productsRaw = await Product.find(filter)
       .sort({ createdAt: -1 })
-      // .select(
-      //   "name slug category subCategory minPrice maxPrice totalStock thumbnail isActive createdAt",
-      // )
+      .select("_id name slug category minPrice maxPrice totalStock thumbnail isActive createdAt variants")
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
+
+    // Map products to include image field with fallback
+    const products = productsRaw.map((p) => ({
+      ...p,
+      image: p.thumbnail || (p.variants?.[0]?.images?.[0]?.url || null),
+    }));
+
     res.json({
       success: true,
       products,
@@ -316,8 +385,8 @@ exports.updateProduct = async (req, res) => {
 
       data.slug = slug;
     }
-      //  HANDLE VARIANT FILE UPLOADS
-      
+    //  HANDLE VARIANT FILE UPLOADS
+
     const clearedImageVariants = new Set();
 
     if (req.files?.length && data.variants?.length) {
@@ -333,8 +402,16 @@ exports.updateProduct = async (req, res) => {
           if (!data.variants[variantIndex]) return;
 
           if (type === "images") {
+            // Only clear blob URLs (pending client uploads), keep real file paths from database
             if (!clearedImageVariants.has(variantIndex)) {
-              data.variants[variantIndex].images = [];
+              if (data.variants[variantIndex].images) {
+                // Filter out blob URLs but keep existing file paths
+                data.variants[variantIndex].images = data.variants[variantIndex].images.filter(
+                  img => !img.url?.startsWith('blob:')
+                );
+              } else {
+                data.variants[variantIndex].images = [];
+              }
               clearedImageVariants.add(variantIndex);
             }
 
@@ -353,8 +430,11 @@ exports.updateProduct = async (req, res) => {
           if (type === "video") {
             data.variants[
               variantIndex
-            ].video =`/${file.path.replace(/\\/g, "/")}`;
+            ].video = `/${file.path.replace(/\\/g, "/")}`;
           }
+        } else if (fieldName === "thumbnailFile") {
+          // Handle thumbnail file upload
+          data.thumbnail = `/${file.path.replace(/\\/g, "/")}`;
         }
       });
     }
@@ -405,7 +485,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-  //  deleting multiple products
+//  deleting multiple products
 exports.deleteManyProducts = async (req, res) => {
   try {
     const { ids } = req.body;
@@ -503,13 +583,181 @@ exports.autoBestSeller = async (req, res) => {
 };
 
 
+// exports.getOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find().sort({ createdAt: -1 });
+
+//     res.json({ success: true, orders });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
 exports.getOrders = async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
+
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const search = req.query.search || "";
+
+    const { startDate, endDate, status } = req.query;
+
+    const filter = {};
+
+    if (search) {
+      filter["userInfo.name"] = { $regex: search, $options: "i" };
+    }
+
+    if (startDate && endDate) {
+      filter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+    // Status filter: support explicit status, comma-separated list, or special token 'Unfulfilled'
+    if (status && status !== "All") {
+      const statuses = status.split(",").map((s) => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        if (statuses[0] === "Unfulfilled") {
+          filter.status = { $ne: "Delivered" };
+        } else {
+          filter.status = statuses[0];
+        }
+      } else if (statuses.length > 1) {
+        // If the list includes 'Unfulfilled' together with explicit statuses,
+        // build an $or that matches either the explicit statuses or any non-Delivered status.
+        if (statuses.includes("Unfulfilled")) {
+          const explicit = statuses.filter((s) => s !== "Unfulfilled");
+          const ors = [];
+          if (explicit.length) ors.push({ status: { $in: explicit } });
+          ors.push({ status: { $ne: "Delivered" } });
+          filter.$or = ors;
+        } else {
+          filter.status = { $in: statuses };
+        }
+      }
+    }
+    const total = await Order.countDocuments(filter);
+
+    const ordersRaw = await Order.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    const orders = ordersRaw.map((o) => ({
+      id: "#" + o._id.toString().slice(-4),
+      orderId: o._id,
+      date: o.createdAt,
+      customer: o.userInfo?.name || "Customer",
+      payment: o.paymentStatus,
+      total: o.finalAmount,
+      items: o.products?.length || 0,
+      status: o.status,
+    }));
+
+    res.json({
+      success: true,
+      orders,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    });
+
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// POST /api/admin/orders/details
+exports.getOrdersDetails = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || !ids.length) {
+      return res.status(400).json({ success: false, message: "ids array required" });
+    }
+
+    const orders = await Order.find({ _id: { $in: ids } }).sort({ createdAt: -1 });
 
     res.json({ success: true, orders });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getOrderAnalytics = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    let match = {};
+
+    if (startDate && endDate) {
+      match.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    /* ================= TOTAL ORDERS ================= */
+    const totalOrders = await Order.countDocuments(match);
+
+    /* ================= ORDER ITEMS OVER TIME ================= */
+    const orderItems = await Order.aggregate([
+      { $match: match },
+      { $unwind: "$products" },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+            },
+          },
+          items: { $sum: "$products.quantity" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    /* ================= RETURN ORDERS ================= */
+    const returnOrders = await Order.countDocuments({
+      ...match,
+      status: "Cancelled",
+    });
+
+    /* ================= FULFILLED ORDERS ================= */
+    const fulfilledOrders = await Order.aggregate([
+      {
+        $match: {
+          ...match,
+          status: "Delivered",
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt",
+            },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    res.json({
+      success: true,
+      totalOrders,
+      orderItems,
+      returnOrders,
+      fulfilledOrders,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -789,3 +1037,4 @@ exports.deleteManyDrafts = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+

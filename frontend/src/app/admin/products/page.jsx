@@ -11,13 +11,10 @@ import {
     ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
-
-import { AdminLayout } from "@/components/admin/AdminLayout";
-
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
+import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 
-const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_BASE } from "@/lib/api";
 
 export default function ProductListPage() {
     const router = useRouter();
@@ -126,7 +123,7 @@ export default function ProductListPage() {
             console.log("Response status:", response.status, "Response ok:", response.ok);
 
             const data = await response.json();
-            
+
             console.log("Response data:", data);
 
             // Validate response
@@ -136,12 +133,12 @@ export default function ProductListPage() {
             }
 
             // Show success message with count
-            const successMessage = deleteTarget 
+            const successMessage = deleteTarget
                 ? "Product deleted successfully! ✓"
                 : `${data.deletedCount || selectedIds.length} product${data.deletedCount > 1 || selectedIds.length > 1 ? 's' : ''} deleted successfully! ✓`;
-            
+
             console.log("Showing toast:", successMessage);
-            
+
             toast.success(successMessage, {
                 duration: 3000,
             });
@@ -162,7 +159,15 @@ export default function ProductListPage() {
 
     /* ================= UI ================= */
     return (
-        <AdminLayout>
+        <>
+            <AdminBreadcrumbs
+                items={[
+                    { label: "Home", href: "/admin" },
+                    { label: "MyShop", href: "" },
+                    { label: "AllProducts", href: "/admin/products" },
+                ]}
+                mode={null}
+            />
             <h1 className="text-2xl font-bold mb-5">All Products</h1>
 
             {/* TOP NAV */}
@@ -192,7 +197,7 @@ export default function ProductListPage() {
                             setDeleteTarget(null);
                             setDeleteOpen(true);
                         }}
-                className="btn-destructive px-4 py-2 flex items-center gap-2 text-sm whitespace-nowrap"
+                        className="btn-destructive px-4 py-2 flex items-center gap-2 text-sm whitespace-nowrap"
                     >
                         <Trash2 size={15} /> Delete Product
                     </button>
@@ -293,10 +298,17 @@ export default function ProductListPage() {
                                 </td>
 
                                 <td className="p-3 flex items-center gap-3">
-                                    <img
-                                        src={p.thumbnail}
-                                        className="w-12 h-12 rounded border object-cover"
-                                    />
+                                    {p.image ? (
+                                        <img
+                                            // src={p.thumbnail}
+                                            src={p.image.startsWith("http") ? p.image : `${API_BASE}${p.image}`}
+
+                                            className="w-12 h-12 rounded border object-cover"
+                                        />) : (
+                                        <div className="w-12 h-12 rounded border bg-muted flex items-center justify-center text-xs text-muted">
+                                            No Image
+                                        </div>
+                                    )}
                                     {p.name}
                                 </td>
 
@@ -359,6 +371,6 @@ export default function ProductListPage() {
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={confirmDelete}
             />
-        </AdminLayout>
+        </>
     );
 }

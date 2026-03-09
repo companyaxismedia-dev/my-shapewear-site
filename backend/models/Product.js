@@ -266,14 +266,6 @@ productSchema.pre("save", function () {
           }
         }
       });
-//       variant.sizes?.forEach((size) => {
-//   totalStock += size?.stock || 0;
-//   prices.push(size?.price || 0);
-
-//   if (size?.mrp && size?.price) {
-//     size.discount = Math.round(((size.mrp - size.price) / size.mrp) * 100);
-//   }
-// });
     });
   }
 
