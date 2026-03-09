@@ -66,84 +66,139 @@ export default function AdminOrderDetail() {
   if (!order) return <div className="p-6">Order not found</div>;
 
   return (
-    <div className="p-6 space-y-6 flex gap-6">
-      <div className="flex-1 space-y-4">
-        <div className="bg-white p-4 rounded shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold">Order ID: {String(order._id)}</h1>
-              <div className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString()}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded bg-yellow-100 text-yellow-800">{order.paymentStatus || 'Payment'}</span>
-              <span className="px-3 py-1 rounded bg-red-100 text-red-800">{order.status || 'Status'}</span>
-            </div>
+    <div className="p-6 space-y-6">
+      <div className="admin-card p-4 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Order ID: {String(order._id)}</h1>
+          <div className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString()} • from {order.source || 'Store'}</div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">{order.paymentStatus || 'Payment pending'}</span>
+            <span className="px-2 py-1 rounded bg-red-100 text-red-800 text-sm">{order.status || 'Unfulfilled'}</span>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded shadow-sm space-y-4">
-          <h2 className="font-semibold">Order Items</h2>
-          <div className="space-y-3">
-            {(order.products || []).map((p) => (
-              <div key={p._id || p.productId} className="flex items-center gap-4 border-b pb-3">
-                <div className="w-16 h-16 bg-gray-100 flex items-center justify-center rounded overflow-hidden">
-                  {p.images?.[0] ? <img src={p.images[0].url || p.images[0]} alt={p.name} className="w-full h-full object-cover" /> : null}
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium">{p.name}</div>
-                  <div className="text-sm text-gray-500">Qty: {p.quantity} • ₹{p.price ?? p.salePrice ?? p.finalPrice}</div>
-                </div>
-                <div className="text-right">₹{(p.quantity * (p.price || p.salePrice || 0)).toFixed(2)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow-sm">
-          <h2 className="font-semibold">Order Summary</h2>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-            <div>Subtotal</div><div className="text-right">₹{order.subtotal ?? order.finalAmount ?? 0}</div>
-            <div>Shipping</div><div className="text-right">₹{order.shippingCost ?? 0}</div>
-            <div>Discount</div><div className="text-right">-₹{order.discount ?? 0}</div>
-            <div className="font-semibold">Total</div><div className="text-right font-semibold">₹{order.finalAmount ?? 0}</div>
-          </div>
+        <div className="flex items-center gap-2">
+          <button className="btn-muted">Restock</button>
+          <button className="btn-muted">Edit</button>
+          <button className="btn-muted">More actions</button>
         </div>
       </div>
 
-      <aside className="w-80 space-y-4">
-        <div className="bg-white p-4 rounded shadow-sm">
-          <h3 className="font-semibold">Customer</h3>
-          <div className="text-sm">{order.userInfo?.name || 'Guest'}</div>
-          <div className="text-sm text-gray-500">{order.userInfo?.email}</div>
-        </div>
+      <div className="grid grid-cols-3 gap-6">
+        <div className="col-span-2 space-y-4">
+          {/* Order Item card */}
+          <div className="admin-card p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">Order Item</h2>
+              <div className="text-sm text-gray-500">{(order.products||[]).length} item(s)</div>
+            </div>
 
-        <div className="bg-white p-4 rounded shadow-sm">
-          <h3 className="font-semibold">Contact</h3>
-          <div className="text-sm">{order.userInfo?.phone || '-'}</div>
-        </div>
+            <div className="mt-3 space-y-4">
+              {(order.products || []).map((p, idx) => (
+                <div key={p._id || idx} className="border rounded p-3 bg-white">
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 bg-gray-50 rounded overflow-hidden flex-shrink-0">
+                      {p.images?.[0] ? <img src={p.images[0].url || p.images[0]} alt={p.name} className="w-full h-full object-cover"/> : null}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{p.name}</div>
+                      <div className="text-sm text-gray-500">{p.variant || ''} • {p.color || ''}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm">{p.quantity} x ₹{p.price ?? p.salePrice ?? 0}</div>
+                      <div className="font-semibold">₹{(p.quantity * (p.price || 0)).toFixed(2)}</div>
+                    </div>
+                  </div>
 
-        <div className="bg-white p-4 rounded shadow-sm">
-          <h3 className="font-semibold">Shipping address</h3>
-          <div className="text-sm">
-            {order.shippingAddress?.address || order.userInfo?.address || '-'}
+                  <div className="mt-3 flex items-center gap-2">
+                    <button className="btn-muted">Fulfill item</button>
+                    <button className="btn-primary">Create shipping label</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Order Summary */}
+          <div className="admin-card p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">Order Summary</h2>
+              <span className="px-2 py-1 rounded bg-yellow-50 text-yellow-700 text-sm">{order.paymentStatus || 'Payment pending'}</span>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+              <div>Subtotal</div><div className="text-right">₹{order.subtotal ?? 0}</div>
+              <div>Discount</div><div className="text-right">-₹{order.discount ?? 0}</div>
+              <div>Shipping</div><div className="text-right">₹{order.shippingCost ?? 0}</div>
+              <div className="font-semibold">Total</div><div className="text-right font-semibold">₹{order.finalAmount ?? 0}</div>
+            </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button className="btn-muted">Send invoice</button>
+              <button className="btn-primary">Collect payment</button>
+            </div>
+          </div>
+
+          {/* Timeline / Comments */}
+          <div className="admin-card p-4">
+            <h3 className="font-semibold">Timeline</h3>
+            <p className="text-sm text-gray-500 mt-2">Order events and comments</p>
+            <div className="mt-3 space-y-3">
+              {(order.statusHistory || []).map((h, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center text-sm">{(h.status||'').slice(0,1)}</div>
+                  <div>
+                    <div className="text-sm font-medium">{h.status}</div>
+                    <div className="text-xs text-gray-500">{new Date(h.createdAt || order.createdAt).toLocaleString()}</div>
+                  </div>
+                </div>
+              ))}
+
+              <textarea placeholder="Leave a comment..." className="input w-full mt-2" rows={3}></textarea>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded shadow-sm">
-          <label className="block text-sm font-medium">Status</label>
-          <select value={status} onChange={(e)=>setStatus(e.target.value)} className="w-full mt-2 input">
-            <option>Order Placed</option>
-            <option>Processing</option>
-            <option>Shipped</option>
-            <option>Delivered</option>
-            <option>Cancelled</option>
-          </select>
-          <div className="flex gap-2 mt-3">
-            <button onClick={()=>router.back()} className="btn-muted">Back</button>
-            <button onClick={updateStatus} disabled={saving} className="btn-primary">{saving? 'Saving...' : 'Update status'}</button>
+        {/* Right sidebar */}
+        <aside className="space-y-4">
+          <div className="admin-card p-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Notes</h3>
+              <button className="text-sm text-gray-500">✎</button>
+            </div>
+            <div className="mt-2 text-sm text-gray-600">{order.notes || 'No notes'}</div>
           </div>
-        </div>
-      </aside>
+
+          <div className="admin-card p-4">
+            <h3 className="font-semibold">Customers</h3>
+            <div className="mt-2 text-sm">{order.userInfo?.name || 'Guest'}</div>
+            <div className="text-xs text-gray-500 mt-1">{(order.userInfo?.orderCount || 1)} order(s)</div>
+          </div>
+
+          <div className="admin-card p-4">
+            <h3 className="font-semibold">Contact Information</h3>
+            <div className="mt-2 text-sm">{order.userInfo?.email || '-'}</div>
+            <div className="text-sm">{order.userInfo?.phone || '-'}</div>
+          </div>
+
+          <div className="admin-card p-4">
+            <h3 className="font-semibold">Shipping address</h3>
+            <div className="mt-2 text-sm">{order.shippingAddress?.address || order.userInfo?.address || '-'}</div>
+            <div className="text-sm text-gray-500 mt-2">{order.shippingAddress?.phone || ''}</div>
+            <a className="text-sm text-primary mt-2 inline-block">View Map</a>
+          </div>
+
+          <div className="admin-card p-4">
+            <h3 className="font-semibold">Billing address</h3>
+            <div className="mt-2 text-sm">{order.billingAddress?.address || 'Same as shipping'}</div>
+          </div>
+
+          <div className="admin-card p-4">
+            <h3 className="font-semibold">Conversion summary</h3>
+            <div className="mt-2 text-sm text-gray-500">There aren't any conversion details available for this order.</div>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

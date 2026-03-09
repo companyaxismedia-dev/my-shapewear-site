@@ -6,6 +6,7 @@ import { ChevronRight, Search } from "lucide-react";
 
 
 import { useOrders } from "@/context/OrderContext";
+import { API_BASE } from "@/lib/api";
 
 /* ================= TYPES REMOVED (JS VERSION) ================= */
 
@@ -313,7 +314,7 @@ const [searchTerm, setSearchTerm] = useState("");
                                             {/* PRODUCT SECTION */}
                                             <div className="flex gap-4 min-w-0">
                                                 <img
-                                                    src={order.items[0]?.imageUrl}
+                                                    src={`${API_BASE}${order.items[0]?.imageUrl}`}
                                                     alt=""
                                                     className="w-20 h-20 object-cover rounded"
                                                 />
