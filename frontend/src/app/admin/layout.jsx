@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import "./admin.css";
+import { AdminLayout as SidebarLayout } from "@/components/admin/AdminLayout";
 
-export default function AdminLayout({ children }) {
+export default function AdminRootLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -20,5 +21,5 @@ export default function AdminLayout({ children }) {
     }
   }, [pathname]);
 
-  return <>{children}</>;
+  return <SidebarLayout>{children}</SidebarLayout>;
 }

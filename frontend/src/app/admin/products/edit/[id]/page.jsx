@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { Loader2 } from "lucide-react";
 
@@ -72,20 +71,20 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <AdminLayout>
+      <>
         <div className="flex items-center justify-center min-h-screen">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Loading product...</p>
           </div>
         </div>
-      </AdminLayout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <AdminLayout>
+      <>
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
           <div className="text-center">
             <p className="text-destructive font-semibold mb-2">{error}</p>
@@ -100,13 +99,13 @@ export default function EditProductPage() {
             Back to Products
           </button>
         </div>
-      </AdminLayout>
+      </>
     );
   }
 
   if (!product) {
     return (
-      <AdminLayout>
+      <>
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
           <p className="text-muted-foreground">Product not found</p>
           <button
@@ -116,13 +115,13 @@ export default function EditProductPage() {
             Back to Products
           </button>
         </div>
-      </AdminLayout>
+      </>
     );
   }
 
   return (
-    <AdminLayout>
+    <>
       <ProductForm mode="edit" initialData={product} showLayout={true} />
-    </AdminLayout>
+    </>
   );
 }

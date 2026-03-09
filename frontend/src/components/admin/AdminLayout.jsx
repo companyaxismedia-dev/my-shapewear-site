@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home, Store, ShoppingCart, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle,
-  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2,LucideUserCircle2
+  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2, LucideUserCircle2
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ const navItems = [
         children: [
           { title: "All Products", href: "/admin/products" },
           { title: "Add Product", href: "/admin/products/add" },
-          {title: "Draft Products", href:"/admin/products/drafts"},
+          { title: "Draft Products", href: "/admin/products/drafts" },
           { title: "Categories", href: "/admin/products/categories" },
         ],
       },
@@ -323,7 +323,7 @@ export function AdminSidebar({ collapsed, onToggle }) {
 
 /* ================= ADMIN LAYOUT ================= */
 export function AdminLayout({ children }) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const pathname = usePathname();
   const parentItem = getParentBreadcrumb(pathname, navItems);
 
@@ -333,7 +333,6 @@ export function AdminLayout({ children }) {
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-
       <div
         className={cn(
           "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
