@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Offer = require("../models/Offer");
+const mongoose = require('mongoose');
 
 
 // dynamic controller to fetch the counts in the amdin panel
@@ -582,16 +583,6 @@ exports.autoBestSeller = async (req, res) => {
   }
 };
 
-
-// exports.getOrders = async (req, res) => {
-//   try {
-//     const orders = await Order.find().sort({ createdAt: -1 });
-
-//     res.json({ success: true, orders });
-//   } catch (err) {
-//     res.status(500).json({ success: false, message: err.message });
-//   }
-// };
 exports.getOrders = async (req, res) => {
   try {
 
@@ -868,6 +859,55 @@ exports.getCustomersDetails = async (req, res) => {
     if (!ids.length) return res.json({ success: true, users: [] });
     const users = await User.find({ _id: { $in: ids } }).select('-password');
     res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/* GET /api/admin/customers/:id
+   Returns a detailed customer view including orders, totals and spending over time */
+exports.getCustomerById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ success: false, message: 'Invalid id' });
+
+    const user = await User.findById(id).select('-password');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const orders = await Order.find({ userId: id }).sort({ createdAt: -1 });
+
+    const totalOrders = orders.length;
+    const totalSpent = orders.reduce((s, o) => s + (o.finalAmount || 0), 0);
+    const completedOrders = orders.filter((o) => o.status === 'Delivered').length;
+
+    // Spending over last 12 months
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+    const spendingAgg = await Order.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(id), createdAt: { $gte: startDate } } },
+      {
+        $group: {
+          _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
+          total: { $sum: { $ifNull: ['$finalAmount', 0] } },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]);
+
+    // build monthly series for last 12 months
+    const months = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+      months.push({ year: d.getFullYear(), month: d.getMonth() + 1, label: d.toLocaleString('default', { month: 'short' }) });
+    }
+
+    const spendingOverTime = months.map((m) => {
+      const found = spendingAgg.find((a) => a._id.year === m.year && a._id.month === m.month);
+      return { label: m.label, total: found ? found.total : 0 };
+    });
+
+    res.json({ success: true, user, orders, totalOrders, totalSpent, completedOrders, spendingOverTime });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

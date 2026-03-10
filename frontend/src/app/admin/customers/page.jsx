@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search, MoreVertical, Download, Trash2, UploadIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -23,16 +23,15 @@ export default function CustomersPage() {
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [exportOpen, setExportOpen] = useState(false);
 
-    const menuRef = useRef(null);
-
     useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
+        const handleClickOutside = (e) => {
+            if (!e.target.closest(".action-menu")) {
                 setMenuOpenFor(null);
             }
         };
 
         document.addEventListener("mousedown", handleClickOutside);
+
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
@@ -74,6 +73,36 @@ export default function CustomersPage() {
             toast.error(err.message || "Failed to delete");
         }
     };
+
+    const generateProductsCSV = (list) => {
+        const headers = [
+            "Name",
+            "Email",
+            "Phone",
+            "Orders",
+            "TotalSpent",
+            "Status",
+            "CreatedAt",
+            "LastActivity",
+        ];
+
+        const rows = list.map((c) => [
+            c.name || "",
+            c.email || "",
+            c.phone || "",
+            c.orders ?? 0,
+            c.totalSpent ?? 0,
+            c.status || "",
+            c.createdAt || "",
+            c.lastActivity || "",
+        ]);
+
+        return [headers, ...rows]
+            .map((r) =>
+                r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
+            )
+            .join("\n");
+    }
 
     return (
         <>
@@ -263,8 +292,7 @@ export default function CustomersPage() {
                                             Ledger
                                         </button>
 
-                                        <div className="relative" ref={menuRef}>
-
+                                        <div className="relative action-menu">
                                             <button
                                                 className="btn-muted p-2"
                                                 onClick={() =>
@@ -353,35 +381,7 @@ export default function CustomersPage() {
                 fetchAll={async () => {
                     return customers;
                 }}
-                generateCSV={(list) => {
-                    const headers = [
-                        "Name",
-                        "Email",
-                        "Phone",
-                        "Orders",
-                        "TotalSpent",
-                        "Status",
-                        "CreatedAt",
-                        "LastActivity",
-                    ];
-
-                    const rows = list.map((c) => [
-                        c.name || "",
-                        c.email || "",
-                        c.phone || "",
-                        c.orders ?? 0,
-                        c.totalSpent ?? 0,
-                        c.status || "",
-                        c.createdAt || "",
-                        c.lastActivity || "",
-                    ]);
-
-                    return [headers, ...rows]
-                        .map((r) =>
-                            r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
-                        )
-                        .join("\n");
-                }}
+                generateCSV={generateProductsCSV}
             />
         </>
     );
