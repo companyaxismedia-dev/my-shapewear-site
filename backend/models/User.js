@@ -109,6 +109,27 @@ const userSchema = new mongoose.Schema(
     ],
 
     addresses: [addressSchema],
+    /* ================= ACCOUNT STATUS & SOFT DELETE ================= */
+    status: {
+      type: String,
+      enum: ["active", "inactive", "deleted", "suspended"],
+      default: "active",
+      index: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    /* ================= LAST ACTIVITY (updated by app events) ================= */
+    lastActivity: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

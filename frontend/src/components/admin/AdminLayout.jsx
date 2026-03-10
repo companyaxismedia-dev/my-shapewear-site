@@ -254,6 +254,18 @@ export function AdminSidebar({ collapsed, onToggle }) {
                                 )}
                               </div>
                             ) : (
+                              // <Link
+                              //   href={child.href}
+                              //   className={cn(
+                              //     "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm",
+                              //     isActive(child.href)
+                              //       ? "admin-nav-active"
+                              //       : "text-muted-foreground hover:bg-muted"
+                              //   )}
+                              // >
+                              //   <ChevronRight className="w-3 h-3" />
+                              //   {child.title}
+                              // </Link>
                               <Link
                                 href={child.href}
                                 className={cn(
@@ -263,7 +275,7 @@ export function AdminSidebar({ collapsed, onToggle }) {
                                     : "text-muted-foreground hover:bg-muted"
                                 )}
                               >
-                                <ChevronRight className="w-3 h-3" />
+                                {child.children && <ChevronRight className="w-3 h-3" />}
                                 {child.title}
                               </Link>
                             )}

@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Search, MoreVertical, Pencil, ChevronDown, } from "lucide-react";
+import { Plus, Trash2, Search, MoreVertical, Pencil, ChevronDown, UploadIcon, } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
 // import EditProductModal from "@/components/admin/modals/EditProductModal";
-import ExportProductsModal from "@/components/admin/modals/ExportProductsModal";
+// import ExportProductsModal from "@/components/admin/modals/ExportProductsModal";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import ExportModal from "@/components/admin/modals/ExportModal";
 
 const API_BASE =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -142,7 +143,30 @@ export default function ProductListPage() {
         fetchProducts();
     };
 
-    /* ================= UI ================= */
+    const generateProductsCSV = (list) => {
+        const headers = [
+            "Name",
+            "Price",
+            "Stock",
+            "Category",
+            "CreatedAt"
+        ];
+
+        const rows = list.map((p) => [
+            p.name || "",
+            p.minPrice || 0,
+            p.totalStock || 0,
+            p.category || "",
+            p.createdAt || ""
+        ]);
+
+        return [headers, ...rows]
+            .map((r) =>
+                r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
+            )
+            .join("\n");
+    };
+
     return (
         <>
             <AdminBreadcrumbs
@@ -183,9 +207,9 @@ export default function ProductListPage() {
 
                     <button
                         onClick={() => setExportOpen(true)}
-                        className="btn-muted px-4 py-2 text-sm"
+                        className="btn-muted px-4 py-2 text-sm whitespace-nowrap flex items-center gap-2"
                     >
-                        Export Categories
+                        <UploadIcon size={14} />Export Categories
                     </button>
                 </div>
 
@@ -303,19 +327,6 @@ export default function ProductListPage() {
 
                                 <td className="p-3">
                                     <div className="flex gap-2">
-                                        {/* <button className="btn-muted p-2">
-                                            <MoreVertical size={14} />
-                                        </button> */}
-
-                                        {/* <button
-                                            onClick={() => {
-                                                setEditProduct(p);
-                                                setEditOpen(true);
-                                            }}
-                                            className="btn-muted px-3 flex gap-1"
-                                        >
-                                            <Pencil size={14} /> Edit
-                                        </button> */}
                                         <button
                                             onClick={() => {
                                                 router.push(`/admin/products/edit/${p._id}`);
@@ -365,9 +376,18 @@ export default function ProductListPage() {
             />
 
 
-            <ExportProductsModal
+            <ExportModal
                 open={exportOpen}
                 onClose={() => setExportOpen(false)}
+                entityName="products"
+                selectedIds={selectedIds}
+                fetchSelected={async (ids) => {
+                    return products.filter((p) => ids.includes(p._id));
+                }}
+                fetchAll={async () => {
+                    return products;
+                }}
+                generateCSV={generateProductsCSV}
             />
         </>
     );

@@ -42,6 +42,17 @@ router.post("/toggle", protect, async (req, res) => {
 
       await user.save();
 
+      // update lastActivity
+      try {
+        const u = await User.findById(req.user._id);
+        if (u) {
+          u.lastActivity = new Date();
+          await u.save();
+        }
+      } catch (e) {
+        console.error("Failed to update lastActivity after wishlist remove", e.message);
+      }
+
       return res.status(200).json({
         success: true,
         action: "removed",
@@ -51,6 +62,17 @@ router.post("/toggle", protect, async (req, res) => {
       // ADD
       user.wishlist.push(productId);
       await user.save();
+
+      // update lastActivity
+      try {
+        const u = await User.findById(req.user._id);
+        if (u) {
+          u.lastActivity = new Date();
+          await u.save();
+        }
+      } catch (e) {
+        console.error("Failed to update lastActivity after wishlist add", e.message);
+      }
 
       return res.status(200).json({
         success: true,
