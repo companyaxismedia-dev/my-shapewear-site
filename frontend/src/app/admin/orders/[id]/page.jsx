@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import OrderModal from "@/components/admin/modals/OrderModal";
 import { toast } from "sonner";
 
 export default function AdminOrderDetail() {
@@ -13,6 +14,11 @@ export default function AdminOrderDetail() {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [itemsOpen, setItemsOpen] = useState(true);
+  const [summaryOpen, setSummaryOpen] = useState(true);
+  const [timeline, setTimeline] = useState(true);
+
+  const [showFulfillModal, setShowFulfillModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -65,6 +71,12 @@ export default function AdminOrderDetail() {
   if (loading) return <div className="p-6">Loading order...</div>;
   if (!order) return <div className="p-6">Order not found</div>;
 
+  const sortedTimeline = [...(order.statusHistory || [])].sort(
+    (a, b) =>
+      new Date(b.date || order.updatedAt) -
+      new Date(a.date || order.updatedAt)
+  );
+
   return (
     <div className="p-6 space-y-6">
       <div className="admin-card p-4 flex items-start justify-between gap-4">
@@ -90,34 +102,49 @@ export default function AdminOrderDetail() {
           <div className="admin-card p-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">Order Item</h2>
-              <div className="text-sm text-gray-500">{(order.products||[]).length} item(s)</div>
+              <div className="text-sm text-gray-500">{(order.products || []).length} item(s)</div>
             </div>
 
-            <div className="mt-3 space-y-4">
-              {(order.products || []).map((p, idx) => (
-                <div key={p._id || idx} className="border rounded p-3 bg-white">
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 bg-gray-50 rounded overflow-hidden flex-shrink-0">
-                      {p.images?.[0] ? <img src={p.images[0].url || p.images[0]} alt={p.name} className="w-full h-full object-cover"/> : null}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium">{p.name}</div>
-                      <div className="text-sm text-gray-500">{p.variant || ''} • {p.color || ''}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm">{p.quantity} x ₹{p.price ?? p.salePrice ?? 0}</div>
-                      <div className="font-semibold">₹{(p.quantity * (p.price || 0)).toFixed(2)}</div>
-                    </div>
-                  </div>
+            <div className="mt-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500">{(order.products || []).length} item(s)</div>
+                <button onClick={() => setItemsOpen(v => !v)} className="text-sm text-gray-500">{itemsOpen ? 'Collapse ▲' : 'Expand ▼'}</button>
+              </div>
 
-                  <div className="mt-3 flex items-center gap-2">
-                    <button className="btn-muted">Fulfill item</button>
-                    <button className="btn-primary">Create shipping label</button>
-                  </div>
+              {itemsOpen && (
+                <div className="mt-3 space-y-4">
+                  {(order.products || []).map((p, idx) => (
+                    <div key={p._id || idx} className="border rounded p-3 bg-white flex items-start gap-4">
+                      <div className="w-20 h-20 bg-gray-50 rounded overflow-hidden flex-shrink-0">
+                        {/* Order model uses `img` and `img` string; fallback to images array */}
+                        {p.img ? <img src={p.img} alt={p.name} className="w-full h-full object-cover" /> : (p.images?.[0] ? <img src={p.images[0].url || p.images[0]} alt={p.name} className="w-full h-full object-cover" /> : null)}
+                      </div>
+
+                      <div className="flex-1">
+                        {/* category above name if available */}
+                        {p.category && <div className="text-xs text-gray-400">{p.category}</div>}
+                        <div className="font-medium">{p.name}</div>
+                        <div className="text-sm text-gray-500 mt-1">Size: {p.size || 'Standard'} • Color: {p.color || '-'}</div>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="text-sm">{p.quantity} x ₹{(p.price ?? p.salePrice ?? 0).toFixed(2)}</div>
+                        <div className="font-semibold">₹{((p.quantity || 0) * (p.price || 0)).toFixed(2)}</div>
+                      </div>
+                    </div>
+                  ))}
+
                 </div>
-              ))}
+              )}
             </div>
           </div>
+
+          {/* action buttons moved outside individual item boxes: show below the items, right-aligned */}
+          <div className="flex justify-end gap-3 mt-2">
+            <button onClick={() => setShowFulfillModal(true)} className="btn-muted">Fulfill item</button>
+            <button className="btn-primary">Create shipping label</button>
+          </div>
+
 
           {/* Order Summary */}
           <div className="admin-card p-4">
@@ -126,35 +153,52 @@ export default function AdminOrderDetail() {
               <span className="px-2 py-1 rounded bg-yellow-50 text-yellow-700 text-sm">{order.paymentStatus || 'Payment pending'}</span>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              <div>Subtotal</div><div className="text-right">₹{order.subtotal ?? 0}</div>
-              <div>Discount</div><div className="text-right">-₹{order.discount ?? 0}</div>
-              <div>Shipping</div><div className="text-right">₹{order.shippingCost ?? 0}</div>
-              <div className="font-semibold">Total</div><div className="text-right font-semibold">₹{order.finalAmount ?? 0}</div>
-            </div>
+            <div className="mt-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm text-gray-500">Summary</h4>
+                <button onClick={() => setSummaryOpen(v => !v)} className="text-sm text-gray-500">{summaryOpen ? 'Collapse ▲' : 'Expand ▼'}</button>
+              </div>
 
-            <div className="mt-4 flex justify-end gap-2">
-              <button className="btn-muted">Send invoice</button>
-              <button className="btn-primary">Collect payment</button>
+              {summaryOpen && (
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                  <div>Subtotal</div><div className="text-right">₹{order.totalAmount ?? order.subtotal ?? 0}</div>
+                  <div>Discount</div><div className="text-right">-₹{order.discountAmount ?? order.discount ?? 0}</div>
+                  <div>Shipping</div><div className="text-right">₹{order.shippingCost ?? 0}</div>
+                  <div className="font-semibold">Total</div><div className="text-right font-semibold">₹{order.finalAmount ?? 0}</div>
+                </div>
+              )}
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button className="btn-muted">Send invoice</button>
+                <button className="btn-primary">Collect payment</button>
+              </div>
             </div>
           </div>
 
           {/* Timeline / Comments */}
           <div className="admin-card p-4">
             <h3 className="font-semibold">Timeline</h3>
-            <p className="text-sm text-gray-500 mt-2">Order events and comments</p>
-            <div className="mt-3 space-y-3">
-              {(order.statusHistory || []).map((h, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center text-sm">{(h.status||'').slice(0,1)}</div>
-                  <div>
-                    <div className="text-sm font-medium">{h.status}</div>
-                    <div className="text-xs text-gray-500">{new Date(h.createdAt || order.createdAt).toLocaleString()}</div>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm text-gray-500">Order events and comments</h4>
+                <button onClick={() => setTimeline(v => !v)} className="text-sm text-gray-500">{timeline ? 'Collapse ▲' : 'Expand ▼'}</button>
+              </div>
 
-              <textarea placeholder="Leave a comment..." className="input w-full mt-2" rows={3}></textarea>
+              <div className="mt-3 space-y-3">
+                {(timeline ? sortedTimeline : sortedTimeline.slice(0, 3)).map((h, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center text-sm">{(h.status || '').slice(0, 1)}</div>
+                    <div>
+                      <div className="text-sm font-medium">{h.status}</div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(h.date || order.updatedAt || order.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <textarea placeholder="Leave a comment..." className="input w-full mt-2" rows={3}></textarea>
+              </div>
             </div>
           </div>
         </div>
@@ -199,6 +243,18 @@ export default function AdminOrderDetail() {
           </div>
         </aside>
       </div>
+      {showFulfillModal && (
+        <OrderModal
+          orderId={order._id}
+          order={order}
+          show={showFulfillModal}
+          onClose={() => setShowFulfillModal(false)}
+          onUpdated={(data) => {
+            if (data && data.order) setOrder(data.order)
+            else if (data && data._id) setOrder(data)
+          }}
+        />
+      )}
     </div>
   );
 }

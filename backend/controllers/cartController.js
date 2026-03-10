@@ -1,5 +1,6 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
+const User = require("../models/User");
 
 /* ================= GET CART ================= */
 exports.getCart = async (req, res) => {
@@ -56,6 +57,17 @@ exports.addItemToCart = async (req, res) => {
     }
 
     await cart.save();
+
+    // Update user's last activity
+    try {
+      const user = await User.findById(req.user._id);
+      if (user) {
+        user.lastActivity = new Date();
+        await user.save();
+      }
+    } catch (e) {
+      console.error("Failed to update lastActivity:", e.message);
+    }
 
     res.status(200).json({ success: true });
 

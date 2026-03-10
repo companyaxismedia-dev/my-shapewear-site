@@ -231,6 +231,14 @@ exports.createOrder = async (req, res) => {
     /* ---------- CLEAR CART ---------- */
     await Cart.deleteOne({ user: req.user._id });
 
+    // update user's last activity (placed order)
+    try {
+      user.lastActivity = new Date();
+      await user.save();
+    } catch (e) {
+      console.error('Failed to update user.lastActivity after order:', e.message);
+    }
+
     /* ---------- ADMIN EMAIL ---------- */
     if (resend && process.env.OTP_FROM_EMAIL) {
       resend.emails
@@ -465,6 +473,17 @@ exports.getOrderById = async (req, res) => {
         success: false,
         message: "Order not found",
       });
+    }
+
+    // update user's last activity (viewed order)
+    try {
+      const user = await User.findById(req.user._id);
+      if (user) {
+        user.lastActivity = new Date();
+        await user.save();
+      }
+    } catch (e) {
+      console.error('Failed to update lastActivity on order view:', e.message);
     }
 
     return res.status(200).json({

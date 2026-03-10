@@ -801,21 +801,111 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-exports.toggleUserStatus = async (req, res) => {
+/*
+  GET /api/admin/customers
+  Returns paginated customers with order count, total spent and last activity
+*/
+exports.getCustomers = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const search = req.query.search || "";
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+    const match = { role: "user" };
+    if (search) {
+      const regex = new RegExp(search, "i");
+      match.$or = [{ name: regex }, { email: regex }, { phone: regex }];
     }
 
-    user.isBlocked = !user.isBlocked;
+    const pipeline = [
+      { $match: match },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "orders",
+          let: { userId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$userId", "$$userId"] } } },
+            { $group: { _id: null, orders: { $sum: 1 }, totalSpent: { $sum: { $ifNull: ["$finalAmount", 0] } }, lastOrder: { $max: "$createdAt" } } },
+          ],
+          as: "ordersMeta",
+        },
+      },
+      { $addFields: { ordersMeta: { $arrayElemAt: ["$ordersMeta", 0] } } },
+      { $project: { password: 0 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ];
+
+    const results = await User.aggregate(pipeline);
+
+    // total count for pagination
+    const total = await User.countDocuments(match);
+
+    const users = results.map((u) => ({
+      _id: u._id,
+      name: u.name,
+      email: u.email,
+      phone: u.phone,
+      createdAt: u.createdAt,
+      status: u.status || (u.isDeleted ? 'deleted' : 'active'),
+      isDeleted: u.isDeleted || false,
+      orders: (u.ordersMeta && u.ordersMeta.orders) || 0,
+      totalSpent: (u.ordersMeta && u.ordersMeta.totalSpent) || 0,
+      lastActivity: u.lastActivity || (u.ordersMeta && u.ordersMeta.lastOrder) || null,
+    }));
+
+    res.json({ success: true, users, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/* POST /api/admin/customers/details */
+exports.getCustomersDetails = async (req, res) => {
+  try {
+    const ids = req.body.ids || [];
+    if (!ids.length) return res.json({ success: true, users: [] });
+    const users = await User.find({ _id: { $in: ids } }).select('-password');
+    res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/*
+  DELETE /api/admin/users/:id
+  Delete a user (admin)
+*/
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Soft delete: mark as deleted but keep data
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    user.status = 'deleted';
     await user.save();
 
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.toggleUserStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    // Toggle between active and suspended for admin quick toggle
+    if (user.status === 'active') user.status = 'inactive';
+    else if (user.status === 'inactive') user.status = 'active';
+    else user.status = 'inactive';
+
+    await user.save();
+    res.json({ success: true, status: user.status });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

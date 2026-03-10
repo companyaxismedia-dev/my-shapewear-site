@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useOrders } from "@/components/admin/useOrders";
-import OrderModal from "@/components/admin/OrderModal";
+import { useOrders } from "@/components/admin/hooks/useOrders";
+import OrderModal from "@/components/admin/modals/OrderModal";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import ConfirmModalButton from "@/components/admin/modals/ConfirmModalButton";
@@ -277,10 +277,10 @@ export default function OrdersPage() {
             <div className="admin-card p-4 mb-4 flex justify-between flex-wrap gap-3">
                 <div>
 
-<div className="mt-2 text-sm text-gray-500">
-  <span className="font-bold text-gray-900">Viewing: </span>
-  {startDate && endDate ? `${startDate} → ${endDate}` : "All dates"}
-</div>
+                    <div className="mt-2 text-sm text-gray-500">
+                        <span className="font-bold text-gray-900">Viewing: </span>
+                        {startDate && endDate ? `${startDate} → ${endDate}` : "All dates"}
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">

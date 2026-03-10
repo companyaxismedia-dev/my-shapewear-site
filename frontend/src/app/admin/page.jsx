@@ -5,19 +5,29 @@ import Link from "next/link";
 import { TrendingUp, ShoppingCart, Package, Users, ArrowRight, AlertTriangle, ChevronRight } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { cn } from "@/lib/utils";
-import { useDashboardStats } from "@/components/admin/useDashboardStats";
+import { useDashboardStats } from "@/components/admin/hooks/useDashboardStats";
 import { useRouter } from "next/navigation";
 import { API_BASE } from "@/lib/api";
 
 // ── Stat Card ──────────────────────────────────────────────────────────────
-function StatCard({ title, value, change, positive, icon: Icon, prefix }) {
+function StatCard({ title, value, change, positive, icon: Icon, prefix, href }) {
   return (
     <div className="admin-card p-5 flex flex-col gap-2">
       <div className="flex items-start justify-between">
         <p className="text-sm text-muted-foreground font-medium">{title}</p>
-        <div className="w-9 h-9 rounded-lg bg-admin-green-light flex items-center justify-center">
-          <Icon className="w-4 h-4 text-admin-green-text" />
-        </div>
+        {href ? (
+          <Link
+            href={href}
+            className="w-9 h-9 rounded-lg bg-admin-green-light flex items-center justify-center hover:scale-105 transition"
+          ><Icon className="w-4 h-4 text-admin-green-text" />
+          </Link>
+        ) : (
+          <div className="w-9 h-9 rounded-lg bg-admin-green-light flex items-center justify-center">
+            <Icon className="w-4 h-4 text-admin-green-text" />
+          </div>
+        )}
+
+
       </div>
       <div className="flex items-end gap-2 flex-wrap">
         <span className="text-2xl font-bold text-foreground">
@@ -132,6 +142,7 @@ export default function Dashboard() {
                 : "—"
           }
           icon={ShoppingCart}
+          href="/admin/orders"
         />
         <StatCard
           title="Total Products"
@@ -143,7 +154,8 @@ export default function Dashboard() {
                 : "—"
           }
           icon={Package}
-        />
+          href="admin/products"        
+          />
         <StatCard
           title="Total Customers"
           value={
@@ -154,6 +166,7 @@ export default function Dashboard() {
                 : "—"
           }
           icon={Users}
+          href="/admin/customers"
         />
       </div>
 
@@ -314,7 +327,8 @@ export default function Dashboard() {
               <h2 className="text-base font-semibold text-foreground">
                 Recent Orders
               </h2>
-              <Link href="/admin/orders/recent">
+              {/* <Link href="/admin/orders/recent"> */}
+              <Link href="/admin/orders/">
                 <button className="flex items-center gap-1 text-sm text-primary hover:underline font-medium">
                   View All <ArrowRight className="w-3.5 h-3.5" />
                 </button></Link>
