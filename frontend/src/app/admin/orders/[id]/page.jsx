@@ -141,7 +141,7 @@ export default function AdminOrderDetail() {
 
           {/* action buttons moved outside individual item boxes: show below the items, right-aligned */}
           <div className="flex justify-end gap-3 mt-2">
-            <button onClick={() => setShowFulfillModal(true)} className="btn-muted">Fulfill item</button>
+            <button onClick={() => setShowFulfillModal(true)} className="btn-muted">Update Order Status</button>
             <button className="btn-primary">Create shipping label</button>
           </div>
 

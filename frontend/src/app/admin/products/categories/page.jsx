@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2, Search, MoreVertical, Pencil, ChevronDown, UploadIcon, } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
-// import EditProductModal from "@/components/admin/modals/EditProductModal";
-// import ExportProductsModal from "@/components/admin/modals/ExportProductsModal";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import ExportModal from "@/components/admin/modals/ExportModal";
 

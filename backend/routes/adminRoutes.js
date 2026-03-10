@@ -33,9 +33,11 @@ router.get("/orders/analytics", protect, admin, adminController.getOrderAnalytic
 router.post("/orders/details", protect, admin, adminController.getOrdersDetails);
 
 router.put("/orders/status", protect, admin, adminController.updateOrderStatus);
+
 router.get("/users", protect, admin, adminController.getUsers);
 router.get("/customers", protect, admin, adminController.getCustomers);
 router.post("/customers/details", protect, admin, adminController.getCustomersDetails);
+router.get("/customers/:id", protect, admin, adminController.getCustomerById);
 router.delete("/users/:id", protect, admin, adminController.deleteUser);
 router.patch("/users/:id/status", protect, admin, adminController.toggleUserStatus);
 router.post("/offers", protect, admin, adminController.createOffer);
