@@ -8,6 +8,7 @@ import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
 import { API_BASE } from "@/lib/api";
 import ExportModal from "@/components/admin/modals/ExportModal";
+import CustomerEditModal from "@/components/admin/CustomerEditModal";
 
 export default function CustomersPage() {
     const router = useRouter();
@@ -22,6 +23,8 @@ export default function CustomersPage() {
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [exportOpen, setExportOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+    const [editingUserId, setEditingUserId] = useState(null);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -317,7 +320,8 @@ export default function CustomersPage() {
                                                     <button
                                                         className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
                                                         onClick={() => {
-                                                            router.push(`/admin/customers/edit/${c._id}`);
+                                                            setEditingUserId(c._id);
+                                                            setEditOpen(true);
                                                             setMenuOpenFor(null);
                                                         }}
                                                     >
@@ -369,6 +373,16 @@ export default function CustomersPage() {
                 open={deleteOpen}
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={confirmDelete}
+            />
+            <CustomerEditModal
+                open={editOpen}
+                onClose={() => setEditOpen(false)}
+                userId={editingUserId}
+                variant="modal"
+                onSaved={(updated) => {
+                    setCustomers((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+                    setEditOpen(false);
+                }}
             />
             <ExportModal
                 open={exportOpen}

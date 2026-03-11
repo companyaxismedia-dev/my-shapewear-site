@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -71,7 +71,7 @@ const getInputClass = (hasError) =>
   cn(inp, hasError && "border-red-500 bg-red-50 focus:ring-red-500");
 
 // Validation Schema
-const productSchema = yup.object().shape({
+export const productSchema = yup.object().shape({
   name: yup.string().required("Product name is required"),
   brand: yup.string().required("Brand name is required"),
   category: yup.string().required("Product category is required"),
@@ -470,13 +470,13 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
 
 // ============ MAIN FORM COMPONENT ============
 
-export function ProductForm({
+export const ProductForm = forwardRef(function ProductForm({
   mode = "add",
   initialData = null,
   onClose = null,
   onSuccess = null,
   showLayout = true,
-}) {
+}, ref) {
   const router = useRouter();
   const productDetailsRef = useRef(null);
 
@@ -494,6 +494,7 @@ export function ProductForm({
     setValue,
     getValues,
     formState: { errors },
+    trigger,
     reset,
   } = useForm({
     resolver: yupResolver(productSchema),
@@ -597,11 +598,22 @@ export function ProductForm({
         isActive: initialData.isActive !== false,
         metaTitle: initialData.metaTitle || "",
         metaDescription: initialData.metaDescription || "",
-        metaKeywords: initialData.metaKeywords?.join(", ") || "",
+        metaKeywords: Array.isArray(initialData.metaKeywords)
+          ? initialData.metaKeywords.join(", ")
+          : (initialData.metaKeywords || ""),
       };
       reset(formData);
     }
   }, [mode, initialData, reset]);
+
+  useImperativeHandle(ref, () => ({
+    save: async () => {
+      // run validation and return values
+      const valid = await trigger();
+      const values = getValues();
+      return { valid, values };
+    },
+  }));
 
   const updateSizeDetail = (variantId, size, field, value) => {
     const currentVariants = getValues("variants");
@@ -876,11 +888,12 @@ export function ProductForm({
         formDataObj.append("thumbnail", thumbnailFile);
       }
 
-      const endpoint = mode === "edit"
+      const isEditWithId = mode === "edit" && initialData && initialData._id;
+      const endpoint = isEditWithId
         ? `${API_BASE}/api/admin/products/${initialData._id}`
         : `${API_BASE}/api/admin/products`;
 
-      const method = mode === "edit" ? "PUT" : "POST";
+      const method = isEditWithId ? "PUT" : "POST";
 
       const response = await fetch(endpoint, {
         method,
@@ -908,14 +921,16 @@ export function ProductForm({
         onSuccess(data.product);
       }
 
-      // Redirect based on mode
-      setTimeout(() => {
-        if (isDraft && mode === "add") {
-          router.push("/admin/products/drafts");
-        } else {
-          router.push("/admin/products");
-        }
-      }, 500);
+      // Redirect based on mode only if caller did not provide an onSuccess handler
+      if (!onSuccess) {
+        setTimeout(() => {
+          if (isDraft && mode === "add") {
+            router.push("/admin/products/drafts");
+          } else {
+            router.push("/admin/products");
+          }
+        }, 500);
+      }
     } catch (error) {
       console.error("Form submission error:", error);
       toast.error(error.message || "Failed to submit form");
@@ -1296,6 +1311,7 @@ export function ProductForm({
                 )}
               </div>
             ))}
+            
           </div>
         </Card>
 
@@ -1771,29 +1787,29 @@ export function ProductForm({
 
             </form>
             {/* {mode === "add" && ( */}
-              <button
-                type="button"
-                onClick={async (e) => {
-                  e.preventDefault();
-                  if (isDraftSubmitting || isPublishSubmitting) return;
-                  const draftData = getValues();
-                  await onSubmit(draftData, true);
-                }}
-                disabled={isDraftSubmitting || isPublishSubmitting}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {/* {isDraftSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {isDraftSubmitting ? "Saving..." : "Save as Draft"} */}
-                {isDraftSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                {isDraftSubmitting
-                  ? "Saving..."
-                  : mode === "edit"
-                    ? "Update Draft"
-                    : "Save as Draft"}
-              </button>
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.preventDefault();
+                if (isDraftSubmitting || isPublishSubmitting) return;
+                const draftData = getValues();
+                await onSubmit(draftData, true);
+              }}
+              disabled={isDraftSubmitting || isPublishSubmitting}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {/* {isDraftSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {isDraftSubmitting ? "Saving..." : "Save as Draft"} */}
+              {isDraftSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {isDraftSubmitting
+                ? "Saving..."
+                : mode === "edit"
+                  ? "Update Draft"
+                  : "Save as Draft"}
+            </button>
             {/* )} */}
           </div>
         </div>
@@ -1808,7 +1824,7 @@ export function ProductForm({
   return (
     <div>
       {/* Page Header */}
-      <div className="mb-6">
+      <div className="mb-6 ">
         <AdminBreadcrumbs
           mode={mode === "edit" ? "edit" : "add"}
           items={[
@@ -1817,15 +1833,26 @@ export function ProductForm({
           ]}
         />
 
-        <h1 className="text-2xl font-bold text-foreground">
-          {mode === "edit" ? "Edit Product" : "Add New Product"}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {mode === "edit" ? "Update product details and information" : "Add a new product to your store"}
-        </p>
-      </div>
+        <div className="flex items-start justify-between mt-2">
 
+          <div>
+
+            <h1 className="text-2xl font-bold text-foreground">
+              {mode === "edit" ? "Edit Product" : "Add New Product"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {mode === "edit" ? "Update product details and information" : "Add a new product to your store"}
+            </p>
+          </div>
+
+          <button className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
+            >
+            Import Products
+          </button>
+        </div>
+      </div>
+      
       {formContent}
     </div>
   );
-}
+})

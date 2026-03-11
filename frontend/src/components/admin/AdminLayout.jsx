@@ -26,7 +26,7 @@ const navItems = [
         title: "Products",
         children: [
           { title: "All Products", href: "/admin/products" },
-          { title: "Add Product", href: "/admin/products/add" },
+          { title: "Import Multiple Product", href: "/admin/products/multiple-import" },
           { title: "Draft Products", href: "/admin/products/drafts" },
           { title: "Categories", href: "/admin/products/categories" },
         ],
