@@ -3,6 +3,9 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Offer = require("../models/Offer");
 const mongoose = require('mongoose');
+const ImportModel = require('../models/Import');
+const XLSX = require('xlsx');
+const fs = require('fs');
 
 
 // dynamic controller to fetch the counts in the amdin panel
@@ -913,6 +916,50 @@ exports.getCustomerById = async (req, res) => {
   }
 };
 
+// PUT /api/admin/customers/:id - update customer details
+exports.updateCustomer = async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!id) return res.status(400).json({ success: false, message: 'Missing id' });
+
+    const { name, email, phone, address } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: 'Customer not found' });
+
+    // check email uniqueness
+    if (email && email !== user.email) {
+      const exist = await User.findOne({ email });
+      if (exist && String(exist._id) !== String(id)) return res.status(400).json({ success: false, message: 'Email already in use' });
+      user.email = email;
+    }
+
+    if (phone && phone !== user.phone) {
+      const existPhone = await User.findOne({ phone });
+      if (existPhone && String(existPhone._id) !== String(id)) return res.status(400).json({ success: false, message: 'Phone already in use' });
+      user.phone = phone;
+    }
+
+    if (name) user.name = name;
+
+    // address: if provided, replace first address or push
+    if (address && typeof address === 'object') {
+      if (!user.addresses || !user.addresses.length) {
+        user.addresses = [address];
+      } else {
+        user.addresses[0] = { ...user.addresses[0].toObject(), ...address };
+      }
+    }
+
+    await user.save();
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error('updateCustomer error', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 /*
   DELETE /api/admin/users/:id
   Delete a user (admin)
@@ -1165,6 +1212,144 @@ exports.deleteManyDrafts = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ===== Import handlers (moved from importController) =====
+// POST /api/admin/imports  (multipart/form-data: file)
+exports.uploadImport = async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+
+    // Read buffer and parse using SheetJS
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    // Create import record
+    const importRec = new ImportModel({
+      filename: file.originalname,
+      uploader: req.user?._id || null,
+      status: 'processed',
+      items: rows.map(r => ({ data: r, valid: false, errors: [] })),
+    });
+
+    await importRec.save();
+
+    return res.json({ success: true, importId: importRec._id, count: rows.length });
+  } catch (err) {
+    console.error('Import upload error', err);
+    return res.status(500).json({ success: false, message: 'Import failed' });
+  }
+};
+
+// GET /api/admin/imports
+exports.listImports = async (req, res) => {
+  const imports = await ImportModel.find().sort({ createdAt: -1 }).limit(50);
+  res.json({ success: true, imports });
+};
+
+// GET /api/admin/imports/:id
+exports.getImport = async (req, res) => {
+  const imp = await ImportModel.findById(req.params.id);
+  if (!imp) return res.status(404).json({ success: false, message: 'Not found' });
+  res.json({ success: true, import: imp });
+};
+
+// POST /api/admin/imports/:id/submit  (body: { itemIndex } optional)
+exports.submitImport = async (req, res) => {
+  try {
+    const imp = await ImportModel.findById(req.params.id);
+    if (!imp) return res.status(404).json({ success: false, message: 'Not found' });
+
+    const { itemIndex } = req.body;
+    const toProcess = typeof itemIndex === 'number' ? [itemIndex] : imp.items.map((_, i) => i);
+
+    const results = [];
+    for (const idx of toProcess) {
+      const item = imp.items[idx];
+      if (!item) { results.push({ idx, success: false, message: 'Invalid index' }); continue; }
+      if (item.createdProductId) { results.push({ idx, success: true, message: 'Already created' }); continue; }
+
+      // Minimal validation: require name, brand, category, productDetails
+      const d = item.data || {};
+      const missing = [];
+      if (!d.name || !String(d.name).trim()) missing.push('name');
+      if (!d.brand || !String(d.brand).trim()) missing.push('brand');
+      if (!d.category || !String(d.category).trim()) missing.push('category');
+      if (!d.productDetails || !String(d.productDetails).trim()) missing.push('productDetails');
+
+      if (missing.length) {
+        item.errors = missing.map(m => `${m} is required`);
+        await imp.save();
+        results.push({ idx, success: false, errors: item.errors });
+        continue;
+      }
+
+      // Build payload similar to frontend ProductForm
+      const payload = {
+        name: d.name,
+        brand: d.brand,
+        category: d.category,
+        subCategory: d.subCategory || '',
+        shortDescription: d.shortDescription || '',
+        thumbnail: d.thumbnail || '',
+        productDetails: d.productDetails || '',
+        features: Array.isArray(d.features) ? d.features : (d.features ? String(d.features).split(';').map(s=>s.trim()) : []),
+        materialCare: Array.isArray(d.materialCare) ? d.materialCare : (d.materialCare ? String(d.materialCare).split(';').map(s=>s.trim()) : []),
+        sizeAndFits: [],
+        specifications: [],
+        variants: [],
+        offers: [],
+        pincodes: [],
+        isFeatured: !!d.isFeatured,
+        isBestSeller: !!d.isBestSeller,
+        isNewArrival: !!d.isNewArrival,
+        isActive: d.isActive === undefined ? true : !!d.isActive,
+        status: 'published',
+        metaTitle: d.metaTitle || '',
+        metaDescription: d.metaDescription || '',
+        metaKeywords: d.metaKeywords || '',
+      };
+
+      // Create product using existing Product model
+      const prod = new Product(payload);
+      await prod.save();
+
+      item.createdProductId = prod._id;
+      item.errors = [];
+      await imp.save();
+
+      results.push({ idx, success: true, productId: prod._id });
+    }
+
+    return res.json({ success: true, results });
+  } catch (err) {
+    console.error('submitImport error', err);
+    return res.status(500).json({ success: false, message: 'Submit failed' });
+  }
+};
+
+// POST /api/admin/imports/:id/delete-items  body: { indices: [0,1,2] }
+exports.deleteItems = async (req, res) => {
+  try {
+    const imp = await ImportModel.findById(req.params.id);
+    if (!imp) return res.status(404).json({ success: false, message: 'Not found' });
+
+    const { indices } = req.body;
+    if (!Array.isArray(indices)) return res.status(400).json({ success: false, message: 'indices array required' });
+
+    // Remove items by index (keep items not in indices)
+    const newItems = imp.items.filter((_, idx) => !indices.includes(idx));
+    imp.items = newItems;
+    await imp.save();
+
+    return res.json({ success: true, count: newItems.length });
+  } catch (err) {
+    console.error('deleteItems error', err);
+    return res.status(500).json({ success: false, message: 'Delete failed' });
   }
 };
 

@@ -10,6 +10,8 @@ import {
     Pencil,
     ChevronDown,
 } from "lucide-react";
+import dynamic from 'next/dynamic';
+const ImportModal = dynamic(() => import('@/components/admin/ImportModal'), { ssr: false });
 import { toast } from "sonner";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
@@ -31,6 +33,7 @@ export default function ProductListPage() {
     const [selectedIds, setSelectedIds] = useState([]);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [importOpen, setImportOpen] = useState(false);
 
 
     /* ================= FETCH ================= */
@@ -179,6 +182,13 @@ export default function ProductListPage() {
                         className="btn-primary px-4 py-2 flex items-center gap-2 text-sm"
                     >
                         <Plus size={15} /> Add Product
+                    </button>
+
+                    <button
+                        onClick={() => setImportOpen(true)}
+                        className="btn-primary px-4 py-2 flex items-center gap-2 text-sm"
+                    >
+                        Import Products
                     </button>
 
                     <button
@@ -371,6 +381,7 @@ export default function ProductListPage() {
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={confirmDelete}
             />
+            <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
         </>
     );
 }

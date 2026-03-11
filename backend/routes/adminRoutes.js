@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
 const { protect, admin } = require("../middleware/authMiddleware");
+const multer = require('multer');
+const memUpload = multer({ storage: multer.memoryStorage() });
 
 const adminController = require("../controllers/adminController");
 
@@ -10,6 +12,13 @@ router.get("/stats/counts", protect, admin, adminController.getCounts);
 router.get("/sales-graph", protect, admin, adminController.getSalesGraph);
 router.post("/products",protect,admin,upload.any(),adminController.createProduct);
 router.post("/upload",protect,admin,upload.single("file"),adminController.uploadFile);
+
+// Import routes (file uploads parsed in-memory)
+router.post('/imports', protect, admin, memUpload.single('file'), adminController.uploadImport);
+router.get('/imports', protect, admin, adminController.listImports);
+router.get('/imports/:id', protect, admin, adminController.getImport);
+router.post('/imports/:id/submit', protect, admin, adminController.submitImport);
+router.post('/imports/:id/delete-items', protect, admin, adminController.deleteItems);
 
 // DRAFT ROUTES - MUST BE BEFORE GENERIC :id ROUTES
 router.get("/products/drafts", protect, admin, adminController.getDraftProducts);
@@ -37,6 +46,7 @@ router.put("/orders/status", protect, admin, adminController.updateOrderStatus);
 router.get("/users", protect, admin, adminController.getUsers);
 router.get("/customers", protect, admin, adminController.getCustomers);
 router.post("/customers/details", protect, admin, adminController.getCustomersDetails);
+router.put("/customers/:id", protect, admin, adminController.updateCustomer);
 router.get("/customers/:id", protect, admin, adminController.getCustomerById);
 router.delete("/users/:id", protect, admin, adminController.deleteUser);
 router.patch("/users/:id/status", protect, admin, adminController.toggleUserStatus);
