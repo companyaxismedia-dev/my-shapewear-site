@@ -21,5 +21,10 @@ export default function AdminRootLayout({ children }) {
     }
   }, [pathname]);
 
+  // Don't show sidebar on auth pages
+  if (pathname.startsWith("/admin/auth")) {
+    return <>{children}</>;
+  }
+
   return <SidebarLayout>{children}</SidebarLayout>;
 }

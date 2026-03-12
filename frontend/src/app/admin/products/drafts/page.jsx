@@ -279,7 +279,7 @@ export default function DraftProductsPage() {
                                     <td className="p-2 md:p-3 flex items-center gap-2 md:gap-3">
                                         {p.thumbnail && (
                                             <img
-                                                src={p.thumbnail}
+                                                src={p.thumbnail.startsWith("http") ? p.thumbnail : `${API_BASE}${p.thumbnail}`}
                                                 className="w-10 h-10 md:w-12 md:h-12 rounded border object-cover flex-shrink-0"
                                                 alt={p.name}
                                             />

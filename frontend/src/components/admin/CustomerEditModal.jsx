@@ -51,6 +51,7 @@ export default function CustomerEditModal({ open, onClose = () => {}, user: init
         name: user.name,
         email: user.email,
         phone: user.phone,
+        status: user.status,
         address: (user.addresses && user.addresses[0]) ? user.addresses[0] : undefined,
       };
       const res = await fetch(`${API_BASE}/api/admin/customers/${user._id || userId}`, {
@@ -73,65 +74,78 @@ export default function CustomerEditModal({ open, onClose = () => {}, user: init
 
   const containerClass = variant === 'drawer'
     ? 'fixed right-0 top-0 h-full w-[420px] bg-white shadow-xl z-50 overflow-auto'
-    : 'fixed inset-0 flex items-center justify-center z-50';
+    : 'fixed inset-0 flex items-center justify-center z-50 bg-black/40 backdrop-blur-sm';
 
   return (
     <div className={containerClass}>
-      {variant === 'modal' && <div className="absolute inset-0 bg-black/10 pointer-events-none" />}
-      <div className={(variant === 'drawer' ? 'p-6' : 'bg-white rounded-lg p-6 w-[540px]') + ' relative z-50'} role="dialog" aria-modal="true">
+      <div className={(variant === 'drawer' ? 'p-6' : 'bg-white rounded-2xl p-8 w-[540px] shadow-2xl') + ' relative z-50'} role="dialog" aria-modal="true">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Edit Customer</h3>
           <button type="button" onClick={onClose} className="text-gray-600 cursor-pointer"><X className="w-4 h-4" /></button>
         </div>
 
         {!user ? (
-          <div>Loading...</div>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center text-gray-600">Loading...</div>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <label className="text-xs text-gray-600">Name</label>
-              <input value={user.name || ''} onChange={(e) => handleChange('name', e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+              <input value={user.name || ''} onChange={(e) => handleChange('name', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
             </div>
             <div>
-              <label className="text-xs text-gray-600">Email</label>
-              <input value={user.email || ''} onChange={(e) => handleChange('email', e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input value={user.email || ''} onChange={(e) => handleChange('email', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
             </div>
             <div>
-              <label className="text-xs text-gray-600">Phone</label>
-              <input value={user.phone || ''} onChange={(e) => handleChange('phone', e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+              <input value={user.phone || ''} onChange={(e) => handleChange('phone', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
             </div>
 
-            <div className="pt-2 border-t">
-              <div className="text-sm font-medium mb-2">Address</div>
-              <div>
-                <label className="text-xs text-gray-600">Address Line</label>
-                <input value={(user.addresses && user.addresses[0] && user.addresses[0].addressLine) || ''} onChange={(e) => handleAddressChange('addressLine', e.target.value)} className="w-full px-3 py-2 border rounded-md" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select value={user.status || 'active'} onChange={(e) => handleChange('status', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition cursor-pointer">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+                <option value="deleted">Deleted</option>
+              </select>
+            </div>
+
+            <div className="pt-4 border-t border-gray-200">
+              <div className="text-sm font-semibold text-gray-900 mb-4">Address</div>
+              <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-gray-600">City</label>
-                  <input value={(user.addresses && user.addresses[0] && user.addresses[0].city) || ''} onChange={(e) => handleAddressChange('city', e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address Line</label>
+                  <input value={(user.addresses && user.addresses[0] && user.addresses[0].addressLine) || ''} onChange={(e) => handleAddressChange('addressLine', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
                 </div>
-                <div>
-                  <label className="text-xs text-gray-600">State</label>
-                  <input value={(user.addresses && user.addresses[0] && user.addresses[0].state) || ''} onChange={(e) => handleAddressChange('state', e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <input value={(user.addresses && user.addresses[0] && user.addresses[0].city) || ''} onChange={(e) => handleAddressChange('city', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                    <input value={(user.addresses && user.addresses[0] && user.addresses[0].state) || ''} onChange={(e) => handleAddressChange('state', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-gray-600">Pincode</label>
-                  <input value={(user.addresses && user.addresses[0] && user.addresses[0].pincode) || ''} onChange={(e) => handleAddressChange('pincode', e.target.value)} className="w-full px-3 py-2 border rounded-md" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-600">Phone (address)</label>
-                  <input value={(user.addresses && user.addresses[0] && user.addresses[0].phone) || ''} onChange={(e) => handleAddressChange('phone', e.target.value)} className="w-full px-3 py-2 border rounded-md" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
+                    <input value={(user.addresses && user.addresses[0] && user.addresses[0].pincode) || ''} onChange={(e) => handleAddressChange('pincode', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone (address)</label>
+                    <input value={(user.addresses && user.addresses[0] && user.addresses[0].phone) || ''} onChange={(e) => handleAddressChange('phone', e.target.value)} className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-4">
-              <button type="button" onClick={onClose} className="px-3 py-2 rounded-md bg-gray-100 cursor-pointer">Cancel</button>
-              <button type="button" onClick={submit} disabled={loading} className="px-4 py-2 rounded-md bg-accent-brand text-black cursor-pointer">{loading ? 'Saving...' : 'Save changes'}</button>
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+              <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 cursor-pointer transition">Cancel</button>
+              <button type="button" onClick={submit} disabled={loading} className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:bg-gray-400 cursor-pointer transition">{loading ? 'Saving...' : 'Save changes'}</button>
             </div>
           </div>
         )}

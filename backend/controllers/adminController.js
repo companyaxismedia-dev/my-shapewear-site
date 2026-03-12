@@ -6,86 +6,103 @@ const mongoose = require('mongoose');
 const ImportModel = require('../models/Import');
 const XLSX = require('xlsx');
 const fs = require('fs');
+const path = require('path');
 
 
 // dynamic controller to fetch the counts in the amdin panel
 exports.getCounts = async (req, res) => {
   try {
+    // Get total sales from all orders
     const sales = await Order.aggregate([
-      { $match: { status: "Order Placed" } },
       {
         $group: {
           _id: null,
           totalSales: { $sum: "$finalAmount" },
         }
       }
-    ])
+    ]);
 
-    const totalSales = sales.length ? sales[0].totalSales : 0;
+    const totalSales = sales.length && sales[0].totalSales ? sales[0].totalSales : 0;
     const totalCustomers = await User.countDocuments({ role: "user" });
     const totalProducts = await Product.countDocuments();
     const totalOrders = await Order.countDocuments();
 
+    // Fetch recent orders (up to 6)
     const recentOrdersRaw = await Order.find()
       .sort({ createdAt: -1 })
       .limit(6)
-      .select("userInfo.name finalAmount status");
+      .lean();
 
     const recentOrders = recentOrdersRaw.map((o) => ({
       id: "#" + o._id.toString().slice(-10),
       customer: o.userInfo?.name || "Customer",
-      amount: o.finalAmount,
-      status: o.status,
+      amount: o.finalAmount || o.totalAmount || 0,
+      status: o.status || "Order Placed",
     }));
 
-    // fetch last 3 published products for recent products section
+    // Fetch last 3 published products for recent products section
     const recentProductsRaw = await Product.find({ status: "published", isActive: true })
       .sort({ createdAt: -1 })
       .limit(3)
-      .select("_id name thumbnail minPrice maxPrice totalStock category variants");
+      .lean();
 
     const recentProducts = recentProductsRaw.map((p) => ({
       id: p._id.toString(),
-      name: p.name,
-      image: p.thumbnail || (p.variants?.[0]?.images?.[0] || null),
+      name: p.name || "Product",
+      image: p.thumbnail || (p.variants?.[0]?.images?.[0]?.url) || null,
       price: p.minPrice || p.maxPrice || 0,
-      stock: p.totalStock,
-      category: p.category,
+      stock: p.totalStock || 0,
+      category: p.category || "N/A",
     }));
 
-    const lowStock = await Product.find({
-      totalStock: { $lt: 5 },
+    // Fetch low stock products (less than 10 units)
+    const lowStockRaw = await Product.find({
+      totalStock: { $lt: 10 },
       isActive: true,
-    }).sort({ totalStock: 1 })
-      .limit(3);
+    })
+      .sort({ totalStock: 1 })
+      .limit(3)
+      .lean();
+
+    const lowStock = lowStockRaw.map((p) => ({
+      _id: p._id.toString(),
+      name: p.name || "Product",
+      variant: p.category || "Unknown",
+      totalStock: p.totalStock || 0,
+    }));
 
     res.json({
-      success: true, totalSales, totalCustomers,
-      totalProducts, totalOrders, recentOrders, recentProducts, lowStock
+      success: true,
+      totalSales,
+      totalCustomers,
+      totalProducts,
+      totalOrders,
+      recentOrders,
+      recentProducts,
+      lowStock,
     });
   } catch (err) {
+    console.error("Error in getCounts:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
 exports.getSalesGraph = async (req, res) => {
   try {
-    const { period } = req.query;
+    const { period = "7days" } = req.query;
 
     let startDate = new Date();
     let groupFormat = "%d %b"; // Apr 18
 
     if (period === "7days") {
       startDate.setDate(startDate.getDate() - 6);
-    } else {
+    } else if (period === "month") {
       startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
     }
 
     const sales = await Order.aggregate([
       {
         $match: {
-          // status: "Delivered",
-          status: "Order Placed",
           createdAt: { $gte: startDate },
         },
       },
@@ -94,7 +111,7 @@ exports.getSalesGraph = async (req, res) => {
           _id: {
             $dateToString: { format: groupFormat, date: "$createdAt" },
           },
-          sales: { $sum: "$finalAmount" || "$totalAmount" },
+          sales: { $sum: { $ifNull: ["$finalAmount", { $ifNull: ["$totalAmount", 0] }] } },
         },
       },
       {
@@ -104,7 +121,7 @@ exports.getSalesGraph = async (req, res) => {
 
     const formatted = sales.map((s) => ({
       date: s._id,
-      sales: s.sales,
+      sales: Math.round(s.sales) || 0,
     }));
 
     res.json({
@@ -112,6 +129,7 @@ exports.getSalesGraph = async (req, res) => {
       data: formatted,
     });
   } catch (err) {
+    console.error("Error in getSalesGraph:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
@@ -145,6 +163,22 @@ exports.createProduct = async (req, res) => {
         data[field] = [];
       }
     });
+
+    // Filter out blob URLs from thumbnail
+    if (data.thumbnail && data.thumbnail.startsWith('blob:')) {
+      data.thumbnail = "";
+    }
+
+    // Filter out blob URLs from variants
+    if (Array.isArray(data.variants)) {
+      data.variants = data.variants.map(v => ({
+        ...v,
+        images: Array.isArray(v.images)
+          ? v.images.filter(img => img && img.url && !img.url.startsWith('blob:'))
+          : [],
+        video: (!v.video || v.video.startsWith('blob:')) ? "" : v.video,
+      }));
+    }
 
     // Only validate required fields if NOT saving as draft
     if (data.status !== "draft" && (!data.name || !data.category || !data.variants?.length)) {
@@ -182,6 +216,11 @@ exports.createProduct = async (req, res) => {
     ========================================== */
     // Keep a set of initialized variants to avoid over-clearing if there are multiple images for one variant
     const clearedImageVariants = new Set();
+
+    // Filter out blob URLs from thumbnail
+    if (data.thumbnail && data.thumbnail.startsWith('blob:')) {
+      data.thumbnail = "";
+    }
 
     if (req.files?.length) {
       req.files.forEach((file) => {
@@ -392,6 +431,22 @@ exports.updateProduct = async (req, res) => {
     //  HANDLE VARIANT FILE UPLOADS
 
     const clearedImageVariants = new Set();
+
+    // Filter out blob URLs from thumbnail
+    if (data.thumbnail && data.thumbnail.startsWith('blob:')) {
+      data.thumbnail = "";
+    }
+
+    // Filter out blob URLs from variants (from JSON body)
+    if (Array.isArray(data.variants)) {
+      data.variants = data.variants.map(v => ({
+        ...v,
+        images: Array.isArray(v.images)
+          ? v.images.filter(img => img && img.url && !img.url.startsWith('blob:'))
+          : [],
+        video: (!v.video || v.video.startsWith('blob:')) ? "" : v.video,
+      }));
+    }
 
     if (req.files?.length && data.variants?.length) {
       req.files.forEach((file) => {
@@ -922,7 +977,7 @@ exports.updateCustomer = async (req, res) => {
     const id = req.params.id;
     if (!id) return res.status(400).json({ success: false, message: 'Missing id' });
 
-    const { name, email, phone, address } = req.body;
+    const { name, email, phone, address, status } = req.body;
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'Customer not found' });
@@ -941,6 +996,18 @@ exports.updateCustomer = async (req, res) => {
     }
 
     if (name) user.name = name;
+
+    // Update status if provided
+    if (status && ["active", "inactive", "deleted", "suspended"].includes(status)) {
+      user.status = status;
+      if (status === "deleted") {
+        user.isDeleted = true;
+        user.deletedAt = new Date();
+      } else if (status === "active") {
+        user.isDeleted = false;
+        user.deletedAt = null;
+      }
+    }
 
     // address: if provided, replace first address or push
     if (address && typeof address === 'object') {
@@ -1228,12 +1295,87 @@ exports.uploadImport = async (req, res) => {
     const sheet = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
 
-    // Create import record
+    // Helper: copy frontend sample images (/image/...) into backend uploads and normalize paths
+    const copyImageIfFrontend = (imgPath) => {
+      if (!imgPath || typeof imgPath !== 'string') return imgPath;
+      // Only handle frontend image references like '/image/...' or 'image/...'
+      if (!imgPath.includes('/image/')) return imgPath;
+
+      // If image is a full URL, extract the pathname
+      let rel;
+      try {
+        if (/^https?:\/\//i.test(imgPath)) {
+          const u = new URL(imgPath);
+          rel = u.pathname.startsWith('/') ? u.pathname.slice(1) : u.pathname;
+        } else {
+          rel = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath; // e.g. image/bra/comfort.jpg
+        }
+      } catch (e) {
+        rel = imgPath.startsWith('/') ? imgPath.slice(1) : imgPath;
+      }
+
+      const src = path.join(__dirname, '..', 'frontend', 'public', rel);
+      if (!fs.existsSync(src)) return imgPath; // leave as-is if source not present
+
+      // Ensure destination folder exists
+      const destDir = path.join(__dirname, '..', 'uploads', 'products', 'images');
+      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+
+      const ext = path.extname(src) || '.jpg';
+      const fileName = `${Date.now()}-${Math.floor(Math.random() * 1e6)}${ext}`;
+      const dest = path.join(destDir, fileName);
+
+      try {
+        fs.copyFileSync(src, dest);
+        return `/uploads/products/images/${fileName}`;
+      } catch (e) {
+        console.error('Failed to copy frontend image', src, e);
+        return imgPath;
+      }
+    };
+
+    // Normalize row fields that may contain image references
+    const normalizeRowImages = (r) => {
+      const row = { ...r };
+
+      // Thumbnail
+      if (row.thumbnail && typeof row.thumbnail === 'string' && row.thumbnail.includes('/image/')) {
+        row.thumbnail = copyImageIfFrontend(row.thumbnail);
+      }
+
+      // Variants column may be JSON string or object
+      try {
+        if (row.variants && typeof row.variants === 'string' && row.variants.trim()) {
+          const parsed = JSON.parse(row.variants);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((v) => {
+              if (v.images && Array.isArray(v.images)) {
+                v.images = v.images.map(img => (typeof img === 'string' ? copyImageIfFrontend(img) : img));
+              }
+            });
+            row.variants = parsed;
+          }
+        } else if (row.variants && Array.isArray(row.variants)) {
+          row.variants = row.variants.map(v => {
+            if (v.images && Array.isArray(v.images)) {
+              v.images = v.images.map(img => (typeof img === 'string' ? copyImageIfFrontend(img) : img));
+            }
+            return v;
+          });
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
+
+      return row;
+    };
+
+    // Create import record (normalize any frontend image references into backend uploads)
     const importRec = new ImportModel({
       filename: file.originalname,
       uploader: req.user?._id || null,
       status: 'processed',
-      items: rows.map(r => ({ data: r, valid: false, errors: [] })),
+      items: rows.map(r => ({ data: normalizeRowImages(r), valid: false, errors: [] })),
     });
 
     await importRec.save();
