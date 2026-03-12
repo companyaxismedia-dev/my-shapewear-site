@@ -80,6 +80,20 @@ export default function ImportModal({ open, onClose }) {
       try { copy.pincodes = JSON.parse(copy.pincodes); } catch { copy.pincodes = []; }
     }
 
+    // Normalize variants: filter out blob URLs from images
+    if (Array.isArray(copy.variants)) {
+      copy.variants = copy.variants.map(v => ({
+        ...v,
+        images: Array.isArray(v.images) ? v.images.filter(img => !img.url?.startsWith('blob:')) : [],
+        video: (!v.video || v.video?.startsWith('blob:')) ? "" : v.video,
+      }));
+    }
+
+    // Filter out blob URLs from thumbnail
+    if (copy.thumbnail && copy.thumbnail.startsWith('blob:')) {
+      copy.thumbnail = "";
+    }
+
     // Normalize pincodes into objects expected by ProductForm / productSchema
     if (Array.isArray(copy.pincodes)) {
       try {

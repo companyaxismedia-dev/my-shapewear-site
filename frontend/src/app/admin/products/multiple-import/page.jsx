@@ -200,13 +200,41 @@ export default function MultipleImportPage() {
 
       // Normalize variants to expected shape
       if (Array.isArray(copy.variants)) {
-        copy.variants = copy.variants.map(v => ({
-          color: v.color || v.colorName || "",
-          colorCode: v.colorCode || v.colorHex || "",
-          video: v.video || "",
-          images: Array.isArray(v.images) ? v.images : [],
-          sizes: Array.isArray(v.sizes) ? v.sizes : [],
-        }));
+        copy.variants = copy.variants.map(v => {
+          const uid = () => Math.random().toString(36).slice(2);
+          
+          // Convert sizes array to selectSizes and sizeDetails
+          let selectedSizes = [];
+          let sizeDetails = {};
+          
+          if (Array.isArray(v.sizes) && v.sizes.length > 0) {
+            selectedSizes = v.sizes.map(s => s.size || s);
+            sizeDetails = {};
+            v.sizes.forEach(s => {
+              const size = s.size || s;
+              sizeDetails[size] = {
+                sku: s.sku || "",
+                price: s.price || 0,
+                mrp: s.mrp || 0,
+                stock: parseInt(s.stock) || 0,
+                isActive: s.isActive !== false,
+              };
+            });
+          }
+          
+          return {
+            id: uid(),
+            color: v.color || v.colorName || "",
+            colorCode: v.colorCode || v.colorHex || "",
+            video: v.video && !v.video.startsWith('blob:') ? v.video : "",
+            images: Array.isArray(v.images) 
+              ? v.images.filter(img => img && img.url && !img.url.startsWith('blob:'))
+              : [],
+            selectedSizes: selectedSizes,
+            sizeDetails: sizeDetails,
+            isExpanded: true,
+          };
+        });
       }
 
       return copy;
@@ -335,6 +363,7 @@ export default function MultipleImportPage() {
                   });
 
                   toast.success('Saved import row');
+                  closeEdit();
                 } catch (err) {
                   console.error(err);
                   toast.error('Failed to save');

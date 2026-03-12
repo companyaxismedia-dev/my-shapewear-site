@@ -75,16 +75,17 @@ export function useDashboardStats(pollInterval = 0, chartPeriod = "7days") {
 
 
     useEffect(() => {
-        if (!user?.token) return;
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
 
-fetchStats();
-fetchSalesGraph();
+        fetchStats();
+        fetchSalesGraph();
 
         if (pollInterval > 0) {
             const intervalId = setInterval(fetchStats, pollInterval);
             return () => clearInterval(intervalId);
         }
-    }, [user?.token, pollInterval, chartPeriod]);
+    }, [pollInterval, chartPeriod]);
 
     return { stats, loading, error, salesData, salesLoading, refetch: fetchStats };
 }

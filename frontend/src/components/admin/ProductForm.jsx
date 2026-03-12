@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import ImportModal from "./ImportModal";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const CATEGORIES = [
@@ -484,6 +485,7 @@ export const ProductForm = forwardRef(function ProductForm({
   const [isDraftSubmitting, setIsDraftSubmitting] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState({});
   const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   // Initialize form with React Hook Form and Yup validation
   const {
@@ -817,31 +819,47 @@ export const ProductForm = forwardRef(function ProductForm({
         category: formData.category,
         subCategory: formData.subCategory || "",
         shortDescription: formData.shortDescription || "",
-        thumbnail: formData.thumbnail || "",
+        // Filter out blob URLs from thumbnail
+        thumbnail: formData.thumbnail && !formData.thumbnail.startsWith('blob:') ? formData.thumbnail : "",
         productDetails: formData.productDetails,
         features: formData.features.filter(f => f.trim()),
         materialCare: formData.materialCare.filter(m => m.trim()),
         sizeAndFits: formData.sizeAndFits.filter(s => s.key && s.value),
         specifications: formData.specifications.filter(s => s.key && s.value),
-        variants: formData.variants.map(v => ({
-          color: v.color,
-          colorCode: v.colorCode,
-          video: v.video || "",
-          images: v.images.map((img, i) => ({
-            ...img,
-            file: undefined, // Strip out file objects from the JSON payload
-            isPrimary: i === 0,
-            order: i,
-          })),
-          sizes: Object.entries(v.sizeDetails).map(([size, detail]) => ({
-            size,
-            sku: detail.sku,
-            price: parseFloat(detail.price) || 0,
-            mrp: parseFloat(detail.mrp) || 0,
-            stock: parseInt(detail.stock) || 0,
-            isActive: detail.isActive !== false,
-          })),
-        })),
+        variants: formData.variants.map(v => {
+          // Filter out blob URLs and ensure only valid images remain
+          const validImages = v.images
+            .filter(img => img && img.url && !img.url.startsWith('blob:'))
+            .map((img, i) => ({
+              url: img.url,
+              altText: img.altText || "",
+              isPrimary: i === 0,
+              order: i,
+            }));
+
+          // Map only selected sizes to the sizes array
+          const sizes = (v.selectedSizes || [])
+            .filter(size => size) // Remove empty sizes
+            .map(size => {
+              const detail = v.sizeDetails[size] || {};
+              return {
+                size,
+                sku: detail.sku || "",
+                price: parseFloat(detail.price) || 0,
+                mrp: parseFloat(detail.mrp) || 0,
+                stock: parseInt(detail.stock) || 0,
+                isActive: detail.isActive !== false,
+              };
+            });
+
+          return {
+            color: v.color,
+            colorCode: v.colorCode,
+            video: v.video && !v.video.startsWith('blob:') ? v.video : "",
+            images: validImages,
+            sizes: sizes,
+          };
+        }),
         offers: formData.offers?.filter(o => o.title && o.code) || [],
         pincodes: formData.pincodes?.map(p => ({
           pincode: p.pincode,
@@ -883,9 +901,9 @@ export const ProductForm = forwardRef(function ProductForm({
         }
       });
 
-      // Append thumbnail file
+      // Append thumbnail file (if a new file was selected and uploaded)
       if (thumbnailFile) {
-        formDataObj.append("thumbnail", thumbnailFile);
+        formDataObj.append("thumbnailFile", thumbnailFile);
       }
 
       const isEditWithId = mode === "edit" && initialData && initialData._id;
@@ -1845,12 +1863,15 @@ export const ProductForm = forwardRef(function ProductForm({
             </p>
           </div>
 
-          <button className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
+          <button 
+            onClick={()=>setImportOpen(true)}
+          className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
             >
             Import Products
           </button>
         </div>
       </div>
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
       
       {formContent}
     </div>

@@ -63,24 +63,26 @@ export function ProductCard({ item, onOpenDetails }) {
         >
             {/* IMAGE CONTAINER */}
             <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f5f6]">
-                {/* <img
-                    src={item.thumbnail}
-                    // {...console.log(item)}
-                    alt={item.name}
-                    onClick={onOpenDetails}
-                    className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"
-                        }`}
-                /> */}
-                <Image
-                    src={getImageUrl(item.thumbnail)}
-                    fill
-                    sizes="(max-width:768px) 100vw, 33vw"
-                    alt={item.name}
-                    loading="lazy"
-                    onClick={onOpenDetails}
-                    className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"
-                        }`}
-                /> 
+                {/* Use regular img for API-served images, Next.js Image for public images */}
+                {getImageUrl(item.thumbnail).includes('localhost') || getImageUrl(item.thumbnail).includes('uploads') ? (
+                    <img
+                        src={getImageUrl(item.thumbnail)}
+                        alt={item.name}
+                        onClick={onOpenDetails}
+                        loading="lazy"
+                        className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"}`}
+                    />
+                ) : (
+                    <Image
+                        src={getImageUrl(item.thumbnail)}
+                        fill
+                        sizes="(max-width:768px) 100vw, 33vw"
+                        alt={item.name}
+                        loading="lazy"
+                        onClick={onOpenDetails}
+                        className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"}`}
+                    />
+                )}
 
                 {/* <Swiper
                     modules={[Autoplay]}
