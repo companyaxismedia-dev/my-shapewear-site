@@ -5,16 +5,36 @@ const User = require("../models/User");
 /* ================= GET CART ================= */
 exports.getCart = async (req, res) => {
   try {
+
     let cart = await Cart.findOne({ user: req.user._id })
-      .populate("items.product");
+      .populate("items.product", "name brand mrp minPrice thumbnail slug");
 
     if (!cart) {
       return res.status(200).json({ success: true, items: [] });
     }
 
+    const formattedItems = cart.items
+      .filter((item) => item.product)
+      .map((item) => ({
+        id: item._id,
+        qty: item.qty,
+        size: item.size,
+        color: item.color,
+
+        product: {
+          _id: item.product._id,
+          name: item.product.name,
+          brand: item.product.brand,
+          mrp: item.product.mrp,
+          minPrice: item.product.minPrice,
+          thumbnail: item.product.thumbnail,
+          slug: item.product.slug,
+        },
+      }));
+
     res.status(200).json({
       success: true,
-      items: cart.items,
+      items: formattedItems,
     });
 
   } catch (error) {

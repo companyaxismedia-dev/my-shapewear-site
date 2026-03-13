@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import axios from "axios";
-
+import { useRouter } from "next/navigation";
 
 import {
     ChevronRight,
@@ -18,13 +18,16 @@ import {
 
 
 import { useOrders } from "@/context/OrderContext";
+
 import { API_BASE } from "@/lib/api";
 import ManageAccessModal from "@/components/orders/ManageAccessModal";
 import ChangeAddressModal from "@/components/orders/ChangeAddressModal";
 import AddressListModal from "@/components/orders/AddressListModal";
 import AddEditAddressModal from "@/components/orders/AddEditAddressModal";
-import CancelOrderModal from "@/components/orders/CancelOrderModal";
+import CancelOrderModal from "@/components/orders/cancel/CancelOrderModal";
 import ChangePhoneNumberModal from "@/components/orders/ChangePhoneNumberModal";
+import PriceDetails from "@/components/orders/PriceDetails";
+import ChangePaymentModal from "@/components/orders/cancel/ChangePaymentModal";
 
 
 export default function OrderDetail() {
@@ -32,15 +35,19 @@ export default function OrderDetail() {
     const { fetchOrderById } = useOrders();
 
     const [order, setOrder] = useState(null);
-    const [cancelReason, setCancelReason] = useState("");
+
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelledOrder, setCancelledOrder] = useState(false);
+    const [cancelReason, setCancelReason] = useState("");
 
     const [showFeeDetails, setShowFeeDetails] = useState(false);
     const [showDiscountDetails, setShowDiscountDetails] = useState(false);
     const [showOffersDetails, setShowOffersDetails] = useState(false);
 
     const [showAccess, setShowAccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("")
+    const [showProcessing, setShowProcessing] = useState(false)
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false)
 
     const [showChangeAddress, setShowChangeAddress] = useState(false)
     const [showAddressList, setShowAddressList] = useState(false)
@@ -49,13 +56,24 @@ export default function OrderDetail() {
     const [showAddAddress, setShowAddAddress] = useState(false)
     const [editAddress, setEditAddress] = useState(null)
     const [showChangePhone, setShowChangePhone] = useState(false)
+    const [showChangePayment, setShowChangePayment] = useState(false)
 
+    const router = useRouter();
+
+
+    const handleStartChat = () => {
+
+        localStorage.setItem("chatOrderId", order.id)
+
+        router.push(`/support/${order.id}`)
+
+    }
 
     const refreshAddresses = async () => {
 
         try {
 
-            const user = JSON.parse(localStorage.getItem("user"))
+            const user = JSON.parse(localStorage.getItem("user") || "{}")
             const token = user?.token
 
             const res = await axios.get(
@@ -82,13 +100,21 @@ export default function OrderDetail() {
 
             setOrder({
                 ...o,
-                fees: 16,
                 canBeCancelled: true,
             });
         };
 
         loadOrder();
     }, [id, fetchOrderById]);
+
+    useEffect(() => {
+        const msg = sessionStorage.getItem("orderMessage")
+
+        if (msg) {
+            setSuccessMessage(msg)
+            sessionStorage.removeItem("orderMessage")
+        }
+    }, [])
 
 
     /* ================= FETCH ADDRESSES ================= */
@@ -97,7 +123,7 @@ export default function OrderDetail() {
 
         const fetchAddresses = async () => {
 
-            const user = JSON.parse(localStorage.getItem("user"));
+            const user = JSON.parse(localStorage.getItem("user") || "{}")
             const token = user?.token;
 
             const res = await axios.get(
@@ -118,7 +144,7 @@ export default function OrderDetail() {
 
     const handleCancelOrder = async () => {
         try {
-            const user = JSON.parse(localStorage.getItem("user"));
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
             const token = user?.token;
 
             await axios.put(
@@ -149,9 +175,24 @@ export default function OrderDetail() {
         );
     }
 
-    const isAddressEditable =
-        order.status === "order placed" ||
-        order.status === "processing";
+    const status = order.status?.toLowerCase().trim();
+    /* ================= PAYMENT CHANGE WINDOW ================= */
+
+    const orderTime = new Date(order.createdAt).getTime();
+    const now = new Date().getTime();
+
+    const twoHours = 2 * 60 * 60 * 1000;
+
+    const canChangePayment =
+        now - orderTime <= twoHours &&
+        order.paymentType === "COD" &&
+        !order.paymentChanged &&
+        !["shipped", "out for delivery", "delivered", "cancelled"].includes(status);
+    const canEditPhone =
+        status === "order placed" ||
+        status === "processing";
+
+    const isAddressEditable = order?.canEditAddress === true;
 
     const getStatusColor = (status) => {
         if (status === "cancelled" || status === "Cancelled") return "text-red-600 bg-red-50";
@@ -161,17 +202,56 @@ export default function OrderDetail() {
 
     const getStatusLabel = (status) =>
         status?.charAt(0).toUpperCase() + status?.slice(1);
+    /* ================= CHANGE PAYMENT METHOD ================= */
+
+    const changePaymentMethod = async (method) => {
+
+        try {
+            if (!canChangePayment) {
+                alert("Payment method can only be changed within 2 hours of placing the order.");
+                return;
+            }
+
+            const user = JSON.parse(localStorage.getItem("user") || "{}")
+            const token = user?.token
+
+            await axios.put(
+                `${API_BASE}/api/orders/payment/${id}`,
+                {
+                    paymentMethod: method,
+                    paymentStatus: "Paid"
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            )
+
+            const updated = await fetchOrderById(id)
+            setOrder(updated)
+
+            alert("Payment updated successfully")
+
+        } catch (err) {
+
+            setSuccessMessage(err.response?.data?.message || "Payment update failed")
+
+        }
+
+    }
 
     /* ================= UPDATE ORDER ADDRESS ================= */
 
     const updateOrderAddress = async (addr) => {
 
+
         try {
 
-            const user = JSON.parse(localStorage.getItem("user"))
+            const user = JSON.parse(localStorage.getItem("user") || "{}")
             const token = user?.token
 
-            if (!token) return
+            if (!token) return false
 
             await axios.put(
                 `${API_BASE}/api/orders/update-address/${id}`,
@@ -189,9 +269,15 @@ export default function OrderDetail() {
                 }
             )
 
+            sessionStorage.setItem("orderMessage", "Delivery address updated")
+            setSuccessMessage("Delivery address updated")
+
+            return true
+
         } catch (err) {
 
-            console.error("Order address update error", err)
+            setSuccessMessage("Failed to update address")
+            return false
 
         }
 
@@ -201,8 +287,8 @@ export default function OrderDetail() {
 
     const stages = [
         "Order Placed",
-        "Order Packed",
-        "Order Shipped",
+        "Processing",
+        "Shipped",
         "Out for Delivery",
         "Delivered",
     ];
@@ -215,11 +301,11 @@ export default function OrderDetail() {
         delivered: 4,
     };
 
-    const currentIndex = statusMap[order.status?.toLowerCase()] ?? 0;
+    const currentIndex = statusMap[status] ?? 0;
 
     /* ================= CANCELLED ORDER UI ================= */
 
-    if (order.status === "cancelled") {
+    if (status === "cancelled") {
         return (
             <div className="min-h-screen bg-gray-50">
 
@@ -335,19 +421,24 @@ export default function OrderDetail() {
 
                         <div className="flex gap-3">
 
-                            <button className="px-4 py-2 border rounded flex gap-2 items-center">
+                            <button
+                                onClick={handleStartChat}
+                                className="px-4 py-2 border rounded flex gap-2 items-center hover:bg-gray-50"
+                            >
                                 <MessageCircle size={16} />
                                 Chat with us
                             </button>
 
-                            {order.canBeCancelled && !cancelledOrder && (
-                                <button
-                                    onClick={() => setShowCancelModal(true)}
-                                    className="px-4 py-2 bg-red-50 border border-red-200 rounded text-red-600"
-                                >
-                                    Cancel Order
-                                </button>
-                            )}
+                            {status !== "shipped" &&
+                                status !== "delivered" &&
+                                status !== "cancelled" && (
+                                    <button
+                                        onClick={() => setShowCancelModal(true)}
+                                        className="px-4 py-2 bg-red-50 border border-red-200 rounded text-red-600"
+                                    >
+                                        Cancel Order
+                                    </button>
+                                )}
                         </div>
                     </div>
 
@@ -356,7 +447,7 @@ export default function OrderDetail() {
                     <div className="bg-white rounded border border-gray-200 p-5">
                         <h2 className="font-bold text-lg mb-6">Product Details</h2>
 
-                        {order?.items?.map((item, i) => (
+                        {order?.products?.map((item, i) => (
                             <div
                                 key={i}
                                 className="flex gap-4 pb-4 border-b last:border-b-0"
@@ -494,7 +585,11 @@ export default function OrderDetail() {
 
                                                     {completed && (
                                                         <p className="text-sm text-gray-500">
-                                                            {order.trackingEvents?.[index]?.date}
+                                                            {
+                                                                order.trackingEvents?.find(
+                                                                    (e) => e.status?.toLowerCase() === stage.toLowerCase()
+                                                                )?.date
+                                                            }
                                                         </p>
                                                     )}
 
@@ -527,16 +622,29 @@ export default function OrderDetail() {
                 {/* Right Section - Price Details */}
                 <div className="space-y-6">
                     {/* Delivery Details */}
+
+                    {successMessage && (
+                        <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg mb-4">
+                            <div className="flex items-start gap-2">
+                                <span className="text-green-600 font-semibold">✔</span>
+                                <div>
+                                    <p className="font-semibold">{successMessage}</p>
+                                    <p className="text-sm text-green-700">
+                                        Your order will now be delivered using updated details.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100 w-full">
                         <div
-
+                            onClick={() => {
+                                setShowAddressList(true)
+                            }}
                             className="bg-gray-50 rounded-xl p-5 space-y-4 cursor-pointer hover:bg-gray-100 transition min-h-[80px]"
                         >
-                            {!isAddressEditable && (
-                                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg mt-3 text-sm">
-                                    Address cannot be changed for this order
-                                </div>
-                            )}
+
 
 
                             <div
@@ -563,7 +671,12 @@ export default function OrderDetail() {
 
 
                                 <div
-                                    onClick={() => setShowChangePhone(true)}
+                                    onClick={(e) => {
+
+                                        e.stopPropagation()
+                                        setShowChangePhone(true)
+
+                                    }}
                                     className="flex justify-between items-center cursor-pointer"
                                 >
 
@@ -590,149 +703,33 @@ export default function OrderDetail() {
 
                         </div>
                     </div>
-
-
-                    {/* Price Details */}
-                    <div className="bg-white rounded-lg p-7 shadow-sm border border-gray-100 w-full">
-                        <h2 className="text-base font-bold text-gray-900 mb-6">Price details</h2>
-                        <div className="space-y-4">
-                            {/* Listing Price */}
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-gray-600">Listing price</span>
-                                <span className="text-sm text-gray-900">₹{order.subtotal + Math.abs(order.discount)}</span>
-                            </div>
-
-                            {/* Selling Price */}
-                            <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-1">
-                                    <span className="text-sm text-gray-600">Special price</span>
-                                </div>
-                                <span className="text-sm text-gray-900">₹{order.subtotal}</span>
-                            </div>
-
-                            {/* Total Fees - Expandable */}
-                            {order.fees > 0 && (
-                                <>
-                                    <button
-                                        onClick={() => setShowFeeDetails(!showFeeDetails)}
-                                        className="w-full flex justify-between items-center py-2 hover:bg-gray-50 transition rounded"
-                                    >
-                                        <span className="text-sm text-gray-600">Total fees</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-gray-900">₹{order.fees}</span>
-                                            <ChevronDown
-                                                className={`w-4 h-4 text-gray-600 transition-transform ${showFeeDetails ? "rotate-180" : ""}`}
-                                            />
-                                        </div>
-                                    </button>
-
-                                    {/* Fee Details */}
-                                    {showFeeDetails && (
-                                        <div className="space-y-2 bg-gray-50 p-3 rounded text-sm">
-                                            <div className="flex justify-between text-gray-600">
-                                                <span>Payment Handling Fee</span>
-                                                <span>₹{Math.floor(order.fees * 0.6)}</span>
-                                            </div>
-                                            <div className="flex justify-between text-gray-600 border-t border-dotted border-gray-300 pt-2">
-                                                <span>Platform fee</span>
-                                                <span>₹{Math.floor(order.fees * 0.4)}</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {/* Other Discount - Expandable */}
-                            {Number(order.discount) > 0 && (
-                                <>
-                                    <button
-                                        onClick={() => setShowDiscountDetails(!showDiscountDetails)}
-                                        className="w-full flex justify-between items-center py-2 hover:bg-gray-50 rounded transition"
-                                    >
-                                        <span className="text-sm text-gray-600">Other discount</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-green-600 font-medium">-₹{Number(order.discount)}</span>
-                                            <ChevronDown
-                                                className={`w-4 h-4 text-gray-600 transition-transform ${showDiscountDetails ? "rotate-180" : ""}`}
-                                            />
-                                        </div>
-                                    </button>
-
-                                    {/* Discount Details */}
-                                    {showDiscountDetails && (
-                                        <div className="space-y-2 bg-green-50 p-3 rounded text-sm">
-                                            <p className="text-gray-700 leading-relaxed">
-                                                Get extra 10% off upto ₹100 on 20 item(s) (price inclusive of cashback/coupon)
-                                            </p>
-                                            <div className="flex justify-between text-gray-600 border-t border-dotted border-green-200 pt-2">
-                                                <span>−</span>
-                                                <span className="text-green-600 font-medium">₹{order.discount}</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {/* Separator */}
-                            <div className="border-t border-dashed border-gray-300 my-2" />
-
-                            {/* Total Amount */}
-                            <div className="flex justify-between items-center bg-gray-50 -mx-6 -mb-6 px-6 py-3 rounded-b-lg">
-                                <span className="text-sm font-bold text-gray-900">Total amount</span>
-                                <span className="text-base font-bold text-gray-900">₹{order.totalAmount}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Payment Method */}
-                    <div className="bg-white rounded-lg p-7 shadow-sm border border-gray-100 w-full">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Payment method</span>
-                            <div className="flex items-center gap-2">
-                                <div className="w-5 h-5 border border-gray-300 rounded flex items-center justify-center text-xs font-bold">
-                                    ₹
-                                </div>
-                                <span className="text-sm text-gray-900 font-medium">{order.paymentMethod}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Offers Earned */}
-                    {order.offersEarned && order.offersEarned.length > 0 && (
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                            <button
-                                onClick={() => setShowOffersDetails(!showOffersDetails)}
-                                className="w-full flex items-center justify-between cursor-pointer hover:bg-gray-50 p-6 transition"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                    <h2 className="text-base font-bold text-gray-900">Offers earned</h2>
-                                </div>
-                                <ChevronDown
-                                    className={`w-4 h-4 text-gray-600 transition-transform ${showOffersDetails ? "rotate-180" : ""}`}
-                                />
-                            </button>
-
-                            {/* Offers Details */}
-                            {showOffersDetails && (
-                                <div className="space-y-3 border-t border-gray-200 p-6">
-                                    {order.offersEarned.map((offer, index) => (
-                                        <div key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                                            <span className="text-primary mt-1">›</span>
-                                            <p className="leading-relaxed">{offer}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                    {canChangePayment && (
+                        <div className="bg-yellow-50 border border-yellow-200 p-3 rounded text-sm mb-3">
+                            You can change payment method within 2 hours of placing the order.
                         </div>
                     )}
+
+                    {canChangePayment && (
+                        <div className="bg-white border rounded p-4 mt-3">
+
+                            <p className="text-sm font-semibold mb-3">
+                                Change Payment Method
+                            </p>
+
+                            <button
+                                onClick={() => setShowChangePayment(true)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded"
+                            >
+                                Change Payment
+                            </button>
+
+                        </div>
+                    )}
+                    {/* Price Details */}
+                    <PriceDetails order={order} />
+
+
+
                 </div>
             </div >
 
@@ -750,6 +747,7 @@ export default function OrderDetail() {
                 setShowAddressList={setShowAddressList}
                 order={order}
                 refreshOrder={() => fetchOrderById(id)}
+                isAddressEditable={isAddressEditable}
             />
             <AddressListModal
                 showAddressList={showAddressList}
@@ -757,11 +755,13 @@ export default function OrderDetail() {
                 addresses={addresses}
                 setEditAddress={setEditAddress}
                 setShowAddAddress={setShowAddAddress}
+                isAddressEditable={isAddressEditable}
 
                 onSelectAddress={async (addr) => {
 
-                    await updateOrderAddress(addr)
+                    const res = await updateOrderAddress(addr)
 
+                    if (!res) return
                     setOrder(prev => ({
                         ...prev,
                         deliveryAddress: {
@@ -788,7 +788,9 @@ export default function OrderDetail() {
 
                 onAddressSaved={async (addr) => {
 
-                    await updateOrderAddress(addr)
+                    const res = await updateOrderAddress(addr)
+
+                    if (!res) return
 
                     setOrder(prev => ({
                         ...prev,
@@ -804,52 +806,146 @@ export default function OrderDetail() {
 
                 }}
             />
-            <CancelOrderModal
-                showCancelModal={showCancelModal}
-                setShowCancelModal={setShowCancelModal}
-                cancelReason={cancelReason}
-                setCancelReason={setCancelReason}
-                handleCancelOrder={handleCancelOrder}
-            />
+            {showCancelModal && (
+                <CancelOrderModal
+                    orderId={id}
+                    productImage={order.products?.[0]?.img}
+                    savedAmount={order.discount}
+                    onClose={() => setShowCancelModal(false)}
+                    onCancel={(reason) => {
+                        if (!reason) {
+                            alert("Please select cancellation reason")
+                            return
+                        }
+
+                        setCancelReason(reason)
+                        handleCancelOrder()
+                    }}
+                />
+            )}
 
             <ChangePhoneNumberModal
                 showChangePhone={showChangePhone}
                 setShowChangePhone={setShowChangePhone}
                 currentPhone={order.userInfo?.phone}
                 currentName={order.userInfo?.name}
+                isPhoneEditable={canEditPhone}
 
                 onPhoneChange={async (data) => {
 
-                    const user = JSON.parse(localStorage.getItem("user"))
+                    const user = JSON.parse(localStorage.getItem("user") || "{}")
                     const token = user?.token
 
-                    await axios.put(
-                        `${API_BASE}/api/orders/update-address/${id}`,
-                        {
-                            name: data.name,
-                            phone: data.primary
-                        },
-                        {
-                            headers: {
-                                Authorization: `Bearer ${token}`
+                    try {
+
+                        setShowProcessing(true)
+
+                        await axios.put(
+
+                            `${API_BASE}/api/orders/update-phone/${id}`,
+                            {
+                                name: data.name,
+                                primary: data.primary,
+                                alternate: data.alternate
+                            },
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${token}`
+                                }
                             }
-                        }
-                    )
+                        )
+
+                        setShowProcessing(false)
+                        setShowSuccessPopup(true)
+                        setShowChangePhone(false)
+
+
+
+                        sessionStorage.setItem("orderMessage", "Phone number updated")
+
+                    } catch (err) {
+
+                        alert(err.response?.data?.message || "Phone update failed")
+                        return
+
+                    }
 
                     setOrder(prev => ({
                         ...prev,
                         userInfo: {
                             ...prev.userInfo,
                             name: data.name,
-                            phone: data.primary
+                            phone: data.primary,
+                            alternatePhone: data.alternate
                         }
                     }))
 
+
                 }}
             />
+            <ChangePaymentModal
+                show={showChangePayment}
+                setShow={setShowChangePayment}
+                orderId={id}
+                refreshOrder={async () => {
+                    const updated = await fetchOrderById(id)
+                    setOrder(updated)
+                }}
+            />
+            {showProcessing && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+                    <div className="bg-white px-8 py-6 rounded-lg flex items-center gap-3">
+
+                        <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+
+                        <div>
+                            <p className="font-semibold">Please wait...</p>
+                            <p className="text-sm text-gray-500">
+                                We are processing your request
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+            )}
+
+            {showSuccessPopup && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+                    <div className="bg-white rounded-lg w-[360px] text-center">
+
+                        <div className="p-6 border-b">
+
+                            <div className="text-green-600 text-2xl mb-2">
+                                ✔
+                            </div>
+
+                            <p className="font-semibold text-green-700">
+                                Your phone number has been updated
+                            </p>
+
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                setShowSuccessPopup(false)
+                                router.refresh()
+                            }}
+                            className="w-full py-3 text-blue-600 font-semibold"
+                        >
+                            OKAY
+                        </button>
+
+                    </div>
+
+                </div>
+            )}
 
 
         </div >
+
     );
 }
 

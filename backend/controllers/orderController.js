@@ -70,21 +70,49 @@ exports.createOrder = async (req, res) => {
 
     /* ---------- PRODUCTS ---------- */
     const orderProducts = cart.items.map((item) => {
+
       if (!item.product) {
         throw new Error("Product missing in cart");
       }
 
+      let selectedPrice = item.product.minPrice;
+      let selectedMrp = item.product.mrp;
+
+      item.product.variants.forEach((variant) => {
+        variant.sizes.forEach((size) => {
+
+          if (size.size === item.size) {
+            selectedPrice = size.price;
+            selectedMrp = size.mrp || size.price;
+          }
+
+        });
+      });
+
       return {
         productId: item.product._id,
+
         name: item.product.name,
-        price: item.product.minPrice || 0,
+
+        price: selectedPrice,
+
+        listingPrice: selectedMrp,
+
         quantity: item.qty,
+
         size: item.size || "Standard",
-        img: item.product.thumbnail || "",
+
+        img: item.product.thumbnail || ""
       };
+
     });
 
     /* ---------- TOTAL ---------- */
+
+    const totalMrp = orderProducts.reduce(
+      (sum, item) => sum + item.listingPrice * item.quantity,
+      0
+    );
     const totalAmount = orderProducts.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
@@ -92,7 +120,8 @@ exports.createOrder = async (req, res) => {
 
     /* ---------- OFFER LOGIC ---------- */
     let discountAmount = 0;
-    let finalAmount = totalAmount;
+    let fees = 16;
+    let finalAmount = totalAmount + fees;
     let appliedOfferCode = null;
     let offersEarned = [];
 
@@ -141,7 +170,7 @@ exports.createOrder = async (req, res) => {
       }
 
       finalAmount = Math.max(
-        totalAmount - discountAmount,
+        totalAmount + fees - discountAmount,
         0
       );
 
@@ -161,11 +190,27 @@ exports.createOrder = async (req, res) => {
 
     let savedOrder = null;
 
+    /* ---------- ORDER NUMBER GENERATE ---------- */
+
+    const orderCount = await Order.countDocuments()
+
+    const orderNumber =
+      "ORD-" +
+      new Date().getFullYear() +
+      "-" +
+      Math.floor(100000 + Math.random() * 900000);
+
     for (const item of orderProducts) {
 
       const order = new Order({
 
+        orderNumber: orderNumber,
+
         userId: req.user._id,
+
+        listingPrice: totalMrp,
+        subtotal: totalAmount,
+        discount: totalMrp - totalAmount,
 
         userInfo: {
           name: address.fullName,
@@ -176,40 +221,31 @@ exports.createOrder = async (req, res) => {
           pincode: address.pincode,
         },
 
-        products: [item], // 👈 only one product per order
+        products: [item],
 
-        totalAmount: item.price * item.quantity,
+        totalAmount: totalAmount,
+        fees: fees,
+
         offerCode: appliedOfferCode,
         discountAmount: discountAmount,
-        finalAmount: finalAmount,
-        offersEarned,
+        finalAmount: totalAmount + fees - discountAmount,
 
         paymentId: paymentId || "N/A",
         paymentType: finalPaymentType,
-        paymentStatus:
-          finalPaymentType === "COD"
-            ? "Pending"
-            : paymentId
-              ? "Paid"
-              : "Pending",
 
         status: "Order Placed",
 
-        statusHistory: [{ status: "Order Placed" }],
+        canEditAddress: true,
+        canEditPhone: true,
 
-        trackingEvents: [
-          {
-            status: "Order Placed",
-            time: new Date().toLocaleTimeString(),
-            date: new Date().toLocaleDateString(),
-          },
-        ],
+        statusHistory: [{ status: "Order Placed" }],
 
       });
 
       savedOrder = await order.save();
     }
 
+    /* ---------- STOCK REDUCE (FIXED VERSION) ---------- */
     /* ---------- STOCK REDUCE (FIXED VERSION) ---------- */
     for (const item of cart.items) {
       const product = item.product;
@@ -224,9 +260,13 @@ exports.createOrder = async (req, res) => {
         }
       }
 
+      // ⭐ FIX: agar createdBy missing ho to set kar do
+      if (!product.createdBy) {
+        product.createdBy = req.user._id;
+      }
+
       await product.save();
     }
-
 
     /* ---------- CLEAR CART ---------- */
     await Cart.deleteOne({ user: req.user._id });
@@ -252,7 +292,7 @@ exports.createOrder = async (req, res) => {
             <p><b>Phone:</b> ${address.phone}</p>
             <p><b>Total:</b> ₹${totalAmount}</p>
             <p><b>Discount:</b> ₹${discountAmount}</p>
-            <p><b>Final:</b> ₹${finalAmount}</p>
+            <p><b>Final:</b> ₹${savedOrder.finalAmount}</p>
           `,
         })
         .catch(() => { });
@@ -350,33 +390,38 @@ exports.getMyOrders = async (req, res) => {
 /* =====================================================
    3️⃣ TRACK ORDER
 ===================================================== */
+/* =====================================================
+   3️⃣ TRACK ORDER
+===================================================== */
 exports.trackOrder = async (req, res) => {
   try {
+
     const order = await Order.findOne({
       _id: req.params.id,
-      userId: req.user._id,
+      userId: req.user._id
     });
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "Order not found",
+        message: "Order not found"
       });
     }
 
     return res.status(200).json({
       success: true,
-      order,
+      order
     });
 
   } catch {
+
     return res.status(500).json({
       success: false,
-      message: "Invalid Order ID",
+      message: "Invalid Order ID"
     });
+
   }
 };
-
 /* =====================================================
    4️⃣ ADMIN – GET ALL ORDERS
 ===================================================== */
@@ -404,11 +449,14 @@ exports.getAllOrders = async (req, res) => {
 ===================================================== */
 exports.updateOrderStatus = async (req, res) => {
   try {
+
     const { orderId, status, trackingId } = req.body;
+
     const allowedStatuses = [
       "Order Placed",
       "Processing",
       "Shipped",
+      "Out for Delivery",
       "Delivered",
       "Cancelled",
     ];
@@ -430,9 +478,19 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     order.status = status;
+    /* ===== LOCK ADDRESS + PHONE AFTER SHIPPING ===== */
+
+    if (status === "Shipped") {
+      order.canEditAddress = false;
+      order.canEditPhone = false;
+      order.lockedAt = new Date();
+    }
 
     if (trackingId) {
       order.trackingId = trackingId;
+    }
+    if (status === "Shipped" && !order.courier) {
+      order.courier = "ShadowFax";
     }
 
     order.statusHistory.push({ status });
@@ -504,6 +562,9 @@ exports.getOrderById = async (req, res) => {
 ===================================================== */
 exports.cancelOrder = async (req, res) => {
   try {
+
+    const { reason, comment, refundMode } = req.body;
+
     const order = await Order.findOne({
       _id: req.params.id,
       userId: req.user._id,
@@ -512,24 +573,39 @@ exports.cancelOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "Order not found",
+        message: "Order not found"
       });
     }
 
-
-
-    // ❌ delivered / shipped cancel nahi hoga
     if (["Shipped", "Delivered", "Cancelled"].includes(order.status)) {
       return res.status(400).json({
         success: false,
-        message: "Order cannot be cancelled now",
+        message: "Order cannot be cancelled now"
       });
     }
 
+    /* ========= UPDATE ORDER ========= */
+
     order.status = "Cancelled";
+
+    order.cancelReason = reason;
+    order.cancelComment = comment;
+    order.refundMode = refundMode;
+    order.cancelledAt = new Date();
+
+    /* ========= STATUS HISTORY ========= */
+
     order.statusHistory.push({
       status: "Cancelled",
-      reason: req.body.reason,
+      reason: reason
+    });
+
+    /* ========= TRACKING EVENTS ========= */
+
+    order.trackingEvents.push({
+      status: "Cancelled",
+      time: new Date().toLocaleTimeString(),
+      date: new Date().toLocaleDateString()
     });
 
     await order.save();
@@ -537,17 +613,18 @@ exports.cancelOrder = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Order cancelled successfully",
-      order,
+      order
     });
 
   } catch (error) {
+
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
+
   }
 };
-
 /* =====================================================
    8️⃣ UPDATE ORDER DELIVERY ADDRESS
 ===================================================== */
@@ -559,36 +636,228 @@ exports.updateOrderAddress = async (req, res) => {
       userId: req.user._id
     });
 
+    /* ===== ORDER NOT FOUND ===== */
+
     if (!order) {
       return res.status(404).json({
-        success:false,
-        message:"Order not found"
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    /* ===== CHANGE BLOCK AFTER SHIPPING ===== */
+
+    /* ===== CHANGE BLOCK AFTER SHIPPING ===== */
+
+    if (
+      ["Shipped", "Out for Delivery", "Delivered", "Cancelled"]
+        .includes(order.status)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Address cannot be changed after order is shipped"
       });
     }
 
     const { name, phone, address, city, pincode } = req.body;
 
-    order.userInfo.name = name || order.userInfo.name;
-    order.userInfo.phone = phone || order.userInfo.phone;
-    order.userInfo.address = address || order.userInfo.address;
-    order.userInfo.city = city || order.userInfo.city;
-    order.userInfo.pincode = pincode || order.userInfo.pincode;
+    /* ===== UPDATE DATA ===== */
+
+    if (name) order.userInfo.name = name;
+    if (phone) order.userInfo.phone = phone;
+    if (address) order.userInfo.address = address;
+    if (city) order.userInfo.city = city;
+    if (pincode) order.userInfo.pincode = pincode;
 
     await order.save();
 
     res.status(200).json({
-      success:true,
-      message:"Address updated",
+      success: true,
+      message: "Address updated",
       order
     });
 
-  } catch(error) {
+  } catch (error) {
 
     console.error("UPDATE ADDRESS ERROR:", error);
 
     res.status(500).json({
-      success:false,
-      message:error.message
+      success: false,
+      message: error.message
     });
+
   }
+};
+/* =====================================================
+   9️⃣ UPDATE ORDER PHONE
+===================================================== */
+
+exports.updateOrderPhone = async (req, res) => {
+  try {
+
+    const order = await Order.findOne({
+      _id: req.params.id,
+      userId: req.user._id
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    if (!order.canEditPhone) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone cannot be changed for this order"
+      });
+    }
+
+    const { name, primary, alternate } = req.body;
+
+    /* ===== NOTHING TO UPDATE ===== */
+
+    if (!name && !primary && !alternate) {
+      return res.status(400).json({
+        success: false,
+        message: "Nothing to update"
+      });
+    }
+
+    /* ===== UPDATE DATA ===== */
+
+    if (name) order.userInfo.name = name;
+    if (primary) order.userInfo.phone = primary;
+    if (alternate) order.userInfo.alternatePhone = alternate;
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Phone updated successfully",
+      order
+    });
+
+  } catch (error) {
+
+    console.error("UPDATE PHONE ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
+  }
+};
+
+/* =====================================================
+   🔟 UPDATE PAYMENT METHOD
+===================================================== */
+
+exports.updatePayment = async (req, res) => {
+
+  try {
+
+    const { paymentMethod, paymentStatus, paymentId } = req.body;
+
+    const order = await Order.findOne({
+      _id: req.params.id,
+      userId: req.user._id
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    
+    /* ===== BLOCK PAYMENT CHANGE FOR FINAL ORDERS ===== */
+
+    if (["Cancelled", "Delivered"].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment cannot be changed for this order"
+      });
+    }
+
+    /* ===== BLOCK AFTER SHIPPING ===== */
+
+    if (["Shipped", "Out for Delivery"].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment cannot be changed after order is shipped"
+      });
+    }
+
+    /* ===== ONLY COD ORDERS CAN CHANGE PAYMENT ===== */
+
+    if (order.paymentType !== "COD") {
+      return res.status(400).json({
+        success: false,
+        message: "Only COD orders can change payment method"
+      });
+    }
+
+    /* ===== PAYMENT CHANGE TIME LIMIT (2 HOURS) ===== */
+
+    const orderTime = new Date(order.createdAt).getTime();
+    const now = Date.now();
+
+    const twoHours = 2 * 60 * 60 * 1000;
+
+    if (now - orderTime > twoHours) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment change allowed only within 2 hours"
+      });
+    }
+
+    /* ===== ONLY ONE TIME CHANGE ===== */
+
+    if (order.paymentChanged) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment method already changed once"
+      });
+    }
+
+    /* ===== UPDATE PAYMENT ===== */
+
+    if (paymentMethod) {
+      order.paymentType = paymentMethod;
+    }
+
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
+    }
+
+    if (paymentId) {
+      order.paymentId = paymentId;
+    }
+
+    order.paymentChanged = true;
+    order.paymentChangedAt = new Date();
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment updated successfully",
+      order
+    });
+
+  } catch (error) {
+
+    console.error("UPDATE PAYMENT ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+
+  }
+
 };

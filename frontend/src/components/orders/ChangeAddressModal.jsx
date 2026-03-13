@@ -1,6 +1,7 @@
 "use client";
 
 import axios from "axios";
+import { useState } from "react";
 import { X, MapPin } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
@@ -9,8 +10,11 @@ export default function ChangeAddressModal({
   setShowChangeAddress,
   setShowAddressList,
   order,
-  refreshOrder
+  refreshOrder,
+  isAddressEditable
 }) {
+
+  const [loading, setLoading] = useState(false);
 
   if (!showChangeAddress) return null;
 
@@ -19,38 +23,49 @@ export default function ChangeAddressModal({
     setShowAddressList(true);
   };
 
-const handleUseCurrent = async () => {
+  const handleUseCurrent = async () => {
 
-  try {
+    if (loading) return;
 
-    const user = JSON.parse(localStorage.getItem("user"));
-    const token = user?.token;
+    setLoading(true);
+    try {
 
-    await axios.put(
-      `${API_BASE}/api/orders/${order._id}/address`,
-      {
-        addressId: order.deliveryAddress?._id
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const token = user?.token;
+
+      await axios.put(
+        `${API_BASE}/api/orders/update-address/${order.id}`,
+        {
+          name: order.userInfo?.name,
+          phone: order.userInfo?.phone,
+          address: order.userInfo?.address,
+          city: order.userInfo?.city,
+          pincode: order.userInfo?.pincode
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      }
-    );
+      );
 
-    if (refreshOrder) {
-      await refreshOrder();
+      if (refreshOrder) {
+        await refreshOrder();
+      }
+
+      setShowChangeAddress(false);
+
+    } catch (err) {
+
+      console.error("Address update error", err.response?.data || err.message);
+
+    } finally {
+
+      setLoading(false);
+
     }
 
-    setShowChangeAddress(false);
-
-  } catch (err) {
-
-    console.error("Address update error", err.response?.data || err.message);
-
-  }
-
-};
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
@@ -73,6 +88,11 @@ const handleUseCurrent = async () => {
 
         {/* BODY */}
         <div className="p-6 space-y-6">
+          {!isAddressEditable && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-sm">
+              ⚠ Address cannot be changed for this order
+            </div>
+          )}
 
           <div>
             <p className="text-sm text-gray-500 mb-1">Deliver to</p>
@@ -112,13 +132,15 @@ const handleUseCurrent = async () => {
 
             <button
               onClick={handleUseCurrent}
+              disabled={loading || !isAddressEditable}
               className="flex-1 bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-700 transition"
             >
-              Use this address
+              {loading ? "Updating..." : "Use this address"}
             </button>
 
             <button
               onClick={handleChangeAddress}
+              disabled={!isAddressEditable}
               className="flex-1 bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition"
             >
               Select another
