@@ -6,6 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { OrderProvider } from "@/context/OrderContext";
+import { ChatProvider } from "@/context/ChatContext";
 
 export const metadata = {
   title: "Shapewear Store | Premium Collection",
@@ -45,12 +46,15 @@ export default function RootLayout({ children }) {
             <CartProvider>
               <WishlistProvider>
                 <OrderProvider>
+                  <ChatProvider>
 
                   <div className="min-h-screen w-full pb-[env(safe-area-inset-bottom)]">
                     {children}
+                  
                   </div>
+                  </ChatProvider>
                 </OrderProvider>
-
+                
               </WishlistProvider>
             </CartProvider>
           </AuthProvider>

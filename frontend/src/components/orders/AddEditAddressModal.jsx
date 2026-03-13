@@ -28,6 +28,7 @@ export default function AddEditAddressModal({
     });
 
     const [loading, setLoading] = useState(false)
+    const [showSuccess, setShowSuccess] = useState(false)
 
     /* ================= EDIT ADDRESS LOAD ================= */
 
@@ -86,7 +87,7 @@ export default function AddEditAddressModal({
 
     const handleSave = async () => {
 
-        const user = JSON.parse(localStorage.getItem("user"))
+        const user = JSON.parse(localStorage.getItem("user") || "{}")
         const token = user?.token
 
         if (!token) {
@@ -96,11 +97,11 @@ export default function AddEditAddressModal({
 
         if (
             !formData.name ||
-            !formData.phone ||
+            !/^[0-9]{10}$/.test(formData.phone) ||
             !formData.address ||
             !formData.city ||
             !formData.state ||
-            !formData.pincode
+            !/^[0-9]{6}$/.test(formData.pincode)
         ) {
             alert("Please fill all required fields")
             return
@@ -122,7 +123,7 @@ export default function AddEditAddressModal({
                         pincode: formData.pincode,
                         city: formData.city,
                         state: formData.state,
-                        addressLine: formData.address,
+                        addressLine: `${formData.address}${formData.area ? ", " + formData.area : ""}`,
                         landmark: formData.landmark,
                         addressType: formData.addressType
                     },
@@ -143,7 +144,7 @@ export default function AddEditAddressModal({
                         pincode: formData.pincode,
                         city: formData.city,
                         state: formData.state,
-                        addressLine: formData.address,
+                        addressLine: `${formData.address}${formData.area ? ", " + formData.area : ""}`,
                         landmark: formData.landmark,
                         addressType: formData.addressType
                     },
@@ -164,13 +165,18 @@ export default function AddEditAddressModal({
 
                 const savedAddress = res.data.address || res.data
 
-                onAddressSaved(savedAddress)
+                onAddressSaved({
+                    fullName: savedAddress.fullName,
+                    phone: savedAddress.phone,
+                    addressLine: savedAddress.addressLine,
+                    city: savedAddress.city,
+                    state: savedAddress.state,
+                    pincode: savedAddress.pincode
+                })
 
             }
 
-            alert("Address saved successfully")
-
-            setShowAddAddress(false)
+            setShowSuccess(true)
             setEditAddress(null)
 
         } catch (err) {
@@ -191,233 +197,306 @@ export default function AddEditAddressModal({
 
 
     return (
+        <>
 
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+            {!showSuccess && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
 
-            <div className="bg-white rounded-xl w-full max-w-3xl shadow-xl">
+                    <div className="bg-white rounded-xl w-full max-w-3xl shadow-xl">
 
-                {/* HEADER */}
+                        {/* HEADER */}
 
-                <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
+                        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-center z-10">
 
-                    <h2 className="text-lg font-semibold text-gray-900">
-                        {editAddress ? "Edit Address" : "Add New Address"}
-                    </h2>
-
-                    <button
-                        onClick={() => {
-                            setShowAddAddress(false)
-                            setEditAddress(null)
-                        }}
-                        className="text-gray-400 hover:text-gray-600"
-                    >
-                        <X size={20} />
-                    </button>
-
-                </div>
-
-
-                {/* FORM */}
-
-                <div className="p-8 max-h-[70vh] overflow-y-auto">
-
-                    {/* NAME */}
-
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Name *
-                        </label>
-
-                        <input
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleChange}
-                            placeholder="Full name"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-
-
-                    {/* PHONE */}
-
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Phone *
-                        </label>
-
-                        <input
-                            type="tel"
-                            name="phone"
-                            maxLength={10}
-                            pattern="[0-9]{10}"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            placeholder="10 digit mobile number"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-
-
-                    {/* CITY */}
-
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            City *
-                        </label>
-
-                        <input
-                            type="text"
-                            name="city"
-                            value={formData.city}
-                            onChange={handleChange}
-                            placeholder="Enter city"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-
-
-                    {/* ADDRESS */}
-
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Address *
-                        </label>
-
-                        <input
-                            type="text"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleChange}
-                            placeholder="House No., Building Name"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-
-
-                    {/* AREA */}
-
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Area
-                        </label>
-
-                        <input
-                            type="text"
-                            name="area"
-                            value={formData.area}
-                            onChange={handleChange}
-                            placeholder="Road name, Area, Colony"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-
-
-                    {/* STATE + PINCODE */}
-
-                    <div className="grid grid-cols-2 gap-4">
-
-                        <div>
-                            <label className="text-sm font-medium text-gray-700 mb-2 block">
-                                State *
-                            </label>
-
-                            <input
-                                type="text"
-                                name="state"
-                                value={formData.state}
-                                onChange={handleChange}
-                                placeholder="State"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="text-sm font-medium text-gray-700 mb-2 block">
-                                Pincode *
-                            </label>
-
-                            <input
-                                type="text"
-                                name="pincode"
-                                value={formData.pincode}
-                                onChange={handleChange}
-                                placeholder="Pincode"
-                                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-
-                    </div>
-
-
-                    {/* LANDMARK */}
-
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Landmark
-                        </label>
-
-                        <input
-                            type="text"
-                            name="landmark"
-                            value={formData.landmark}
-                            onChange={handleChange}
-                            placeholder="Near temple, school etc"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-
-                    {/* ADDRESS TYPE */}
-
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">
-                            Address Type
-                        </label>
-
-                        <div className="flex gap-3">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                {editAddress ? "Edit Address" : "Add New Address"}
+                            </h2>
 
                             <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, addressType: "HOME" })}
-                                className={`px-4 py-2 rounded border text-sm ${formData.addressType === "HOME"
-                                    ? "bg-blue-600 text-white border-blue-600"
-                                    : "border-gray-300 text-gray-600"
-                                    }`}
+                                onClick={() => {
+                                    setShowAddAddress(false)
+                                    setEditAddress(null)
+                                }}
+                                className="text-gray-400 hover:text-gray-600"
                             >
-                                Home
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setFormData({ ...formData, addressType: "WORK" })}
-                                className={`px-4 py-2 rounded border text-sm ${formData.addressType === "WORK"
-                                    ? "bg-blue-600 text-white border-blue-600"
-                                    : "border-gray-300 text-gray-600"
-                                    }`}
-                            >
-                                Work
+                                <X size={20} />
                             </button>
 
                         </div>
+
+                        {/* FORM */}
+
+                        <div className="p-8 max-h-[70vh] overflow-y-auto">
+
+                            {/* NAME */}
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    Name *
+                                </label>
+
+                                <input
+                                    disabled={loading}
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={(e) => {
+                                        const value = e.target.value
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            name: value
+                                        }))
+                                    }}
+                                    placeholder="Full name"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+                        
+
+
+                            {/* PHONE */}
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    Phone *
+                                </label>
+
+                                <input
+                                    disabled={loading}
+                                    type="tel"
+                                    name="phone"
+                                    maxLength={10}
+                                    pattern="[0-9]{10}"
+                                    value={formData.phone}
+                                    onChange={(e) => {
+                                        const value = e.target.value.replace(/\D/g, "").slice(0, 10)
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            phone: value
+                                        }))
+                                    }}
+                                    placeholder="10 digit mobile number"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+
+
+
+                            {/* CITY */}
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    City *
+                                </label>
+
+                                <input
+                                    disabled={loading}
+                                    type="text"
+                                    name="city"
+                                    value={formData.city}
+                                    onChange={handleChange}
+                                    placeholder="Enter city"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+
+
+                            {/* ADDRESS */}
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    Address *
+                                </label>
+
+                                <input
+                                    disabled={loading}
+                                    type="text"
+                                    name="address"
+                                    value={formData.address}
+                                    onChange={handleChange}
+                                    placeholder="House No., Building Name"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+
+
+                            {/* AREA */}
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    Area
+                                </label>
+
+                                <input
+                                    disabled={loading}
+                                    type="text"
+                                    name="area"
+                                    value={formData.area}
+                                    onChange={handleChange}
+                                    placeholder="Road name, Area, Colony"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+
+
+                            {/* STATE + PINCODE */}
+
+                            <div className="grid grid-cols-2 gap-4">
+
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                        State *
+                                    </label>
+
+                                    <input
+                                        disabled={loading}
+                                        type="text"
+                                        name="state"
+                                        value={formData.state}
+                                        onChange={handleChange}
+                                        placeholder="State"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                        Pincode *
+                                    </label>
+
+                                    <input
+                                        disabled={loading}
+                                        type="text"
+                                        name="pincode"
+                                        maxLength={6}
+                                        value={formData.pincode}
+                                        onChange={(e) => {
+                                            const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                pincode: value
+                                            }))
+                                        }}
+                                        placeholder="Pincode"
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
+                            </div>
+
+
+                            {/* LANDMARK */}
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    Landmark
+                                </label>
+
+                                <input
+                                    disabled={loading}
+                                    type="text"
+                                    name="landmark"
+                                    value={formData.landmark}
+                                    onChange={handleChange}
+                                    placeholder="Near temple, school etc"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                            </div>
+
+                            {/* ADDRESS TYPE */}
+
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    Address Type
+                                </label>
+
+                                <div className="flex gap-3">
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, addressType: "HOME" })}
+                                        className={`px-4 py-2 rounded border text-sm ${formData.addressType === "HOME"
+                                            ? "bg-blue-600 text-white border-blue-600"
+                                            : "border-gray-300 text-gray-600"
+                                            }`}
+                                    >
+                                        Home
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, addressType: "WORK" })}
+                                        className={`px-4 py-2 rounded border text-sm ${formData.addressType === "WORK"
+                                            ? "bg-blue-600 text-white border-blue-600"
+                                            : "border-gray-300 text-gray-600"
+                                            }`}
+                                    >
+                                        Work
+                                    </button>
+
+                                </div>
+                            </div>
+
+
+                            {/* SAVE BUTTON */}
+
+                            <button
+                                onClick={handleSave}
+                                disabled={loading}
+                                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition mt-6 disabled:opacity-50"
+                            >
+                                {loading ? "Saving Address..." : "SAVE ADDRESS"}
+                            </button>
+
+                        </div>
+
                     </div>
 
+                </div>
+             )}
 
-                    {/* SAVE BUTTON */}
 
-                    <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition mt-6 disabled:opacity-50"
-                    >
-                        {loading ? "Saving Address..." : "SAVE ADDRESS"}
-                    </button>
+
+            {showSuccess && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[999]">
+
+                    <div className="bg-white rounded-2xl w-[380px] text-center shadow-2xl">
+
+                        <div className="pt-8">
+                            <div className="w-16 h-16 mx-auto flex items-center justify-center rounded-full bg-green-100">
+                                <span className="text-green-600 text-3xl">✓</span>
+                            </div>
+                        </div>
+
+                        <div className="px-8 py-6">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                Address Saved Successfully
+                            </h2>
+
+                            <p className="text-sm text-gray-500 mt-2">
+                                Your new delivery address has been added.
+                            </p>
+                        </div>
+
+                        <div className="border-t">
+                            <button
+                                onClick={() => {
+                                    setShowSuccess(false)
+                                    setShowAddAddress(false)
+                                    setEditAddress(null)
+                                }}
+                                className="w-full py-3 text-blue-600 font-semibold hover:bg-gray-50 transition"
+                            >
+                                CONTINUE
+                            </button>
+                        </div>
+
+                    </div>
 
                 </div>
+            )}
 
-            </div>
-
-        </div>
-
+        </>
     )
 
 }

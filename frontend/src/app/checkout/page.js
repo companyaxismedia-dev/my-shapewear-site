@@ -3,17 +3,20 @@
 import { useEffect, useState, useRef } from "react";
 import { ShieldCheck, Plus } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 import AddressList from "@/components/checkout/AddressList";
 import AddressForm from "@/components/checkout/AddressForm";
 import PriceDetails from "@/components/checkout/PriceDetails";
 import DeliveryEstimates from "@/components/checkout/DeliveryEstimates";
 
+
 export default function CheckoutPage() {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const hasSelectedAddress = !!selectedAddressId;
   const [highlightContinue, setHighlightContinue] = useState(false);
+  const router = useRouter();
 
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,9 +46,9 @@ export default function CheckoutPage() {
 
   /* ================= TOKEN ================= */
   const getToken = () => {
-    const stored = JSON.parse(localStorage.getItem("user"));
-    return stored?.token;
-  };
+  const stored = JSON.parse(localStorage.getItem("user") || "{}");
+  return stored?.token;
+};
 
   /* ================= FETCH DATA ================= */
   const fetchData = async () => {
@@ -187,6 +190,7 @@ export default function CheckoutPage() {
       });
 
       const data = await res.json();
+      console.log("ORDER API RESPONSE:", data);
       setAddresses(data.addresses || []);
       closeModal();
     } catch (err) {
@@ -196,25 +200,79 @@ export default function CheckoutPage() {
 
   /* ================= CART ================= */
   const totalMrp = cartItems.reduce(
-    (sum, i) => sum + (i.product?.minPrice || 0) * i.qty,
-    0
-  );
+  (sum, i) => sum + (i.product?.mrp || i.product?.minPrice || 0) * i.qty,
+  0
+);
+
+const sellingPrice = cartItems.reduce(
+  (sum, i) => sum + (i.product?.minPrice || i.product?.price || 0) * i.qty,
+  0
+);
+
+  const discount = totalMrp - sellingPrice;
 
   const cartSummary = {
     itemCount: cartItems.length,
     totalMrp,
-    discount: 0,
+    discount,
     platformFee: 23,
     codFee: 0,
   };
 
   /* ================= CONTINUE ================= */
-  const goToPayment = () => {
+  const goToPayment = async () => {
+
     if (!selectedAddressId) {
       alert("Please select delivery address");
       return;
     }
-    window.location.href = `/payment?address=${selectedAddressId}`;
+
+    try {
+
+      const token = getToken();
+
+const res = await fetch(`${API_BASE}/api/orders`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    addressId: selectedAddressId
+  })
+});
+
+if (!res.ok) {
+  const errData = await res.json();
+  alert(errData.message || "Order create failed");
+  return;
+}
+
+const data = await res.json();
+
+console.log("ORDER RESPONSE:", data);
+
+if (!data || !data.orderId) {
+  alert("Order creation failed");
+  return;
+}
+
+const orderId = data.orderId;
+console.log("ORDER API RESPONSE:", data);
+
+if (!orderId) {
+  alert("Order ID missing");
+  return;
+}
+
+window.location.href =
+  `/payment?order=${orderId}&address=${selectedAddressId}`;
+
+    } catch (err) {
+      console.log(err);
+      alert("Order create error");
+    }
+
   };
 
   if (loading)

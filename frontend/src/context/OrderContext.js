@@ -16,7 +16,7 @@ export const OrderProvider = ({ children }) => {
         try {
             setLoading(true);
 
-            const user = JSON.parse(localStorage.getItem("user"));
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
             const token = user?.token;
 
             if (!token) return;
@@ -29,13 +29,17 @@ export const OrderProvider = ({ children }) => {
 
             const mapped = res.data.orders.map((o) => ({
                 id: o._id,
+                orderNumber: o.orderNumber,
                 createdAt: o.createdAt,
 
                 status: (() => {
                     const s = o.status?.toLowerCase();
 
-                    if (s === "processing" || s === "shipped") return "on-the-way";
+                    if (["processing", "shipped", "out for delivery"].includes(s))
+                        return "on-the-way";
+
                     if (s === "delivered") return "delivered";
+
                     if (s === "cancelled") return "cancelled";
 
                     return "on-the-way";
@@ -65,11 +69,18 @@ export const OrderProvider = ({ children }) => {
     /* ================= FETCH SINGLE ORDER ================= */
 
     const fetchOrderById = async (id) => {
+        if (!id || id === "null") {
+            console.log("Invalid order id:", id);
+            return null;
+        }
         try {
-            const user = JSON.parse(localStorage.getItem("user"));
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
             const token = user?.token;
 
-            if (!token) return null;
+            if (!token) {
+                setLoading(false);
+                return;
+            }
 
             const res = await axios.get(`${API_BASE}/api/orders/${id}`, {
                 headers: {
@@ -77,53 +88,68 @@ export const OrderProvider = ({ children }) => {
                 },
             });
 
-            const o = res.data.order;
+            const o = res?.data?.order;
+
+            if (!o) return null;
+
+            const status = (o.status || "").toLowerCase().trim();
 
             return {
                 id: o._id,
                 trackingId: o.trackingId,
                 courier: o.courier,
 
-                orderNumber: "OD" + o._id.slice(-12).toUpperCase(),
+                userInfo: o.userInfo,
 
-                status: o.status?.toLowerCase(),
+                canEditAddress:
+                    ["order placed", "processing"].includes(status),
 
+                orderNumber: o.orderNumber,
+
+                status: (o.status || "Order Placed").trim(),
                 items: o.products.map((p) => ({
                     name: p.name,
                     img: p.img,
                     size: p.size,
                     price: p.price,
+                    listingPrice: p.listingPrice,
                     quantity: p.quantity,
                 })),
 
-                subtotal: o.totalAmount,
+                listingPrice: o.listingPrice || 0,
 
-                discount: o.discountAmount || 0,
+                subtotal: o.subtotal || o.totalAmount,
+
+                discount: o.discount || 0,
+
+                fees: o.fees || 0,
 
                 totalAmount: o.finalAmount || o.totalAmount,
-
                 offersEarned: o.offersEarned || [],
 
-                trackingEvents: (o.statusHistory || []).map((s) => ({
-                    status: s.status?.toLowerCase(),
-                    time: s.status,
-                    date: new Date(s.date).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                    }),
+                trackingEvents: (o.trackingEvents || []).map((s) => ({
+                    status: s.status,
+                    time: s.time,
+                    date: s.date
+                        ? new Date(s.date).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                        })
+                        : "",
                 })),
 
                 deliveryAddress: {
                     address: o.userInfo?.address,
                     city: o.userInfo?.city,
+                    state: o.userInfo?.state,
                     pincode: o.userInfo?.pincode,
                 },
-
                 recipientName: o.userInfo?.name,
                 recipientPhone: o.userInfo?.phone,
 
                 paymentMethod: o.paymentType,
+
             };
         } catch (err) {
             console.error("Order fetch error", err);

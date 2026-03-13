@@ -126,6 +126,9 @@ app.use("/api/offers", require("./routes/offerRoutes"));
 /* ================= PAYMENT ================= */
 app.use("/api/payment", require("./routes/paymentRoutes"));
 
+/* ================= chat us ================= */
+app.use("/api/chat", require("./routes/chatRoutes"));
+
 
 app.use((req, res) => {
   res.status(404).json({
