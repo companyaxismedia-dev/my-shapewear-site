@@ -17,6 +17,8 @@ import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 
 import { API_BASE } from "@/lib/api";
+import SearchFilterComponent from "@/components/admin/common/SearchFilterComponent";
+import PaginationComponent from "@/components/admin/common/PaginationComponent";
 
 export default function ProductListPage() {
     const router = useRouter();
@@ -24,7 +26,7 @@ export default function ProductListPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [rows, setRows] = useState(10);
+    const [rows, setRows] = useState(25);
     const [page, setPage] = useState(1);
     const [pages, setPages] = useState(1);
     const [categories, setCategories] = useState([]);
@@ -198,6 +200,22 @@ export default function ProductListPage() {
                         📋 Draft Products
                     </button>
 
+
+
+
+                </div>
+
+                <div className="flex gap-2 items-center">
+                    <SearchFilterComponent
+                        searchValue={search}
+                        // onSearchChange={(val) => setSearch(val)}
+                        onSearchChange={(val) => {
+                            setSearch(val);
+                            setPage(1);
+                        }}
+                        showExpandButton={true}
+                        expandDirection="right"
+                    />
                     <button
                         onClick={() => {
                             if (!selectedIds.length) {
@@ -211,30 +229,6 @@ export default function ProductListPage() {
                     >
                         <Trash2 size={15} /> Delete Product
                     </button>
-
-
-                </div>
-
-                <div className="flex gap-2 items-center">
-                    <select
-                        className="px-3 py-2 border rounded-lg"
-                        value={rows}
-                        onChange={(e) => setRows(Number(e.target.value))}
-                    >
-                        <option value={10}>Show 10</option>
-                        <option value={20}>Show 20</option>
-                        <option value={50}>Show 50</option>
-                    </select>
-
-                    <div className="relative">
-                        <Search className="absolute left-2 top-2.5 w-4 h-4" />
-                        <input
-                            className="pl-8 pr-3 py-2 border rounded-lg"
-                            placeholder="Search..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
                 </div>
             </div>
 
@@ -363,19 +357,17 @@ export default function ProductListPage() {
             </div>
 
             {/* PAGINATION */}
-            <div className="flex justify-center gap-2 mt-4">
-                {Array.from({ length: pages }).map((_, i) => (
-                    <button
-                        key={i}
-                        onClick={() => setPage(i + 1)}
-                        className={`px-3 py-1 rounded ${page === i + 1 ? "bg-primary text-black" : "bg-muted"
-                            }`}
-                    >
-                        {i + 1}
-                    </button>
-                ))}
-            </div>
-
+            <PaginationComponent
+                currentPage={page}
+                totalPages={pages}
+                limit={rows}
+                onPageChange={(newPage) => setPage(newPage)}
+                onLimitChange={(newLimit) => {
+                    setRows(newLimit);
+                    setPage(1);
+                }}
+                className="mt-4"
+            />
             <DeleteConfirmModal
                 open={deleteOpen}
                 onClose={() => setDeleteOpen(false)}

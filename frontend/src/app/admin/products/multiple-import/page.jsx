@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Search, MoreVertical, Pencil, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import { API_BASE } from "@/lib/api";
 import { productSchema } from "@/components/admin/ProductForm";
 import dynamic from 'next/dynamic';
+import PaginationComponent from "@/components/admin/common/PaginationComponent";
+import SearchFilterComponent from "@/components/admin/common/SearchFilterComponent";
+import ImportModal from "@/components/admin/ImportModal";
 const ProductForm = dynamic(() => import('@/components/admin/ProductForm').then(mod => mod.ProductForm), { ssr: false });
 
 export default function MultipleImportPage() {
@@ -17,11 +19,28 @@ export default function MultipleImportPage() {
   const [selected, setSelected] = useState([]);
   const [editItem, setEditItem] = useState(null);
   const formRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const [importOpen, setImportOpen] = useState(false);
+
+
+  const filteredItems = items.filter((item) =>
+    item.data?.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredItems.length / limit);
+
+  const paginatedItems = filteredItems.slice(
+    (page - 1) * limit,
+    page * limit
+  );
 
   useEffect(() => {
     const raw = sessionStorage.getItem('multiple_import_data');
     if (!raw) {
-      router.push('/admin/products');
+      // router.push('/admin/products');
+      router.push("/admin/products/multiple-import") // for empty multiple import
       return;
     }
     try {
@@ -29,7 +48,9 @@ export default function MultipleImportPage() {
       setItems(parsed.map((r, i) => ({ id: i, ...r })));
     } catch (err) {
       console.error(err);
-      router.push('/admin/products');
+      // router.push('/admin/products');
+      router.push("/admin/products/multiple-import")
+
     }
   }, []);
 
@@ -334,6 +355,16 @@ export default function MultipleImportPage() {
         </div>
 
         <div className="flex gap-2 items-center">
+          <SearchFilterComponent
+            searchValue={search}
+            // onSearchChange={(val) => setSearch(val)}
+            onSearchChange={(val) => {
+              setSearch(val);
+              setPage(1);
+            }}
+            showExpandButton={true}
+            expandDirection="right"
+          />
           <button onClick={submitAll} className="btn-primary px-4 py-2">Submit All</button>
           <button onClick={deleteSelected} className="btn-destructive px-4 py-2">Delete Products</button>
 
@@ -364,35 +395,57 @@ export default function MultipleImportPage() {
           </thead>
 
           <tbody>
-            {items.map((p) => (
-              <tr key={p.id} className={`border-b ${p.errors ? 'bg-red-50' : ''}`}>
-                <td className="p-3">
-                  <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} />
-                </td>
-                <td className="p-3">{p.data.name || 'No Name'}</td>
-                <td className="p-3">{p.data.brand || '-'}</td>
-                <td className="p-3">{p.data.category || '-'} / {p.data.subcategory || '-'}</td>
-                <td className="p-3">{p.created ? 'Created' : p.valid === false ? 'Invalid' : 'Ready'}</td>
-                {p.errors ? (
-                  <td
-                    className="p-3 text-xs text-red-600">{p.errors ? p.errors.join('; ') : ''}
-                  </td>) : (
-                  <td className="p-3 text-green-600">No errors</td>
-                )}
+            {paginatedItems.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="text-lg font-semibold text-slate-600">
+                      No products imported
+                    </p>
 
-                <td className="p-3">
-                  <div className="flex gap-2">
-                    {p.created ? (
-                      <button onClick={() => router.push(`/admin/products/edit/${p.createdProductId}`)} className="btn-muted px-3 py-1">Edit</button>
-                    ) : (
-                      <button onClick={() => openEdit(p)} className="btn-muted px-3 py-1">Edit</button>
-                    )}
-                    <button disabled={p.created} onClick={() => submitSingle(p.id)} className="btn-primary px-3 py-1">{p.created ? 'Done' : 'Submit'}</button>
-                    <button onClick={() => deleteSingle(p.id)} className="btn-destructive px-3 py-1">Delete</button>
+                    <p className="text-sm text-slate-500">
+                      Import a file to preview products here.
+                    </p>
+
+                    <button
+                      onClick={() => setImportOpen(true)}
+                      className="btn-primary px-4 py-2 flex items-center gap-2 text-sm"
+                    >
+                      Import Products
+                    </button>
                   </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              paginatedItems.map((p) => (
+                <tr key={p.id} className={`border-b ${p.errors ? 'bg-red-50' : ''}`}>
+                  <td className="p-3">
+                    <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} />
+                  </td>
+                  <td className="p-3">{p.data.name || 'No Name'}</td>
+                  <td className="p-3">{p.data.brand || '-'}</td>
+                  <td className="p-3">{p.data.category || '-'} / {p.data.subcategory || '-'}</td>
+                  <td className="p-3">{p.created ? 'Created' : p.valid === false ? 'Invalid' : 'Ready'}</td>
+                  {p.errors ? (
+                    <td
+                      className="p-3 text-xs text-red-600">{p.errors ? p.errors.join('; ') : ''}
+                    </td>) : (
+                    <td className="p-3 text-green-600">No errors</td>
+                  )}
+
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      {p.created ? (
+                        <button onClick={() => router.push(`/admin/products/edit/${p.createdProductId}`)} className="btn-muted px-3 py-1">Edit</button>
+                      ) : (
+                        <button onClick={() => openEdit(p)} className="btn-muted px-3 py-1">Edit</button>
+                      )}
+                      <button disabled={p.created} onClick={() => submitSingle(p.id)} className="btn-primary px-3 py-1">{p.created ? 'Done' : 'Submit'}</button>
+                      <button onClick={() => deleteSingle(p.id)} className="btn-destructive px-3 py-1">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              )))}
           </tbody>
         </table>
       </div>
@@ -449,6 +502,19 @@ export default function MultipleImportPage() {
           </div>
         </div>
       )}
+      <PaginationComponent
+        currentPage={page}
+        totalPages={totalPages}
+        limit={limit}
+        onPageChange={(p) => setPage(p)}
+        onLimitChange={(l) => {
+          setLimit(l);
+          setPage(1);
+        }}
+        className="mt-4"
+      />
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+
     </>
   );
 }

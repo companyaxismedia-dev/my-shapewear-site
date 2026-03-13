@@ -91,7 +91,7 @@ ${dropdownOpen ? "opacity-100 visible" : "opacity-0 invisible"}
 
             <div className="flex flex-col text-sm">
               {[
-                ["My Orders", "/orders"],
+                ["My Orders", "/order"],
                 ["Buy Again", "/buy-again"],
                 ["My Recommendations", "/recommendations"],
                 ["My Account", "/account"],
