@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+
 
 export default function ChangePhoneNumberModal({
     showChangePhone,
@@ -7,8 +8,8 @@ export default function ChangePhoneNumberModal({
     currentPhone,
     currentName,
     onPhoneChange,
+    isPhoneEditable
 }) {
-
     const [name, setName] = useState(currentName || "")
     const [phone, setPhone] = useState(currentPhone || "")
     const [alternatePhone, setAlternatePhone] = useState("")
@@ -16,13 +17,48 @@ export default function ChangePhoneNumberModal({
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
 
+    useEffect(() => {
+
+        if (showChangePhone) {
+
+            setName(currentName || "")
+            setPhone(currentPhone || "")
+            setAlternatePhone("")
+            setError("")
+
+        }
+
+    }, [showChangePhone, currentName, currentPhone])
+
     const validatePhone = (number) => {
-        return /^[6-9]\d{9}$/.test(number)
+    return /^[6-9]\d{9}$/.test(number)
+}
+
+useEffect(() => {
+
+    const handleEsc = (e) => {
+        if (e.key === "Escape") {
+            setShowChangePhone(false)
+        }
     }
+
+    window.addEventListener("keydown", handleEsc)
+
+    return () => {
+        window.removeEventListener("keydown", handleEsc)
+    }
+
+}, [])
 
     const handleUpdate = async () => {
 
+        if (loading) return
         setError("")
+
+        if (!name || name.trim().length < 2) {
+            setError("Enter receiver name")
+            return
+        }
 
         if (!validatePhone(phone)) {
             setError("Enter a valid phone number")
@@ -34,19 +70,25 @@ export default function ChangePhoneNumberModal({
             return
         }
 
+        if (alternatePhone && phone === alternatePhone) {
+            setError("Alternate phone cannot be same as primary")
+            return
+        }
+
         try {
 
             setLoading(true)
 
             if (onPhoneChange) {
                 await onPhoneChange({
-                    name,
+                    name: name.trim(),
                     primary: phone,
                     alternate: alternatePhone
                 })
             }
 
             setLoading(false)
+            setError("")
             setShowChangePhone(false)
 
         } catch (err) {
@@ -61,9 +103,15 @@ export default function ChangePhoneNumberModal({
 
     return (
 
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowChangePhone(false)}
+        >
 
-            <div className="bg-white rounded-lg w-full max-w-md shadow-lg">
+            <div
+                className="bg-white rounded-lg w-full max-w-md shadow-lg"
+                onClick={(e) => e.stopPropagation()}
+            >
 
                 {/* HEADER */}
 
@@ -74,7 +122,11 @@ export default function ChangePhoneNumberModal({
                     </h2>
 
                     <button
-                        onClick={() => setShowChangePhone(false)}
+                        onClick={() => {
+                            setShowChangePhone(false)
+                            setLoading(false)
+                            setError("")
+                        }}
                         className="text-gray-400 hover:text-gray-600"
                     >
                         <X size={20} />
@@ -85,7 +137,15 @@ export default function ChangePhoneNumberModal({
 
                 {/* FORM */}
 
+
+
                 <div className="p-6 space-y-4">
+                    {!isPhoneEditable && (
+                        <div className="bg-yellow-100 border border-yellow-300 text-yellow-900 p-3 rounded-lg text-sm flex items-center gap-2">
+                            ⚠ Phone number cannot be changed for this order
+                        </div>
+                    )}
+
 
                     {/* NAME */}
 
@@ -96,9 +156,13 @@ export default function ChangePhoneNumberModal({
                         </label>
 
                         <input
+                            disabled={!isPhoneEditable}
                             type="text"
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/[^a-zA-Z\s]/g, "")
+                                setName(value)
+                            }}
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         />
 
@@ -114,9 +178,15 @@ export default function ChangePhoneNumberModal({
                         </label>
 
                         <input
+                            disabled={!isPhoneEditable}
                             type="tel"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={(e) => {
+
+                                const value = e.target.value.replace(/\D/g, "").slice(0, 10)
+                                setPhone(value)
+
+                            }}
                             placeholder="10-digit mobile number"
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         />
@@ -133,9 +203,15 @@ export default function ChangePhoneNumberModal({
                         </label>
 
                         <input
+                            disabled={!isPhoneEditable}
                             type="tel"
                             value={alternatePhone}
-                            onChange={(e) => setAlternatePhone(e.target.value)}
+                            onChange={(e) => {
+
+                                const value = e.target.value.replace(/\D/g, "").slice(0, 10)
+                                setAlternatePhone(value)
+
+                            }}
                             placeholder="Optional"
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         />
@@ -165,7 +241,7 @@ export default function ChangePhoneNumberModal({
 
                     <button
                         onClick={handleUpdate}
-                        disabled={loading}
+                        disabled={loading || !isPhoneEditable}
                         className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
                     >
 
@@ -174,6 +250,7 @@ export default function ChangePhoneNumberModal({
                     </button>
 
                 </div>
+
 
             </div>
 

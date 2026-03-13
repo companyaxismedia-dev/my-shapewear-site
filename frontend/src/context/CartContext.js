@@ -178,7 +178,7 @@ export const CartProvider = ({ children }) => {
           const availableSizes = selectedVariant?.sizes?.map((s) => s.size) || [];
 
           return {
-            id: item._id,
+            id: item.id,
             productId: product._id,
             slug: product.slug,
             name: product.name,

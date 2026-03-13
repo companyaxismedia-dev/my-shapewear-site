@@ -8,8 +8,10 @@ const {
    trackOrder,
    updateOrderStatus,
    getOrderById,
-   cancelOrder,   
+   cancelOrder,
    updateOrderAddress,
+   updateOrderPhone,
+   updatePayment
 } = require("../controllers/orderController");
 const { protect, admin } = require("../middleware/authMiddleware");
 
@@ -30,8 +32,23 @@ router.put("/cancel/:id", protect, cancelOrder);
 
 router.put("/update-address/:id", protect, updateOrderAddress);
 
+/* =====================================================
+   UPDATE ORDER ADDRESS
+   PUT /api/orders/update-address/:id
+===================================================== */
+router.put("/update-address/:id", protect, updateOrderAddress);
+
+/* =====================================================
+   UPDATE ORDER PHONE NUMBER
+   PUT /api/orders/update-phone/:id
+===================================================== */
+router.put("/update-phone/:id", protect, updateOrderPhone);
+/* =====================================================
+   UPDATE PAYMENT METHOD
+   PUT /api/orders/update-payment/:id
+===================================================== */
+router.put("/update-payment/:id", protect, updatePayment);
+
 router.get("/:id", protect, getOrderById);
-
-
 
 module.exports = router;

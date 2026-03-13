@@ -17,6 +17,12 @@ const OrderSchema = new mongoose.Schema(
         trim: true,
       },
 
+      alternatePhone: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+
       email: {
         type: String,
         lowercase: true,
@@ -45,7 +51,14 @@ const OrderSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+   
+    /* ================= ORDER NUMBER ================= */
 
+orderNumber: {
+  type: String,
+  unique: true,
+  index: true,
+},
     /* ================= PRODUCTS ================= */
     products: [
       {
@@ -83,7 +96,25 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
 
+    /* ================= PRICE BREAKDOWN ================= */
+
+    listingPrice: {
+      type: Number,
+      default: 0,
+    },
+
+    subtotal: {
+      type: Number,
+      default: 0,
+    },
+
+    discount: {
+      type: Number,
+      default: 0,
+    },
+
     /* ================= TOTAL ================= */
+
     totalAmount: {
       type: Number,
       required: true,
@@ -101,7 +132,10 @@ const OrderSchema = new mongoose.Schema(
       default: 0,
     },
 
-    
+    fees: {
+      type: Number,
+      default: 16,
+    },
 
     finalAmount: {
       type: Number,
@@ -133,6 +167,8 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
 
+
+
     /* ================= LOGISTICS ================= */
 
     trackingId: {
@@ -151,11 +187,51 @@ const OrderSchema = new mongoose.Schema(
         "Order Placed",
         "Processing",
         "Shipped",
+        "Out for Delivery",
         "Delivered",
         "Cancelled",
       ],
       default: "Order Placed",
       index: true,
+    },
+
+    /* ================= EDIT LOCK SYSTEM ================= */
+
+    canEditAddress: {
+      type: Boolean,
+      default: true,
+    },
+
+    canEditPhone: {
+      type: Boolean,
+      default: true,
+    },
+
+    lockedAt: {
+      type: Date,
+      default: null,
+    },
+
+    /* ================= CANCELLATION ================= */
+
+    cancelReason: {
+      type: String,
+      default: "",
+    },
+
+    cancelComment: {
+      type: String,
+      default: "",
+    },
+
+    refundMode: {
+      type: String,
+      enum: ["Original", "Wallet"],
+      default: "Original",
+    },
+
+    cancelledAt: {
+      type: Date,
     },
 
     /* ================= STATUS TIMELINE ================= */
@@ -167,6 +243,7 @@ const OrderSchema = new mongoose.Schema(
             "Order Placed",
             "Processing",
             "Shipped",
+            "Out for Delivery",
             "Delivered",
             "Cancelled",
           ],
@@ -182,7 +259,7 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
 
-    
+
     /* ================= PAYMENT ================= */
     paymentType: {
       type: String,
@@ -200,6 +277,19 @@ const OrderSchema = new mongoose.Schema(
       type: String,
       default: "N/A",
     },
+
+    /* ================= PAYMENT CHANGE CONTROL ================= */
+
+paymentChanged: {
+  type: Boolean,
+  default: false,
+},
+
+paymentChangedAt: {
+  type: Date,
+  default: null,
+},
+
   },
   {
     timestamps: true,
@@ -211,16 +301,28 @@ const OrderSchema = new mongoose.Schema(
 ====================================================== */
 
 OrderSchema.pre("save", function () {
-  if (
-    this.isNew &&
-    (!this.statusHistory || this.statusHistory.length === 0)
-  ) {
+
+  if (this.isModified("status")) {
+
+    const now = new Date()
+
+    this.trackingEvents.push({
+      status: this.status,
+      date: now.toLocaleDateString("en-GB"),
+      time: now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    })
+
     this.statusHistory.push({
       status: this.status,
-    });
-  }
-});
+      date: now
+    })
 
+  }
+
+})
 /* ======================================================
    INDEXES (ADMIN PANEL SPEED BOOST)
 ====================================================== */

@@ -183,7 +183,7 @@ export default function ProductListPage() {
 
                 <div className="flex gap-2">
                     <button
-                        onClick={() => router.push("/admin/products/add")}
+                        // onClick={() => router.push("/admin/products/add")}
                         className="btn-primary px-4 py-2 flex items-center gap-2 text-sm"
                     >
                         <Plus size={15} /> Add Category

@@ -202,11 +202,11 @@ export default function MultipleImportPage() {
       if (Array.isArray(copy.variants)) {
         copy.variants = copy.variants.map(v => {
           const uid = () => Math.random().toString(36).slice(2);
-          
+
           // Convert sizes array to selectSizes and sizeDetails
           let selectedSizes = [];
           let sizeDetails = {};
-          
+
           if (Array.isArray(v.sizes) && v.sizes.length > 0) {
             selectedSizes = v.sizes.map(s => s.size || s);
             sizeDetails = {};
@@ -221,13 +221,13 @@ export default function MultipleImportPage() {
               };
             });
           }
-          
+
           return {
             id: uid(),
             color: v.color || v.colorName || "",
             colorCode: v.colorCode || v.colorHex || "",
             video: v.video && !v.video.startsWith('blob:') ? v.video : "",
-            images: Array.isArray(v.images) 
+            images: Array.isArray(v.images)
               ? v.images.filter(img => img && img.url && !img.url.startsWith('blob:'))
               : [],
             selectedSizes: selectedSizes,
@@ -241,6 +241,63 @@ export default function MultipleImportPage() {
     };
 
     setEditItem({ ...item, data: transformImportRow(item.data) });
+  };
+
+  const denormalizeFormData = (formData) => {
+    // Convert ProductForm format back to import format
+    const result = { ...formData };
+
+    // Ensure thumbnail is preserved
+    result.thumbnail = formData.thumbnail || "";
+
+    // Convert serviceablePincodes back to pincodes
+    if (Array.isArray(formData.pincodes)) {
+      result.pincodes = formData.pincodes.map(p => p.pincode);
+    }
+
+    // Convert variants format back to import format
+    if (Array.isArray(formData.variants)) {
+      result.variants = formData.variants.map(v => {
+        const variant = {
+          color: v.color || "",
+          colorCode: v.colorCode || "",
+          colorName: v.color || "",
+          colorHex: v.colorCode || "",
+          video: v.video || "",
+          images: [],
+          sizes: [],
+        };
+
+        // Preserve images with all their properties (url, altText, isPrimary, order)
+        if (Array.isArray(v.images) && v.images.length > 0) {
+          variant.images = v.images.map(img => ({
+            url: img.url || "",
+            altText: img.altText || "",
+            isPrimary: img.isPrimary !== false,
+            order: typeof img.order === 'number' ? img.order : 0,
+          }));
+        }
+
+        // Convert selectedSizes + sizeDetails back to sizes array
+        if (Array.isArray(v.selectedSizes) && v.selectedSizes.length > 0) {
+          variant.sizes = v.selectedSizes.map(size => {
+            const detail = v.sizeDetails?.[size] || {};
+            return {
+              size: size,
+              sku: detail.sku || "",
+              price: parseFloat(detail.price) || 0,
+              mrp: parseFloat(detail.mrp) || 0,
+              stock: parseInt(detail.stock, 10) || 0,
+              isActive: detail.isActive !== false,
+            };
+          });
+        }
+
+        return variant;
+      });
+    }
+
+    return result;
   };
 
   const closeEdit = () => setEditItem(null);
@@ -272,12 +329,14 @@ export default function MultipleImportPage() {
 
       <div className="admin-card p-4 mb-4 flex justify-between flex-wrap gap-3">
         <div className="flex gap-2">
-          <button onClick={() => router.push('/admin/products')} className="btn-muted px-4 py-2">Back</button>
-          <button onClick={deleteSelected} className="btn-destructive px-4 py-2">Delete Selected</button>
+          <button onClick={() => router.push('/admin/')} className="btn-muted px-4 py-2">Back</button>
+          <button onClick={() => router.push('/admin/products')} className="btn-primary2 px-4 py-2">All Products</button>
         </div>
 
         <div className="flex gap-2 items-center">
           <button onClick={submitAll} className="btn-primary px-4 py-2">Submit All</button>
+          <button onClick={deleteSelected} className="btn-destructive px-4 py-2">Delete Products</button>
+
         </div>
       </div>
 
@@ -296,8 +355,8 @@ export default function MultipleImportPage() {
             <tr>
               <th className="p-3"></th>
               <th className="p-3 text-left">Product</th>
-              <th className="p-3 text-left">Price</th>
-              <th className="p-3 text-left">Stock</th>
+              <th className="p-3 text-left">Brand</th>
+              <th className="p-3 text-left">Category / Subcategory</th>
               <th className="p-3 text-left">Status</th>
               <th className="p-3 text-left">Errors</th>
               <th className="p-3 text-left">Actions</th>
@@ -310,11 +369,17 @@ export default function MultipleImportPage() {
                 <td className="p-3">
                   <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleSelect(p.id)} />
                 </td>
-                <td className="p-3">{p.id + 1}. {p.data.name || 'No Name'}</td>
-                <td className="p-3">₹{p.data.minPrice || p.data.price || '-'}</td>
-                <td className="p-3">{p.data.totalStock || '-'}</td>
+                <td className="p-3">{p.data.name || 'No Name'}</td>
+                <td className="p-3">{p.data.brand || '-'}</td>
+                <td className="p-3">{p.data.category || '-'} / {p.data.subcategory || '-'}</td>
                 <td className="p-3">{p.created ? 'Created' : p.valid === false ? 'Invalid' : 'Ready'}</td>
-                <td className="p-3 text-xs text-red-600">{p.errors ? p.errors.join('; ') : ''}</td>
+                {p.errors ? (
+                  <td
+                    className="p-3 text-xs text-red-600">{p.errors ? p.errors.join('; ') : ''}
+                  </td>) : (
+                  <td className="p-3 text-green-600">No errors</td>
+                )}
+
                 <td className="p-3">
                   <div className="flex gap-2">
                     {p.created ? (
@@ -354,11 +419,20 @@ export default function MultipleImportPage() {
                     return;
                   }
 
+                  // Convert ProductForm data back to import format before storing
+                  const denormalizedData = denormalizeFormData(values);
+
                   // update item in preview and sessionStorage (do not publish)
                   setItems(prev => {
-                    const updated = prev.map(p => p.id === editItem.id ? { ...p, data: values, errors: null, valid: true } : p);
-                    const toStore = updated.map(p => ({ data: p.data, errors: p.errors, valid: p.valid, created: p.created, createdProductId: p.createdProductId }));
+                    const updated = prev.map(p => p.id === editItem.id ? { ...p, data: denormalizedData, errors: null, valid: true } : p);
+                    const toStore = updated.map(p => {
+                      // Preserve all fields from the original item structure
+                      const stored = { ...p };
+                      delete stored.id; // Remove transient id
+                      return { data: stored.data, errors: stored.errors, valid: stored.valid, created: stored.created, createdProductId: stored.createdProductId, importId: stored.importId };
+                    });
                     sessionStorage.setItem('multiple_import_data', JSON.stringify(toStore));
+                    console.log('Updated item in preview and sessionStorage', updated.find(p => p.id === editItem.id));
                     return updated;
                   });
 

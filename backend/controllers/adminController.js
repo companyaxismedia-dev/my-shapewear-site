@@ -1282,6 +1282,179 @@ exports.deleteManyDrafts = async (req, res) => {
   }
 };
 
+/* ======================================================
+   INVENTORY MANAGEMENT ENDPOINTS
+====================================================== */
+
+/**
+ * GET /api/admin/inventory
+ * Get all products with their variants flattened for inventory management
+ * Each variant/size combination is returned as a separate item
+ */
+exports.getInventory = async (req, res) => {
+  try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+    const keyword = req.query.keyword || "";
+    const category = req.query.category || "";
+
+    const filter = { status: "published", isActive: true };
+
+    if (keyword) {
+      filter.name = { $regex: keyword, $options: "i" };
+    }
+
+    if (category) {
+      // Support multiple categories separated by comma
+      const categories = category.split(",").map((c) => c.trim());
+      if (categories.length > 1) {
+        filter.category = { $in: categories };
+      } else {
+        filter.category = category;
+      }
+    }
+
+    const products = await Product.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Flatten products - each variant/size becomes a separate item
+    let flattenedInventory = [];
+    products.forEach((product) => {
+      if (product.variants && product.variants.length > 0) {
+        product.variants.forEach((variant, variantIndex) => {
+          if (variant.sizes && variant.sizes.length > 0) {
+            variant.sizes.forEach((size, sizeIndex) => {
+              const image = variant.images?.[0]?.url || product.thumbnail || "";
+              flattenedInventory.push({
+                _id: `${product._id}-${variantIndex}-${sizeIndex}`,
+                productId: product._id,
+                productName: product.name,
+                variantIndex,
+                sizeIndex,
+                color: variant.color || "N/A",
+                colorCode: variant.colorCode || "",
+                size: size.size || "N/A",
+                sku: size.sku || "",
+                price: size.price || 0,
+                originalPrice: size.price || 0,
+                mrp: size.mrp || size.price || 0,
+                originalMrp: size.mrp || size.price || 0,
+                stock: size.stock || 0,
+                originalStock: size.stock || 0,
+                image: image,
+                category: product.category || "",
+              });
+            });
+          }
+        });
+      }
+    });
+
+    // Pagination
+    const total = flattenedInventory.length;
+    const startIndex = (page - 1) * limit;
+    const paginatedInventory = flattenedInventory.slice(startIndex, startIndex + limit);
+
+    res.json({
+      success: true,
+      inventory: paginatedInventory,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    });
+  } catch (err) {
+    console.error("Error in getInventory:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * PUT /api/admin/inventory/:productId/:variantIndex/:sizeIndex
+ * Update price, MRP, and stock for a specific variant/size combination
+ */
+exports.updateVariantDetails = async (req, res) => {
+  try {
+    const { productId, variantIndex, sizeIndex } = req.params;
+    const { price, mrp, stock } = req.body;
+
+    // Validate inputs
+    if (
+      isNaN(variantIndex) ||
+      isNaN(sizeIndex) ||
+      price === undefined ||
+      mrp === undefined ||
+      stock === undefined
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid parameters. Price, MRP, and stock are required.",
+      });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    const variant = product.variants[variantIndex];
+    if (!variant) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid variant index",
+      });
+    }
+
+    const sizeItem = variant.sizes[sizeIndex];
+    if (!sizeItem) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid size index",
+      });
+    }
+
+    // Update the fields
+    sizeItem.price = Number(price);
+    sizeItem.mrp = Number(mrp);
+    sizeItem.stock = Number(stock);
+
+    // Calculate discount if not present
+    if (!sizeItem.discount && sizeItem.mrp > sizeItem.price) {
+      sizeItem.discount = Math.round((((sizeItem.mrp - sizeItem.price) / sizeItem.mrp) * 100));
+    } else if (sizeItem.mrp > sizeItem.price) {
+      sizeItem.discount = Math.round((((sizeItem.mrp - sizeItem.price) / sizeItem.mrp) * 100));
+    }
+
+    product.updatedBy = req.user._id;
+    await product.save();
+
+    res.json({
+      success: true,
+      message: "Variant details updated successfully",
+      variant: {
+        color: variant.color,
+        size: sizeItem.size,
+        price: sizeItem.price,
+        mrp: sizeItem.mrp,
+        stock: sizeItem.stock,
+        discount: sizeItem.discount,
+      },
+    });
+  } catch (err) {
+    console.error("Error in updateVariantDetails:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 // ===== Import handlers (moved from importController) =====
 // POST /api/admin/imports  (multipart/form-data: file)
 exports.uploadImport = async (req, res) => {

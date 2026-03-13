@@ -15,7 +15,7 @@ const categoryBanners = [
   { img: "/image/CategorySlider/shapewear.png", path: "/shapewear", alt: "Shapewear" },
   { img: "/image/CategorySlider/curvy-1.png", path: "/curvy", alt: "Curvy" },
   { img: "/image/CategorySlider/bra.png", path: "/bra", alt: "Bra" },
-  { img: "/image/CategorySlider/panties.png", path: "/panty", alt: "Panty" },
+  { img: "/image/CategorySlider/panties.png", path: "/panties", alt: "Panty" },
 ];
 
 const MAX_SLIDES_VIEW = 5;

@@ -37,6 +37,10 @@ router.delete("/products/:id", protect, admin, adminController.deleteProduct);
 
 router.patch("/products/:id/inventory", protect, admin, adminController.updateInventory);
 router.post("/products/auto-best-seller", protect, admin, adminController.autoBestSeller);
+
+/* INVENTORY MANAGEMENT ROUTES */
+router.get("/inventory", protect, admin, adminController.getInventory);
+router.put("/inventory/:productId/:variantIndex/:sizeIndex", protect, admin, adminController.updateVariantDetails);
 router.get("/orders", protect, admin, adminController.getOrders);
 router.get("/orders/analytics", protect, admin, adminController.getOrderAnalytics);
 router.post("/orders/details", protect, admin, adminController.getOrdersDetails);

@@ -3,65 +3,39 @@
 import { useEffect, useState } from "react";
 import { API_BASE } from "@/lib/api";
 
-export function PriceDetailsSection() {
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+export function PriceDetailsSection({
+  itemCount,
+  totalMrp,
+  sellingPrice,
+  discount
+}) {
+  
 
-  /* ================= TOKEN ================= */
-  const getToken = () => {
-    const stored = JSON.parse(localStorage.getItem("user"));
-    return stored?.token;
-  };
-
-  /* ================= FETCH CART ================= */
-  useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        const token = getToken();
-        if (!token) return;
-
-        const res = await fetch(`${API_BASE}/api/cart`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-        setCartItems(data?.items || []);
-      } catch (err) {
-        console.log("Price fetch error", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCart();
-  }, []);
+  
 
   /* ================= CALCULATIONS ================= */
 
-  const totalMrp = cartItems.reduce(
-    (sum, i) => sum + (i.product?.minPrice || 0) * i.qty,
-    0
-  );
+  const totalMrpValue = totalMrp || 0;
+const sellingPriceValue = sellingPrice || 0;
+const discountValue = discount || 0;
 
-  const discount = 0; // future offer integration
+
   const earlyAccessFee = 49;
   const platformFee = 23;
   const codFee = 10;
 
   const finalAmount =
-    totalMrp - discount + earlyAccessFee + platformFee + codFee;
-
+  sellingPriceValue + earlyAccessFee + platformFee + codFee;
+  
   const priceDetails = [
     {
       label: "Total MRP",
-      value: `₹${totalMrp}`,
+     value: `₹${totalMrpValue}`,
       highlight: false,
     },
     {
       label: "Discount on MRP",
-      value: `-₹${discount}`,
+      value: `-₹${discountValue}`,
       highlight: true,
     },
     {
@@ -83,20 +57,14 @@ export function PriceDetailsSection() {
     },
   ];
 
-  if (loading) {
-    return (
-      <div className="bg-white border rounded-lg p-4">
-        <p className="text-sm text-gray-500">Loading price details...</p>
-      </div>
-    );
-  }
+  
 
   return (
     <div className="bg-white border border-[#eaeaec] rounded-lg p-4">
 
       {/* HEADER */}
       <p className="text-[12px] font-bold uppercase text-[#535766] mb-4">
-        PRICE DETAILS ({cartItems.length} Items)
+        PRICE DETAILS ({itemCount} Items)
       </p>
 
       {/* PRICE ROWS */}
