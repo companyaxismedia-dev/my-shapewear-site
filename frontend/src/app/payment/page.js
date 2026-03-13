@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { API_BASE } from "@/lib/api";
@@ -11,14 +11,21 @@ import { PaymentDetailsPanel } from "@/components/payment/PaymentDetailsPanel";
 import { PriceDetailsSection } from "@/components/payment/PriceDetailsSection";
 
 export default function PaymentPage() {
+    return (
+        <Suspense fallback={<div>Loading payments.......</div>}>
+            <PaymentPageContent />
+        </Suspense>
+    )
+}
+
+
+function PaymentPageContent() {
     const [selectedMethod, setSelectedMethod] = useState("cod");
     const [cartTotal, setCartTotal] = useState({
         totalMrp: 0,
         sellingPrice: 0,
         discount: 0,
     });
-
-    /* 🔥 ADDRESS ID FROM CHECKOUT */
     const searchParams = useSearchParams();
     const addressId = searchParams.get("address");
     const orderId = searchParams.get("order");
@@ -63,15 +70,12 @@ export default function PaymentPage() {
     }, [finalOrderId]);
     return (
         <div className="min-h-screen bg-gray-100">
-
-            {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-40 border-b bg-white">
                 <div className="mx-auto flex h-[72px] max-w-[1100px] items-center justify-between px-4">
 
                     {/* Logo */}
                     <div className="text-2xl font-bold text-pink-500">M</div>
 
-                    {/* Steps */}
                     <div className="hidden items-center gap-3 text-[13px] font-semibold tracking-[2px] uppercase sm:flex">
                         <span className="text-gray-500">Bag</span>
                         <span className="text-gray-400">----------</span>
@@ -80,7 +84,6 @@ export default function PaymentPage() {
                         <span className="text-emerald-600">Payment</span>
                     </div>
 
-                    {/* Security */}
                     <div className="flex items-center gap-2 text-xs font-bold tracking-[2px] uppercase">
                         <svg
                             className="h-4 w-4 text-emerald-600"
@@ -94,11 +97,9 @@ export default function PaymentPage() {
                 </div>
             </header>
 
-            {/* ================= MAIN ================= */}
             <main className="mx-auto max-w-[1100px] px-4 py-6">
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-                    {/* LEFT */}
                     <div className="space-y-6 lg:col-span-2">
 
                         <BankOfferSection />
@@ -114,7 +115,6 @@ export default function PaymentPage() {
                                 onMethodChange={setSelectedMethod}
                             />
 
-                            {/* 🔥 BACKEND CONNECTED */}
                             <PaymentDetailsPanel
                                 selectedMethod={selectedMethod}
                                 selectedAddressId={addressId}
@@ -126,7 +126,6 @@ export default function PaymentPage() {
                         </div>
                     </div>
 
-                    {/* RIGHT */}
                     <div>
                         <PriceDetailsSection
                             itemCount={1}
@@ -142,4 +141,5 @@ export default function PaymentPage() {
             </main>
         </div>
     );
+
 }
