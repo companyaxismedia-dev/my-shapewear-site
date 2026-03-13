@@ -67,13 +67,25 @@
   font-weight: 600;
   box-shadow: 0 6px 18px rgba(14,165,164,0.12);
 }
+
+.btn-primary2 {
+  background: linear-gradient(90deg,var(--primary), hwb(293 1% 76% / 0.877));
+  color: var(--primary-foreground);
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(14,165,164,0.12);
+}
+
 .btn-primary:hover { filter: brightness(0.95); transform: translateY(-2px); }
+.btn-primary2:hover { filter: brightness(0.95); transform: translateY(-2px); }
 
 .btn-muted {
   background: #f8fafc; color: #0f172a; border: 1px solid var(--border); padding: 0.45rem 0.9rem; border-radius: 10px;
 }
 .btn-destructive { background: var(--danger); color: #fff; padding: 0.45rem 0.75rem; border-radius: 8px; border: none; }
-.btn-destructive:hover { filter: brightness(0.9); }
+.btn-destructive:hover { filter: brightness(0.9); transform: translateY(-2px);}
 
 /* Toggle switch: target role="switch" used in Toggle component */
 [role="switch"] {

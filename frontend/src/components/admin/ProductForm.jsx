@@ -1329,7 +1329,7 @@ export const ProductForm = forwardRef(function ProductForm({
                 )}
               </div>
             ))}
-            
+
           </div>
         </Card>
 
@@ -1863,16 +1863,15 @@ export const ProductForm = forwardRef(function ProductForm({
             </p>
           </div>
 
-          <button 
-            onClick={()=>setImportOpen(true)}
-          className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
-            >
+          <button
+            onClick={() => setImportOpen(true)}
+            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer hover:brightness-90 hover:-translate-y-0.5 transition"            >
             Import Products
           </button>
         </div>
       </div>
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} />
-      
+
       {formContent}
     </div>
   );

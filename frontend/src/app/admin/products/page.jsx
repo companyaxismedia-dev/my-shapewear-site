@@ -193,7 +193,7 @@ export default function ProductListPage() {
 
                     <button
                         onClick={() => router.push("/admin/products/drafts")}
-                        className="btn-muted px-4 py-2 flex items-center gap-2 text-sm"
+                        className="btn-primary2 px-4 py-2 flex items-center gap-2 text-sm"
                     >
                         📋 Draft Products
                     </button>
