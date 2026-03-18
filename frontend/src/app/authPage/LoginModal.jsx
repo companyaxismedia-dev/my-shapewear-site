@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
 import { GoogleLogin } from "@react-oauth/google";
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /* ================= REUSABLE INPUT ================= */
 export function AuthInput({
@@ -81,7 +81,7 @@ export function GoogleLoginButton({ onSuccess }) {
           } catch (error) {
             alert(
               error.response?.data?.message ||
-                "Google login failed"
+              "Google login failed"
             );
           }
         }}
@@ -114,6 +114,10 @@ export default function LoginModal({
   const [loading, setLoading] = useState(false);
   const [activeAction, setActiveAction] = useState(null);
 
+  // ✅ OTP Timer + resend
+  const [timer, setTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+
   const resetForm = () => {
     setStep(1);
     setView("password");
@@ -128,6 +132,21 @@ export default function LoginModal({
   useEffect(() => {
     if (!isOpen) resetForm();
   }, [isOpen]);
+
+  // ✅ Countdown timer
+  useEffect(() => {
+    let interval;
+
+    if (view === "verifyOtp" && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (timer === 0) {
+      setCanResend(true);
+    }
+
+    return () => clearInterval(interval);
+  }, [view, timer]);
 
   /* ===== SUCCESS HANDLER ===== */
   const handleAuthSuccess = (res) => {
@@ -179,11 +198,21 @@ export default function LoginModal({
 
   /* ===== SEND LOGIN OTP ===== */
   const sendLoginOtp = async () => {
+
+
     setActiveAction("sendLoginOtp");
     setLoading(true);
 
     try {
       const clean = identifier.trim();
+
+      // ✅ Phone validation (ADD THIS)
+      if (!clean.includes("@") && clean.length !== 10) {
+        alert("Enter valid 10 digit phone number");
+        setLoading(false);
+        setActiveAction(null);
+        return;
+      }
 
       const payload = clean.includes("@")
         ? { email: clean.toLowerCase() }
@@ -195,6 +224,9 @@ export default function LoginModal({
       );
 
       setView("verifyOtp");
+
+      setTimer(60);
+      setCanResend(false);
     } catch (err) {
       alert(err.response?.data?.message || "Failed to send OTP");
     } finally {
@@ -203,6 +235,32 @@ export default function LoginModal({
     }
   };
 
+
+  // ✅ RESEND OTP (YAHAN ADD KARNA HAI)
+  const resendOtp = async () => {
+    if (!canResend) return;
+
+    setActiveAction("resendOtp");
+    setLoading(true);
+
+    try {
+      const clean = identifier.trim();
+
+      const payload = clean.includes("@")
+        ? { email: clean.toLowerCase() }
+        : { phone: clean };
+
+      await axios.post(`${API_BASE}/api/auth/login/send-otp`, payload);
+
+      setTimer(60);
+      setCanResend(false);
+    } catch (err) {
+      alert("Resend failed");
+    } finally {
+      setLoading(false);
+      setActiveAction(null);
+    }
+  };
   /* ===== VERIFY LOGIN OTP ===== */
   const verifyLoginOtp = async () => {
     setActiveAction("verifyLoginOtp");
@@ -210,6 +268,14 @@ export default function LoginModal({
 
     try {
       const clean = identifier.trim();
+
+      // ✅ Phone validation (ADD THIS)
+      if (!clean.includes("@") && clean.length !== 10) {
+        alert("Invalid phone number");
+        setLoading(false);
+        setActiveAction(null);
+        return;
+      }
 
       const payload = clean.includes("@")
         ? { email: clean.toLowerCase(), otp: otp.trim() }
@@ -223,6 +289,8 @@ export default function LoginModal({
       handleAuthSuccess(res);
     } catch (err) {
       alert(err.response?.data?.message || "Invalid OTP");
+
+      setOtp("");
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -376,7 +444,7 @@ export default function LoginModal({
                 loading={
                   loading &&
                   activeAction ===
-                    "passwordLogin"
+                  "passwordLogin"
                 }
               >
                 Login
@@ -400,7 +468,7 @@ export default function LoginModal({
               loading={
                 loading &&
                 activeAction ===
-                  "sendLoginOtp"
+                "sendLoginOtp"
               }
             >
               Login via OTP
@@ -411,34 +479,62 @@ export default function LoginModal({
         {view === "verifyOtp" && (
           <>
             <AuthInput
-              placeholder="Enter OTP"
+              type="number"
+              placeholder="Enter 6-digit OTP"
               value={otp}
-              onChange={(e) =>
-                setOtp(e.target.value)
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+
+                if (value.length <= 6) {
+                  setOtp(value);
+
+                  if (value.length === 6) {
+                    verifyLoginOtp();
+                  }
+                }
+              }}
             />
 
             <AuthButton
               onClick={verifyLoginOtp}
-              loading={
-                loading &&
-                activeAction ===
-                  "verifyLoginOtp"
-              }
+              loading={loading && activeAction === "verifyLoginOtp"}
             >
               Verify OTP
             </AuthButton>
+
+            {/* ✅ TIMER + RESEND */}
+            <div className="text-center mt-3 text-sm text-gray-600">
+              {canResend ? (
+                <button
+                  onClick={resendOtp}
+                  className="text-pink-600 font-semibold"
+                >
+                  Resend OTP
+                </button>
+              ) : (
+                <span>Resend in {timer}s</span>
+              )}
+            </div>
           </>
         )}
 
         {view === "verifyForgotOtp" && (
           <>
             <AuthInput
-              placeholder="Enter OTP"
+              type="number"
+              placeholder="Enter 6-digit OTP"
               value={otp}
-              onChange={(e) =>
-                setOtp(e.target.value)
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+
+                if (value.length <= 6) {
+                  setOtp(value);
+
+                  if (value.length === 6) {
+                    verifyLoginOtp();
+                  }
+                }
+              }}
             />
 
             <AuthButton
@@ -446,7 +542,7 @@ export default function LoginModal({
               loading={
                 loading &&
                 activeAction ===
-                  "verifyForgotOtp"
+                "verifyForgotOtp"
               }
             >
               Verify OTP
@@ -478,7 +574,7 @@ export default function LoginModal({
               loading={
                 loading &&
                 activeAction ===
-                  "resetPassword"
+                "resetPassword"
               }
             >
               Change Password

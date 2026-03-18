@@ -5,124 +5,229 @@ import { Copy } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 export default function MyCoupons() {
+
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState("");
 
   /* ================= FETCH COUPONS ================= */
+
   useEffect(() => {
+
     const fetchCoupons = async () => {
+
       try {
-        const res = await fetch(`${API_BASE}/offers`);
+
+        const res = await fetch(`${API_BASE}/api/offers`);
+
         const data = await res.json();
 
-        const offers =
-          Array.isArray(data?.offers) ? data.offers : [];
+        if (data?.success) {
 
-        setCoupons(offers);
-      } catch (err) {
-        console.log("Coupon fetch error", err);
-        setCoupons([]);
-      } finally {
-        setLoading(false);
+          setCoupons(data.offers || []);
+
+        } else {
+
+          setCoupons([]);
+
+        }
+
       }
-    };
+      catch (err) {
+
+        console.log("Coupon fetch error", err);
+
+        setCoupons([]);
+
+      }
+      finally {
+
+        setLoading(false);
+
+      }
+
+    }
 
     fetchCoupons();
+
   }, []);
 
+
   /* ================= COPY CODE ================= */
+
   const copyCode = async (code) => {
-    if (!code) return;
 
     try {
+
       await navigator.clipboard.writeText(code);
+
       setCopied(code);
 
       setTimeout(() => setCopied(""), 1500);
-    } catch (err) {
-      console.log("Copy failed");
+
     }
+    catch (err) {
+
+      console.log("Copy failed");
+
+    }
+
   };
 
+
+  /* ================= LOADING ================= */
+
   if (loading) {
-    return <p className="text-gray-500 text-sm">Loading coupons...</p>;
+
+    return (
+
+      <div className="text-gray-500 text-sm">
+        Loading coupons...
+      </div>
+
+    )
+
   }
 
+
+  /* ================= UI ================= */
+
   return (
-    <div className="w-full">
-      {/* TITLE */}
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">
-        My coupon || Clovia
+
+    <div className="w-full max-w-4xl">
+
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        My Coupons
       </h2>
 
-      <div className="space-y-2">
 
-        {coupons.length === 0 && (
-          <p className="text-gray-500 text-sm">No coupons available</p>
-        )}
+      {coupons.length === 0 && (
+
+        <div className="bg-white border p-6 rounded text-gray-500">
+          No coupons available
+        </div>
+
+      )}
+
+
+      <div className="space-y-4">
 
         {coupons.map((coupon) => (
+
           <div
             key={coupon._id}
-            className="border border-gray-300 bg-white w-full"
+            className="border border-gray-200 bg-white rounded-md overflow-hidden shadow-sm"
           >
+
             <div className="flex">
 
-              {/* LEFT DISCOUNT BLOCK */}
-              <div className="w-[160px] min-h-[75px] border-r border-gray-300 flex items-center justify-center">
-                <p className="text-pink-600 font-semibold text-[30px] leading-none text-center">
+              {/* LEFT DISCOUNT */}
+
+              <div className="w-[130px] flex items-center justify-center bg-pink-50">
+
+                <p className="text-pink-600 font-semibold text-[20px] text-center">
                   {coupon.discountType === "percentage"
+
                     ? `${coupon.discountValue}% OFF`
+
                     : `₹${coupon.discountValue} OFF`}
+
                 </p>
+
               </div>
 
-              {/* RIGHT CONTENT */}
-              <div className="flex-1 flex justify-between px-3 py-2">
+
+              {/* RIGHT DETAILS */}
+
+              <div className="flex-1 flex justify-between px-4 py-3">
 
                 <div>
+
                   {/* CODE */}
-                  <div className="inline-block border border-dashed border-gray-400 px-2 py-[2px] text-[13px] font-medium mb-1">
+
+                  <div className="inline-block border border-dashed px-2 py-[2px] text-[13px] font-medium mb-1">
+
                     Code: {coupon.code}
+
                   </div>
 
-                  {/* MIN PURCHASE */}
-                  <p className="text-gray-700 text-[14px] mb-[2px]">
-                    Minimum purchase value: ₹
-                    {coupon.minOrderValue || 0}
+
+                  {/* DESCRIPTION */}
+
+                  {coupon.description && (
+
+                    <p className="text-gray-700 text-sm mb-1">
+
+                      {coupon.description}
+
+                    </p>
+
+                  )}
+
+
+                  {/* MIN ORDER */}
+
+                  <p className="text-gray-600 text-[13px]">
+
+                    Minimum purchase: ₹{coupon.minOrderValue || 0}
+
                   </p>
+
 
                   {/* EXPIRY */}
-                  <p className="text-gray-500 italic text-[14px]">
+
+                  <p className="text-gray-500 italic text-[13px]">
+
                     Expiry:{" "}
+
                     {coupon.endDate
+
                       ? new Date(coupon.endDate).toLocaleDateString("en-IN")
-                      : "Limited time offer"}
+
+                      : "Limited time"}
+
                   </p>
+
                 </div>
 
-                {/* COPY ICON */}
+
+                {/* COPY BUTTON */}
+
                 <button
                   onClick={() => copyCode(coupon.code)}
-                  className="text-pink-500 hover:text-pink-600 self-start"
+                  className="text-pink-500 hover:text-pink-600"
                 >
+
                   <Copy size={18} />
+
                 </button>
+
 
               </div>
 
             </div>
+
           </div>
+
         ))}
+
       </div>
 
-      {/* COPY MESSAGE */}
+
+      {/* COPY TOAST */}
+
       {copied && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white px-5 py-1 rounded text-sm">
-          Saved to clipboard
+
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black text-white px-5 py-2 rounded text-sm">
+
+          Coupon copied
+
         </div>
+
       )}
+
     </div>
-  );
+
+  )
+
 }

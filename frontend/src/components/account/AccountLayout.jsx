@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 import AccountSidebar from "./AccountSidebar";
 import OrderHistory from "./OrderHistory";
@@ -12,7 +13,16 @@ import MyAddressBook from "./MyAddressBook";
 import ManageNotifications from "./ManageNotifications";
 
 export default function AccountLayout() {
+
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab");
   const [activeSection, setActiveSection] = useState("order-history");
+
+  useEffect(() => {
+    if (tab === "coupons") {
+      setActiveSection("coupons");
+    }
+  }, [tab]);
 
   const renderContent = () => {
     switch (activeSection) {

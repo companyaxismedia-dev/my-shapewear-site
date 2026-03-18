@@ -96,7 +96,10 @@ ${dropdownOpen ? "opacity-100 visible" : "opacity-0 invisible"}
                 ["My Recommendations", "/recommendations"],
                 ["My Account", "/account"],
                 ["Wishlist", "/wishlist"],
-                ["My Coupons", "/coupons"],
+                ["My Coupons", "/account?tab=coupons"],
+                ["Contact us", "/faq#contact-us"],
+                ["About us", "/about"],
+                
               ].map(([label, href]) => (
                 <Link
                   key={label}

@@ -27,6 +27,12 @@ const nextConfig = {
         hostname: "my-shapewear-site.onrender.com",
         pathname: "/image/**",
       },
+
+      // ADD THIS
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
     dangerouslyAllowLocalIP: true,
   },

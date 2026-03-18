@@ -130,11 +130,14 @@ export const ChatProvider = ({ children }) => {
                 }
             )
 
-            setMessages(res?.data?.messages || [])
             setChatId(id)
 
+            const msgs = res?.data?.messages || []
+
+            setMessages(msgs)
+
             localStorage.setItem("chatId", id)
-            localStorage.setItem(`chatMessages_${id}`, JSON.stringify(res?.data?.messages || []))
+            localStorage.setItem(`chatMessages_${id}`, JSON.stringify(msgs))
 
         } catch (error) {
 

@@ -129,11 +129,15 @@ app.use("/api/admin", adminRouter);
 app.use("/api/pages", pagesRouter);
 
 
+
 /* ================= PAYMENT ================= */
 app.use("/api/payment", require("./routes/paymentRoutes"));
 
 /* ================= chat us ================= */
 app.use("/api/chat", require("./routes/chatRoutes"));
+
+/* ================= SUPPORT ================= */
+app.use("/api/support", require("./routes/ticketRoutes"));
 
 
 app.use((req, res) => {
