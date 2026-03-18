@@ -91,7 +91,7 @@ const nextConfig = {
   compress: true,
 
   // Enable SWR (stale-while-revalidate)
-  swcMinify: true,
+  // swcMinify: true,
 };
 
 export default nextConfig;
