@@ -11,16 +11,25 @@ const ensureDir = (dirPath) => {
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    let uploadPath = "uploads/products/";
-
-    if (file.mimetype.startsWith("image/")) {
-      uploadPath += "images/";
-    } else if (file.mimetype.startsWith("video/")) {
-      uploadPath += "videos/";
+    let uploadPath;
+    // Check if this is a banner/block upload (admin routes with blocks or banner endpoint)
+    const isBannerUpload = req.baseUrl.includes('banner') || 
+                          req.path.includes('blocks') || 
+                          req.path.includes('sections');
+    
+    if (isBannerUpload) {
+      uploadPath = "uploads/banner/";
     } else {
-      return cb(new Error("Only images and videos are allowed"));
+      uploadPath = "uploads/products/";
+      if (file.mimetype.startsWith("image/")) {
+        uploadPath += "images/";
+      } else if (file.mimetype.startsWith("video/")) {
+        uploadPath += "videos/";
+      } else {
+        return cb(new Error("Only images and videos are allowed"));
+      }
     }
-
+    console.log(`📁 Upload path for ${file.originalname}: ${uploadPath}`);
     ensureDir(uploadPath);
     cb(null, uploadPath);
   },

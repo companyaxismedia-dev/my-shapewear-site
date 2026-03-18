@@ -2,17 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronDown,
-  Plus,
-  Trash2,
-  Pencil,
-  Grid3x3,
-  List,
-  Save,
-  RotateCcw,
-  ArrowUpDown,
-} from "lucide-react";
+import { ChevronDown,Plus,Grid3x3,List,Save,RotateCcw,ArrowUpDown} from "lucide-react";
 import { toast } from "sonner";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
@@ -26,7 +16,6 @@ export default function InventoryPage() {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [searchVisible, setSearchVisible] = useState(false);
   const [allCategories, setAllCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState(["all"]);
   const [catOpen, setCatOpen] = useState(false);
@@ -122,6 +111,10 @@ export default function InventoryPage() {
             sortedInventory.sort((a, b) => (a.price || 0) - (b.price || 0));
           } else if (sortBy === "price-desc") {
             sortedInventory.sort((a, b) => (b.price || 0) - (a.price || 0));
+          } else if (sortBy === "stock-asc") {
+            sortedInventory.sort((a, b) => (a.stock || 0) - (b.stock || 0));
+          } else if (sortBy === "stock-desc") {
+            sortedInventory.sort((a, b) => (b.stock || 0) - (a.stock || 0));
           } else if (sortBy === "date-newest") {
             sortedInventory.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           } else if (sortBy === "date-oldest") {
@@ -543,6 +536,30 @@ export default function InventoryPage() {
                     }`}
                 >
                   Name (Z-A)
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy(sortBy === "stock-asc" ? null : "stock-asc");
+                    setSortOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition ${sortBy === "stock-asc"
+                    ? "bg-blue-500 text-white"
+                    : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                >
+                  Stock (Low to High)
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy(sortBy === "stock-desc" ? null : "stock-desc");
+                    setSortOpen(false);
+                  }}
+                  className={`block w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition ${sortBy === "stock-desc"
+                    ? "bg-blue-500 text-white"
+                    : "text-slate-700 hover:bg-slate-100"
+                    }`} 
+                >
+                  Stock (High to Low)
                 </button>
                 <button
                   onClick={() => {

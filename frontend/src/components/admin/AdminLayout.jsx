@@ -1,26 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, Store, ShoppingCart, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle,
-  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2, LucideUserCircle2
+  Home, Store, ShoppingCart, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle, Blinds,
+  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2, UserCircle2
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { API_BASE } from "@/lib/api";
 
 /* ================= NAV ITEMS ================= */
 const navItems = [
   {
-    title: "Home",
+    title: "Dashboard",
     href: "/admin",
     icon: Home,
   },
   {
     title: "My Shop",
     icon: Store,
-    basePaths: ["/admin/products", "/admin/orders", "/admin/customers",],
+    basePaths: ["/admin/products", "/admin/orders"],
     children: [
       {
         title: "Products",
@@ -32,13 +33,21 @@ const navItems = [
         ],
       },
       { title: "Orders", href: "/admin/orders" },
-      // { title: "Customers", href: "/admin/customers" },
     ],
+  },
+  {
+    title: "Banner",
+    icon: Blinds,
+    basePaths: ["/admin/banner", "/admin/pages"],
+    children: [
+      { title: "Sections", href: "/admin/pages/home" },
+      { title: "Banners", href: "/admin/banner" },
+    ]
   },
   {
     title: "Customers",
     href: "/admin/customers",
-    icon: LucideUserCircle2,
+    icon: UserCircle2,
   },
   {
     title: "Shop Management",
@@ -82,17 +91,23 @@ function getParentBreadcrumb(pathname, items) {
         pathname.startsWith(base)
       );
 
-      if (match) return item;
+      if (match && item.icon) return item;
     }
 
     // check for direct href
     if (item.href && pathname === item.href) {
       return item;
     }
-    // check fro the children match
-    if (item.children) {
-      const result = getParentBreadcrumb(pathname, item.children);
-      if (result) return result;
+    // check fro the children match - only recurse if item has icon (to ensure breadcrumb can render)
+    if (item.children && item.icon) {
+      // Check if any child matches the pathname
+      const childMatches = item.children.some((child) => {
+        if (child.href && pathname === child.href) return true;
+        if (child.basePaths && child.basePaths.some((base) => pathname.startsWith(base))) return true;
+        return false;
+      });
+      // Return the parent with icon instead of recursing to avoid undefined icons
+      if (childMatches) return item;
     }
   }
 
@@ -105,6 +120,52 @@ export function AdminSidebar({ collapsed, onToggle }) {
   const [expandedItems, setExpandedItems] = useState(["My Shop"]);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedSubItems, setExpandedSubItems] = useState([]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
+  const [admin, setAdmin] = useState(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("adminToken");
+        const res = await fetch(`${API_BASE}/api/admin/users`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ); // your controller
+        const data = await res.json();
+
+        if (data.success) {
+          const adminUser = data.users.find(
+            (user) => user.role === "admin"
+          );
+
+          setAdmin(adminUser);
+        }
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    setShowUserMenu(false);
+    window.location.href = "/admin/login";
+  };
 
   const toggleExpanded = (title) => {
     setExpandedItems((prev) =>
@@ -158,23 +219,6 @@ export function AdminSidebar({ collapsed, onToggle }) {
             </span>
           )}
         </div>
-
-        {/* Search */}
-        {!collapsed && (
-          <div className="px-3 py-3 border-b border-border">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted text-muted-foreground text-sm">
-              <Search className="w-4 h-4 flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent outline-none flex-1 text-sm placeholder:text-muted-foreground text-foreground"
-              />
-              <span className="text-xs hidden sm:block">⌘S</span>
-            </div>
-          </div>
-        )}
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-3 px-2">
@@ -304,8 +348,30 @@ export function AdminSidebar({ collapsed, onToggle }) {
         </nav>
 
         {/* User */}
-        <div className="border-t border-border px-3 py-3">
+        <div className="border-t border-border px-3 py-3 relative" ref={userMenuRef}>
+          {/* Popup Menu */}
+          {showUserMenu && (
+            <div className="absolute bottom-full left-2 right-2 mb-2 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-50">
+              <Link
+                href="/admin"
+                onClick={() => setShowUserMenu(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                {!collapsed && <span>Admin Dashboard</span>}
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4" />
+                {!collapsed && <span>Logout</span>}
+              </button>
+            </div>
+          )}
+
           <div
+            onClick={() => setShowUserMenu(!showUserMenu)}
             className={cn(
               "flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted cursor-pointer transition-colors",
               collapsed && "justify-center"
@@ -318,12 +384,16 @@ export function AdminSidebar({ collapsed, onToggle }) {
             {!collapsed && (
               <>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">Admin</p>
-                  <p className="text-xs text-muted-foreground">
-                    Super Admin
+                  <p className="text-sm fon   t-medium text-foreground">
+                    {admin ? admin.name : "Loading..."}
                   </p>
+
+                  <p className="text-xs text-muted-foreground">
+                    {admin ? admin.role : ""}
+                  </p>
+
                 </div>
-                <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+                <ChevronUp className={cn("w-3.5 h-3.5 text-muted-foreground transition-transform", showUserMenu && "rotate-180")} />
               </>
             )}
           </div>
@@ -338,6 +408,7 @@ export function AdminLayout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const pathname = usePathname();
   const parentItem = getParentBreadcrumb(pathname, navItems);
+
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -374,7 +445,7 @@ export function AdminLayout({ children }) {
               <>
                 <Home className="w-4 h-4" />
                 <span>/</span>
-                <span className="text-foreground font-medium">Dashboa</span>
+                <span className="text-foreground font-medium">Dashboard</span>
               </>
             )}
           </nav>

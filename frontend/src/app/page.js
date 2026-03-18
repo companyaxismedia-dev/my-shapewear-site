@@ -8,6 +8,7 @@ import CategorySlider from "@/components/CategorySlider";
 import AutoSliceSlider from "@/components/AutoSliceSlider";
 import Footer from "@/components/Footer";
 import { Truck, ShieldCheck, RotateCcw, Zap } from "lucide-react";
+import PageSections from "@/components/PageSections";
 
 export default function Home() {
   return (
@@ -40,9 +41,12 @@ export default function Home() {
               <div className="h-1 w-24 bg-pink-100 mx-auto mt-3 rounded-full"></div>
             </div>
 
-             {/* Ye component saare pages ko section-wise load karega */}
+            {/* Ye component saare pages ko section-wise load karega */}
             <AutoSliceSlider />
           </div>
+
+          {/* Dynamic sections from CMS */}
+          <PageSections slug="home" />
         </div>
 
         {/* Trust Bar */}
@@ -71,7 +75,7 @@ export default function Home() {
             </div>
             <div className="flex flex-col items-center text-center gap-3">
               <div className="bg-white p-3 rounded-full shadow-sm"><Zap size={24} fill="#ed4e7e" className="text-[#ed4e7e]" /></div>
-              <div> 
+              <div>
                 <p className="text-[11px] font-black uppercase text-gray-700 tracking-tighter">Quick COD</p>
                 <p className="text-[9px] text-gray-500 italic">Pay on delivery</p>
               </div>

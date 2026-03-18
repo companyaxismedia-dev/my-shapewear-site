@@ -122,6 +122,12 @@ app.use("/api/users", require("./routes/userAddressRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
 
+// Banner system routes (banners, admin pages, sections, blocks)
+const { bannerRouter, adminRouter, pagesRouter } = require("./routes/bannerRoutes");
+app.use("/api/banner", bannerRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/pages", pagesRouter);
+
 
 /* ================= PAYMENT ================= */
 app.use("/api/payment", require("./routes/paymentRoutes"));
