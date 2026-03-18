@@ -91,3 +91,27 @@ nav li a {
     animation: shadow-pulse 2s ease-in-out infinite;
   }
 }
+
+/* Myntra style thin scrollbar */
+
+.faq-scroll::-webkit-scrollbar,
+main::-webkit-scrollbar {
+  width: 2px;
+}
+
+.faq-scroll::-webkit-scrollbar-track,
+main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.faq-scroll::-webkit-scrollbar-thumb {
+  background: #f6e58d;
+  border-radius: 20px;
+}
+
+.faq-scroll::-webkit-scrollbar-thumb:hover,
+main::-webkit-scrollbar-thumb:hover {
+  background: #c2c3c7;
+}
+
+

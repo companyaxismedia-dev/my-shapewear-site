@@ -49,9 +49,14 @@ exports.startChat = async (req, res) => {
 
         }
 
+        const messages = await Message.find({
+            chatId: chat._id
+        }).sort({ createdAt: 1 })
+
         return res.status(200).json({
             success: true,
-            chatId: chat._id
+            chatId: chat._id,
+            messages
         })
 
     } catch (error) {
@@ -127,18 +132,14 @@ exports.sendMessage = async (req, res) => {
 
         const botReply = await botService.handleMessage(text, chat.orderId)
 
-        /* ========= SAVE BOT MESSAGE ========= */
-
         const botMessage = await Message.create({
             chatId,
             sender: "bot",
-            message: botReply,
+            message: botReply.text,
             status: "sent"
         })
 
-        /* ========= UPDATE CHAT ========= */
-
-        chat.lastMessage = botReply
+        chat.lastMessage = botReply.text
         chat.lastSender = "bot"
         chat.unreadUser += 1
 

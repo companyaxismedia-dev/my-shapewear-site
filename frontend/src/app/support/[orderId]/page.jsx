@@ -14,63 +14,21 @@ import {
 
 export default function SupportCenter() {
 
-  const [expandedFaq, setExpandedFaq] = useState(null)
-  const [searchTerm, setSearchTerm] = useState("")
 
   const [ticketData, setTicketData] = useState({
+    category: "",
+    priority: "",
     subject: "",
     message: "",
+    image: null
   })
 
   const [submitStatus, setSubmitStatus] = useState(null)
+  const [showPopup, setShowPopup] = useState(false)
   const { orderId } = useParams()
   const router = useRouter()
   const { startChat } = useChat()
 
-  const faqs = [
-    {
-      id: 1,
-      question: "How do I track leads on the map?",
-      answer:
-        "Navigate to 'Leads Map Tracking' from the sidebar. The map will display all your leads with their geographical locations.",
-    },
-    {
-      id: 2,
-      question: "How can I add a new agent to my team?",
-      answer:
-        "Go to Team Management > Add New Agent and invite the agent.",
-    },
-    {
-      id: 3,
-      question: "What do the pin status colors mean?",
-      answer:
-        "Green = Active leads, Yellow = Pending, Red = Closed leads.",
-    },
-    {
-      id: 4,
-      question: "How do I export reports?",
-      answer:
-        "Navigate to Reports section and click Export.",
-    },
-    {
-      id: 5,
-      question: "Can I customize dashboard filters?",
-      answer:
-        "Yes, click the filter icon and customize your dashboard.",
-    },
-    {
-      id: 6,
-      question: "How do I reset my password?",
-      answer:
-        "Go to settings → security → change password.",
-    },
-  ]
-
-  const filteredFaqs = faqs.filter(
-    (faq) =>
-      faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
-  )
 
   /* ================= SUBMIT TICKET ================= */
 
@@ -78,28 +36,73 @@ export default function SupportCenter() {
 
     e.preventDefault()
 
-    const res = await fetch("/api/support/ticket", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(ticketData)
-    })
+    if (
+      !ticketData.category ||
+      !ticketData.priority ||
+      !ticketData.subject ||
+      !ticketData.message
+    ) {
+      alert("Please fill all fields")
+      return
+    }
 
-    const data = await res.json()
+    const user = JSON.parse(localStorage.getItem("user") || "{}")
+    const token = user?.token
 
-    if (data.success) {
+    try {
 
-      setSubmitStatus("success")
+      const formData = new FormData()
 
-      setTicketData({
-        subject: "",
-        message: ""
+      formData.append("orderId", orderId)
+      formData.append("category", ticketData.category)
+      formData.append("priority", ticketData.priority)
+      formData.append("subject", ticketData.subject)
+      formData.append("message", ticketData.message)
+
+      if (ticketData.image) {
+        formData.append("image", ticketData.image)
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/support/ticket`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
       })
+      const data = await res.json()
 
-      setTimeout(() => setSubmitStatus(null), 3000)
+      if (data.success) {
+
+        setShowPopup(true)
+
+        setTicketData({
+          category: "",
+          priority: "",
+          subject: "",
+          message: "",
+          image: null
+        })
+
+        setTimeout(() => {
+          setShowPopup(false)
+        }, 3000)
+
+      }
+
+    } catch (err) {
+
+      console.error("Ticket error:", err)
 
     }
+
+  }
+
+  /* ================= EMAIL ================= */
+
+  const handleEmailClick = () => {
+
+    window.location.href = "mailto:support@yourstore.com"
 
   }
 
@@ -124,14 +127,6 @@ export default function SupportCenter() {
 
   }
 
-  /* ================= EMAIL ================= */
-
-  const handleEmailClick = () => {
-
-    window.location.href = "mailto:support@yourstore.com"
-
-  }
-
   /* ================= PHONE ================= */
 
   const handlePhoneClick = () => {
@@ -142,11 +137,10 @@ export default function SupportCenter() {
 
   return (
 
-    <div className="min-h-screen bg-gray-50">
-
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* HEADER */}
 
-      <div className="bg-white border-b">
+      <div className="bg-white relative">
 
         <div className="max-w-7xl mx-auto px-6 py-12">
 
@@ -160,8 +154,10 @@ export default function SupportCenter() {
 
         </div>
 
-      </div>
+        {/* GRADIENT LINE */}
+        <div className="h-[2px] w-full bg-gradient-to-r from-blue-500 to-indigo-500"></div>
 
+      </div>
 
       <div className="max-w-7xl mx-auto px-6 py-12">
 
@@ -172,18 +168,15 @@ export default function SupportCenter() {
 
           {/* CHAT */}
 
-          <div className="bg-white p-8 border rounded-lg">
+          <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200">
 
             <div className="flex items-start mb-6">
 
               <div className="bg-indigo-100 p-4 rounded-full mr-4">
-
                 <MessageCircle className="w-6 h-6 text-indigo-600" />
-
               </div>
 
               <div>
-
                 <h3 className="font-semibold text-lg">
                   Live Chat
                 </h3>
@@ -191,14 +184,13 @@ export default function SupportCenter() {
                 <p className="text-sm text-gray-500">
                   Chat with our support team
                 </p>
-
               </div>
 
             </div>
 
             <button
               onClick={handleChatStart}
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg"
+              className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
             >
               Start Chat
             </button>
@@ -208,18 +200,15 @@ export default function SupportCenter() {
 
           {/* EMAIL */}
 
-          <div className="bg-white p-8 border rounded-lg">
+          <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200">
 
             <div className="flex items-start mb-6">
 
               <div className="bg-green-100 p-4 rounded-full mr-4">
-
                 <Mail className="w-6 h-6 text-green-600" />
-
               </div>
 
               <div>
-
                 <h3 className="font-semibold text-lg">
                   Email Support
                 </h3>
@@ -227,24 +216,22 @@ export default function SupportCenter() {
                 <p className="text-sm text-gray-500">
                   support@yourstore.com
                 </p>
-
               </div>
 
             </div>
 
             <button
               onClick={handleEmailClick}
-              className="w-full bg-green-600 text-white py-2 rounded-lg"
+              className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
             >
               Send Email
             </button>
 
           </div>
 
-
           {/* PHONE */}
 
-          <div className="bg-white p-8 border rounded-lg">
+          <div className="bg-white p-8 rounded-xl shadow-md border border-gray-200">
 
             <div className="flex items-start mb-6">
 
@@ -275,132 +262,150 @@ export default function SupportCenter() {
               Call Now
             </button>
 
-          </div>
 
+
+          </div>
         </div>
 
 
         {/* FAQ + TICKET */}
 
-        <div className="grid lg:grid-cols-2 gap-12">
-
-
-          {/* FAQ */}
-
-          <div className="bg-white border rounded-lg p-8">
-
-            <h2 className="text-2xl font-bold mb-4">
-              Frequently Asked Questions
-            </h2>
-
-
-            {/* SEARCH */}
-
-            <div className="relative mb-6">
-
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-
-              <input
-                type="text"
-                placeholder="Search FAQs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg"
-              />
-
-            </div>
-
-
-            {/* FAQ LIST */}
-
-            <div className="space-y-3">
-
-              {filteredFaqs.map((faq) => (
-                <div key={faq.id} className="border rounded-lg">
-
-                  <button
-                    onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                    className="w-full flex justify-between px-4 py-4"
-                  >
-
-                    <span>{faq.question}</span>
-
-                    <ChevronDown className={`w-5 h-5 ${expandedFaq === faq.id && "rotate-180"}`} />
-
-                  </button>
-
-                  {expandedFaq === faq.id && (
-
-                    <div className="px-4 pb-4 text-gray-500">
-                      {faq.answer}
-                    </div>
-
-                  )}
-
-                </div>
-              ))}
-
-            </div>
-
-          </div>
+        <div className="max-w-xl mx-auto">
 
 
           {/* TICKET */}
 
-          <div className="bg-white border rounded-lg p-8">
+          <div className="p-[2px] rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500">
+            <div className="bg-white rounded-2xl p-8 shadow-xl">
 
-            <h2 className="text-2xl font-bold mb-2">
-              Submit a Ticket
-            </h2>
+              <h2 className="text-2xl font-bold mb-2">
+                Submit a Ticket
+              </h2>
 
-            <p className="text-gray-500 mb-6">
-              We'll respond within 24h
-            </p>
+              <p className="text-gray-500 mb-6">
+                We'll respond within 24h
+              </p>
 
-            {submitStatus === "success" && (
 
-              <div className="bg-green-100 p-3 rounded mb-4 text-green-700">
-                Ticket submitted successfully
-              </div>
 
-            )}
+              <form onSubmit={handleTicketSubmit} className="space-y-4">
 
-            <form onSubmit={handleTicketSubmit} className="space-y-4">
+                <select
+                  value={ticketData.category}
+                  onChange={(e) =>
+                    setTicketData({ ...ticketData, category: e.target.value })
+                  }
+                  className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 rounded-lg outline-none"
+                >
+                  <option value="">Select Issue Type</option>
+                  <option value="order">Order Issue</option>
+                  <option value="payment">Payment Issue</option>
+                  <option value="refund">Refund / Return</option>
+                  <option value="delivery">Delivery Problem</option>
+                  <option value="product">Product Quality</option>
+                </select>
 
-              <input
-                type="text"
-                placeholder="Subject"
-                value={ticketData.subject}
-                onChange={(e) => setTicketData({ ...ticketData, subject: e.target.value })}
-                className="w-full border px-4 py-2 rounded"
-              />
 
-              <textarea
-                rows="5"
-                placeholder="Describe your issue"
-                value={ticketData.message}
-                onChange={(e) => setTicketData({ ...ticketData, message: e.target.value })}
-                className="w-full border px-4 py-2 rounded"
-              />
 
-              <button className="w-full bg-indigo-600 text-white py-3 rounded flex justify-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Subject"
+                  value={ticketData.subject}
+                  onChange={(e) => setTicketData({ ...ticketData, subject: e.target.value })}
+                  className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 rounded-lg outline-none"
+                />
 
-                <Send className="w-4 h-4" />
 
-                Submit Ticket
+                <select
+                  value={ticketData.priority}
+                  onChange={(e) => setTicketData({ ...ticketData, priority: e.target.value })}
+                  className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 rounded-lg outline-none"
+                >
+                  <option value="">Select Priority</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
 
-              </button>
 
-            </form>
+
+                <textarea
+                  rows="5"
+                  placeholder="Describe your issue"
+                  value={ticketData.message}
+                  onChange={(e) => setTicketData({ ...ticketData, message: e.target.value })}
+                  className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 rounded-lg outline-none"
+                />
+
+
+                <div className="p-[1.5px] rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500">
+                  <input
+                    type="text"
+                    placeholder="Subject"
+                    value={ticketData.subject}
+                    onChange={(e) => setTicketData({ ...ticketData, subject: e.target.value })}
+                    className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 rounded-lg outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 rounded-lg flex justify-center items-center gap-2 font-semibold transition"
+                >
+
+                  <Send className="w-4 h-4" />
+
+                  Submit Ticket
+
+                </button>
+
+              </form>
+            </div>
 
           </div>
 
         </div>
 
+        {/* SUCCESS POPUP */}
+        {showPopup && (
+
+          <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+
+            <div className="bg-white rounded-xl p-6 w-[350px] text-center shadow-lg">
+
+              <div className="text-green-600 text-3xl mb-2">
+                ✓
+              </div>
+
+              <h3 className="text-lg font-semibold">
+                Ticket Submitted
+              </h3>
+
+              <p className="text-gray-500 text-sm mt-1">
+                Your support ticket has been created successfully.
+              </p>
+
+              <button
+                onClick={() => setShowPopup(false)}
+                className="mt-4 bg-indigo-600 text-white px-5 py-2 rounded-lg"
+              >
+                OK
+              </button>
+
+            </div>
+
+          </div>
+
+        )}
+
       </div>
 
     </div>
 
+
+
   )
+
 
 }

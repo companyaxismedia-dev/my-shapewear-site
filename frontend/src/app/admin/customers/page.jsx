@@ -112,6 +112,7 @@ export default function CustomersPage() {
             <AdminBreadcrumbs
                 items={[
                     { label: "Home", href: "/admin" },
+                    { label: "Customers", href: "" },
                     { label: "All Customers", href: "/admin/customers" },
                 ]}
                 mode={null}

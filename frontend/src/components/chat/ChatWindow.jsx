@@ -26,75 +26,85 @@ export default function ChatWindow({ chatId, question, order }) {
 
   /* ================= LOAD MESSAGES ================= */
 
-  useEffect(() => {
+useEffect(() => {
 
-  if (!chatId || !token) return
+  if (!chatId) return
+  if (!token) return
 
   loadMessages(chatId, token)
 
 }, [chatId, token])
 
-
+  
   /* ================= AUTO QUESTION MESSAGE ================= */
+
+  useEffect(() => {
+
+    if (!question || messages.length === 0) return
+
+    const botReplies = supportQuestions[question] || [
+      "Sorry, I don't understand your question."
+    ]
+
+    const botMessages = botReplies.map((reply) => ({
+      sender: "bot",
+      message: reply,
+      createdAt: new Date()
+    }))
+
+    setMessages((prev) => {
+
+      const alreadyAsked = prev.some(
+        (msg) => msg.sender === "user" && msg.message === question
+      )
+
+      if (alreadyAsked) return prev
+
+      return [
+
+        ...prev,
+
+        {
+          sender: "user",
+          message: question,
+          createdAt: new Date()
+        },
+
+        ...botMessages,
+
+        {
+          sender: "bot",
+          message: "Can I help you with anything else?",
+          createdAt: new Date()
+        }
+
+      ]
+
+    })
+
+  }, [question, messages, setMessages])
+
+  /* ================= INITIAL GREETING ================= */
 
 useEffect(() => {
 
-  if (!question) return
-  if (messages.length === 0) return
+  if (!messages || messages.length !== 0) return
 
-  const alreadyAsked = messages.some(
-    (msg) => msg.sender === "user" && msg.message === question
-  )
+  const user =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("user") || "{}")
+      : {}
 
-  if (alreadyAsked) return
-
-  const botReplies = supportQuestions[question] || [
-    "Sorry, I don't understand your question."
-  ]
-
-  const botMessages = botReplies.map((reply) => ({
-    sender: "bot",
-    message: reply,
-    createdAt: new Date()
-  }))
-
-  setMessages((prev) => [
-    ...prev,
-    {
-      sender: "user",
-      message: question,
-      createdAt: new Date()
-    },
-    ...botMessages,
+  setMessages([
     {
       sender: "bot",
-      message: "Can I help you with anything else?",
+      message: `Hey ${user?.name || "there"} 👋, I'm your support assistant`,
       createdAt: new Date()
     }
   ])
 
-}, [question])
+}, [messages])
 
-  /* ================= INITIAL GREETING ================= */
-
-  useEffect(() => {
-
-    if (messages.length > 0) return
-
-    const user =
-      typeof window !== "undefined"
-        ? JSON.parse(localStorage.getItem("user") || "{}")
-        : {}
-
-    setMessages([
-      {
-        sender: "bot",
-        message: `Hey ${user?.name || "there"} 👋, I'm your support assistant`,
-        createdAt: new Date()
-      }
-    ])
-
-  }, [])
   /* ================= UI ================= */
 
   return (
@@ -143,7 +153,7 @@ useEffect(() => {
 
       <ChatMessages messages={messages} chatId={chatId} order={order} />
 
-
+      
 
       {loading && (
         <div className="px-4 py-2 text-xs text-gray-400">

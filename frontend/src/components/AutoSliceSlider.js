@@ -144,7 +144,8 @@ export default function AutoSliceSlider() {
                 768: { slidesPerView: 3 },
                 1024: { slidesPerView: 4.5 },
               }}
-              navigation={enableNav}
+              // navigation={enableNav}
+              navigation={false}
               className="homePageSwiper px-4">
               {products.map((product) => (
                 <SwiperSlide key={product._id} className="no-swiping">

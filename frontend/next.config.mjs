@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    async rewrites() {
+      return [
+        {
+          source: '/api/:path*',
+          destination: 'http://localhost:5000/api/:path*', // Change port if backend is different
+        },
+      ];
+    },
   images: {
     remotePatterns: [
       {
@@ -18,6 +26,12 @@ const nextConfig = {
         protocol: "https",
         hostname: "my-shapewear-site.onrender.com",
         pathname: "/image/**",
+      },
+
+      // ADD THIS
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
     ],
     dangerouslyAllowLocalIP: true,
@@ -77,7 +91,7 @@ const nextConfig = {
   compress: true,
 
   // Enable SWR (stale-while-revalidate)
-  swcMinify: true,
+  // swcMinify: true,
 };
 
 export default nextConfig;

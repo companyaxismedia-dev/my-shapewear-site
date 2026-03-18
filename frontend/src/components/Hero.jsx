@@ -1,70 +1,80 @@
 "use client";
 
+
+import { useEffect, useState } from "react";
+import { API_BASE } from "@/lib/api";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination, EffectFade } from "swiper/modules";
-
-// Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
 
-const banners = [
-  // { desktop: "/hero-image/clovia1.webp", mobile: "/hero-image/cloviamobile.jpeg", alt: "Premium Lingerie" },
-  { desktop: "/hero-image/Banner-1.jpeg", mobile: "/hero-image/banner1mobile.jpeg", alt: "Comfortable Everyday Bras" },
-  { desktop: "/hero-image/Banner-2.jpeg", mobile: "/hero-image/banner2mobile.jpeg", alt: "Comfortable Everyday Bras" },
-  // { desktop: "/hero-image/hero-ba-2.jpeg", mobile: "/hero-image/hero-ba-2.jpeg", alt: "Comfortable Everyday Bras" },
-  // { desktop: "/hero-image/hero-n-2.jpeg", mobile: "/hero-image/hero-n-2.jpeg", alt: "Comfortable Everyday Bras" },
-  // { desktop: "/hero-image/hero-n-4.jpeg", mobile: "/hero-image/hero-n-4.jpeg", alt: "Comfortable Everyday Bras" },
-  // { desktop: "/hero-image/hero-ba-1.png", mobile: "/hero-image/hero-ba-1.png", alt: "Comfortable Everyday Bras" },
-  // { desktop: "/hero-image/curvy.png", mobile: "/hero-image/curvy.png", alt: "Comfortable Everyday Bras" },
+export default function Hero({ slides }) {
+  const [banners, setBanners] = useState(slides || []);
 
-];
+  useEffect(() => {
+    if (slides) return;
+    fetch(`${API_BASE}/api/banner`)
+      .then((res) => res.json())
+      .then((data) => setBanners(Array.isArray(data) ? data.filter((b) => b.active) : []))
+      .catch(() => setBanners([]));
+  }, [slides]);
 
-export default function Hero() {
   return (
     <section className="relative w-full bg-white mt-0 p-0">
       <div className="w-full relative overflow-hidden">
-        <Swiper
-          modules={[Autoplay, Navigation, Pagination, EffectFade]}
-          effect="fade"
-          fadeEffect={{ crossFade: true }}
-          loop={false}
-          speed={1000}
-          autoplay={{ delay: 5000, disableOnInteraction: false }}
-          pagination={{
-            clickable: true,
-          }}
-          navigation={true}
-          className="hero-swiper w-full"
-        >
-          {banners.map((item, index) => (
-            <SwiperSlide key={index}>
-              <div className="w-full flex justify-center items-center leading-[0]">
-                <picture className="w-full block">
-                  <source
-                    srcSet={item.mobile}
-                    media="(max-width: 767px)"
-                  />
-                  <img
-                    src={item.desktop}
-                    alt={item.alt}
-                    width={1966}
-                    height={835}
-                    className="w-full h-auto block select-none"
-                    // style={{
-                    //   height: 'auto',
-                    //   width: '100%',
-                    //   objectFit: 'contain',
-                    //   // aspectRatio: '1966 / 835',
-                    // }}
-                    loading={index === 0 ? "eager" : "lazy"}
-                  />
-                </picture>
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
+        {banners.length > 0 ? (
+          <Swiper
+            modules={[Autoplay, Navigation, Pagination, EffectFade]}
+            effect="fade"
+            fadeEffect={{ crossFade: true }}
+            loop={banners.length > 1}
+            speed={1000}
+            autoplay={{ delay: 5000, disableOnInteraction: false }}
+            pagination={{ clickable: true }}
+            navigation={false}
+            className="hero-swiper w-full"
+          >
+            {banners.map((item, index) => (
+              <SwiperSlide key={item._id || index}>
+                <div className="w-full flex justify-center items-center leading-[0]">
+                  {item.link ? (
+                    <a href={item.link} className="w-full block" target="_blank" rel="noreferrer">
+                      <picture>
+                        <source srcSet={item.mobileUrl} media="(max-width: 767px)" />
+                        <img
+                          src={item.desktopUrl}
+                          alt={item.altText || "Homepage Banner"}
+                          width={1966}
+                          height={835}
+                          className="w-full h-auto block select-none"
+                          style={{ objectFit: "contain" }}
+                          loading={index === 0 ? "eager" : "lazy"}
+                        />
+                      </picture>
+                    </a>
+                  ) : (
+                    <picture>
+                      <source srcSet={item.mobileUrl} media="(max-width: 767px)" />
+                      <img
+                        src={item.desktopUrl}
+                        alt={item.altText || "Homepage Banner"}
+                        width={1966}
+                        height={835}
+                        className="w-full h-auto block select-none"
+                        style={{ objectFit: "contain" }}
+                        loading={index === 0 ? "eager" : "lazy"}
+                      />
+                    </picture>
+                  )}
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        ) : (
+          <div style={{ width: "100%", height: 300, background: "#f3f3f3" }} />
+        )}
       </div>
 
       <style jsx global>{`
@@ -119,60 +129,3 @@ aspect-ratio: auto !important; /* Remove the forced 2/3 ratio */
     </section>
   );
 }
-
-// "use client";
-
-// import { Swiper, SwiperSlide } from "swiper/react";
-// import { Autoplay, Navigation, Pagination, EffectFade } from "swiper/modules";
-
-// import "swiper/css";
-// import "swiper/css/navigation";
-// import "swiper/css/pagination";
-// import "swiper/css/effect-fade";
-
-// const banners = [
-//   { desktop: "/hero-image/Banner-1.jpeg", mobile: "/hero-image/banner1mobile.jpeg", alt: "Banner 1" },
-//   { desktop: "/hero-image/Banner-2.jpeg", mobile: "/hero-image/banner2mobile.jpeg", alt: "Banner 2" },
-// ];
-
-// export default function Hero() {
-//   return (
-//     <section className="relative w-full bg-white">
-
-//       {/* 🔥 FIXED HERO HEIGHT (NO JUMP) */}
-//       <div className="w-full relative overflow-hidden min-h-[220px] md:min-h-[420px]">
-
-//         <Swiper
-//           modules={[Autoplay, Navigation, Pagination, EffectFade]}
-//           effect="fade"
-//           fadeEffect={{ crossFade: true }}
-//           loop={banners.length > 2}
-//           speed={1000}
-//           autoplay={
-//             banners.length > 1
-//               ? { delay: 5000, disableOnInteraction: false }
-//               : false
-//           }
-//           pagination={{ clickable: true }}
-//           navigation={true}
-//           className="hero-swiper w-full"
-//         >
-//           {banners.map((item, index) => (
-//             <SwiperSlide key={index}>
-//               <picture className="block w-full">
-//                 <source srcSet={item.mobile} media="(max-width: 767px)" />
-//                 <img
-//                   src={item.desktop}
-//                   alt={item.alt}
-//                   loading={index === 0 ? "eager" : "lazy"}
-//                   className="w-full h-auto block"
-//                 />
-//               </picture>
-//             </SwiperSlide>
-//           ))}
-//         </Swiper>
-
-//       </div>
-//     </section>
-//   );
-// }

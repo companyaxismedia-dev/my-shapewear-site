@@ -82,4 +82,5 @@ const admin = (req, res, next) => {
 /* =========================================
    EXPORT (IMPORTANT FIX)
 ========================================= */
-module.exports = { protect, admin };
+const verifyAdmin = [protect, admin];
+module.exports = { protect, admin, verifyAdmin };
