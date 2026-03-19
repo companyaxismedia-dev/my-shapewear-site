@@ -25,7 +25,7 @@ const allReviews = [
     name: "Ritu M.", 
     location: "Jaipur", 
     rating: 5, 
-    text: "Product quality sach mein heavy hai, sasta wala material nahi hai. Packaging bhi bahut premium thi aur delivery Jaipur mein sirf 2 din mein mil gayi. Highly impressed with Booty Bloom!", 
+    text: "Product quality sach mein heavy hai, sasta wala material nahi hai. Packaging bhi bahut premium thi aur delivery Jaipur mein sirf 2 din mein mil gayi. Highly impressed with IMKAA!", 
     image: "/image/Reviews/WhatsApp Image 2026-01-19 at 14.22.09.jpeg" 
   },
   { 
@@ -73,7 +73,7 @@ const allReviews = [
     name: "Tanya P.", 
     location: "Gurgaon", 
     rating: 5, 
-    text: "Instant confidence booster! Office wear dresses ke liye must have hai. Pehle mujhe tight kapde pehenne mein sharam aati thi par ab mein comfortably carry karti hoon. Thanks Booty Bloom!", 
+    text: "Instant confidence booster! Office wear dresses ke liye must have hai. Pehle mujhe tight kapde pehenne mein sharam aati thi par ab mein comfortably carry karti hoon. Thanks IMKAA!", 
     image: "/image/Reviews/WhatsApp Image 2026-01-19 at 14.22.09.jpeg" 
   },
   { 
@@ -181,7 +181,7 @@ const allReviews = [
     name: "Sapna G.", 
     location: "Ranchi", 
     rating: 5, 
-    text: "Don't think, just buy! Maine video mein dikhaya hai ki ye kitna stretchable hai. Material skin friendly hai aur koi rashes nahi hote. 100% genuine product from Booty Bloom.", 
+    text: "Don't think, just buy! Maine video mein dikhaya hai ki ye kitna stretchable hai. Material skin friendly hai aur koi rashes nahi hote. 100% genuine product from IMKAA.", 
     isVideo: true, 
     thumbnail: "/image/Reviews/WhatsApp Image 2026-01-19 at 14.22.09.jpeg", 
     videoUrl: "https://www.youtube.com/embed/MQLGVImRiko?autoplay=1" 
@@ -323,7 +323,7 @@ function ReviewCardContent({ rev, isDark = false }) {
         <img 
           src={rev.isVideo ? rev.thumbnail : rev.image} 
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out" 
-          alt="Booty Bloom Customer" 
+          alt="IMKAA Customer" 
         />
         {rev.isVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-[#041f41]/20 group-hover:bg-[#041f41]/40 transition-all">

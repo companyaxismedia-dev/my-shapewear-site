@@ -59,10 +59,10 @@ export function ProductCard({ item, onOpenDetails }) {
     return (
         <div
             ref={cardRef}
-            className="flex flex-col bg-white border border-[#e8e8e8] overflow-hidden relative transition-shadow duration-200 hover:shadow-xl group"
+            className="product-card-imkaa group"
         >
             {/* IMAGE CONTAINER */}
-            <div className="relative aspect-[3/4] overflow-hidden bg-[#f5f5f6]">
+            <div className="relative aspect-[3/4] overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
                 {/* Use regular img for API-served images, Next.js Image for public images */}
                 {getImageUrl(item.thumbnail).includes('localhost') || getImageUrl(item.thumbnail).includes('uploads') ? (
                     <img
@@ -119,30 +119,45 @@ export function ProductCard({ item, onOpenDetails }) {
                             ? removeFromWishlist(item._id)
                             : toggleWishlist(item);
                     }}
-                    className="absolute top-2 right-2 z-20 bg-white border-none rounded-full w-[30px] h-[30px] flex items-center justify-center cursor-pointer shadow-md hover:scale-110 transition-transform"
+                    className="absolute top-2 right-2 z-20 rounded-full w-[32px] h-[32px] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+                    style={{
+                        background: "rgba(255,255,255,0.92)",
+                        border: "1px solid var(--color-border)",
+                        boxShadow: "0 6px 18px rgba(74,46,53,0.10)",
+                    }}
                 >
                     <Heart
                         size={16}
-                        className={`transition-colors ${isWishlisted ? "fill-[#ed4e7e] stroke-[#ed4e7e]" : "stroke-[#ed4e7e]"}`}
+                        className={`transition-colors ${isWishlisted ? "fill-[#C56F7F] stroke-[#C56F7F]" : "stroke-[#C56F7F]"}`}
                     />
                 </button>
 
                 {/* RATING BADGE */}
                 {item.rating > 0 && (
-                    <div className="absolute bottom-2 left-2 bg-white px-2 py-0.5 text-xs font-semibold rounded  shadow-sm z-10 flex items-center gap-1">
+                    <div
+                        className="absolute bottom-2 left-2 px-2 py-1 text-xs font-semibold z-10 flex items-center gap-1"
+                        style={{
+                            background: "rgba(255,255,255,0.92)",
+                            border: "1px solid var(--color-border)",
+                            borderRadius: 9999,
+                            boxShadow: "0 6px 18px rgba(74,46,53,0.10)",
+                            color: "var(--color-body)",
+                        }}
+                    >
                         {item.rating}
                         {/* <Star size={10} className="fill-[#14958f] stroke-[#14958f]" /> */}
                         <span
                             className={
                                 item.rating >= 3
-                                    ? "text-[#14958f]"
-                                    : "text-yellow-500"
+                                    ? ""
+                                    : ""
                             }
+                            style={{ color: "var(--color-primary)" }}
                         >
                             ★
                         </span>
 
-                        <span className="text-[#94969f] font-normal text-[11px]">
+                        <span className="product-card-meta font-normal text-[11px]">
                             | {item.numReviews || 0}
                         </span>
                     </div>
@@ -150,9 +165,9 @@ export function ProductCard({ item, onOpenDetails }) {
 
                 {/* SIZE OVERLAY */}
                 {showSizes && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-[15] p-3">
+                    <div className="absolute inset-0 flex items-center justify-center z-[15] p-3" style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(8px)" }}>
                         <div className="text-center">
-                            <p className="text-[11px] font-bold uppercase text-[#ed4e7e] tracking-widest mb-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--color-primary)" }}>
                                 SELECT SIZE
                             </p>
                             <div className="flex flex-wrap gap-2 justify-center">
@@ -161,10 +176,13 @@ export function ProductCard({ item, onOpenDetails }) {
                                         key={i}
                                         disabled={s.stock === 0}
                                         onClick={() => handleSizeSelect(s.size)}
-                                        className={`px-2.5 py-1 border text-[12px] font-semibold rounded-sm transition-colors ${s.stock === 0
-                                            ? "border-gray-200 text-gray-300 cursor-not-allowed"
-                                            : "border-[#ed4e7e] text-[#ed4e7e] hover:bg-[#ed4e7e] hover:text-white"
-                                            }`}
+                                        className={`px-3 py-1.5 text-[12px] font-semibold transition-colors ${s.stock === 0 ? "cursor-not-allowed" : ""}`}
+                                        style={{
+                                            borderRadius: 9999,
+                                            border: `1px solid ${s.stock === 0 ? "var(--color-border)" : "var(--color-accent)"}`,
+                                            color: s.stock === 0 ? "var(--color-muted)" : "var(--color-primary)",
+                                            background: s.stock === 0 ? "rgba(252,239,234,0.4)" : "#FFF4F6",
+                                        }}
                                     >
                                         {s.size}
                                     </button>
@@ -176,27 +194,37 @@ export function ProductCard({ item, onOpenDetails }) {
 
                 {/* SUCCESS MESSAGE */}
                 {showSuccess && (
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[#282c3f] text-white text-[11px] font-bold px-3.5 py-1.5 rounded-full z-20 whitespace-nowrap animate-bounce">
+                    <div
+                        className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-3.5 py-1.5 z-20 whitespace-nowrap"
+                        style={{
+                            background: "var(--color-primary)",
+                            color: "#FFF9FA",
+                            borderRadius: 9999,
+                            boxShadow: "0 10px 24px rgba(74,46,53,0.18)",
+                        }}
+                    >
                         Added to Bag
                     </div>
                 )}
             </div>
 
             {/* DETAILS SECTION */}
-            <div className="p-2.5 flex flex-col flex-1 bg-white">
-                <h3 className="text-[12px] font-bold text-[#282c3f] mb-0.5 truncate uppercase">
+            <div className="p-4 flex flex-col flex-1" style={{ background: "var(--color-card)" }}>
+                <h3 className="product-card-title mb-1 truncate">
                     {item.name}
                 </h3>
-                <p className="text-[12px] text-[#535766] mb-1.5 truncate">
+                <p className="product-card-meta mb-3 truncate">
                     {item.shortDescription}
                 </p>
 
                 <div className="flex items-baseline gap-1.5">
-                    <span className="text-[14px] font-bold text-[#282c3f]">Rs. {item.minPrice}</span>
+                    <span className="product-card-price">₹{item.minPrice}</span>
                     {item.mrp > item.minPrice && (
                         <>
-                            <span className="text-[12px] text-[#94969f] line-through">Rs. {item.mrp}</span>
-                            <span className="text-[12px] text-[#ff905a] font-semibold">({item.discount}% OFF)</span>
+                            <span className="product-card-meta line-through">₹{item.mrp}</span>
+                            <span className="product-card-meta font-semibold" style={{ color: "var(--color-primary)" }}>
+                                ({item.discount}% OFF)
+                            </span>
                         </>
                     )}
                 </div>
@@ -204,9 +232,9 @@ export function ProductCard({ item, onOpenDetails }) {
                 {/* ADD TO BAG BUTTON */}
                 <button
                     onClick={() => setShowSizes(true)}
-                    className="mt-auto w-full py-2 text-[12px] rounded-md font-bold uppercase tracking-wider text-white bg-[#ed4e7e] border border-[#ed4e7e] cursor-pointer hover:bg-[#d43d6a] transition-colors"
+                    className="btn-primary-imkaa mt-auto w-full"
                 >
-                    ADD TO BAG
+                    Add to Bag
                 </button>
             </div>
         </div>

@@ -37,13 +37,19 @@ export default function SearchResults() {
   }, [query]);
 
   return (
-    <div className="max-w-[1600px] mx-auto p-4">
-      <h2 className="text-lg font-bold mb-6">
-        Showing results for "{query}"
-      </h2>
+    <div className="section-padding" style={{ background: "var(--color-bg)" }}>
+      <div className="container-imkaa">
+        <div className="section-heading-block" style={{ marginBottom: 32 }}>
+          <h1 className="heading-section" style={{ textAlign: "left", fontSize: "clamp(24px, 2.6vw, 34px)" }}>
+            Search results
+          </h1>
+          <p className="text-body" style={{ fontSize: 15, color: "var(--color-muted)" }}>
+            Showing results for “{query}”
+          </p>
+        </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-        {products.map((item) => {
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {products.map((item) => {
           const image =
             item?.variants?.[0]?.images?.[0]
               ? `${API_BASE}${item.variants[0].images[0]}`
@@ -53,54 +59,57 @@ export default function SearchResults() {
             <div
               key={item._id}
               onClick={() => router.push(`/product/${item.slug}`)} // ✅ REDIRECT FIX
-              className="group cursor-pointer flex flex-col bg-white border border-pink-50 relative rounded-sm overflow-hidden shadow-sm h-full transition-all hover:shadow-md"
+              className="product-card-imkaa cursor-pointer"
             >
               {/* IMAGE AREA */}
-              <div className="relative aspect-[3/4] overflow-hidden bg-[#fff5f8]">
+              <div className="relative aspect-[3/4] overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
                 <img
                   src={image}
                   alt={item.name}
-                  className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105" // ✅ HOVER EFFECT
+                  className="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-105"
                 />
 
                 {item.discount > 0 && (
-                  <div className="absolute top-0 left-0 bg-[#ed4e7e] text-white text-[9px] px-2 py-0.5 font-bold z-10">
+                  <div
+                    className="absolute top-2 left-2 text-[10px] px-2 py-0.5 font-semibold z-10"
+                    style={{
+                      background: "var(--color-primary)",
+                      color: "#FFF9FA",
+                      borderRadius: 9999,
+                      boxShadow: "0 6px 18px rgba(74,46,53,0.12)",
+                    }}
+                  >
                     {item.discount}% OFF
                   </div>
                 )}
               </div>
 
               {/* CONTENT */}
-              <div className="p-3 flex flex-col flex-grow bg-white">
-                <h3 className="text-[10px] font-bold truncate uppercase mb-1 text-[#ed4e7e]">
-                  {item.name}
-                </h3>
+              <div className="p-4 flex flex-col flex-grow" style={{ background: "var(--color-card)" }}>
+                <h3 className="product-card-title mb-1 truncate">{item.name}</h3>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-gray-900">
-                    ₹{item.price}
-                  </span>
+                  <span className="product-card-price">₹{item.price}</span>
 
                   {item.mrp && (
-                    <span className="text-[10px] text-pink-200 line-through font-medium">
+                    <span className="product-card-meta line-through">
                       ₹{item.mrp}
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center gap-1 mt-1.5">
-                  <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
-                  <span className="text-[10px] font-bold">
+                  <Star size={12} className="fill-[#C56F7F] text-[#C56F7F]" />
+                  <span className="text-muted-sm" style={{ fontSize: 13, fontWeight: 600, color: "var(--color-primary)" }}>
                     {item.rating}
                   </span>
-                  <span className="text-[10px] text-pink-300">
-                    ({item.numReviews})
-                  </span>
+                  <span className="product-card-meta">({item.numReviews})</span>
                 </div>
               </div>
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

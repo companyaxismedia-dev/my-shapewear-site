@@ -1,32 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-
+import { usePathname } from "next/navigation";
 import AccountSidebar from "./AccountSidebar";
+import Overview from "./Overview";
 import OrderHistory from "./OrderHistory";
-import MyCoupons from "./MyCoupons";
-import PersonalInfo from "./PersonalInfo";
-import MyWallet from "./MyWallet";
-import MyBankDetails from "./MyBankDetails";
-import MyAddressBook from "./MyAddressBook";
 import ManageNotifications from "./ManageNotifications";
+import MyAddressBook from "./MyAddressBook";
+import MyBankDetails from "./MyBankDetails";
+import MyWallet from "./MyWallet";
+import PersonalInfo from "./PersonalInfo";
+import MyCoupons from "./MyCoupons";
+
 
 export default function AccountLayout() {
 
-  const searchParams = useSearchParams();
-  const tab = searchParams.get("tab");
-  const [activeSection, setActiveSection] = useState("order-history");
+  const pathname = usePathname();
+  // Extract section from pathname, e.g. /account/coupons => "coupons"
+  const sectionMatch = pathname.match(/account\/(\w+)/);
+  const section = sectionMatch ? sectionMatch[1] : "dashboard";
+  const [activeSection, setActiveSection] = useState(section);
 
   useEffect(() => {
-    if (tab === "coupons") {
-      setActiveSection("coupons");
-    }
-  }, [tab]);
+    setActiveSection(section);
+  }, [section]);
 
   const renderContent = () => {
     switch (activeSection) {
-      case "order-history":
+      case "dashboard":
+        return <Overview />;
+      case "orders":
         return <OrderHistory />;
       case "coupons":
         return <MyCoupons />;
@@ -41,29 +44,36 @@ export default function AccountLayout() {
       case "notifications":
         return <ManageNotifications />;
       default:
-        return <OrderHistory />;
+        return <Overview />;
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Sidebar */}
-      <AccountSidebar
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-      />
+    <div className="flex flex-col min-h-screen" style={{ background: "var(--color-bg)" }}>
+      {/* Header - Full width, sticky above everything */}
+      <div className="sticky top-0 z-20 flex justify-center" style={{ background: "var(--color-bg-alt)", borderBottom: "1px solid var(--color-border)", padding: "20px 16px" }}>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "28px", fontWeight: 700, color: "var(--color-heading)", margin: 0, letterSpacing: "-0.5px" }}>
+          🔒 My Account
+        </h1>
+      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 w-full md:w-auto">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 py-6 sticky top-0 z-10 flex justify-center">
-          <h1 className="text-4xl font-bold text-gray-800 flex items-center gap-2">
-            🔒 My Account
-          </h1>
+      {/* Main content flex - sidebar + content below header */}
+      <div className="flex flex-col md:flex-row flex-1">
+        {/* Sidebar - Visible on desktop, drawer on mobile */}
+        <AccountSidebar
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        />
+
+        {/* Main Content - Full width on mobile, flex-1 on desktop */}
+        <div className="flex-1 w-full">
+          {/* Content */}
+          <div className="container-imkaa" style={{ paddingTop: "32px", paddingBottom: "32px", scrollBehavior: "smooth" }}>
+            <div className="card-imkaa" style={{ padding: "24px" }}>
+              {renderContent()}
+            </div>
+          </div>
         </div>
-
-        {/* Content */}
-        <div className="p-6 md:p-10 w-full">{renderContent()}</div>
       </div>
     </div>
   );

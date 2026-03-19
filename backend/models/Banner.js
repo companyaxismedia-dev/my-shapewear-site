@@ -33,7 +33,7 @@ const sectionSchema = new mongoose.Schema({
   },
   layoutType: {
     type: String,
-    enum: ['grid', 'columns', 'banner'],
+    enum: ['grid', 'columns', 'banner', 'three_per_row', 'two_per_row', 'short_banner'],
     default: 'grid',
   },
   rows: {

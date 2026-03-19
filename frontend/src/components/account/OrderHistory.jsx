@@ -1,376 +1,317 @@
 "use client";
-import { useState, useEffect } from "react";
-import Link from "next/link"; 
-import { ChevronRight, Search } from "lucide-react";
-
-
-
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { Search, SlidersHorizontal, X, ShoppingBag, Ticket, User, Wallet, Banknote, MapPin, Bell } from "lucide-react";
 import { useOrders } from "@/context/OrderContext";
 import { API_BASE } from "@/lib/api";
 
-/* ================= TYPES REMOVED (JS VERSION) ================= */
+const menuItems = [
+    { id: "orders", label: "Orders", icon: ShoppingBag },
+    { id: "coupons", label: "Coupons", icon: Ticket },
+    { id: "personal-info", label: "Profile", icon: User },
+    { id: "wallet", label: "Wallet", icon: Wallet },
+    { id: "bank-details", label: "Bank", icon: Banknote },
+    { id: "address-book", label: "Address", icon: MapPin },
+    { id: "notifications", label: "Alerts", icon: Bell },
+];
 
-export default function MyOrders() {
+export default function OrderHistory() {
+    const { orders, loading, fetchOrders } = useOrders();
+    const [statusFilter, setStatusFilter] = useState("all");
+    const [timeFilter, setTimeFilter] = useState("all");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isClient, setIsClient] = useState(false);
+    const filterRef = useRef(null);
 
-const { orders, loading, fetchOrders } = useOrders();
-
-const [statusFilters, setStatusFilters] = useState(["all"]);
-const [timeFilters, setTimeFilters] = useState(["all"]);
-const [searchTerm, setSearchTerm] = useState("");
-
-    
-    
-    /* ================= BACKEND CONNECT ================= */
-
-    
-    const statusOptions = [
-        { label: "All", value: "all" },
-        { label: "On the way", value: "on-the-way" },
-        { label: "Delivered", value: "delivered" },
-        { label: "Cancelled", value: "cancelled" },
-        { label: "Returned", value: "returned" },
-    ];
-
-    const timeOptions = [
-        { label: "All", value: "all" },
-        { label: "Last 30 days", value: "last-30-days" },
-        { label: "2026", value: "2026" },
-        { label: "2025", value: "2025" }, // FIXED
-        { label: "2024", value: "2024" },
-        { label: "2023", value: "2023" },
-        { label: "Older", value: "older" },
-    ];
-
-    const toggleStatusFilter = (status) => {
-        setStatusFilters((prev) => {
-            if (status === "all") return ["all"];
-            const filtered = prev.filter((s) => s !== "all");
-            if (filtered.includes(status)) {
-                const updated = filtered.filter((s) => s !== status);
-                return updated.length === 0 ? ["all"] : updated;
-            }
-            return [...filtered, status];
-        });
-
-
-    };
-
-    const toggleTimeFilter = (time) => {
-        setTimeFilters((prev) => {
-            if (time === "all") return ["all"];
-            const filtered = prev.filter((t) => t !== "all");
-            if (filtered.includes(time)) {
-                const updated = filtered.filter((t) => t !== time);
-                return updated.length === 0 ? ["all"] : updated;
-            }
-            return [...filtered, time];
-        });
-    };
-
-    const clearAllFilters = () => {
-        setStatusFilters(["all"]);
-        setTimeFilters(["all"]);
-    };
-
-    const isStatusFilterActive = (status) =>
-  statusFilters.includes(status) || statusFilters.includes("all");
-
-    const isTimeFilterActive = (time) =>
-        timeFilters.includes(time);
-
-    const handleSearch = () => {
-        fetchOrders();
-    };
     useEffect(() => {
-  fetchOrders();
-}, []);
+        setIsClient(true);
+        fetchOrders();
+    }, []);
+
+    // Close filter when clicking outside
+    useEffect(() => {
+        if (!isClient) return;
+
+        const handleClickOutside = (e) => {
+            if (filterRef.current && !filterRef.current.contains(e.target)) {
+                setIsFilterOpen(false);
+            }
+        };
+
+        if (isFilterOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isFilterOpen, isClient]);
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+    };
 
     const filteredOrders = orders.filter((order) => {
+        const statusMatch = statusFilter === "all" || order.status === statusFilter;
+        let timeMatch = timeFilter === "all";
 
-        const statusMatch =
-            statusFilters.includes("all") ||
-            statusFilters.includes(order.status);
-
-        let timeMatch = timeFilters.includes("all");
-
-        if (!timeMatch) {
+        if (!timeMatch && timeFilter !== "all") {
             const orderDate = new Date(order.createdAt);
             const now = new Date();
-
-            for (const t of timeFilters) {
-
-                if (t === "last-30-days") {
-                    const diff =
-                        (now - orderDate) / (1000 * 60 * 60 * 24);
-                    if (diff <= 30) timeMatch = true;
-                }
-
-                if (t === "2026" && orderDate.getFullYear() === 2026)
-                    timeMatch = true;
-
-                if (t === "2025" && orderDate.getFullYear() === 2025)
-                    timeMatch = true;
-
-                if (t === "2024" && orderDate.getFullYear() === 2024)
-                    timeMatch = true;
-
-                if (t === "2023" && orderDate.getFullYear() === 2023)
-                    timeMatch = true;
-
-                if (t === "older" && orderDate.getFullYear() < 2023)
-                    timeMatch = true;
-            }
+            const diffDays = (now - orderDate) / (1000 * 60 * 60 * 24);
+            if (timeFilter === "last-30-days" && diffDays <= 30) timeMatch = true;
+            if (timeFilter === "last-6-months" && diffDays <= 180) timeMatch = true;
         }
 
-        return statusMatch && timeMatch;
+        const searchMatch =
+            searchTerm === "" ||
+            order.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.items?.some((item) =>
+                item.title?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+        return statusMatch && timeMatch && searchMatch;
     });
+
     const getStatusColor = (status) => {
         switch (status) {
-            case "delivered":
-                return "text-green-600";
-            case "cancelled":
-                return "text-red-600";
-            case "on-the-way":
-                return "text-blue-600";
-            case "returned":
-                return "text-orange-600";
-            case "processing":
-                return "text-yellow-600";
-            default:
-                return "text-gray-600";
+            case "delivered": return "#27AE60";
+            case "cancelled": return "#E74C3C";
+            case "on-the-way": return "#3498DB";
+            case "returned": return "#E67E22";
+            case "processing": return "#F39C12";
+            default: return "#7F8C8D";
         }
     };
 
     const getStatusLabel = (status) =>
         status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ");
 
+    if (!isClient) return null;
+
     return (
-        <div className="w-full bg-[#f1f3f6]">
-            {loading && (
+        <div className="w-full" style={{ background: "var(--color-bg)" }} suppressHydrationWarning>
+            {/* {loading && (
                 <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-                    <div className="bg-white px-6 py-4 rounded shadow-md flex items-center gap-3">
-                        <div className="w-5 h-5 border-2 border-[#2874f0] border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-sm font-medium text-gray-700">
-                            Loading your orders...
-                        </p>
+                    <div className="px-6 py-4 rounded shadow-md flex items-center gap-3" style={{ background: "var(--color-card)" }}>
+                        <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: "var(--color-primary)", borderTopColor: "transparent" }}></div>
+                        <p className="text-sm font-medium" style={{ color: "var(--color-body)" }}>Loading orders...</p>
                     </div>
                 </div>
-            )}
-           
-            {/* Breadcrumb */}
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-2 text-sm">
-                    <Link href="/" className="text-primary hover:opacity-70">
-                        Home
-                    </Link>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600">My Orders</span>
+            )} */}
+
+            {/* Mobile Navigation Section - Horizontal Scroll */}
+            <div className="md:hidden mb-6 px-4 lg:px-6" style={{ background: "var(--color-bg-alt)", borderBottom: "1px solid var(--color-border)", marginLeft: "-16px", marginRight: "-16px", marginTop: "-32px", paddingLeft: "16px", paddingRight: "16px", paddingTop: "16px", paddingBottom: "16px" }}>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                    {menuItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = item.id === "orders";
+                        return (
+                            <Link
+                                key={item.id}
+                                href={`/account?tab=${item.id}`}
+                                className="flex items-center gap-1 px-3 py-2 rounded-full flex-shrink-0 text-sm font-medium whitespace-nowrap transition"
+                                style={{
+                                    background: isActive ? "var(--color-primary)" : "var(--color-card)",
+                                    color: isActive ? "white" : "var(--color-body)",
+                                    border: `1px solid ${isActive ? "var(--color-primary)" : "var(--color-border)"}`,
+                                }}
+                            >
+                                <Icon size={16} />
+                                <span>{item.label}</span>
+                            </Link>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* SAME UI (NO CHANGE) */}
-            <div className="w-full px-4 lg:px-6 py-4">
-                <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6 items-start">
+            {/* Main Content */}
+            <div className="px-4 lg:px-6 py-6">
+                <h2 className="text-2xl font-bold mb-6" style={{ color: "var(--color-heading)", fontFamily: "var(--font-display)" }}>My Orders</h2>
 
-                    {/* LEFT FILTER */}
-                    <div>
-                        <div className="bg-white border border-gray-200 rounded-sm p-6 sticky top-20">
-                            <h2 className="text-lg font-bold mb-6">Filters</h2>
-                            {/* SELECTED FILTER CHIPS */}
-                            {(
-                                !statusFilters.includes("all") ||
-                                !timeFilters.includes("all")
-                            ) && (
-                                    <div className="mb-4">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="text-sm font-semibold text-gray-700">
-                                                Applied Filters
-                                            </span>
+                {/* Search and Filter Bar */}
 
+                <div className="flex flex-col sm:flex-row gap-3 mb-6 overflow-visible">
+                    {/* Search Bar */}
+                    <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="Search by order ID..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="input-imkaa flex-1"
+                            style={{ fontSize: "14px" }}
+                        />
+                        <button
+                            type="submit"
+                            className="btn-primary-imkaa px-4 sm:px-6 flex items-center gap-2 flex-shrink-0"
+                        >
+                            <Search size={18} />
+                            <span className="hidden sm:inline">Search</span>
+                        </button>
+                    </form>
+
+                    {/* Filter Button with Dropdown */}
+                    <div className="relative z-50" ref={filterRef}>
+                        <button
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            className="btn-primary-imkaa px-4 sm:px-6 flex items-center justify-center gap-2 flex-shrink-0 w-full sm:w-auto"
+                        >
+                            <SlidersHorizontal size={18} />
+                            <span className="hidden sm:inline">Filter</span>
+                        </button>
+
+                        {/* Dropdown Filter */}
+                        {isFilterOpen && (
+                            <>
+                                {/* Mobile Backdrop */}
+                                <div
+                                    className="fixed inset-0 sm:hidden z-40 bg-black/20"
+                                    onClick={() => setIsFilterOpen(false)}
+                                />
+                                {/* Filter Panel */}
+                                <div
+                                    className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-1/2 sm:top-full sm:mt-2 w-auto sm:w-72 z-50 rounded-lg shadow-2xl max-h-[70vh] overflow-y-auto -translate-y-1/2 sm:translate-y-0"
+                                    style={{ background: "var(--color-card)", border: "1px solid var(--color-border)" }}
+                                >
+                                    <div className="p-4 space-y-4">
+                                        {/* Status Filter */}
+                                        <div>
+                                            <p className="font-semibold mb-2" style={{ color: "var(--color-heading)", fontSize: "13px" }}>ORDER STATUS</p>
+                                            <div className="space-y-2">
+                                                {["all", "on-the-way", "delivered", "cancelled", "returned"].map((status) => (
+                                                    <label key={status} className="flex items-center gap-2 text-sm" style={{ color: "var(--color-body)" }}>
+                                                        <input
+                                                            type="radio"
+                                                            name="status"
+                                                            checked={statusFilter === status}
+                                                            onChange={() => setStatusFilter(status)}
+                                                            className="w-4 h-4 cursor-pointer"
+                                                        />
+                                                        {status === "all" ? "All Orders" : getStatusLabel(status)}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Time Filter */}
+                                        <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "12px" }}>
+                                            <p className="font-semibold mb-2" style={{ color: "var(--color-heading)", fontSize: "13px" }}>TIME PERIOD</p>
+                                            <div className="space-y-2">
+                                                {[
+                                                    { value: "all", label: "All Time" },
+                                                    { value: "last-30-days", label: "Last 30 Days" },
+                                                    { value: "last-6-months", label: "Last 6 Months" },
+                                                ].map((time) => (
+                                                    <label key={time.value} className="flex items-center gap-2 text-sm" style={{ color: "var(--color-body)" }}>
+                                                        <input
+                                                            type="radio"
+                                                            name="time"
+                                                            checked={timeFilter === time.value}
+                                                            onChange={() => setTimeFilter(time.value)}
+                                                            className="w-4 h-4 cursor-pointer"
+                                                        />
+                                                        {time.label}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Buttons */}
+                                        <div className="flex gap-2 pt-2" style={{ borderTop: "1px solid var(--color-border)" }}>
                                             <button
-                                                onClick={clearAllFilters}
-                                                className="text-[#2874f0] text-sm font-medium hover:underline"
+                                                onClick={() => {
+                                                    setStatusFilter("all");
+                                                    setTimeFilter("all");
+                                                }}
+                                                className="flex-1 py-2 rounded text-sm font-medium"
+                                                style={{ background: "var(--color-bg)", color: "var(--color-body)" }}
                                             >
-                                                Clear all
+                                                Clear
+                                            </button>
+                                            <button
+                                                onClick={() => setIsFilterOpen(false)}
+                                                className="flex-1 py-2 rounded text-sm font-medium btn-primary-imkaa"
+                                            >
+                                                Apply
                                             </button>
                                         </div>
-
-                                        <div className="flex flex-wrap gap-2">
-                                            {statusFilters
-                                                .filter((s) => s !== "all")
-                                                .map((s) => (
-                                                    <button
-                                                        key={s}
-                                                        onClick={() => toggleStatusFilter(s)}
-                                                        className="px-3 py-1 bg-gray-100 border rounded text-sm flex items-center gap-2"
-                                                    >
-                                                        ✕ {statusOptions.find(o => o.value === s)?.label}
-                                                    </button>
-                                                ))}
-
-                                            {timeFilters
-                                                .filter((t) => t !== "all")
-                                                .map((t) => (
-                                                    <button
-                                                        key={t}
-                                                        onClick={() => toggleTimeFilter(t)}
-                                                        className="px-3 py-1 bg-gray-100 border rounded text-sm flex items-center gap-2"
-                                                    >
-                                                        ✕ {timeOptions.find(o => o.value === t)?.label}
-                                                    </button>
-                                                ))}
-                                        </div>
                                     </div>
-                                )}
-
-                            {/* ORDER STATUS */}
-                            <div className="border-t border-[#e0e0e0] pt-5 mt-5">
-                                <h3 className="text-[14px] font-semibold mb-3 text-gray-900">ORDER STATUS</h3>
-
-                                <div className="space-y-3">
-                                    {statusOptions
-                                        .filter((o) => o.value !== "all")
-                                        .map((option) => (
-                                            <label key={option.value} className="flex items-center gap-3 text-[14px] text-gray-900">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isStatusFilterActive(option.value)}
-                                                    onChange={() => toggleStatusFilter(option.value)}
-                                                    className="w-4 h-4"
-                                                />
-                                                {option.label}
-                                            </label>
-                                        ))}
                                 </div>
-                            </div>
-
-                            {/* ORDER TIME */}
-                            {/* ORDER STATUS */}
-                            <div className="border-t border-gray-200 pt-5 mt-5">
-                                <h3 className="text-[14px] font-semibold mb-3 text-gray-900">ORDER TIME</h3>
-
-                                <div className="space-y-3">
-                                    {timeOptions
-                                        .filter((o) => o.value !== "all")
-                                        .map((option) => (
-                                            <label key={option.value} className="flex items-center gap-3 text-sm">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isTimeFilterActive(option.value)}
-                                                    onChange={() => toggleTimeFilter(option.value)}
-                                                    className="w-4 h-4"
-                                                />
-                                                {option.label}
-                                            </label>
-                                        ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* RIGHT CARDS */}
-                    <div className="min-w-0">
-
-
-                        {/* SEARCH BAR TOP (FLIPKART STYLE) */}
-                        <div className="bg-white border border-gray-200 mb-4 flex items-center h-[56px]">
-
-                            <input
-                                type="text"
-                                placeholder="Search your orders here"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") handleSearch();
-                                }}
-                                className="flex-1 h-full px-4 text-[14px] text-gray-700 outline-none"
-                            />
-
-                            <button
-                                onClick={handleSearch}
-                                className="h-full px-8 bg-[#2874f0] text-white text-[14px] font-semibold flex items-center gap-2"
-                            >
-                                <Search size={18} />
-                                Search Orders
-                            </button>
-
-                        </div>
-
-                        {filteredOrders.length === 0 ? (
-
-                            <div className="bg-white rounded p-8 text-center">
-                                No orders found
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {filteredOrders.map((order) => (
-                                    <Link
-                                        key={order.id}
-                                        href={`/order/${order.id}`}
-                                        className="block bg-white border border-gray-200 rounded hover:shadow-sm transition"
-                                    >
-                                        <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_260px] items-center p-4 gap-6">
-
-                                            {/* PRODUCT SECTION */}
-                                            <div className="flex gap-4 min-w-0">
-                                                <img
-                                                    src={`${API_BASE}${order.items[0]?.imageUrl}`}
-                                                    alt=""
-                                                    className="w-20 h-20 object-cover rounded"
-                                                />
-
-                                                <div className="min-w-0">
-                                                    <h3 className="font-medium text-gray-900 truncate">
-                                                        {order.items[0]?.title}
-                                                    </h3>
-
-                                                    <p className="text-sm text-gray-500 mt-1">
-                                                        Color: {order.items[0]?.color || "-"} &nbsp;
-                                                        Size: {order.items[0]?.size || "-"}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* PRICE */}
-                                            <div>
-                                                <p className="text-lg font-semibold text-gray-900">
-                                                    ₹{order.items[0]?.price}
-                                                </p>
-                                            </div>
-
-                                            {/* DELIVERY */}
-                                            <div>
-                                                <p className={`font-semibold ${getStatusColor(order.status)}`}>
-                                                    ● {order.status === "delivered"
-                                                        ? "Delivered"
-                                                        : order.status === "cancelled"
-                                                            ? "Cancelled"
-                                                            : `Delivery expected by ${order.deliveryDate
-                                                                ? new Date(order.deliveryDate).toLocaleDateString("en-IN", {
-                                                                    month: "short",
-                                                                    day: "numeric",
-                                                                })
-                                                                : ""
-                                                            }`}
-                                                </p>
-
-                                                <p className="text-sm text-gray-600 mt-1">
-                                                    {order.status === "cancelled"
-                                                        ? "Your order has been cancelled."
-                                                        : order.status === "delivered"
-                                                            ? "Your item has been delivered"
-                                                            : "Your order has been placed."}
-                                                </p>
-                                            </div>
-
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
+                            </>
                         )}
                     </div>
-
                 </div>
+
+                {/* Orders Display */}
+                {filteredOrders.length === 0 ? (
+                    <div className="rounded text-center py-12 card-imkaa" style={{ padding: "32px 24px" }}>
+                        <p style={{ color: "var(--color-body)", fontSize: "16px" }}>
+                            {searchTerm || statusFilter !== "all" || timeFilter !== "all"
+                                ? "No orders found matching your filters"
+                                : "No orders yet"}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {filteredOrders.map((order) => (
+                            <Link
+                                key={order.id}
+                                href={`/order/${order.id}`}
+                                className="block rounded hover:shadow-md transition card-imkaa"
+                                style={{ padding: 0, background: "var(--color-card)" }}
+                            >
+                                <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_120px_260px] gap-6 items-center">
+                                    {/* Product Section */}
+                                    <div className="flex gap-4">
+                                        {order.items?.[0]?.imageUrl && (
+                                            <img
+                                                src={`${API_BASE}${order.items[0].imageUrl}`}
+                                                alt={order.items[0].title}
+                                                className="w-20 h-20 object-cover rounded"
+                                                onError={(e) => {
+                                                    e.target.style.display = "none";
+                                                }}
+                                            />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-medium truncate" style={{ color: "var(--color-heading)" }}>
+                                                {order.items?.[0]?.title || "Order"}
+                                            </h3>
+                                            <p className="text-sm mt-2" style={{ color: "var(--color-muted)" }}>
+                                                Color: {order.items?.[0]?.color || "-"} | Size: {order.items?.[0]?.size || "-"}
+                                            </p>
+                                            <p className="text-sm" style={{ color: "var(--color-muted)" }}>
+                                                Qty: {order.items?.[0]?.quantity || 1}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Price */}
+                                    <div className="hidden md:block">
+                                        <p className="text-lg font-semibold" style={{ color: "var(--color-heading)" }}>
+                                            ₹{order.items?.[0]?.price || order.totalAmount}
+                                        </p>
+                                    </div>
+
+                                    {/* Order Status */}
+                                    <div className="flex justify-between md:block">
+                                        <div>
+                                            <p className="font-semibold text-sm md:text-base" style={{ color: getStatusColor(order.status) }}>
+                                                ● {getStatusLabel(order.status)}
+                                            </p>
+                                            <p className="text-xs md:text-sm mt-2" style={{ color: "var(--color-body)" }}>
+                                                {order.status === "delivered"
+                                                    ? `Delivered`
+                                                    : order.status === "cancelled"
+                                                        ? "Cancelled"
+                                                        : `ID: ${order.id?.slice(-6)}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

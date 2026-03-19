@@ -12,7 +12,7 @@ export default function WishlistButton({ onLoginOpen }) {
     return (
       <button
         onClick={onLoginOpen}
-        className="relative p-1 hover:text-pink-600 transition cursor-pointer"
+        className="relative p-1 hover:text-[#C56F7F] transition cursor-pointer"
       >
         <Heart size={22} />
       </button>
@@ -21,33 +21,12 @@ export default function WishlistButton({ onLoginOpen }) {
 
   return (
     <Link href="/wishlist" className="relative p-1">
-      <Heart size={22} className="hover:text-pink-600 transition" />
+      <Heart size={22} className="hover:text-[#C56F7F] transition" />
       {wishlistCount > 0 && (
-        <span className="absolute top-0 right-0 bg-pink-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-pulse">
+        <span className="absolute top-0 right-0 bg-[#C56F7F] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-pulse">
           {wishlistCount}
         </span>
       )}
     </Link>
   );
 }
-
-// {wishlistCount > 0 && (
-//   <span className="
-//     absolute
-//     -top-1
-//     -right-1
-//     bg-pink-600
-//     text-white
-//     text-[9px]
-//     w-4
-//     h-4
-//     rounded-full
-//     flex
-//     items-center
-//     justify-center
-//     font-bold
-//     leading-none
-//   ">
-//     {wishlistCount}
-//   </span>
-// )}

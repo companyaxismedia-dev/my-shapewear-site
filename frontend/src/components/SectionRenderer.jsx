@@ -4,8 +4,24 @@ import Hero from "@/components/Hero";
 import CategorySlider from "@/components/CategorySlider";
 import { API_BASE } from "@/lib/api";
 
-export default function SectionRenderer({ section }) {
+export default function SectionRenderer({ section, compact = false }) {
   if (!section || !section.blocks || section.blocks.length === 0) return null;
+
+  const getSectionSubtitle = (title = "") => {
+    const t = String(title).toLowerCase().trim();
+    if (!t) return "";
+    const presets = [
+      { match: "shop by category", subtitle: "Find your perfect fit, thoughtfully curated for you." },
+      { match: "our exclusive collections", subtitle: "Curated for comfort, confidence, and everyday elegance." },
+      { match: "trending bras", subtitle: "Bestselling silhouettes and fresh new favorites." },
+      { match: "best sellers", subtitle: "Loved by customers for fit, feel, and finish." },
+      { match: "why choose us", subtitle: "Premium quality, privacy, and service you can trust." },
+    ];
+    const preset = presets.find((p) => t.includes(p.match));
+    // return preset?.subtitle || "Curated pieces designed for comfort and confidence.";
+    return preset?.subtitle || "";
+  };
+   
 
   const resolveImage = (src) => {
     if (!src) return src;
@@ -56,53 +72,19 @@ export default function SectionRenderer({ section }) {
     );
   };
 
-  // GRID LAYOUT (rows × columns)
-  if (section.layoutType === "grid") {
-    const cols = Math.max(1, Number(section.columns) || 4);
-    const rows = Math.max(1, Number(section.rows) || 1);
-    const itemsToShow = cols * rows;
-    const itemsToDisplay = section.blocks.slice(0, itemsToShow);
-    const effectiveCols = Math.min(cols, Math.max(1, itemsToDisplay.length));
-
+  const SectionHeading = ({ title }) => {
+    if (!title) return null;
     return (
-      <div className="py-12">
-        <div className="w-full px-4">
-          <div className="max-w-full mx-auto">
-            {section.title && (
-              <h2 className="text-3xl md:text-4xl font-black text-[#ed4e7e] uppercase italic tracking-tight mb-8">
-                {section.title}
-              </h2>
-            )}
-            <div className={getGridClasses(effectiveCols)}>
-              {itemsToDisplay.map((block) => {
-                const data = block.data || {};
-                return (
-                  <a
-                    key={block._id}
-                    href={data.link || "#"}
-                    className="rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition group"
-                  >
-                    <div className="aspect-square overflow-hidden bg-gray-100">
-                      {renderBlockContent(block)}
-                    </div>
-                    {data.title && (
-                      <div className="p-3 text-center">
-                        <p className="text-sm font-semibold group-hover:text-[#ed4e7e] transition">
-                          {data.title}
-                        </p>
-                      </div>
-                    )}
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+      <div className="section-heading-block">
+        <h2 className="heading-section">{title}</h2>
+        <p className="section-subtitle">{getSectionSubtitle(title)}</p>
       </div>
     );
-  }
+  };
 
-  // COLUMNS LAYOUT (rows × columns)
+  const wrapClassName = compact ? "py-6 md:py-10" : "section-padding";
+
+  // COLUMNS LAYOUT (flexible rows × columns - replaces grid)
   if (section.layoutType === "columns") {
     const cols = Math.max(1, Number(section.columns) || 3);
     const rows = Math.max(1, Number(section.rows) || 1);
@@ -111,29 +93,30 @@ export default function SectionRenderer({ section }) {
     const effectiveCols = Math.min(cols, Math.max(1, itemsToDisplay.length));
 
     return (
-      <div className="py-12">
-        <div className="w-full px-4">
-          <div className="max-w-full mx-auto">
-            {section.title && (
-              <h2 className="text-3xl md:text-4xl font-black text-[#ed4e7e] uppercase italic tracking-tight mb-8">
-                {section.title}
-              </h2>
-            )}
+      <section className={wrapClassName}>
+        <div className={compact ? "" : "container-imkaa"}>
+            <SectionHeading title={section.title} />
             <div className={getGridClasses(effectiveCols)}>
               {itemsToDisplay.map((block) => {
                 const data = block.data || {};
+                const hasLink = data.link && data.link.trim();
+                const handleClick = (e) => {
+                  if (!hasLink) e.preventDefault();
+                };
+                const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
                 return (
                   <a
                     key={block._id}
-                    href={data.link || "#"}
-                    className="block rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition group"
+                    href={hasLink ? data.link : "#"}
+                    className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                    {...linkProps}
                   >
-                    <div className="aspect-square overflow-hidden bg-gray-100">
+                    <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
                       {renderBlockContent(block)}
                     </div>
                     {data.title && (
                       <div className="p-4 text-center">
-                        <p className="text-sm font-semibold group-hover:text-[#ed4e7e] transition">
+                        <p className="title-product">
                           {data.title}
                         </p>
                       </div>
@@ -142,9 +125,143 @@ export default function SectionRenderer({ section }) {
                 );
               })}
             </div>
-          </div>
         </div>
-      </div>
+      </section>
+    );
+  }
+
+  // THREE PER ROW LAYOUT (responsive: 1 on mobile, 2 on tablet, 3 on desktop)
+  if (section.layoutType === "three_per_row") {
+    const itemsToDisplay = section.blocks.slice(0, 9); // Max 9 for 3 rows
+
+    return (
+      <section className={wrapClassName}>
+        <div className={compact ? "" : "container-imkaa"}>
+            <SectionHeading title={section.title} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {itemsToDisplay.map((block) => {
+                const data = block.data || {};
+                const hasLink = data.link && data.link.trim();
+                const handleClick = (e) => {
+                  if (!hasLink) e.preventDefault();
+                };
+                const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
+                return (
+                  <a
+                    key={block._id}
+                    href={hasLink ? data.link : "#"}
+                    className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                    {...linkProps}
+                  >
+                    <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
+                      {renderBlockContent(block)}
+                    </div>
+                    {data.title && (
+                      <div className="p-4 text-center">
+                        <p className="title-product">
+                          {data.title}
+                        </p>
+                      </div>
+                    )}
+                  </a>
+                );
+              })}
+            </div>
+        </div>
+      </section>
+    );
+  }
+
+  // TWO PER ROW LAYOUT (responsive: 1 on mobile, 2 on tablet+)
+  if (section.layoutType === "two_per_row") {
+    const itemsToDisplay = section.blocks.slice(0, 8); // Max 8 for 4 rows
+
+    return (
+      <section className={wrapClassName}>
+        <div className={compact ? "" : "container-imkaa"}>
+            <SectionHeading title={section.title} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+              {itemsToDisplay.map((block) => {
+                const data = block.data || {};
+                const hasLink = data.link && data.link.trim();
+                const handleClick = (e) => {
+                  if (!hasLink) e.preventDefault();
+                };
+                const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
+                return (
+                  <a
+                    key={block._id}
+                    href={hasLink ? data.link : "#"}
+                    className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                    {...linkProps}
+                  >
+                    <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
+                      {renderBlockContent(block)}
+                    </div>
+                    {data.title && (
+                      <div className="p-4 text-center">
+                        <p className="title-product">
+                          {data.title}
+                        </p>
+                      </div>
+                    )}
+                  </a>
+                );
+              })}
+            </div>
+        </div>
+      </section>
+    );
+  }
+
+  // SHORT BANNER LAYOUT (for section headings - full width, short height)
+  if (section.layoutType === "short_banner") {
+    const itemsToDisplay = section.blocks.slice(0, 1); // Usually 1 banner
+
+    return (
+      <section style={{ paddingTop: compact ? 14 : 20, paddingBottom: compact ? 14 : 20 }}>
+        <div className={compact ? "" : "container-imkaa"}>
+            {itemsToDisplay.map((block) => {
+              const data = block.data || {};
+              const desktopUrl = data.desktopUrl || data.image || data.img || data.src;
+              const mobileUrl = data.mobileUrl;
+              const hasLink = data.link && data.link.trim();
+              const handleClick = (e) => {
+                if (!hasLink) e.preventDefault();
+              };
+              const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
+
+              return (
+                <a
+                  key={block._id}
+                  href={hasLink ? data.link : "#"}
+                  className={`block w-full card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  {...linkProps}
+                >
+                  <div className="w-full" style={{ background: "var(--color-bg-alt)" }}>
+                    <picture>
+                      {mobileUrl ? (
+                        <source srcSet={resolveImage(mobileUrl)} media="(max-width: 767px)" />
+                      ) : null}
+                      {desktopUrl ? (
+                        <img
+                          src={resolveImage(desktopUrl)}
+                          alt={data.altText || "Short Banner"}
+                          className="w-full h-auto object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-64 flex items-center justify-center" style={{ color: "var(--color-muted)" }}>
+                          No image
+                        </div>
+                      )}
+                    </picture>
+                  </div>
+                </a>
+              );
+            })}
+        </div>
+      </section>
     );
   }
 
@@ -156,23 +273,27 @@ export default function SectionRenderer({ section }) {
     const itemsToDisplay = section.blocks.slice(0, itemsToShow);
 
     return (
-      <div className="py-6">
-        <div className="w-full px-4">
-          <div className="max-w-full mx-auto space-y-4">
+      <section style={{ paddingTop: compact ? 14 : 20, paddingBottom: compact ? 14 : 20 }}>
+        <div className={compact ? "" : "container-imkaa"}>
+          <div className="space-y-4">
             {itemsToDisplay.map((block) => {
               const data = block.data || {};
               const desktopUrl = data.desktopUrl || data.image || data.img || data.src;
               const mobileUrl = data.mobileUrl;
+              const hasLink = data.link && data.link.trim();
+              const handleClick = (e) => {
+                if (!hasLink) e.preventDefault();
+              };
+              const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
               
               return (
                 <a
                   key={block._id}
-                  href={data.link || "#"}
-                  target={data.link ? "_blank" : undefined}
-                  rel={data.link ? "noreferrer" : undefined}
-                  className="block w-full rounded-xl overflow-hidden shadow-md border border-gray-100 hover:shadow-lg transition"
+                  href={hasLink ? data.link : "#"}
+                  className={`block w-full card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  {...linkProps}
                 >
-                  <div className="w-full bg-gray-100" style={{ aspectRatio: "16/6" }}>
+                  <div className="w-full" style={{ background: "var(--color-bg-alt)" }}>
                     <picture>
                       {mobileUrl ? (
                         <source srcSet={resolveImage(mobileUrl)} media="(max-width: 767px)" />
@@ -181,11 +302,11 @@ export default function SectionRenderer({ section }) {
                         <img
                           src={resolveImage(desktopUrl)}
                           alt={data.altText || "Banner"}
-                          className="w-full h-full object-cover"
+                          className="w-full h-auto object-cover"
                           loading="lazy"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="w-full h-64 flex items-center justify-center" style={{ color: "var(--color-muted)" }}>
                           No image
                         </div>
                       )}
@@ -196,7 +317,7 @@ export default function SectionRenderer({ section }) {
             })}
           </div>
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -212,21 +333,17 @@ export default function SectionRenderer({ section }) {
 
     case "collections":
       return (
-        <div className="py-12">
-          <div className="max-w-6xl mx-auto px-4">
-            {section.title && (
-              <h2 className="text-3xl md:text-4xl font-black text-[#ed4e7e] uppercase italic tracking-tight mb-8">
-                {section.title}
-              </h2>
-            )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
+        <section className={wrapClassName}>
+          <div className={compact ? "" : "container-imkaa"}>
+            <SectionHeading title={section.title} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-6">
               {section.blocks.map((block) => {
                 const data = block.data || {};
                 return (
                   <a
                     key={block._id}
                     href={data.link || '#'}
-                    className="rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition"
+                    className="card-imkaa"
                   >
                     <img
                       src={data.image}
@@ -234,34 +351,30 @@ export default function SectionRenderer({ section }) {
                       className="w-full h-44 object-cover"
                     />
                     <div className="p-4 text-center">
-                      <p className="text-sm font-semibold">{data.name}</p>
+                      <p className="title-product">{data.name}</p>
                     </div>
                   </a>
                 );
               })}
             </div>
           </div>
-        </div>
+        </section>
       );
 
     case "featured_products":
       return (
-        <div className="py-10">
-          <div className="max-w-6xl mx-auto px-4">
-            {section.title && (
-              <h2 className="text-3xl md:text-4xl font-black text-[#ed4e7e] uppercase italic tracking-tight mb-8">
-                {section.title}
-              </h2>
-            )}
+        <section className={wrapClassName}>
+          <div className={compact ? "" : "container-imkaa"}>
+            <SectionHeading title={section.title} />
             <CategorySlider />
           </div>
-        </div>
+        </section>
       );
 
     case "promo_banner":
       return (
-        <div className="py-10">
-          <div className="max-w-6xl mx-auto px-4">
+        <section className={wrapClassName}>
+          <div className={compact ? "" : "container-imkaa"}>
             {section.blocks.map((block) => {
               const data = block.data || {};
               return (
@@ -269,29 +382,25 @@ export default function SectionRenderer({ section }) {
                   <img
                     src={data.image}
                     alt={data.altText || 'Promo'}
-                    className="w-full h-auto rounded-xl shadow-sm"
+                    className="w-full h-auto card-imkaa"
                   />
                 </a>
               );
             })}
           </div>
-        </div>
+        </section>
       );
 
     default:
       return (
-        <div className="py-12">
-          <div className="max-w-6xl mx-auto px-4">
-            {section.title && (
-              <h2 className="text-3xl md:text-4xl font-black text-[#ed4e7e] uppercase italic tracking-tight mb-8">
-                {section.title}
-              </h2>
-            )}
-            <div className="grid gap-4">
+        <section className={wrapClassName}>
+          <div className={compact ? "" : "container-imkaa"}>
+            <SectionHeading title={section.title} />
+            <div className="grid gap-4 md:gap-6">
               {section.blocks.map((block) => {
                 const data = block.data || {};
                 return (
-                  <div key={block._id} className="bg-white p-6 rounded-xl shadow-sm border">
+                  <div key={block._id} className="card-imkaa" style={{ padding: 22 }}>
                     {(() => {
                       const desktopUrl =
                         data.desktopUrl || data.image || data.img || data.src;
@@ -312,26 +421,27 @@ export default function SectionRenderer({ section }) {
                           <img
                             src={resolveImage(desktopUrl || mobileUrl)}
                             alt={imageAlt}
-                            className="w-full h-48 object-cover rounded-lg mb-4"
+                            className="w-full h-48 object-cover mb-4"
+                            style={{ borderRadius: 18, border: "1px solid var(--color-border)" }}
                           />
                         </picture>
                       );
                     })()}
 
-                    {data.title && <h3 className="text-xl font-semibold mb-2">{data.title}</h3>}
-                    {data.description && <p className="text-gray-600 mb-4">{data.description}</p>}
+                    {data.title && <h3 className="title-product" style={{ fontSize: 18, marginBottom: 8 }}>{data.title}</h3>}
+                    {data.description && <p className="text-body" style={{ marginBottom: 14 }}>{data.description}</p>}
                     {data.link && (
                       <a
                         href={data.link}
-                        className="btn-primary px-4 py-2 inline-block"
+                        className="btn-secondary-imkaa inline-flex"
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Learn More
+                        Discover More
                       </a>
                     )}
                     {!data.image && !data.title && !data.description && !data.link && (
-                      <pre className="text-sm text-gray-500 bg-gray-50 p-4 rounded overflow-auto">
+                      <pre className="text-sm p-4 overflow-auto" style={{ color: "var(--color-muted)", background: "var(--color-bg-alt)", borderRadius: 16, border: "1px solid var(--color-border)" }}>
                         {JSON.stringify(data, null, 2)}
                       </pre>
                     )}
@@ -340,7 +450,7 @@ export default function SectionRenderer({ section }) {
               })}
             </div>
           </div>
-        </div>
+        </section>
       );
   }
 }

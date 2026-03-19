@@ -10,53 +10,53 @@ export default function PersonalInfo() {
   const { updateUserProfile } = useAccount();
   const { user } = useAuth();
 
-  const [isEditing,setIsEditing] = useState(false);
-  const [formData,setFormData] = useState({});
-  const [loading,setLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  useEffect(()=>{
+  useEffect(() => {
 
-    if(user){
+    if (user) {
       setFormData(user)
     }
 
-  },[user])
+  }, [user])
 
 
 
-  const handleChange = (e)=>{
+  const handleChange = (e) => {
 
-    const {name,value} = e.target
+    const { name, value } = e.target
 
-    setFormData(prev=>({
+    setFormData(prev => ({
       ...prev,
-      [name]:value
+      [name]: value
     }))
 
   }
 
 
 
-  const handleSubmit = async(e)=>{
+  const handleSubmit = async (e) => {
 
     e.preventDefault()
 
-    try{
+    try {
 
       setLoading(true)
 
       const stored = JSON.parse(localStorage.getItem("user"))
 
-      const res = await fetch(`${API_BASE}/auth/update-profile`,{
+      const res = await fetch(`${API_BASE}/auth/update-profile`, {
 
-        method:"PUT",
+        method: "PUT",
 
-        headers:{
-          "Content-Type":"application/json",
-          Authorization:`Bearer ${stored?.token}`
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${stored?.token}`
         },
 
-        body:JSON.stringify(formData)
+        body: JSON.stringify(formData)
 
       })
 
@@ -64,7 +64,7 @@ export default function PersonalInfo() {
 
       updateUserProfile(updated)
 
-      localStorage.setItem("user",JSON.stringify({
+      localStorage.setItem("user", JSON.stringify({
         ...stored,
         ...updated
       }))
@@ -72,12 +72,12 @@ export default function PersonalInfo() {
       setIsEditing(false)
 
     }
-    catch(err){
+    catch (err) {
 
       console.log(err)
 
     }
-    finally{
+    finally {
 
       setLoading(false)
 
@@ -87,188 +87,188 @@ export default function PersonalInfo() {
 
 
 
-  return(
+  return (
 
-<div className="w-full max-w-4xl">
+    <div className="w-full max-w-4xl">
 
-{/* HEADER */}
+      {/* HEADER */}
 
-<div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8">
 
-<h2 className="text-2xl font-bold text-gray-800">
-Personal Information
-</h2>
+        <h2 className="text-2xl font-bold text-gray-800">
+          Personal Information
+        </h2>
 
-<button
-onClick={()=>setIsEditing(!isEditing)}
-className="bg-pink-600 hover:bg-pink-700 text-white px-5 py-2 rounded-md text-sm font-semibold"
->
-{isEditing ? "Cancel" : "Edit"}
-</button>
+        <button
+          onClick={() => setIsEditing(!isEditing)}
+          className="bg-pink-600 hover:bg-pink-700 text-white px-5 py-2 rounded-md text-sm font-semibold"
+        >
+          {isEditing ? "Cancel" : "Edit"}
+        </button>
 
-</div>
-
-
-
-{/* VIEW MODE */}
-
-{!isEditing && (
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-
-<div>
-<p className="text-xs text-gray-500 uppercase mb-1">Name</p>
-<p className="text-gray-900">{formData?.name || "Not provided"}</p>
-</div>
-
-<div>
-<p className="text-xs text-gray-500 uppercase mb-1">Email</p>
-<p className="text-gray-900">{formData?.email || "Not provided"}</p>
-</div>
-
-<div>
-<p className="text-xs text-gray-500 uppercase mb-1">Phone</p>
-<p className="text-gray-900">{formData?.phone || "Not provided"}</p>
-</div>
-
-<div>
-<p className="text-xs text-gray-500 uppercase mb-1">Gender</p>
-<p className="text-gray-900">{formData?.gender || "Not provided"}</p>
-</div>
-
-<div>
-<p className="text-xs text-gray-500 uppercase mb-1">Birthday</p>
-<p className="text-gray-900">{formData?.birthday || "Not provided"}</p>
-</div>
-
-</div>
-
-)}
+      </div>
 
 
 
-{/* EDIT MODE */}
+      {/* VIEW MODE */}
 
-{isEditing && (
+      {!isEditing && (
 
-<form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
 
-<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <p className="text-xs text-gray-500 uppercase mb-1">Name</p>
+            <p className="text-gray-900">{formData?.name || "Not provided"}</p>
+          </div>
 
-{/* NAME */}
+          <div>
+            <p className="text-xs text-gray-500 uppercase mb-1">Email</p>
+            <p className="text-gray-900">{formData?.email || "Not provided"}</p>
+          </div>
 
-<div>
-<label className="text-sm font-medium text-gray-700 mb-1 block">
-Full Name
-</label>
+          <div>
+            <p className="text-xs text-gray-500 uppercase mb-1">Phone</p>
+            <p className="text-gray-900">{formData?.phone || "Not provided"}</p>
+          </div>
 
-<input
-type="text"
-name="name"
-value={formData?.name || ""}
-onChange={handleChange}
-className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
-/>
-</div>
+          <div>
+            <p className="text-xs text-gray-500 uppercase mb-1">Gender</p>
+            <p className="text-gray-900">{formData?.gender || "Not provided"}</p>
+          </div>
 
+          <div>
+            <p className="text-xs text-gray-500 uppercase mb-1">Birthday</p>
+            <p className="text-gray-900">{formData?.birthday || "Not provided"}</p>
+          </div>
 
+        </div>
 
-{/* EMAIL */}
-
-<div>
-<label className="text-sm font-medium text-gray-700 mb-1 block">
-Email
-</label>
-
-<input
-type="email"
-name="email"
-value={formData?.email || ""}
-onChange={handleChange}
-className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
-/>
-</div>
+      )}
 
 
 
-{/* PHONE */}
+      {/* EDIT MODE */}
 
-<div>
-<label className="text-sm font-medium text-gray-700 mb-1 block">
-Phone
-</label>
+      {isEditing && (
 
-<input
-type="text"
-name="phone"
-value={formData?.phone || ""}
-onChange={handleChange}
-className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
-/>
-</div>
+        <form onSubmit={handleSubmit} className="space-y-6">
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+            {/* NAME */}
 
-{/* GENDER */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Full Name
+              </label>
 
-<div>
-<label className="text-sm font-medium text-gray-700 mb-1 block">
-Gender
-</label>
-
-<select
-name="gender"
-value={formData?.gender || ""}
-onChange={handleChange}
-className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
->
-
-<option value="">Select Gender</option>
-<option value="male">Male</option>
-<option value="female">Female</option>
-<option value="other">Other</option>
-
-</select>
-</div>
+              <input
+                type="text"
+                name="name"
+                value={formData?.name || ""}
+                onChange={handleChange}
+                className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
+              />
+            </div>
 
 
 
-{/* BIRTHDAY */}
+            {/* EMAIL */}
 
-<div>
-<label className="text-sm font-medium text-gray-700 mb-1 block">
-Birthday
-</label>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Email
+              </label>
 
-<input
-type="date"
-name="birthday"
-value={formData?.birthday || ""}
-onChange={handleChange}
-className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
-/>
-</div>
-
-</div>
+              <input
+                type="email"
+                name="email"
+                value={formData?.email || ""}
+                onChange={handleChange}
+                className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
+              />
+            </div>
 
 
 
-<button
-type="submit"
-disabled={loading}
-className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-md font-semibold"
->
+            {/* PHONE */}
 
-{loading ? "Saving..." : "Save Changes"}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Phone
+              </label>
 
-</button>
+              <input
+                type="text"
+                name="phone"
+                value={formData?.phone || ""}
+                onChange={handleChange}
+                className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
+              />
+            </div>
 
-</form>
 
-)}
 
-</div>
+            {/* GENDER */}
 
-)
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Gender
+              </label>
+
+              <select
+                name="gender"
+                value={formData?.gender || ""}
+                onChange={handleChange}
+                className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
+              >
+
+                <option value="">Select Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+
+              </select>
+            </div>
+
+
+
+            {/* BIRTHDAY */}
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Birthday
+              </label>
+
+              <input
+                type="date"
+                name="birthday"
+                value={formData?.birthday || ""}
+                onChange={handleChange}
+                className="w-full border rounded-md px-4 py-2 focus:ring-2 focus:ring-pink-500 outline-none"
+              />
+            </div>
+
+          </div>
+
+
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-md font-semibold"
+          >
+
+            {loading ? "Saving..." : "Save Changes"}
+
+          </button>
+
+        </form>
+
+      )}
+
+    </div>
+
+  )
 
 }

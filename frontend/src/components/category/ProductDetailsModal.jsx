@@ -70,18 +70,27 @@ export function ProductDetailsModal({ product, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row max-h-[90vh]">
+        <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm p-4"
+            style={{ background: "rgba(74,46,53,0.35)" }}
+        >
+            <div className="w-full max-w-4xl card-imkaa relative flex flex-col md:flex-row max-h-[90vh]">
                 <div>
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 z-50 p-2 bg-white rounded-full cursor-pointer hover:rotate-90 transition"
+                        className="absolute top-4 right-4 z-50 p-2 rounded-full cursor-pointer hover:rotate-90 transition"
+                        style={{
+                            background: "rgba(255,255,255,0.92)",
+                            border: "1px solid var(--color-border)",
+                            boxShadow: "0 10px 24px rgba(74,46,53,0.14)",
+                            color: "var(--color-body)",
+                        }}
                     >
                         <X size={24} />
                     </button>
                 </div>
 
-                <div className="md:w-1/2 bg-[#fff5f8]">
+                <div className="md:w-1/2" style={{ background: "var(--color-bg-alt)" }}>
                     <img
                         src={image}
                         className="w-full h-full object-cover"
@@ -90,12 +99,12 @@ export function ProductDetailsModal({ product, onClose }) {
                 </div>
 
                 <div className="md:w-1/2 p-4 space-y-4 overflow-y-auto">
-                    <h1 className="text-2xl font-black uppercase">
+                    <h1 className="title-product" style={{ fontSize: 22 }}>
                         {product.name}
                     </h1>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-2xl font-black text-[#ed4e7e]">
+                        <span className="price-text" style={{ fontSize: 22 }}>
                             {/* ₹{
                                 variant?.sizes?.find((s) => s.size === size)?.price ||
                                 variant?.sizes?.[0]?.price ||
@@ -112,7 +121,7 @@ export function ProductDetailsModal({ product, onClose }) {
                         </span>
 
                         {product.mrp > product.minPrice && (
-                            <span className="line-through text-gray-400">
+                            <span className="product-card-meta line-through">
                                 ₹{product.mrp}
                             </span>
                         )}
@@ -123,7 +132,7 @@ export function ProductDetailsModal({ product, onClose }) {
                     {/* {product.variants?.length > 1 && ( */}
 
                     <div>
-                        <p className="text-xs font-bold uppercase mb-2">
+                        <p className="text-muted-sm" style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
                             Select Color
                         </p>
                         <div className="flex gap-2">
@@ -134,10 +143,16 @@ export function ProductDetailsModal({ product, onClose }) {
                                         setVariant(v);
                                         setSize("");
                                     }}
-                                    className={`px-3 py-1 border rounded transition ${variant?.color === v.color
-                                        ? "bg-[#ed4e7e] text-white border-[#ed4e7e]"
-                                        : "hover:scale-105"
-                                        }`}>
+                                    className="px-3 py-2 transition"
+                                    style={{
+                                        borderRadius: 9999,
+                                        border: `1px solid ${variant?.color === v.color ? "var(--color-primary)" : "var(--color-border)"}`,
+                                        background: variant?.color === v.color ? "var(--color-primary)" : "var(--color-card)",
+                                        color: variant?.color === v.color ? "#FFF9FA" : "var(--color-body)",
+                                        fontWeight: 600,
+                                        fontSize: 13,
+                                    }}
+                                >
 
                                     {/* {v.color} */}
                                     {v.color || `Color ${i + 1}`}
@@ -147,7 +162,7 @@ export function ProductDetailsModal({ product, onClose }) {
                     </div>
                     {/* SIZE */}
                     <div>
-                        <p className="text-xs font-bold uppercase mb-2">
+                        <p className="text-muted-sm" style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
                             Select Size
                         </p>
                         <div className="flex gap-2 flex-wrap">
@@ -156,10 +171,16 @@ export function ProductDetailsModal({ product, onClose }) {
                                 <button
                                     key={s.size}
                                     onClick={() => setSize(s.size)}
-                                    className={`px-4 py-2 border rounded transition ${size === s.size
-                                        ? "bg-[#ed4e7e] text-white"
-                                        : "hover:scale-105"
-                                        }`}                >
+                                    className="px-4 py-2 transition"
+                                    style={{
+                                        borderRadius: 9999,
+                                        border: `1px solid ${size === s.size ? "var(--color-primary)" : "var(--color-border)"}`,
+                                        background: size === s.size ? "var(--color-primary)" : "#FFF4F6",
+                                        color: size === s.size ? "#FFF9FA" : "var(--color-primary)",
+                                        fontWeight: 600,
+                                        fontSize: 13,
+                                    }}
+                                >
                                     {s.size}
                                 </button>
                             ))}
@@ -169,15 +190,15 @@ export function ProductDetailsModal({ product, onClose }) {
                     {/* ACTION BUTTONS */}
                     <button
                         onClick={handleCartAdd}
-                        className="w-full bg-[#ed4e7e] text-white py-3 font-bold uppercase hover:scale-105 transition rounded-md"
+                        className="btn-primary-imkaa w-full"
                     >
                         <ShoppingCart size={16} className="inline mr-2" />
-                        Add to Cart
+                        Add to Bag
                     </button>
 
                     <button
                         onClick={handleBuyNow}
-                        className="w-full bg-black text-white py-3 font-bold uppercase hover:scale-105 transition rounded-md"
+                        className="btn-secondary-imkaa w-full"
                     >
                         <Zap size={16} className="inline mr-2" />
                         Buy Now
@@ -186,9 +207,9 @@ export function ProductDetailsModal({ product, onClose }) {
                     {/* ✅ SHOW MORE DETAILS BUTTON */}
                     <button
                         onClick={handleShowMore}
-                        className="w-full flex items-center justify-center gap-2 border border-[#ed4e7e] rounded-md text-[#ed4e7e] py-3 font-bold uppercase hover:bg-[#ed4e7e] hover:text-white transition-all duration-300 group"
+                        className="btn-secondary-imkaa w-full"
                     >
-                        Show More Details
+                        Discover More
                         <ChevronsDown className="group-hover:translate-y-1 transition-transform duration-300" />
                     </button>
                 </div>

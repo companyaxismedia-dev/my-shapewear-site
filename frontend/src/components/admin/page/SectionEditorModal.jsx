@@ -8,9 +8,11 @@ const KNOWN_SECTION_TYPES = [
 ];
 
 const LAYOUT_TYPES = [
-  { value: "grid", label: "Grid Layout (4 cols, flexible)" },
   { value: "columns", label: "Column Layout (rows × columns)" },
+  { value: "three_per_row", label: "Three Per Row (responsive)" },
+  { value: "two_per_row", label: "Two Per Row (responsive)" },
   { value: "banner", label: "Full Banner" },
+  { value: "short_banner", label: "Short Banner (section heading)" },
 ];
 
 export default function SectionEditorModal({ open, onClose, onSave, initialData, existingSections = [] }) {
@@ -132,7 +134,7 @@ export default function SectionEditorModal({ open, onClose, onSave, initialData,
             </select>
           </div>
 
-          {(selectedLayout === "columns" || selectedLayout === "grid") ? (
+          {selectedLayout === "columns" ? (
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-semibold mb-1">Rows</label>

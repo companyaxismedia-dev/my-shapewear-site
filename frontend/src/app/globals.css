@@ -1,53 +1,488 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+
+/* Smooth scrolling behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ============================================================
+   IMKAA DESIGN SYSTEM – LOCKED PALETTE & TYPOGRAPHY
+   ============================================================ */
+:root {
+  /* Colors */
+  --color-bg:          #FFF8F6;
+  --color-bg-alt:      #FCEFEA;
+  --color-footer-bg:   #FDF4F6;
+  --color-card:        #FFFFFF;
+  --color-primary:     #C56F7F;
+  --color-primary-hover: #B45E6F;
+  --color-accent:      #E8B7C2;
+  --color-heading:     #4A2E35;
+  --color-body:        #6F5560;
+  --color-muted:       #8C7480;
+  --color-border:      #EAD7DD;
+
+  /* Typography */
+  --font-display:      'Playfair Display', Georgia, serif;
+  --font-body:         'Inter', system-ui, sans-serif;
+
+  /* Spacing */
+  --max-width:         1280px;
+  --px-desktop:        24px;
+  --px-mobile:         16px;
+  --section-py-desktop: 82px;
+  --section-py-mobile:  25px;
+  --gap-desktop:       24px;
+  --gap-mobile:        16px;
+
+  /* Radius */
+  --radius-card:       22px;
+  --radius-btn:        9999px;
+  --radius-input:      14px;
+}
+
+/* ============================================================
+   BASE RESET
+   ============================================================ */
 @layer base {
   html {
-    font-family: "Instrument Sans", sans-serif;
-    font-size: 14px;
+    font-family: var(--font-body);
+    font-size: 15px;
     font-weight: 400;
-    line-height: 1.65;
-
+    line-height: 1.7;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    color: var(--color-body);
+    background: var(--color-bg);
   }
 
   body {
-    font-family: inherit;
-    color: rgba(28, 28, 28, 0.65);
-    background: #ffffff;
+    font-family: var(--font-body);
+    color: var(--color-body);
+    background: var(--color-bg);
   }
+
   *, *::before, *::after {
     font-family: inherit;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    color: var(--color-heading);
+    line-height: 1.2;
+  }
+
+  a {
+    color: inherit;
+  }
 }
 
-header,
-header a,
-header span,
-header button {
+/* ============================================================
+   TYPOGRAPHY SCALE
+   ============================================================ */
+
+/* Hero heading: Playfair 700, 56px desktop / 34px mobile */
+.heading-hero {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(34px, 5vw, 60px);
+  line-height: 1.1;
+  color: var(--color-heading);
+}
+
+/* Section headings: Playfair 600, 34–40px desktop / 24–28px mobile */
+.heading-section {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(24px, 3.5vw, 40px);
+  color: var(--color-heading);
+  text-align: center;
+}
+
+/* Product title: Inter 600, 16–18px */
+.title-product {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: clamp(16px, 1.5vw, 18px);
+  color: #5B3C46;
+}
+
+/* Price: Inter 700 */
+.price-text {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: #A04F62;
+}
+
+/* Body text */
+.text-body {
+  font-family: var(--font-body);
   font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
+  font-size: 15px;
+  color: var(--color-body);
+  line-height: 1.7;
 }
 
-nav a {
-  font-size: 12px;
-  letter-spacing: 0.18em;
-}
-
-nav h3 {
+/* Muted / small labels */
+.text-muted-sm {
+  font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  color: var(--color-muted);
 }
 
-nav li a {
+/* Section subtitle */
+.section-subtitle {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-muted);
+  text-align: center;
+  margin-top: 8px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+/* Primary button */
+.btn-primary-imkaa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--color-primary);
+  color: #FFF9FA;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: var(--radius-btn);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(197, 111, 127, 0.18);
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-primary-imkaa:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(197, 111, 127, 0.28);
+}
+
+.btn-primary-imkaa:active {
+  transform: translateY(0);
+}
+
+/* Secondary button */
+.btn-secondary-imkaa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #FFF4F6;
+  color: #A35668;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--color-accent);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn-secondary-imkaa:hover {
+  background-color: #FCE8ED;
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card-imkaa {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(74, 46, 53, 0.04);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-imkaa:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(74, 46, 53, 0.1);
+}
+
+/* ============================================================
+   SKELETONS (replace visible loading text)
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(234, 215, 221, 0.35) 0%,
+    rgba(234, 215, 221, 0.65) 40%,
+    rgba(234, 215, 221, 0.35) 80%
+  );
+  background-size: 240% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+  border-radius: 16px;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: -160% 0; }
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+.input-imkaa {
+  background: #FFFDFD;
+  border: 1px solid #E6D4D9;
+  color: var(--color-body);
+  font-family: var(--font-body);
+  font-size: 14px;
+  border-radius: var(--radius-input);
+  padding: 10px 16px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+
+.input-imkaa::placeholder {
+  color: #A8929B;
+}
+
+.input-imkaa:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(197, 111, 127, 0.12);
+}
+
+/* ============================================================
+   LAYOUT UTILITIES
+   ============================================================ */
+/* UPDATED: Full-width responsive container (like Myntra) */
+.container-imkaa {
+  width: 100%;
+  padding-left: clamp(12px, 2.5vw, 40px);
+  padding-right: clamp(12px, 2.5vw, 40px);
+  margin: 0 auto;
+}
+
+.section-padding {
+  padding-top: var(--section-py-desktop);
+  padding-bottom: var(--section-py-desktop);
+}
+
+@media (max-width: 768px) {
+  .section-padding {
+    padding-top: var(--section-py-mobile);
+    padding-bottom: var(--section-py-mobile);
+  }
+}
+
+/* ============================================================
+   TRUST STRIP / BENEFITS
+   ============================================================ */
+.benefit-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 24px 16px;
+}
+
+.benefit-icon {
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+
+.benefit-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: #5A3C46;
+}
+
+.benefit-desc {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+/* ============================================================
+   NAVBAR OVERRIDES
+   ============================================================ */
+header.imkaa-header {
+  background: #FFFDFC;
+  border-bottom: 1px solid #F0E3E7;
+  font-family: var(--font-body);
+}
+
+.nav-link-imkaa {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: #6A4B56;
+  letter-spacing: 0.01em;
   text-transform: none;
-  letter-spacing: normal;
-  font-size: 12px;
+  transition: color 0.15s ease;
 }
 
+.nav-link-imkaa:hover,
+.nav-link-imkaa:focus {
+  color: var(--color-primary);
+}
+
+/* Top utility strip */
+.top-strip {
+  background: var(--color-primary);
+  color: #FFF9FA;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  padding: 6px 16px;
+  letter-spacing: 0.04em;
+}
+
+/* Promo bar below nav */
+.promo-bar {
+  background: var(--color-bg-alt);
+  color: var(--color-heading);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+footer.imkaa-footer {
+  background: var(--color-footer-bg);
+  border-top: 1px solid #EBCFD6;
+  font-family: var(--font-body);
+}
+
+.footer-heading {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 14px;
+  color: #8E4F61;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+
+.footer-link {
+  font-size: 14px;
+  color: #A06C7B;
+  text-decoration: none;
+  line-height: 1.9;
+  transition: color 0.15s ease;
+  display: block;
+}
+
+.footer-link:hover {
+  color: var(--color-primary);
+}
+
+.footer-bottom {
+  border-top: 1px solid #E8D6DB;
+  color: #A06C7B;
+  font-size: 13px;
+}
+
+.footer-input {
+  background: #FFF9FA;
+  border: 1px solid #E7CCD3;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-body);
+  border-radius: var(--radius-input);
+  padding: 10px 16px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.footer-input:focus {
+  border-color: var(--color-primary);
+}
+
+/* ============================================================
+   PRODUCT CARD OVERRIDES
+   ============================================================ */
+.product-card-imkaa {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(74, 46, 53, 0.04);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card-imkaa:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(74, 46, 53, 0.1);
+}
+
+.product-card-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: #5B3C46;
+  font-size: 16px;
+}
+
+.product-card-price {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: #A04F62;
+}
+
+.product-card-meta {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+/* ============================================================
+   SECTION HEADING BLOCK
+   ============================================================ */
+.section-heading-block {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.section-heading-block .heading-section {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+  .section-heading-block {
+    margin-bottom: 22px;
+  }
+}
+
+/* ============================================================
+   ANIMATIONS / TRANSITIONS
+   ============================================================ */
 @layer components {
   .animate-marquee {
     display: flex;
@@ -60,31 +495,22 @@ nav li a {
   }
 
   @keyframes marquee-scroll {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
   }
 
-  /* Shadow animation effects */
   .shadow-lift {
     transition: all 0.3s ease;
   }
 
   .shadow-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 16px rgba(74, 46, 53, 0.08);
   }
 
   @keyframes shadow-pulse {
-    0%, 100% {
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-    }
-    50% {
-      box-shadow: 0 8px 12px rgba(0, 0, 0, 0.12);
-    }
+    0%, 100% { box-shadow: 0 4px 6px rgba(74, 46, 53, 0.05); }
+    50%       { box-shadow: 0 8px 12px rgba(74, 46, 53, 0.09); }
   }
 
   .shadow-pulse {
@@ -92,8 +518,9 @@ nav li a {
   }
 }
 
-/* Myntra style thin scrollbar */
-
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
 .faq-scroll::-webkit-scrollbar,
 main::-webkit-scrollbar {
   width: 2px;
@@ -105,13 +532,235 @@ main::-webkit-scrollbar-track {
 }
 
 .faq-scroll::-webkit-scrollbar-thumb {
-  background: #f6e58d;
+  background: var(--color-accent);
   border-radius: 20px;
 }
 
 .faq-scroll::-webkit-scrollbar-thumb:hover,
 main::-webkit-scrollbar-thumb:hover {
-  background: #c2c3c7;
+  background: var(--color-primary);
 }
 
+/* ============================================================
+   CATEGORY CARD
+   ============================================================ */
+.category-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 2px 8px rgba(74, 46, 53, 0.04);
+}
 
+.category-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(74, 46, 53, 0.1);
+}
+
+/* ============================================================
+   FAQ ACCORDION
+   ============================================================ */
+.faq-accordion-item {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.faq-accordion-question {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-heading);
+  padding: 20px 0;
+  cursor: pointer;
+}
+
+.faq-accordion-answer {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-body);
+  line-height: 1.7;
+  padding-bottom: 20px;
+}
+
+/* ============================================================
+   RESPONSIVE OVERRIDES
+   ============================================================ */
+@media (max-width: 480px) {
+  .heading-hero {
+    font-size: 32px;
+  }
+
+  .heading-section {
+    font-size: 24px;
+  }
+
+  .btn-primary-imkaa,
+  .btn-secondary-imkaa {
+    height: 44px;
+    font-size: 13px;
+    padding: 0 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .heading-hero {
+    font-size: 28px;
+  }
+
+  .container-imkaa {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* ============================================================
+   SAFETY OVERRIDES: avoid "black" utility usage
+   (keeps functionality, enforces locked palette)
+   ============================================================ */
+.text-black {
+  color: var(--color-heading) !important;
+}
+.border-black {
+  border-color: var(--color-border) !important;
+}
+.bg-black {
+  background-color: var(--color-primary) !important;
+}
+.hover\:bg-black:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+.hover\:text-black:hover {
+  color: var(--color-primary) !important;
+}
+
+/* common Tailwind overlay alphas */
+.bg-black\/30 { background-color: rgba(74,46,53,0.30) !important; }
+.bg-black\/40 { background-color: rgba(74,46,53,0.35) !important; }
+.bg-black\/50 { background-color: rgba(74,46,53,0.40) !important; }
+.bg-black\/60 { background-color: rgba(74,46,53,0.45) !important; }
+.bg-black\/80 { background-color: rgba(74,46,53,0.55) !important; }
+
+/* ============================================================
+   MYNTRA-STYLE RESPONSIVE GRID SYSTEM
+   ============================================================ */
+/* Product grid adapts like Myntra - expands to fill viewport */
+@layer components {
+  /* Full-width grid for products - scales with screen size */
+  .product-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: clamp(12px, 1.5vw, 20px);
+  }
+
+  /* Responsive grid breakpoints for product cards */
+  @media (max-width: 480px) {
+    .product-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+  }
+
+  @media (min-width: 481px) and (max-width: 768px) {
+    .product-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+  }
+
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .product-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+  }
+
+  @media (min-width: 1025px) and (max-width: 1440px) {
+    .product-grid {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+  }
+
+  @media (min-width: 1441px) {
+    .product-grid {
+      grid-template-columns: repeat(6, 1fr);
+      gap: 20px;
+    }
+  }
+
+  /* Hero section takes full width */
+  .section-full-width {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+  }
+
+  /* Swiper container should respect full-width */
+  .swiper {
+    width: 100%;
+  }
+
+  /* Category slider full width */
+  .categorySwiper {
+    width: 100%;
+  }
+
+  /* Auto-slice slider full width */
+  .autoSliceSwiper {
+    width: 100%;
+  }
+
+  /* Ensure all Swiper slides scale properly */
+  .swiper-slide {
+    width: auto;
+  }
+}
+
+/* ============================================================
+   GRID ALIGNMENT UTILITIES
+   ============================================================ */
+.grid-center-content {
+  display: grid;
+  place-items: center;
+}
+
+.grid-align-items-center {
+  display: grid;
+  align-items: center;
+}
+
+.grid-justify-items-center {
+  display: grid;
+  justify-items: center;
+}
+
+/* Ensures sections don't have artificial width constraints */
+section {
+  width: 100%;
+}
+
+/* Main content area should use full width */
+main {
+  width: 100%;
+}
+
+/* ============================================================
+   RESPONSIVE PADDING SYSTEM (like Myntra)
+   ============================================================ */
+.section-px-responsive {
+  padding-left: clamp(12px, 2.5vw, 40px);
+  padding-right: clamp(12px, 2.5vw, 40px);
+}
+
+.section-py-responsive {
+  padding-top: clamp(32px, 6vw, 84px);
+  padding-bottom: clamp(32px, 6vw, 84px);
+}
+
+.section-p-responsive {
+  padding: clamp(32px, 6vw, 84px) clamp(12px, 2.5vw, 40px);
+}

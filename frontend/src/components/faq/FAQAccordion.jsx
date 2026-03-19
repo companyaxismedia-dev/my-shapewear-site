@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Mail } from "lucide-react";
 
 export default function FAQAccordion({
@@ -10,19 +11,26 @@ export default function FAQAccordion({
   actionButton,
   showContactSection = true,
 }) {
+  const [openId, setOpenId] = useState(items?.[0]?.id || null);
+
+  const safeItems = useMemo(
+    () => (Array.isArray(items) ? items.filter(Boolean) : []),
+    [items]
+  );
+
   return (
     <div className="w-full">
 
       {title && (
-        <div className="mb-10 pb-6 border-b border-[#eaeaec] flex justify-between items-start">
+        <div className="mb-10 pb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
 
           <div>
-            <h2 className="text-[26px] font-semibold text-[#282c3f] mb-2">
+            <h2 className="heading-section" style={{ textAlign: "left", fontSize: "clamp(24px, 2.6vw, 34px)" }}>
               {title}
             </h2>
 
             {description && (
-              <p className="text-[14px] text-[#7e818c]">
+              <p className="text-body" style={{ fontSize: 15, color: "var(--color-muted)" }}>
                 {description}
               </p>
             )}
@@ -31,7 +39,7 @@ export default function FAQAccordion({
           {actionButton && (
             <Link
               href={actionButton.link}
-              className="min-w-[140px] text-center px-5 py-3 text-[13px] border border-[#d4d5d9] rounded text-[#526cd0] hover:bg-[#fafbfc]"
+              className="btn-secondary-imkaa w-fit"
             >
               {actionButton.text}
             </Link>
@@ -40,37 +48,55 @@ export default function FAQAccordion({
         </div>
       )}
 
-      <div className="space-y-6">
-        {items.map((item) => (
-          <div key={item.id}>
-            <h3 className="text-[14px] font-semibold text-[#282c3f] mb-1">
-              {item.question}
-            </h3>
+      <div className="divide-y" style={{ borderColor: "var(--color-border)" }}>
+        {safeItems.map((item) => {
+          const isOpen = openId === item.id;
+          return (
+            <div key={item.id} className="faq-accordion-item">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between gap-4 py-5 text-left"
+                onClick={() => setOpenId(isOpen ? null : item.id)}
+              >
+                <span className="faq-accordion-question" style={{ padding: 0 }}>
+                  {item.question}
+                </span>
+                <span
+                  className="text-muted-sm"
+                  style={{
+                    fontSize: 13,
+                    color: isOpen ? "var(--color-primary)" : "var(--color-muted)",
+                    fontWeight: 600,
+                  }}
+                >
+                  {isOpen ? "Hide" : "View"}
+                </span>
+              </button>
 
-            <p className="text-[13px] text-[#535766] leading-6 whitespace-pre-line">
-              {item.answer}
-            </p>
-          </div>
-        ))}
+              {isOpen ? (
+                <div className="faq-accordion-answer whitespace-pre-line" style={{ paddingTop: 0 }}>
+                  {item.answer}
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
       </div>
 
       {showContactSection && (
-        <div className="mt-12 border-t border-[#eaeaec] pt-8">
-          <div className="bg-gray-100 rounded-lg p-8 text-center">
-
-            <h2 className="text-lg font-bold mb-2">
+        <div className="mt-12 pt-8" style={{ borderTop: "1px solid var(--color-border)" }}>
+          <div className="card-imkaa" style={{ padding: 24, background: "var(--color-bg-alt)" }}>
+            <h3 className="title-product" style={{ fontSize: 18, marginBottom: 6 }}>
               Still need help?
-            </h2>
-
-            <p className="text-sm text-gray-600 mb-4">
-              Can't find the answer you're looking for?
+            </h3>
+            <p className="text-body" style={{ marginBottom: 16 }}>
+              If you can’t find what you’re looking for, our support team is happy to help.
             </p>
 
-            <button className="flex items-center gap-2 mx-auto px-8 py-3 border bg-white hover:bg-gray-50">
+            <Link href="/contact" className="btn-primary-imkaa w-fit">
               <Mail className="w-4 h-4" />
-              CONTACT US
-            </button>
-
+              Contact Us
+            </Link>
           </div>
         </div>
       )}

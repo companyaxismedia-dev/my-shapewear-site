@@ -2,24 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Star } from "lucide-react";
+import { Dot } from "lucide-react";
 
 export const faqCategories = [
-
     { id: "top-queries", label: "Top Queries" },
-    { id: "terms-conditions", label: "Terms and Conditions" },
-    { id: "contact-us", label: "Contact Us" },
-    { id: "social-carnival", label: "Social Carnival Event" },
-    { id: "shipping", label: "Shipping, Order Tracking & Delivery" },
-    { id: "cancellations", label: "Cancellations and Modifications" },
-    { id: "returns", label: "Returns and Exchange" },
-    { id: "signup-login", label: "Sign Up and Login" },
-    { id: "payments", label: "Payments" },
-    { id: "myntra-credit", label: "Myntra Credit" },
-    { id: "coupons-cashback", label: "Coupons and My Cashback" },
-    { id: "phonepe", label: "PhonePe Wallet" },
-    { id: "gift-cards", label: "Gift Cards" },
-
+    { id: "shipping", label: "Shipping & Delivery" },
+    { id: "returns", label: "Returns & Exchange" },
+    { id: "payments", label: "Payments & Safety" },
+    { id: "terms-conditions", label: "Terms & Conditions" },
+    { id: "contact-us", label: "Contact & Support" },
 ];
 
 export default function FAQSidebar() {
@@ -64,7 +55,7 @@ export default function FAQSidebar() {
 
     return (
 
-        <aside className="w-full bg-white pt-10">
+        <aside className="w-full pt-8">
 
             <nav>
 
@@ -77,18 +68,20 @@ export default function FAQSidebar() {
                         <Link
                             key={cat.id}
                             href={`#${cat.id}`}
-                            className="flex items-start gap-4 pl-10 pr-10 py-3 transition-colors"
+                            className="flex items-start gap-3 px-6 py-3 rounded-xl transition-colors"
+                            style={{
+                                background: isActive ? "rgba(234,215,221,0.35)" : "transparent",
+                            }}
                         >
 
-                            <Star
-                                className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? "text-[#d4a537]" : "text-[#c2c2c2]"}`}
-                            />
+                            <Dot className="w-5 h-5 flex-shrink-0" style={{ color: isActive ? "var(--color-primary)" : "var(--color-accent)" }} />
 
                             <span
-                                className={`text-[15px] ${isActive
-                                    ? "text-[#d4a537] font-medium"
-                                    : "text-[#696e79]"
-                                    }`}
+                                className="text-[14px]"
+                                style={{
+                                    color: isActive ? "var(--color-heading)" : "var(--color-body)",
+                                    fontWeight: isActive ? 600 : 500,
+                                }}
                             >
                                 {cat.label}
                             </span>
