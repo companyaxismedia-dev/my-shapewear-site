@@ -11,11 +11,41 @@ import "swiper/css/pagination";
 import Image from "next/image";
 
 const categoryBanners = [
-  { img: "/image/CategorySlider/tummy-contol.png", path: "/tummy-control", alt: "Tummy Control" },
-  { img: "/image/CategorySlider/shapewear.png", path: "/shapewear", alt: "Shapewear" },
-  { img: "/image/CategorySlider/curvy-1.png", path: "/curvy", alt: "Curvy" },
-  { img: "/image/CategorySlider/bra.png", path: "/bra", alt: "Bra" },
-  { img: "/image/CategorySlider/panties.png", path: "/panties", alt: "Panty" },
+  {
+    img: "/image/CategorySlider/bra.png",
+    path: "/bra",
+    alt: "Bras",
+    title: "Bras",
+    desc: "Everyday support with premium comfort.",
+  },
+  {
+    img: "/image/CategorySlider/panties.png",
+    path: "/panties",
+    alt: "Panties",
+    title: "Panties",
+    desc: "Soft essentials designed for all‑day ease.",
+  },
+  {
+    img: "/image/CategorySlider/shapewear.png",
+    path: "/shapewear",
+    alt: "Shapewear",
+    title: "Shapewear",
+    desc: "Smooth, sculpt, and move with confidence.",
+  },
+  {
+    img: "/image/CategorySlider/curvy-1.png",
+    path: "/curvy",
+    alt: "Curvy Collection",
+    title: "Curvy",
+    desc: "Designed for beautiful curves and comfort.",
+  },
+  {
+    img: "/image/CategorySlider/tummy-contol.png",
+    path: "/tummy-control",
+    alt: "Tummy Control",
+    title: "Tummy Control",
+    desc: "Targeted shaping with a soft feel.",
+  },
 ];
 
 const MAX_SLIDES_VIEW = 5;
@@ -24,11 +54,12 @@ export default function CategorySlider() {
   const enableLoop = categoryBanners.length > MAX_SLIDES_VIEW;
 
   return (
-    <section className="w-full py-12 bg-white">
-      <div className="max-w-[1440px] mx-auto px-4">
-        <h2 className="text-2xl font-black mb-8 text-gray-800 uppercase italic border-l-4 border-[#ed4e7e] pl-4">
-          Shop By Category
-        </h2>
+    <section className="section-padding w-full" style={{ background: "var(--color-bg-alt)" }}>
+      <div className="container-imkaa">
+        <div className="section-heading-block">
+          <h2 className="heading-section">Shop By Category</h2>
+          <p className="section-subtitle">Find your perfect fit, from everyday essentials to elevated silhouettes.</p>
+        </div>
 
         <Swiper
           modules={[Autoplay, Navigation, Pagination]}
@@ -41,6 +72,7 @@ export default function CategorySlider() {
           }
           breakpoints={{
             320: { slidesPerView: 2, spaceBetween: 10 },
+            480: { slidesPerView: 3, spaceBetween: 12 },
             768: { slidesPerView: 3, spaceBetween: 15 },
             1024: { slidesPerView: 5, spaceBetween: 20 },
           }}
@@ -50,31 +82,42 @@ export default function CategorySlider() {
         >
           {categoryBanners.map((item, index) => (
             <SwiperSlide key={index}>
-              <Link href={item.path}>
-                <div className="relative group rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500">
-                  {/* 🔥 FIXED HEIGHT CONTAINER */}
-                  <div className="relative w-full h-[280px] md:h-[320px] bg-gray-100 overflow-hidden">
-                    {/* 🔥 ABSOLUTE IMAGE (NO LAYOUT SHIFT) */}
-                    <Image
-                      src={item.img}
-                      alt={item.alt}
-                      fill
-                      sizes="(max-width:768px) 100vw, 33vw"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  </div>
+              <div className="h-full">
+                <div className="category-card h-full flex flex-col">
+                  <Link href={item.path} className="block">
+                    <div
+                      className="relative w-full overflow-hidden"
+                      style={{
+                        borderRadius: 18,
+                        border: "1px solid var(--color-border)",
+                        background: "var(--color-bg)",
+                        aspectRatio: "4 / 5",
+                      }}
+                    >
+                      <Image
+                        src={item.img}
+                        alt={item.alt}
+                        fill
+                        sizes="(max-width:768px) 80vw, 280px"
+                        className="object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  </Link>
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/5 to-transparent flex flex-col justify-end p-4 group-hover:from-[#ed4e7e]/80 transition">
-                    <h3 className="text-white text-xl md:text-2xl font-black italic uppercase">
+                  <div className="pt-4 flex flex-col flex-1">
+                    <h3 className="title-product" style={{ fontSize: 18, marginBottom: 6 }}>
                       {item.title}
                     </h3>
-                    <p className="text-white/80 text-[10px] uppercase font-bold mt-1 opacity-0 group-hover:opacity-100 transition">
-                      Shop Now +
+                    <p className="text-muted-sm" style={{ fontSize: 14, marginBottom: 14 }}>
+                      {item.desc}
                     </p>
+                    <Link href={item.path} className="btn-secondary-imkaa w-fit mt-auto">
+                      Explore Collection
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             </SwiperSlide>
           ))}
         </Swiper>

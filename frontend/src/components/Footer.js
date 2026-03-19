@@ -12,270 +12,255 @@ import {
   RotateCcw,
   Lock,
   ShieldCheck,
-  Heart
 } from "lucide-react";
+
+const INTER = "'Inter', sans-serif";
+const PLAYFAIR = "'Playfair Display', serif";
 
 export default function Footer() {
 
-  const productColumns = [
-
-
-    {
-      title: "BRAS",
-      url: "/bra",
-      links: [
-        "Backless Bra",
-        "Bralette",
-        "Bridal Bra",
-        "Cotton Bra",
-        "Full Coverage Bra",
-        "Padded Bra",
-        "Push Up Bra",
-        "Strapless Bra",
-        "T-shirt Bra",
-        "Underwire"
-      ]
-
-    },
-    {
-      title: "PANTIES",
-      url: "/panties",
-      links: [
-        "Bikini Panties",
-        "Boy Shorts",
-        "Bra Panty Set",
-        "Cotton Panties",
-        "Hipster",
-        "Sexy Panties",
-        "Thong"
-      ]
-    },
-    {
-      title: "NIGHTWEAR",
-      url: "/lingerie",
-      links: [
-        "Babydoll",
-        "Bridal Nightwear",
-        "Camisole",
-        "Cotton Nightwear",
-        "Night Suit",
-        "Night Dress",
-        "Pajamas",
-        "Sexy Nightwear",
-        "Tank Top"
-      ]
-    },
-    {
-      title: "ACTIVEWEAR",
-      url: "/shapewear",
-      links: [
-        "Active Shorts",
-        "Sports Bra",
-        "Sports Tshirts",
-        "Tights",
-        "Gym Wear",
-        "Yoga Dress"
-      ]
-
-    }
+  const shopLinks = [
+    { label: "Bras", link: "/bra" },
+    { label: "Panties", link: "/panties" },
+    { label: "Lingerie", link: "/lingerie" },
+    { label: "Shapewear", link: "/shapewear" },
+    { label: "Curvy Collection", link: "/curvy" },
+    { label: "Tummy Control", link: "/tummy-control" },
+    { label: "Sale", link: "/exclusive" },
   ];
 
-  const quickLinks = [
-    { label: "Magazine", link: "/magazine" },
-    { label: "Bra Size Calculator", link: "/bra-size-calculator" },
-    { label: "Shop By Sizes", link: "/shop-by-sizes" },
-    { label: "Shop By Colors", link: "/shop-by-colors" },
-    { label: "Period Tracker", link: "/period-tracker" },
-    { label: "Save For Later", link: "/wishlist" },
-    { label: "Become an Affiliate", link: "/affiliate" },
-    { label: "Sales and Service", link: "/support" }
-  ];
-
-  const policyLinks = [
-    { label: "About Us", link: "/about" },
-    { label: "Contact Us", link: "/faq#contact-us" },
+  const supportLinks = [
+    { label: "Track Your Order", link: "/order" },
     { label: "Shipping Policy", link: "/faq#shipping" },
+    { label: "Returns & Exchange", link: "/faq#returns" },
+    { label: "FAQs", link: "/faq" },
+    { label: "Help Centre", link: "/help" },
+    { label: "Contact Us", link: "/faq#contact-us" },
+    { label: "Bra Size Calculator", link: "/bra-size-calculator" },
+  ];
+
+  const companyLinks = [
+    { label: "About Us", link: "/about" },
     { label: "Privacy Policy", link: "/faq#terms-conditions" },
     { label: "Terms & Conditions", link: "/TermsAndConditions" },
-    { label: "Return & Exchange Policy", link: "/faq#returns" },
-    { label: "Track your order", link: "/order" },
     { label: "Sitemap", link: "/sitemap" },
-    { label: "FAQs", link: "/faq" }
+  ];
 
-  ]
-
-  const features = [
-    { icon: <Truck size={28} />, title: "FREE SHIPPING", desc: "On orders above ₹999" },
-    { icon: <ShieldCheck size={28} />, title: "100% PRIVACY", desc: "Discreet Packaging" },
-    { icon: <RotateCcw size={28} />, title: "EASY RETURNS", desc: "7 Days No Question" },
-    { icon: <Lock size={28} />, title: "QUICK COD", desc: "Pay on delivery" }
-  ]
+  const socials = [
+    { icon: <Facebook size={16} />, link: "https://facebook.com" },
+    { icon: <Twitter size={16} />, link: "https://twitter.com" },
+    { icon: <Youtube size={16} />, link: "https://youtube.com" },
+    { icon: <Instagram size={16} />, link: "https://instagram.com" },
+  ];
 
   return (
+    <footer style={{
+      background: '#FDF4F6',
+      borderTop: '1px solid #EBCFD6',
+      fontFamily: INTER,
+    }}>
 
-    <footer className="bg-[#fafafa] pt-16 text-gray-700">
-
-      <div className="max-w-7xl mx-auto px-6">
-
-        {/* PRODUCT LINKS GRID */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-12 border-b pb-12">
-
-          {productColumns.map((col) => (
-            <div key={col.title}>
-              <h4 className="text-pink-600 font-bold mb-4 tracking-widest text-sm">
-                {col.title}
-              </h4>
-
-              <ul className="space-y-2 text-sm">
-                {col.links.map((l) => (
-                  <li key={l}>
-                    <Link
-                      href={col.url}
-                      className="hover:text-pink-600 cursor-pointer"
-                    >
-                      {l}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-
-          {/* QUICK LINKS */}
-          <div>
-            <h4 className="text-pink-600 font-bold mb-4 tracking-widest text-sm">
-              QUICK LINKS
-            </h4>
-
-            <ul className="space-y-2 text-sm">
-              {quickLinks.map((l) => (
-                <li key={l.label}>
-                  <Link
-                    href={l.link}
-                    className="hover:text-pink-600 cursor-pointer"
-                  >
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+      {/* ── Trust Bar ── */}
+      <div style={{ background: '#FCEFEA', borderBottom: '1px solid #EAD7DD' }}>
+        <div className="max-w-[1280px] mx-auto px-6 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { icon: <Truck size={22} />, title: "Free Shipping", desc: "On orders above ₹999" },
+              { icon: <ShieldCheck size={22} />, title: "Discreet Packaging", desc: "100% private delivery" },
+              { icon: <RotateCcw size={22} />, title: "Easy Returns", desc: "7-day no-question returns" },
+              { icon: <Lock size={22} />, title: "Quick COD", desc: "Pay on delivery" },
+            ].map((b) => (
+              <div key={b.title} className="flex flex-col items-center text-center gap-2">
+                <div style={{ color: '#C56F7F' }}>{b.icon}</div>
+                <p style={{ fontFamily: INTER, fontWeight: 600, fontSize: '14px', color: '#5A3C46' }}>
+                  {b.title}
+                </p>
+                <p style={{ fontFamily: INTER, fontSize: '13px', color: '#8C7480' }}>
+                  {b.desc}
+                </p>
+              </div>
+            ))}
           </div>
-
-          {/* POLICY */}
-          <div>
-            <h4 className="text-pink-600 font-bold mb-4 tracking-widest text-sm">
-              HELP
-            </h4>
-
-            <ul className="space-y-2 text-sm">
-              {policyLinks.map((l) => (
-                <li key={l.label}>
-                  <Link
-                    href={l.link}
-                    className="hover:text-pink-600 cursor-pointer"
-                  >
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* NEWSLETTER */}
-          <div className="col-span-2">
-
-            <h4 className="text-pink-600 font-bold mb-4 tracking-widest text-sm">
-              STAY IN TOUCH
-            </h4>
-
-            <input
-              placeholder="Email"
-              className="w-full border p-3 rounded mb-3"
-            />
-
-            <button className="w-full bg-pink-500 text-white py-3 rounded font-semibold">
-              SUBSCRIBE →
-            </button>
-
-            {/* SOCIAL */}
-            <div className="flex gap-3 mt-4">
-
-              {[
-                { icon: <Facebook size={18} />, link: "https://facebook.com" },
-                { icon: <Twitter size={18} />, link: "https://twitter.com" },
-                { icon: <Youtube size={18} />, link: "https://youtube.com" },
-                { icon: <Instagram size={18} />, link: "https://instagram.com" }
-              ].map((item, i) => (
-                <a
-                  key={i}
-                  href={item.link}
-                  target="_blank"
-                  className="w-9 h-9 flex items-center justify-center bg-gray-200 rounded-full hover:bg-pink-500 hover:text-white cursor-pointer"
-                >
-                  {item.icon}
-                </a>
-              ))}
-
-            </div>
-
-          </div>
-
         </div>
+      </div>
 
+      {/* ── Main Footer ── */}
+      <div className="max-w-[1280px] mx-auto px-6 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
 
-
-
-        {/* BUSINESS INFO */}
-        <div className="grid md:grid-cols-2 gap-12 py-12">
-
-          <div>
-
-            <p className="text-pink-600 font-bold mb-2">
-              REGISTERED BUSINESS INFORMATION
-            </p>
-
-            <h3 className="text-2xl font-bold">
+          {/* Brand Column */}
+          <div className="lg:col-span-2">
+            <h3 style={{ fontFamily: PLAYFAIR, fontWeight: 700, fontSize: '28px', color: '#4A2E35', marginBottom: '10px' }}>
               IMKAA
             </h3>
-
-            <p className="text-sm mt-2">
-              Jaina-2 distics center, janak puri, New Delhi - 110075, India
+            <p style={{ fontFamily: INTER, fontSize: '14px', color: '#A06C7B', lineHeight: '1.7', maxWidth: '280px', marginBottom: '20px' }}>
+              Curated comfort, confidence, and everyday elegance — designed for the modern woman.
             </p>
 
+            {/* Newsletter */}
+            <div style={{ marginBottom: '20px' }}>
+              <p style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
+                Stay in Touch
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  placeholder="Your email address"
+                  style={{
+                    background: '#FFF9FA',
+                    border: '1px solid #E7CCD3',
+                    borderRadius: '9999px',
+                    padding: '10px 16px',
+                    fontSize: '13px',
+                    color: '#6F5560',
+                    outline: 'none',
+                    flex: 1,
+                    fontFamily: INTER,
+                  }}
+                />
+                <button style={{
+                  background: '#C56F7F',
+                  color: '#FFF9FA',
+                  border: 'none',
+                  borderRadius: '9999px',
+                  padding: '10px 18px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: INTER,
+                  whiteSpace: 'nowrap',
+                }}>
+                  Subscribe
+                </button>
+              </div>
+            </div>
+
+            {/* Socials */}
+            <div className="flex gap-3">
+              {socials.map((s, i) => (
+                <a key={i} href={s.link} target="_blank" rel="noreferrer"
+                  style={{
+                    width: 36, height: 36,
+                    background: '#FFF4F6',
+                    border: '1px solid #EAD7DD',
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#C56F7F',
+                    transition: 'background 0.2s, color 0.2s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#C56F7F'; e.currentTarget.style.color = '#FFF9FA'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#FFF4F6'; e.currentTarget.style.color = '#C56F7F'; }}
+                >
+                  {s.icon}
+                </a>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-4">
+          {/* Shop Column */}
+          <div>
+            <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
+              Shop
+            </h4>
+            <ul className="space-y-2">
+              {shopLinks.map((l) => (
+                <li key={l.label}>
+                  <Link href={l.link}
+                    style={{ fontFamily: INTER, fontSize: '14px', color: '#A06C7B', display: 'block', lineHeight: 1.8, textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#C56F7F'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#A06C7B'}>
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <Phone size={18} className="text-pink-500" />
-              +91 9811180043
+          {/* Support Column */}
+          <div>
+            <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
+              Support
+            </h4>
+            <ul className="space-y-2">
+              {supportLinks.map((l) => (
+                <li key={l.label}>
+                  <Link href={l.link}
+                    style={{ fontFamily: INTER, fontSize: '14px', color: '#A06C7B', display: 'block', lineHeight: 1.8, textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#C56F7F'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#A06C7B'}>
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company + Contact Column */}
+          <div>
+            <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
+              Company
+            </h4>
+            <ul className="space-y-2 mb-8">
+              {companyLinks.map((l) => (
+                <li key={l.label}>
+                  <Link href={l.link}
+                    style={{ fontFamily: INTER, fontSize: '14px', color: '#A06C7B', display: 'block', lineHeight: 1.8, textDecoration: 'none', transition: 'color 0.15s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#C56F7F'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#A06C7B'}>
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+              Contact
+            </h4>
+            <div className="space-y-2">
+              <a href="tel:+919811180043"
+                className="flex items-center gap-2"
+                style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}>
+                <Phone size={13} style={{ color: '#C56F7F', flexShrink: 0 }} />
+                +91 9811 180 043
+              </a>
+              <a href="mailto:support@imkaa.com"
+                className="flex items-center gap-2"
+                style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}>
+                <Mail size={13} style={{ color: '#C56F7F', flexShrink: 0 }} />
+                support@imkaa.com
+              </a>
             </div>
-
-            <div className="flex items-center gap-3">
-              <Mail size={18} className="text-pink-500" />
-              inboxdwarka@gmail.com
-            </div>
-
           </div>
 
         </div>
+      </div>
 
-        {/* COPYRIGHT */}
-        <div className="text-center border-t pt-6 pb-8">
-
-          <p className="text-pink-500 tracking-[4px] text-xs mb-2">
-            CONFIDENCE AUR COMFORT KA NAYA NAAM
+      {/* ── Bottom Bar ── */}
+      <div style={{ borderTop: '1px solid #E8D6DB' }}>
+        <div className="max-w-[1280px] mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3">
+          <p style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B' }}>
+            © {new Date().getFullYear()} IMKAA. All rights reserved. Made with ♥ in India.
           </p>
-
-          <p className="text-xs text-gray-400 flex items-center justify-center gap-2">
-            © 2026 IMKAA | Made with <Heart size={12} className="text-pink-500 fill-pink-500" /> in Bharat
-          </p>
-
+          <div className="flex items-center gap-1" style={{ fontSize: '12px', color: '#A06C7B', fontFamily: INTER }}>
+            <span>Janak Puri, New Delhi – 110075</span>
+          </div>
+          <div className="flex gap-4">
+            {[
+              { label: "Privacy", href: "/faq#terms-conditions" },
+              { label: "Terms", href: "/TermsAndConditions" },
+              { label: "Returns", href: "/faq#returns" },
+            ].map((l) => (
+              <Link key={l.label} href={l.href}
+                style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#C56F7F'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#A06C7B'}>
+                {l.label}
+              </Link>
+            ))}
+          </div>
         </div>
-
       </div>
 
     </footer>
-
-  )
+  );
 }

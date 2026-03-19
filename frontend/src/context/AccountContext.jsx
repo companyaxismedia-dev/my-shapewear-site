@@ -43,7 +43,7 @@ export function AccountProvider({ children }) {
 
         /* ===== ORDERS ===== */
         const orderRes = await fetch(
-          `${API_BASE}/api/orders`,
+          `${API_BASE}/api/orders/my-orders`,
           { headers }
         );
 

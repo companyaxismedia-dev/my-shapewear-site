@@ -29,6 +29,7 @@ export const OrderProvider = ({ children }) => {
 
             const mapped = res.data.orders.map((o) => ({
                 id: o._id,
+                _id: o._id,
                 orderNumber: o.orderNumber,
                 createdAt: o.createdAt,
 

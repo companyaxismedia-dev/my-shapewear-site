@@ -22,11 +22,6 @@ export default function RootLayout({ children }) {
           content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
         />
 
-        <link
-          href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap"
-          rel="stylesheet"
-        />
-
         <Script
           id="razorpay-checkout-js"
           src="https://checkout.razorpay.com/v1/checkout.js"
@@ -34,7 +29,7 @@ export default function RootLayout({ children }) {
         />
       </head>
 
-      <body className="antialiased text-slate-900 bg-[#f0f2f5] touch-manipulation">
+      <body className="antialiased touch-manipulation">
         
         {/* ✅ SONNER TOASTER FOR NOTIFICATIONS */}
         <ToasterProvider />

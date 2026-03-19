@@ -25,7 +25,7 @@ const [searchTerm, setSearchTerm] = useState("");
     
     const statusOptions = [
         { label: "All", value: "all" },
-        { label: "On the way", value: "on-the-way" },
+        { label: "Oswsw the way", value: "on-the-way" },
         { label: "Delivered", value: "delivered" },
         { label: "Cancelled", value: "cancelled" },
         { label: "Returned", value: "returned" },

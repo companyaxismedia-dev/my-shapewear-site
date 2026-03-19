@@ -27,7 +27,7 @@ export default function UserMenu({ openLogin, openRegister }) {
     >
       {/* USER ICON BUTTON */}
       <button
-        className="p-1 hover:text-pink-600 relative z-10 cursor-pointer"
+        className="p-1 hover:text-[#C56F7F] relative z-10 cursor-pointer"
         onClick={handleUserClick}
         aria-haspopup="true"
         aria-expanded={dropdownOpen}
@@ -91,15 +91,15 @@ ${dropdownOpen ? "opacity-100 visible" : "opacity-0 invisible"}
 
             <div className="flex flex-col text-sm">
               {[
-                ["My Orders", "/order"],
+                ["My Orders", "/account/orders"],
                 ["Buy Again", "/buy-again"],
                 ["My Recommendations", "/recommendations"],
-                ["My Account", "/account"],
+                ["My Account", "/account/dashboard"],
                 ["Wishlist", "/wishlist"],
-                ["My Coupons", "/account?tab=coupons"],
+                ["My Coupons", "/account/coupons"],
                 ["Contact us", "/faq#contact-us"],
                 ["About us", "/about"],
-                
+
               ].map(([label, href]) => (
                 <Link
                   key={label}

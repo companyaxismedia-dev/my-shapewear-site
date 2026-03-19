@@ -97,10 +97,22 @@ export default function AutoSliceSlider() {
   };
 
   if (loading) {
-    return <div className="py-20 text-center">Loading...</div>;
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="product-card-imkaa">
+            <div className="skeleton" style={{ aspectRatio: "3 / 4" }} />
+            <div style={{ padding: 14 }}>
+              <div className="skeleton" style={{ height: 14, width: "70%", marginBottom: 10 }} />
+              <div className="skeleton" style={{ height: 12, width: "45%" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
   return (
-    <div className="flex flex-col gap-12 py-10 bg-white">
+    <div className="flex flex-col gap-14">
       {homeSections.map((section, index) => {
         const products =
           productsData[section.id]?.slice(0, section.count) || [];
@@ -114,16 +126,15 @@ export default function AutoSliceSlider() {
         return (
           <div key={section.id} className="w-full">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6 px-4">
-              <h2 className="text-xl md:text-2xl font-black text-gray-800 uppercase italic border-l-4 border-[#ed4e7e] pl-4">
-                {section.title}
-              </h2>
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+              <div>
+                <h3 className="heading-section" style={{ textAlign: "left", fontSize: "clamp(24px, 2.6vw, 34px)" }}>
+                  {section.title}
+                </h3>
+              </div>
 
-              <a
-                href={section.path}
-                className="flex items-center gap-1 text-[10px] font-bold bg-[#ed4e7e] text-white px-4 py-2 rounded-full uppercase"
-              >
-                View All <ChevronRight size={14} />
+              <a href={section.path} className="btn-secondary-imkaa w-fit">
+                View Products <ChevronRight size={16} />
               </a>
             </div>
 
@@ -140,13 +151,15 @@ export default function AutoSliceSlider() {
                 swiperRefs.current[section.id] = swiper;
               }}
               breakpoints={{
-                320: { slidesPerView: 1.5 },
-                768: { slidesPerView: 3 },
-                1024: { slidesPerView: 4.5 },
+                320: { slidesPerView: 2.1 },
+                480: { slidesPerView: 2.6 },
+                640: { slidesPerView: 3 },
+                1024: { slidesPerView: 4.2 },
               }}
               // navigation={enableNav}
               navigation={false}
-              className="homePageSwiper px-4">
+              className="homePageSwiper"
+            >
               {products.map((product) => (
                 <SwiperSlide key={product._id} className="no-swiping">
                   <ProductCard
@@ -230,11 +243,12 @@ function ProductCard({
   const reviews = product?.numReviews || 150;
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full">
+    <div className="product-card-imkaa">
 
       {/* IMAGE */}
       <div
-        className="relative aspect-[3/4] overflow-hidden bg-gray-50 cursor-pointer no-swiping"
+        className="relative aspect-[3/4] overflow-hidden cursor-pointer no-swiping"
+        style={{ background: "var(--color-bg-alt)" }}
         onMouseEnter={onProductHover}
         onMouseLeave={onProductHoverEnd}
         onClick={(e) => {
@@ -299,47 +313,57 @@ function ProductCard({
               ? removeFromWishlist(product._id)
               : toggleWishlist(product);
           }}
-          className="absolute top-2 right-2 z-20 bg-white rounded-full w-[30px] h-[30px] flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+          className="absolute top-2 right-2 z-20 rounded-full w-[32px] h-[32px] flex items-center justify-center hover:scale-110 transition-transform"
+          style={{
+            background: "rgba(255,255,255,0.92)",
+            border: "1px solid var(--color-border)",
+            boxShadow: "0 6px 18px rgba(74,46,53,0.10)",
+          }}
         >
           <Heart
             size={16}
-            className={`transition-colors ${isWishlisted
-              ? "fill-[#ed4e7e] stroke-[#ed4e7e]"
-              : "stroke-[#ed4e7e]"
-              }`}
+            className={`transition-colors ${isWishlisted ? "fill-[#C56F7F] stroke-[#C56F7F]" : "stroke-[#C56F7F]"}`}
           />
         </button>
 
         {discount && (
-          <div className="absolute top-2 left-2 bg-[#ed4e7e] text-white text-[10px] px-2 py-0.5 font-bold rounded">
+          <div
+            className="absolute top-2 left-2 text-[10px] px-2 py-0.5 font-semibold"
+            style={{
+              background: "var(--color-primary)",
+              color: "#FFF9FA",
+              borderRadius: 9999,
+              boxShadow: "0 6px 18px rgba(74,46,53,0.12)",
+            }}
+          >
             {discount}% OFF
           </div>
         )}
       </div>
 
       {/* DETAILS */}
-      <div className="p-3 flex flex-col flex-grow">
-        <h3 className="text-[11px] font-bold truncate uppercase mb-1">
+      <div className="p-4 flex flex-col flex-grow">
+        <h3 className="product-card-title truncate mb-1">
           {product.name}
         </h3>
 
         <div className="flex items-center gap-1 mb-1">
-          <Star size={10} className="fill-[#ed4e7e] text-[#ed4e7e]" />
-          <span className="text-[10px] font-bold text-[#ed4e7e]">
+          <Star size={12} className="fill-[#C56F7F] text-[#C56F7F]" />
+          <span className="text-[12px] font-semibold" style={{ color: "var(--color-primary)" }}>
             {rating}
           </span>
-          <span className="text-[9px] text-gray-400">
+          <span className="product-card-meta">
             ({reviews})
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-black text-gray-900">
+          <span className="product-card-price">
             ₹{price}
           </span>
 
           {oldPrice && (
-            <span className="text-[10px] text-gray-400 line-through">
+            <span className="product-card-meta line-through">
               ₹{oldPrice}
             </span>
           )}
