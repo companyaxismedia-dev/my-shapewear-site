@@ -16,8 +16,10 @@ import {
     X,
 } from "lucide-react";
 
-
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { useOrders } from "@/context/OrderContext";
+import ItemDetailView from "@/components/orders/ItemDetailView";
 
 import { API_BASE } from "@/lib/api";
 import ManageAccessModal from "@/components/orders/ManageAccessModal";
@@ -57,6 +59,7 @@ export default function OrderDetail() {
     const [editAddress, setEditAddress] = useState(null)
     const [showChangePhone, setShowChangePhone] = useState(false)
     const [showChangePayment, setShowChangePayment] = useState(false)
+    const [selectedItemIndex, setSelectedItemIndex] = useState(null)
 
     const router = useRouter();
 
@@ -169,8 +172,10 @@ export default function OrderDetail() {
 
     if (!order) {
         return (
-            <div className="min-h-screen bg-gray-50">
-                <div className="text-center py-20">Loading order...</div>
+            <div style={{ background: "var(--color-bg)" }} className="min-h-screen">
+                <Navbar />
+                <div className="text-center py-20" style={{ color: "var(--color-body)" }}>Loading order...</div>
+                <Footer />
             </div>
         );
     }
@@ -202,6 +207,40 @@ export default function OrderDetail() {
 
     const getStatusLabel = (status) =>
         status?.charAt(0).toUpperCase() + status?.slice(1);
+
+    /* ================= GROUP PRODUCTS BY DELIVERY DATE ================= */
+
+    const groupProductsByDelivery = () => {
+        const grouped = {};
+        order?.products?.forEach((item, index) => {
+            const deliveryDate = item.estimatedDelivery 
+                ? new Date(item.estimatedDelivery).toLocaleDateString("en-IN", { 
+                    year: "numeric", 
+                    month: "short", 
+                    day: "numeric" 
+                })
+                : "No delivery date";
+            
+            if (!grouped[deliveryDate]) {
+                grouped[deliveryDate] = [];
+            }
+            grouped[deliveryDate].push({ ...item, index });
+        });
+        return grouped;
+    };
+
+    const groupedProducts = groupProductsByDelivery();
+    const deliveryDates = Object.keys(groupedProducts).sort();
+
+    /* ================= REFRESH ORDER AFTER ITEM ACTION ================= */
+
+    const refreshOrder = async () => {
+        const updated = await fetchOrderById(id);
+        if (updated) {
+            setOrder(updated);
+            setSelectedItemIndex(null);
+        }
+    };
     /* ================= CHANGE PAYMENT METHOD ================= */
 
     const changePaymentMethod = async (method) => {
@@ -307,109 +346,89 @@ export default function OrderDetail() {
 
     if (status === "cancelled") {
         return (
-            <div className="min-h-screen bg-gray-50">
-
-
-
-                <div className="max-w-4xl mx-auto py-20 text-center">
-
-                    <h1 className="text-2xl font-bold text-red-600 mb-4">
+            <div style={{ background: "var(--color-bg)" }} className="min-h-screen flex flex-col">
+                <Navbar />
+                <div className="flex-1 max-w-4xl mx-auto w-full py-20 text-center">
+                    <h1 className="text-2xl font-bold mb-4" style={{ color: "#E74C3C" }}>
                         Order Cancelled
                     </h1>
-
-                    <p className="text-gray-600">
+                    <p style={{ color: "var(--color-body)" }}>
                         Your order has been cancelled successfully.
                     </p>
-
                     <Link
                         href="/order"
-                        className="inline-block mt-6 px-6 py-3 bg-black text-white rounded"
+                        className="inline-block mt-6 px-6 py-3 rounded font-semibold btn-primary-imkaa"
                     >
                         Back to Orders
                     </Link>
-
                 </div>
+                <Footer />
             </div>
         );
     }
     return (
-        <div className="min-h-screen bg-gray-50">
-
-
-
+        <div style={{ background: "var(--color-bg)" }} className="min-h-screen flex flex-col">
+            <Navbar />
 
             {/* Breadcrumb */}
-
-            <div className="bg-white border-b">
-                <div className="max-w-7xl mx-auto px-4 py-3 flex gap-2 text-sm">
-                    <Link href="/">Home</Link>
+            <div style={{ background: "var(--color-card)", borderBottom: "1px solid var(--color-border)" }}>
+                <div className="max-w-7xl mx-auto px-4 py-3 flex gap-2 text-sm" style={{ color: "var(--color-body)" }}>
+                    <Link href="/" style={{ color: "var(--color-body)", textDecoration: "none" }}>Home</Link>
                     <ChevronRight size={16} />
-                    <Link href="/order">My Orders</Link>
+                    <Link href="/order" style={{ color: "var(--color-body)", textDecoration: "none" }}>My Orders</Link>
                     <ChevronRight size={16} />
-                    <span>Order {order.orderNumber}</span>
+                    <span style={{ color: "var(--color-heading)" }}>Order {order.orderNumber}</span>
                 </div>
             </div>
 
             {/* MAIN */}
-
-            <div className="w-full max-w-[1400px] mx-auto px-6 py-6 grid lg:grid-cols-[1.7fr_1fr] gap-6">
+            <div className="flex-1 w-full max-w-[1400px] mx-auto px-6 py-6 grid lg:grid-cols-[1.7fr_1fr] gap-6">
 
 
 
                 <div className="space-y-6">
 
-                    {/* TRACK + ACCESS SECTION (Flipkart style) */}
-
-                    <div className="bg-white border border-gray-200 rounded-md">
-
+                    {/* TRACK + ACCESS SECTION */}
+                    <div className="card-imkaa">
                         {/* TOP TEXT */}
-
-                        <div className="p-4 text-sm text-gray-700">
-
+                        <div className="p-4 text-sm" style={{ color: "var(--color-body)" }}>
                             <p>
                                 Order can be tracked by{" "}
-                                <span className="font-semibold">
+                                <span className="font-semibold" style={{ color: "var(--color-heading)" }}>
                                     {order.recipientPhone || "Phone not available"}
                                 </span>.
                             </p>
-
-                            <p className="text-gray-500 mt-1">
+                            <p style={{ color: "var(--color-muted)", marginTop: "8px" }}>
                                 Tracking link is shared via SMS.
                             </p>
-
                         </div>
-
                         {/* DIVIDER */}
-
-                        <div className="border-t border-gray-200"></div>
-
+                        <div style={{ borderTop: "1px solid var(--color-border)" }}></div>
                         {/* MANAGE ACCESS */}
-
                         <div
                             onClick={() => setShowAccess(true)}
-                            className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
+                            className="p-4 flex justify-between items-center cursor-pointer transition"
+                            style={{ color: "var(--color-body)" }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg)"}  
+                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                         >
-
-                            <span className="text-sm font-medium text-gray-800">
+                            <span className="text-sm font-medium" style={{ color: "var(--color-heading)" }}>
                                 Manage who can access
                             </span>
-
-                            <ChevronRight size={18} className="text-gray-400" />
-
+                            <ChevronRight size={18} style={{ color: "var(--color-muted)" }} />
                         </div>
 
                     </div>
 
                     {/* ORDER HEADER */}
 
-                    <div className="bg-white rounded p-5 border border-gray-200">
+                    {/* ORDER INFO */}
+                    <div className="card-imkaa p-5">
                         <div className="flex justify-between mb-6">
-
                             <div>
-                                <p className="text-sm text-gray-500">Order Number</p>
-                                <h1 className="text-2xl font-bold">{order.orderNumber}</h1>
+                                <p className="text-sm" style={{ color: "var(--color-muted)" }}>Order Number</p>
+                                <h1 className="text-2xl font-bold" style={{ color: "var(--color-heading)" }}>{order.orderNumber}</h1>
                             </div>
-
                             <div
                                 className={`px-4 py-2 rounded text-sm font-semibold ${getStatusColor(
                                     order.status
@@ -420,10 +439,12 @@ export default function OrderDetail() {
                         </div>
 
                         <div className="flex gap-3">
-
                             <button
                                 onClick={handleStartChat}
-                                className="px-4 py-2 border rounded flex gap-2 items-center hover:bg-gray-50"
+                                className="px-4 py-2 border rounded flex gap-2 items-center transition"
+                                style={{ borderColor: "var(--color-border)", color: "var(--color-body)" }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg)"}
+                                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                             >
                                 <MessageCircle size={16} />
                                 Chat with us
@@ -434,90 +455,122 @@ export default function OrderDetail() {
                                 status !== "cancelled" && (
                                     <button
                                         onClick={() => setShowCancelModal(true)}
-                                        className="px-4 py-2 bg-red-50 border border-red-200 rounded text-red-600"
+                                        className="px-4 py-2 rounded text-sm font-semibold transition"
+                                        style={{ background: "#FFE5E5", color: "#C0392B", border: "1px solid #F5CCCC" }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = "#FFD0D0"}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = "#FFE5E5"}
                                     >
-                                        Cancel Order
+                                        Cancel All
                                     </button>
                                 )}
                         </div>
                     </div>
 
-                    {/* PRODUCTS */}
+                    {/* PRODUCTS SECTION */}
+                    {selectedItemIndex !== null ? (
+                        <ItemDetailView 
+                            order={order}
+                            selectedItemIndex={selectedItemIndex}
+                            onClose={() => setSelectedItemIndex(null)}
+                            onRefresh={refreshOrder}
+                        />
+                    ) : (
+                        <>
+                            {/* Grouped Products by Delivery Date */}
+                            {deliveryDates.map((deliveryDate) => (
+                                <div key={deliveryDate} className="card-imkaa p-5">
+                                    <div className="mb-4 pb-4" style={{ borderBottom: "1px solid var(--color-border)" }}>
+                                        <p className="text-sm" style={{ color: "var(--color-muted)" }}>Estimated Delivery</p>
+                                        <h3 className="text-lg font-semibold" style={{ color: "var(--color-heading)" }}>
+                                            {deliveryDate}
+                                        </h3>
+                                    </div>
 
-                    <div className="bg-white rounded border border-gray-200 p-5">
-                        <h2 className="font-bold text-lg mb-6">Product Details</h2>
+                                    <div className="space-y-4">
+                                        {groupedProducts[deliveryDate].map((item) => (
+                                            <div
+                                                key={item.index}
+                                                onClick={() => setSelectedItemIndex(item.index)}
+                                                className="flex gap-4 pb-4 border-b last:border-b-0 cursor-pointer transition"
+                                                style={{ 
+                                                    borderColor: "var(--color-border)",
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg)"}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                                            >
+                                                <Image
+                                                    src={item.img || item.imageUrl || "/placeholder.jpg"}
+                                                    alt={item.name || item.title || "Product image"}
+                                                    width={96}
+                                                    height={96}
+                                                    className="w-24 h-24 rounded object-cover"
+                                                    style={{ background: "var(--color-bg)" }}
+                                                />
+                                                <div className="flex-1">
+                                                    <h3 className="font-medium" style={{ color: "var(--color-heading)" }}>
+                                                        {item.name || item.title}
+                                                    </h3>
 
-                        {order?.products?.map((item, i) => (
-                            <div
-                                key={i}
-                                className="flex gap-4 pb-4 border-b last:border-b-0"
-                            >
-                                <Image
-                                    src={item.img || item.imageUrl || "/placeholder.jpg"}
-                                    alt={item.name || item.title || "Product image"}
-                                    width={96}
-                                    height={96}
-                                    className="w-24 h-24 rounded object-cover bg-gray-100"
-                                />
-                                <div className="flex-1">
+                                                    {item.color && (
+                                                        <p className="text-sm" style={{ color: "var(--color-body)" }}>
+                                                            Color: {item.color}
+                                                        </p>
+                                                    )}
 
-                                    <h3 className="font-medium">{item.name || item.title}</h3>
+                                                    {item.size && (
+                                                        <p className="text-sm" style={{ color: "var(--color-body)" }}>
+                                                            Size: {item.size}
+                                                        </p>
+                                                    )}
 
-                                    {item.color && (
-                                        <p className="text-sm text-gray-600">
-                                            Color: {item.color}
-                                        </p>
-                                    )}
+                                                    <p className="text-sm mt-1" style={{ color: "var(--color-body)" }}>
+                                                        Quantity: {item.quantity}
+                                                    </p>
 
-                                    {item.size && (
-                                        <p className="text-sm text-gray-600">
-                                            Size: {item.size}
-                                        </p>
-                                    )}
+                                                    <div className="flex gap-2 mt-2 items-center">
+                                                        <span className="text-lg font-bold" style={{ color: "var(--color-primary)" }}>
+                                                            ₹{item.price * item.quantity}
+                                                        </span>
+                                                        <span className="text-xs" style={{ color: "var(--color-muted)" }}>
+                                                            (₹{item.price}/item)
+                                                        </span>
 
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        Quantity: {item.quantity}
-                                    </p>
+                                                        {item.listingPrice > item.price && (
+                                                            <span className="text-sm line-through" style={{ color: "var(--color-muted)" }}>
+                                                                ₹{item.listingPrice}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
 
-                                    <div className="flex gap-2 mt-2 items-center">
-                                        <span className="text-lg font-bold">
-                                            ₹{item.price}
-                                        </span>
-
-                                        {item.listingPrice > item.price && (
-                                            <span className="text-sm text-gray-400 line-through">
-                                                ₹{item.listingPrice}
-                                            </span>
-                                        )}
+                                                <div className="flex items-center" style={{ color: "var(--color-primary)" }}>
+                                                    <ChevronRight size={20} />
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </>
+                    )}
 
 
 
                     {/* TRACKING */}
-
                     {(order.trackingEvents && order.trackingEvents.length > 0) ? (
-                        <div className="bg-white rounded p-6">
-                            <h2 className="font-semibold text-lg mb-6">
+                        <div className="card-imkaa p-6">
+                            <h2 className="font-semibold text-lg mb-6" style={{ color: "var(--color-heading)" }}>
                                 Delivery Status
                             </h2>
                             <div className="flex justify-between items-center mb-6">
-
                                 <div>
-
-                                    <p className="text-sm text-gray-600">
+                                    <p className="text-sm" style={{ color: "var(--color-body)" }}>
                                         Tracking No – {order.trackingId || "Not generated"}
                                     </p>
-
-                                    <p className="text-sm text-gray-600">
+                                    <p className="text-sm" style={{ color: "var(--color-body)" }}>
                                         Courier – {order.courier || "ShadowFax"}
                                     </p>
-
                                 </div>
-
                                 <button
                                     onClick={() =>
                                         window.open(
@@ -525,16 +578,17 @@ export default function OrderDetail() {
                                             "_blank"
                                         )
                                     }
-                                    className="border border-pink-500 text-pink-600 px-4 py-2 rounded text-sm hover:bg-pink-50"
+                                    className="px-4 py-2 rounded text-sm font-medium transition"
+                                    style={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", border: "1px solid" }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg)"}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                                 >
                                     Open Tracking Link
                                 </button>
-
                             </div>
-
-                            <p className="text-sm text-gray-600 mb-6">
+                            <p className="text-sm mb-6" style={{ color: "var(--color-body)" }}>
                                 Estimated delivery by{" "}
-                                <span className="font-medium">
+                                <span className="font-medium" style={{ color: "var(--color-heading)" }}>
                                     {order.deliveryDate || "3-5 working days"}
                                 </span>
                             </p>
@@ -542,49 +596,42 @@ export default function OrderDetail() {
                                 onClick={() =>
                                     window.open(`${API_BASE}/api/orders/invoice/${order.id}`)
                                 }
-                                className="text-sm text-blue-600 underline mb-6"
+                                className="text-sm font-medium underline"
+                                style={{ color: "var(--color-primary)" }}
                             >
                                 Download Invoice
                             </button>
 
-                            <div className="bg-white rounded p-6">
-
-
+                            <div style={{ marginTop: "24px" }}>
                                 <div className="space-y-3">
-
                                     {stages.map((stage, index) => {
-
                                         const completed = index <= currentIndex;
-
                                         return (
-
                                             <div key={index} className="flex gap-4">
-
                                                 <div className="flex flex-col items-center">
-
                                                     <div
-                                                        className={`w-6 h-6 flex items-center justify-center rounded-full border-2
-                                                    ${completed ? "bg-green-500 border-green-500 text-white" : "border-gray-300 bg-white"}`}
+                                                        className={`w-6 h-6 flex items-center justify-center rounded-full border-2`}
+                                                        style={{
+                                                            background: completed ? "#27AE60" : "var(--color-card)",
+                                                            borderColor: completed ? "#27AE60" : "var(--color-border)",
+                                                            color: completed ? "white" : "var(--color-body)"
+                                                        }}
                                                     >
                                                         {completed && "✓"}
                                                     </div>
-
                                                     {index !== stages.length - 1 && (
                                                         <div
-                                                            className={`w-[2px] h-8 ${completed ? "bg-green-500" : "bg-gray-200"}`}
+                                                            className="w-[2px] h-8"
+                                                            style={{ background: completed ? "#27AE60" : "var(--color-border)" }}
                                                         ></div>
                                                     )}
-
                                                 </div>
-
                                                 <div>
-
-                                                    <p className="font-medium text-gray-800">
+                                                    <p className="font-medium" style={{ color: "var(--color-heading)" }}>
                                                         {stage}
                                                     </p>
-
                                                     {completed && (
-                                                        <p className="text-sm text-gray-500">
+                                                        <p className="text-sm" style={{ color: "var(--color-muted)" }}>
                                                             {
                                                                 order.trackingEvents?.find(
                                                                     (e) => e.status?.toLowerCase() === stage.toLowerCase()
@@ -592,30 +639,20 @@ export default function OrderDetail() {
                                                             }
                                                         </p>
                                                     )}
-
                                                 </div>
-
                                             </div>
-
                                         );
-
                                     })}
-
                                 </div>
-
                             </div>
                         </div>
-
-
                     ) : (
-
-                        <div className="bg-white rounded p-6">
-                            <h2 className="font-bold text-lg mb-4">Tracking</h2>
-                            <p className="text-gray-500 text-sm">
+                        <div className="card-imkaa p-6">
+                            <h2 className="font-bold text-lg mb-4" style={{ color: "var(--color-heading)" }}>Tracking</h2>
+                            <p className="text-sm" style={{ color: "var(--color-muted)" }}>
                                 Tracking information will appear once the order is processed.
                             </p>
                         </div>
-
                     )}
                 </div>
 
@@ -703,26 +740,24 @@ export default function OrderDetail() {
 
                         </div>
                     </div>
+                    {/* Payment Change */}
                     {canChangePayment && (
-                        <div className="bg-yellow-50 border border-yellow-200 p-3 rounded text-sm mb-3">
+                        <div className="rounded-lg p-3" style={{ background: "#FEF3CD", border: "1px solid #FFC107", color: "#856404", fontSize: "14px" }}>
                             You can change payment method within 2 hours of placing the order.
                         </div>
                     )}
 
                     {canChangePayment && (
-                        <div className="bg-white border rounded p-4 mt-3">
-
-                            <p className="text-sm font-semibold mb-3">
+                        <div className="card-imkaa p-4">
+                            <p className="text-sm font-semibold mb-3" style={{ color: "var(--color-heading)" }}>
                                 Change Payment Method
                             </p>
-
                             <button
                                 onClick={() => setShowChangePayment(true)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded"
+                                className="btn-primary-imkaa w-full"
                             >
                                 Change Payment
                             </button>
-
                         </div>
                     )}
                     {/* Price Details */}
@@ -893,59 +928,46 @@ export default function OrderDetail() {
                 }}
             />
             {showProcessing && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
+                <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: "rgba(74, 46, 53, 0.35)" }}>
                     <div className="bg-white px-8 py-6 rounded-lg flex items-center gap-3">
-
-                        <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-
+                        <div className="w-6 h-6 border-4 rounded-full animate-spin" style={{ borderColor: "var(--color-primary)", borderTopColor: "transparent" }}></div>
                         <div>
-                            <p className="font-semibold">Please wait...</p>
-                            <p className="text-sm text-gray-500">
+                            <p className="font-semibold" style={{ color: "var(--color-heading)" }}>Please wait...</p>
+                            <p className="text-sm" style={{ color: "var(--color-muted)" }}>
                                 We are processing your request
                             </p>
                         </div>
-
                     </div>
-
                 </div>
             )}
 
             {showSuccessPopup && (
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
+                <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: "rgba(74, 46, 53, 0.35)" }}>
                     <div className="bg-white rounded-lg w-[360px] text-center">
-
-                        <div className="p-6 border-b">
-
-                            <div className="text-green-600 text-2xl mb-2">
+                        <div className="p-6" style={{ borderBottom: "1px solid var(--color-border)" }}>
+                            <div className="text-2xl mb-2" style={{ color: "#27AE60" }}>
                                 ✔
                             </div>
-
-                            <p className="font-semibold text-green-700">
+                            <p className="font-semibold" style={{ color: "#27AE60" }}>
                                 Your phone number has been updated
                             </p>
-
                         </div>
-
                         <button
                             onClick={() => {
                                 setShowSuccessPopup(false)
                                 router.refresh()
                             }}
-                            className="w-full py-3 text-blue-600 font-semibold"
+                            className="w-full py-3 font-semibold" 
+                            style={{ color: "var(--color-primary)", borderTop: "1px solid var(--color-border)" }}
                         >
                             OKAY
                         </button>
-
                     </div>
-
                 </div>
             )}
 
-
-        </div >
-
+            <Footer />
+        </div>
     );
 }
 

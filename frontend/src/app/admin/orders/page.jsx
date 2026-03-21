@@ -40,7 +40,7 @@ export default function OrdersPage() {
 
     useEffect(() => {
         if (selectAll) {
-            const all = new Set((orders || []).map((o) => o.orderId));
+            const all = new Set((orders || []).map((o) => o.id));
             setSelected(all);
         } else {
             setSelected(new Set());
@@ -175,7 +175,12 @@ export default function OrdersPage() {
     const openOrder = (order) => {
         // navigate to admin order detail page
         try {
-            const id = order.orderId;
+            const id = order.id || order._id;
+            if (!id) {
+                // Optionally use a toast or alert here
+                console.error("Order ID is missing or invalid", order);
+                return;
+            }
             router.push(`/admin/orders/${id}`);
         } catch (err) {
             console.error("navigation error", err);
@@ -432,11 +437,11 @@ export default function OrdersPage() {
                         ) : filteredOrders.length === 0 ? (
                             <tr><td colSpan="9" className="p-6 text-center">No orders found</td></tr>
                         ) : (
-                            filteredOrders.map((order) => (
-                                <tr key={order.orderId} className="transition-colors hover:bg-muted/10">
-                                    <td className="p-3"><input type="checkbox" checked={selected.has(order.orderId)} onChange={() => toggleRow(order.orderId)} /></td>
-                                    <td className="p-3">{order.id || `#${String(order.orderId).slice(-5)}`}</td>
-                                    <td className="p-3">{new Date(order.date).toLocaleDateString()}</td>
+                            filteredOrders.map((order, index) => (
+                                <tr key={order.id || index} className="transition-colors hover:bg-muted/10">
+                                    <td className="p-3"><input type="checkbox" checked={selected.has(order.id)} onChange={() => toggleRow(order.id)} /></td>
+                                    <td className="p-3">{order.orderNumber || order.id}</td>
+                                    <td className="p-3">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}</td>
                                     <td className="p-3">{order.customer || 'Guest'}</td>
                                     <td className="p-3">{order.payment || 'Pending'}</td>
                                     <td className="p-3">₹{order.total ?? 0}</td>

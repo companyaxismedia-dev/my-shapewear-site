@@ -97,40 +97,39 @@ export const OrderProvider = ({ children }) => {
 
             return {
                 id: o._id,
-                trackingId: o.trackingId,
-                courier: o.courier,
-
-                userInfo: o.userInfo,
-
-                canEditAddress:
-                    ["order placed", "processing"].includes(status),
-
                 orderNumber: o.orderNumber,
-
+                createdAt: o.createdAt,
                 status: (o.status || "Order Placed").trim(),
-                items: o.products.map((p) => ({
+                canEditAddress: o.canEditAddress,
+                canEditPhone: o.canEditPhone,
+                userInfo: o.userInfo,
+                products: o.products || [],
+                items: (o.products || []).map((p) => ({
                     name: p.name,
                     img: p.img,
                     size: p.size,
                     price: p.price,
-                    listingPrice: p.listingPrice,
+                    mrp: p.mrp,
                     quantity: p.quantity,
+                    itemStatus: p.itemStatus,
                 })),
-
-                listingPrice: o.listingPrice || 0,
-
-                subtotal: o.subtotal || o.totalAmount,
-
-                discount: o.discount || 0,
-
-                fees: o.fees || 0,
-
-                totalAmount: o.finalAmount || o.totalAmount,
+                pricing: o.pricing || {},
+                subtotal: o.pricing?.subtotal || 0,
+                discount: (o.pricing?.productDiscount || 0) + (o.pricing?.couponDiscount || 0),
+                fees: (o.pricing?.shippingCharge || 0) + (o.pricing?.platformFee || 0),
+                totalAmount: o.pricing?.totalAmount || 0,
+                coupon: o.coupon || {},
                 offersEarned: o.offersEarned || [],
-
-                trackingEvents: (o.trackingEvents || []).map((s) => ({
+                shipment: o.shipment || {},
+                trackingId: o.shipment?.trackingId || "",
+                courier: o.shipment?.courier || "",
+                trackingUrl: o.shipment?.trackingUrl || "",
+                estimatedDelivery: o.shipment?.estimatedDelivery || null,
+                deliveredAt: o.shipment?.deliveredAt || null,
+                statusHistory: o.statusHistory || [],
+                trackingEvents: o.statusHistory?.map((s) => ({
                     status: s.status,
-                    time: s.time,
+                    message: s.message,
                     date: s.date
                         ? new Date(s.date).toLocaleDateString("en-IN", {
                             day: "2-digit",
@@ -138,22 +137,125 @@ export const OrderProvider = ({ children }) => {
                             year: "numeric",
                         })
                         : "",
-                })),
-
+                    reason: s.reason,
+                })) || [],
                 deliveryAddress: {
-                    address: o.userInfo?.address,
+                    addressLine1: o.userInfo?.addressLine1,
+                    addressLine2: o.userInfo?.addressLine2,
                     city: o.userInfo?.city,
                     state: o.userInfo?.state,
                     pincode: o.userInfo?.pincode,
+                    country: o.userInfo?.country,
                 },
                 recipientName: o.userInfo?.name,
                 recipientPhone: o.userInfo?.phone,
-
-                paymentMethod: o.paymentType,
-
+                payment: o.payment || {},
+                paymentMethod: o.payment?.method,
+                paymentStatus: o.payment?.status,
+                invoiceNumber: o.invoiceNumber,
+                supportTicketIds: o.supportTicketIds || [],
             };
         } catch (err) {
             console.error("Order fetch error", err);
+            return null;
+        }
+    };
+
+    /* ================= CANCEL ITEM ================= */
+    const cancelItem = async (orderId, itemIndex, reason, comment) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            const token = user?.token;
+
+            if (!token) return null;
+
+            const res = await axios.put(
+                `${API_BASE}/api/items/${orderId}/${itemIndex}/cancel`,
+                { reason, comment },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            return res.data;
+        } catch (err) {
+            console.error("Cancel item error", err);
+            throw err;
+        }
+    };
+
+    /* ================= REQUEST RETURN ================= */
+    const requestReturnItem = async (orderId, itemIndex, reason, images) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            const token = user?.token;
+
+            if (!token) return null;
+
+            const res = await axios.put(
+                `${API_BASE}/api/items/${orderId}/${itemIndex}/return`,
+                { reason, images },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            return res.data;
+        } catch (err) {
+            console.error("Return item error", err);
+            throw err;
+        }
+    };
+
+    /* ================= REQUEST EXCHANGE ================= */
+    const requestExchangeItem = async (orderId, itemIndex, reason, newSize, newColor, newProductId) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            const token = user?.token;
+
+            if (!token) return null;
+
+            const res = await axios.put(
+                `${API_BASE}/api/items/${orderId}/${itemIndex}/exchange`,
+                { reason, newSize, newColor, newProductId },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            return res.data;
+        } catch (err) {
+            console.error("Exchange item error", err);
+            throw err;
+        }
+    };
+
+    /* ================= GET ITEM DETAILS ================= */
+    const getItemDetails = async (orderId, itemIndex) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            const token = user?.token;
+
+            if (!token) return null;
+
+            const res = await axios.get(
+                `${API_BASE}/api/items/${orderId}/${itemIndex}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            return res.data;
+        } catch (err) {
+            console.error("Get item details error", err);
             return null;
         }
     };
@@ -165,6 +267,10 @@ export const OrderProvider = ({ children }) => {
                 loading,
                 fetchOrders,
                 fetchOrderById,
+                cancelItem,
+                requestReturnItem,
+                requestExchangeItem,
+                getItemDetails,
             }}
         >
             {children}

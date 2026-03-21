@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useAccount } from "@/hooks/useAccount";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
@@ -14,13 +15,24 @@ export default function PersonalInfo() {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
 
+
+  // Fetch latest profile from backend
   useEffect(() => {
-
-    if (user) {
-      setFormData(user)
-    }
-
-  }, [user])
+    const fetchProfile = async () => {
+      const stored = JSON.parse(localStorage.getItem("user"));
+      if (!stored?.token) return;
+      const res = await fetch(`${API_BASE}/api/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${stored.token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFormData(data);
+      }
+    };
+    fetchProfile();
+  }, [user]);
 
 
 
@@ -37,53 +49,35 @@ export default function PersonalInfo() {
 
 
 
+
   const handleSubmit = async (e) => {
-
-    e.preventDefault()
-
+    e.preventDefault();
     try {
-
-      setLoading(true)
-
-      const stored = JSON.parse(localStorage.getItem("user"))
-
-      const res = await fetch(`${API_BASE}/auth/update-profile`, {
-
+      setLoading(true);
+      const stored = JSON.parse(localStorage.getItem("user"));
+      const res = await fetch(`${API_BASE}/api/users/profile`, {
         method: "PUT",
-
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${stored?.token}`
         },
-
         body: JSON.stringify(formData)
-
-      })
-
-      const updated = await res.json()
-
-      updateUserProfile(updated)
-
+      });
+      if (!res.ok) throw new Error("Failed to update profile");
+      const updated = await res.json();
+      updateUserProfile(updated);
       localStorage.setItem("user", JSON.stringify({
         ...stored,
         ...updated
-      }))
-
-      setIsEditing(false)
-
+      }));
+      setFormData(updated);
+      setIsEditing(false);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
     }
-    catch (err) {
-
-      console.log(err)
-
-    }
-    finally {
-
-      setLoading(false)
-
-    }
-
-  }
+  };
 
 
 

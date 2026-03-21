@@ -693,14 +693,17 @@ exports.getOrders = async (req, res) => {
       .limit(limit);
 
     const orders = ordersRaw.map((o) => ({
-      id: "#" + o._id.toString().slice(-4),
-      orderId: o._id,
-      date: o.createdAt,
+      id: o._id.toString(),
+      orderNumber: o.orderNumber,
+      createdAt: o.createdAt,
       customer: o.userInfo?.name || "Customer",
-      payment: o.paymentStatus,
-      total: o.finalAmount,
+      phone: o.userInfo?.phone || "",
+      payment: o.payment?.status || "Pending",
+      paymentMethod: o.payment?.method || "COD",
+      total: o.pricing?.totalAmount ?? 0,
       items: o.products?.length || 0,
       status: o.status,
+      shipment: o.shipment || {},
     }));
 
     res.json({
@@ -725,8 +728,26 @@ exports.getOrdersDetails = async (req, res) => {
       return res.status(400).json({ success: false, message: "ids array required" });
     }
 
-    const orders = await Order.find({ _id: { $in: ids } }).sort({ createdAt: -1 });
-
+    const ordersRaw = await Order.find({ _id: { $in: ids } }).sort({ createdAt: -1 });
+    const orders = ordersRaw.map((o) => ({
+      id: o._id.toString(),
+      orderNumber: o.orderNumber,
+      createdAt: o.createdAt,
+      customer: o.userInfo?.name || "Customer",
+      phone: o.userInfo?.phone || "",
+      payment: o.payment || {},
+      pricing: o.pricing || {},
+      products: o.products || [],
+      status: o.status,
+      shipment: o.shipment || {},
+      statusHistory: o.statusHistory || [],
+      userInfo: o.userInfo || {},
+      coupon: o.coupon || {},
+      offersEarned: o.offersEarned || [],
+      invoiceNumber: o.invoiceNumber || "",
+      supportTicketIds: o.supportTicketIds || [],
+      cancellation: o.cancellation || {},
+    }));
     res.json({ success: true, orders });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

@@ -1,9 +1,43 @@
 const mongoose = require("mongoose");
 
+const ORDER_STATUS = [
+  "Order Placed",
+  "Processing",
+  "Packed",
+  "Shipped",
+  "Out for Delivery",
+  "Delivered",
+  "Cancelled",
+  "Partially Cancelled",
+  "Partially Delivered",
+  "Partially Returned",
+  "Returned",
+  "Partially Exchanged",
+  "Exchanged",
+];
+
+const ITEM_STATUS = [
+  "Order Placed",
+  "Processing",
+  "Packed",
+  "Shipped",
+  "Out for Delivery",
+  "Delivered",
+  "Cancelled",
+  "Return Requested",
+  "Return Approved",
+  "Picked Up",
+  "Returned",
+  "Refund Processed",
+  "Exchange Requested",
+  "Exchange Approved",
+  "Exchange Shipped",
+  "Exchange Delivered",
+];
 
 const OrderSchema = new mongoose.Schema(
   {
-    /* ================= USER INFO ================= */
+    /* ================= USER / DELIVERY INFO ================= */
     userInfo: {
       name: {
         type: String,
@@ -27,20 +61,43 @@ const OrderSchema = new mongoose.Schema(
         type: String,
         lowercase: true,
         trim: true,
+        default: "",
       },
 
-      address: {
+      addressLine1: {
         type: String,
         required: [true, "Delivery address is mandatory"],
+        trim: true,
+      },
+
+      addressLine2: {
+        type: String,
+        trim: true,
+        default: "",
       },
 
       city: {
         type: String,
-        default: "N/A",
+        trim: true,
+        default: "",
+      },
+
+      state: {
+        type: String,
+        trim: true,
+        default: "",
       },
 
       pincode: {
         type: String,
+        trim: true,
+        default: "",
+      },
+
+      country: {
+        type: String,
+        trim: true,
+        default: "India",
       },
     },
 
@@ -51,15 +108,17 @@ const OrderSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-   
-    /* ================= ORDER NUMBER ================= */
 
-orderNumber: {
-  type: String,
-  unique: true,
-  index: true,
-},
-    /* ================= PRODUCTS ================= */
+    /* ================= ORDER NUMBER ================= */
+    orderNumber: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      trim: true,
+    },
+
+    /* ================= PRODUCTS SNAPSHOT ================= */
     products: [
       {
         productId: {
@@ -68,135 +127,348 @@ orderNumber: {
           default: null,
         },
 
+        variantId: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+
+        sku: {
+          type: String,
+          default: "",
+          trim: true,
+          uppercase: true,
+        },
+
+        brand: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+
         name: {
           type: String,
           required: true,
-        },
-
-        price: {
-          type: Number,
-          required: true,
-        },
-
-        quantity: {
-          type: Number,
-          default: 1,
-          min: 1,
-        },
-
-        size: {
-          type: String,
-          default: "Standard",
+          trim: true,
         },
 
         img: {
           type: String,
           default: "",
+          trim: true,
         },
+
+        color: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+
+        size: {
+          type: String,
+          default: "Standard",
+          trim: true,
+        },
+
+        quantity: {
+          type: Number,
+          required: true,
+          default: 1,
+          min: 1,
+        },
+
+        mrp: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+
+        price: {
+          type: Number,
+          required: true,
+          min: 0,
+        },
+
+        discount: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+
+        lineTotal: {
+          type: Number,
+          required: true,
+          min: 0,
+        },
+
+        itemStatus: {
+          type: String,
+          enum: ITEM_STATUS,
+          default: "Order Placed",
+          index: true,
+        },
+
+        estimatedDelivery: {
+          type: Date,
+          default: null,
+        },
+
+        deliveredAt: {
+          type: Date,
+          default: null,
+        },
+
+        cancellation: {
+          isCancelled: {
+            type: Boolean,
+            default: false,
+          },
+          cancelledAt: {
+            type: Date,
+            default: null,
+          },
+          cancelReason: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+          cancelComment: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+        },
+
+        returnInfo: {
+          isReturnEligible: {
+            type: Boolean,
+            default: false,
+          },
+          returnWindowEnd: {
+            type: Date,
+            default: null,
+          },
+          isReturnRequested: {
+            type: Boolean,
+            default: false,
+          },
+          requestedAt: {
+            type: Date,
+            default: null,
+          },
+          approvedAt: {
+            type: Date,
+            default: null,
+          },
+          pickedUpAt: {
+            type: Date,
+            default: null,
+          },
+          returnedAt: {
+            type: Date,
+            default: null,
+          },
+          reason: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+          refundAmount: {
+            type: Number,
+            default: 0,
+            min: 0,
+          },
+          refundStatus: {
+            type: String,
+            enum: ["Pending", "Processed", "Rejected"],
+            default: "Pending",
+          },
+        },
+
+        exchangeInfo: {
+          isExchangeEligible: {
+            type: Boolean,
+            default: false,
+          },
+          isExchangeRequested: {
+            type: Boolean,
+            default: false,
+          },
+          requestedAt: {
+            type: Date,
+            default: null,
+          },
+          approvedAt: {
+            type: Date,
+            default: null,
+          },
+          reason: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+          newSize: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+          newVariantId: {
+            type: String,
+            default: "",
+            trim: true,
+          },
+          exchangeStatus: {
+            type: String,
+            enum: [
+              "Pending",
+              "Approved",
+              "Rejected",
+              "Exchange Shipped",
+              "Exchange Delivered",
+            ],
+            default: "Pending",
+          },
+        },
+
+        itemStatusHistory: [
+          {
+            status: {
+              type: String,
+              default: "",
+              trim: true,
+            },
+            message: {
+              type: String,
+              default: "",
+              trim: true,
+            },
+            date: {
+              type: Date,
+              default: Date.now,
+            },
+          },
+        ],
       },
     ],
 
-    /* ================= PRICE BREAKDOWN ================= */
-
-    listingPrice: {
-      type: Number,
-      default: 0,
+    /* ================= PRICING ================= */
+    pricing: {
+      subtotal: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0,
+      },
+      productDiscount: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      couponDiscount: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      shippingCharge: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      platformFee: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      tax: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      totalAmount: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0,
+      },
     },
 
-    subtotal: {
-      type: Number,
-      default: 0,
-    },
-
-    discount: {
-      type: Number,
-      default: 0,
-    },
-
-    /* ================= TOTAL ================= */
-
-    totalAmount: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-
-    /* ================= OFFER / COUPON ================= */
-    offerCode: {
-      type: String,
-      default: null,
-    },
-
-    discountAmount: {
-      type: Number,
-      default: 0,
-    },
-
-    fees: {
-      type: Number,
-      default: 16,
-    },
-
-    finalAmount: {
-      type: Number,
-      required: true,
-      min: 0,
+    /* ================= APPLIED COUPON SNAPSHOT ================= */
+    coupon: {
+      code: {
+        type: String,
+        default: "",
+        trim: true,
+        uppercase: true,
+      },
+      title: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      discountType: {
+        type: String,
+        enum: ["percentage", "flat", ""],
+        default: "",
+      },
+      discountValue: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      discountAmount: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
     },
 
     /* ================= FRONTEND FEATURES ================= */
-
     offersEarned: {
       type: [String],
       default: [],
     },
 
-    trackingEvents: [
-      {
-        status: {
-          type: String,
-          default: "",
-        },
-        time: {
-          type: String,
-          default: "",
-        },
-        date: {
-          type: String,
-          default: "",
-        },
+    /* ================= SHIPMENT / LOGISTICS ================= */
+    shipment: {
+      trackingId: {
+        type: String,
+        default: "",
+        trim: true,
+        index: true,
       },
-    ],
-
-
-
-    /* ================= LOGISTICS ================= */
-
-    trackingId: {
-      type: String,
-      default: "",
-      index: true,
+      courier: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      trackingUrl: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      estimatedDelivery: {
+        type: Date,
+        default: null,
+      },
+      shippedAt: {
+        type: Date,
+        default: null,
+      },
+      deliveredAt: {
+        type: Date,
+        default: null,
+      },
     },
 
-    courier: String,
-    trackingUrl: String,
-    estimatedDelivery: Date,
-    /* ================= ORDER STATUS ================= */
+    /* ================= OVERALL ORDER STATUS ================= */
     status: {
       type: String,
-      enum: [
-        "Order Placed",
-        "Processing",
-        "Shipped",
-        "Out for Delivery",
-        "Delivered",
-        "Cancelled",
-      ],
+      enum: ORDER_STATUS,
       default: "Order Placed",
       index: true,
     },
 
     /* ================= EDIT LOCK SYSTEM ================= */
-
     canEditAddress: {
       type: Boolean,
       default: true,
@@ -212,41 +484,40 @@ orderNumber: {
       default: null,
     },
 
-    /* ================= CANCELLATION ================= */
-
-    cancelReason: {
-      type: String,
-      default: "",
+    /* ================= ORDER LEVEL CANCELLATION ================= */
+    cancellation: {
+      cancelReason: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      cancelComment: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      refundMode: {
+        type: String,
+        enum: ["Original", "Wallet"],
+        default: "Original",
+      },
+      cancelledAt: {
+        type: Date,
+        default: null,
+      },
     },
 
-    cancelComment: {
-      type: String,
-      default: "",
-    },
-
-    refundMode: {
-      type: String,
-      enum: ["Original", "Wallet"],
-      default: "Original",
-    },
-
-    cancelledAt: {
-      type: Date,
-    },
-
-    /* ================= STATUS TIMELINE ================= */
+    /* ================= STATUS HISTORY ================= */
     statusHistory: [
       {
         status: {
           type: String,
-          enum: [
-            "Order Placed",
-            "Processing",
-            "Shipped",
-            "Out for Delivery",
-            "Delivered",
-            "Cancelled",
-          ],
+          enum: ORDER_STATUS,
+        },
+        message: {
+          type: String,
+          default: "",
+          trim: true,
         },
         date: {
           type: Date,
@@ -255,41 +526,56 @@ orderNumber: {
         reason: {
           type: String,
           default: "",
+          trim: true,
         },
       },
     ],
 
-
     /* ================= PAYMENT ================= */
-    paymentType: {
-      type: String,
-      enum: ["COD", "UPI", "CARD"],
-      default: "COD",
+    payment: {
+      method: {
+        type: String,
+        enum: ["COD", "UPI", "CARD", "NETBANKING", "WALLET"],
+        default: "COD",
+      },
+      status: {
+        type: String,
+        enum: ["Pending", "Paid", "Failed", "Refunded", "Partially Refunded"],
+        default: "Pending",
+      },
+      paymentId: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      paidAt: {
+        type: Date,
+        default: null,
+      },
+      paymentChanged: {
+        type: Boolean,
+        default: false,
+      },
+      paymentChangedAt: {
+        type: Date,
+        default: null,
+      },
     },
 
-    paymentStatus: {
+    /* ================= EXTRA ================= */
+    invoiceNumber: {
       type: String,
-      enum: ["Pending", "Paid", "Failed"],
-      default: "Pending",
+      default: "",
+      trim: true,
+      index: true,
     },
 
-    paymentId: {
-      type: String,
-      default: "N/A",
-    },
-
-    /* ================= PAYMENT CHANGE CONTROL ================= */
-
-paymentChanged: {
-  type: Boolean,
-  default: false,
-},
-
-paymentChangedAt: {
-  type: Date,
-  default: null,
-},
-
+    supportTicketIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Ticket",
+      },
+    ],
   },
   {
     timestamps: true,
@@ -297,44 +583,33 @@ paymentChangedAt: {
 );
 
 /* ======================================================
-   AUTO PUSH INITIAL STATUS (FIXED - NO NEXT)
+   AUTO PUSH ORDER STATUS HISTORY
 ====================================================== */
-
 OrderSchema.pre("save", function () {
-
-  if (this.isModified("status")) {
-
-    const now = new Date()
-
-    this.trackingEvents.push({
-      status: this.status,
-      date: now.toLocaleDateString("en-GB"),
-      time: now.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit"
-      })
-    })
-
+  if (this.isNew || this.isModified("status")) {
     this.statusHistory.push({
       status: this.status,
-      date: now
-    })
-
+      message: this.isNew ? "Order created" : "Order status updated",
+      date: new Date(),
+    });
   }
+});
 
-})
 /* ======================================================
-   INDEXES (ADMIN PANEL SPEED BOOST)
+   INDEXES
 ====================================================== */
-
+OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ "userInfo.phone": 1, createdAt: -1 });
 OrderSchema.index({ userId: 1, createdAt: -1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ createdAt: -1 });
+OrderSchema.index({ "shipment.trackingId": 1 });
+OrderSchema.index({ "products.sku": 1 });
+OrderSchema.index({ "products.itemStatus": 1 });
+OrderSchema.index({ "payment.status": 1 });
 
 /* ======================================================
    EXPORT SAFE
 ====================================================== */
-
 module.exports =
   mongoose.models.Order || mongoose.model("Order", OrderSchema);

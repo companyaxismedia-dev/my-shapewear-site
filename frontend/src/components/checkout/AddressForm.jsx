@@ -75,11 +75,12 @@ export default function AddressForm({
     const body = {
       fullName: formData.get("name"),
       phone: formData.get("mobile"),
+      altPhone: formData.get("altPhone") || "",
       pincode: formData.get("pincode"),
-      addressLine: formData.get("address"),
-      locality: formData.get("locality"),
       city,
       state,
+      addressLine: formData.get("address"),
+      landmark: formData.get("landmark") || "",
       addressType: formData.get("type"),
       isDefault: formData.get("isDefault") === "on",
     };
@@ -188,10 +189,16 @@ export default function AddressForm({
           />
 
           <input
-            name="locality"
-            placeholder="Locality / Building / Street*"
-            defaultValue={editingAddress?.locality}
-            required
+            name="landmark"
+            placeholder="Landmark (optional)"
+            defaultValue={editingAddress?.landmark}
+            className="w-full h-[44px] border px-3 text-sm rounded-sm"
+          />
+
+          <input
+            name="altPhone"
+            placeholder="Alternate Phone (optional)"
+            defaultValue={editingAddress?.altPhone}
             className="w-full h-[44px] border px-3 text-sm rounded-sm"
           />
 

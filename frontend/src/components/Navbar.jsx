@@ -156,7 +156,7 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
             <User size={20} />
             {user ? (
               <span style={{ fontFamily: "var(--font-body)", fontWeight: 500 }}>
-                Hi, {user.name}
+                Hi, {user?.name || (typeof window !== 'undefined' && JSON.parse(localStorage.getItem('user') || '{}').name) || 'User'}
               </span>
             ) : (
               <div className="flex gap-3">

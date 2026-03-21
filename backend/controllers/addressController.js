@@ -20,10 +20,17 @@ exports.addAddress = async (req, res) => {
       isDefault,
     } = req.body;
 
-    if (!fullName || !phone || !pincode || !city || !state || !addressLine) {
+    const missingFields = [];
+    if (!fullName) missingFields.push('fullName');
+    if (!phone) missingFields.push('phone');
+    if (!pincode) missingFields.push('pincode');
+    if (!city) missingFields.push('city');
+    if (!state) missingFields.push('state');
+    if (!addressLine) missingFields.push('addressLine');
+    if (missingFields.length > 0) {
       return res.status(400).json({
         success: false,
-        message: "All required fields missing",
+        message: `Missing required fields: ${missingFields.join(', ')}`,
       });
     }
 

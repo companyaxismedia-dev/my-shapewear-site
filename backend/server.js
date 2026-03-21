@@ -114,11 +114,12 @@ app.use("/api/otp", require("./routes/otpRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 
 app.use("/api/products", require("./routes/productRoutes"));
+app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/cart", require("./routes/cartRoutes"));
 app.use("/api/wishlist", require("./routes/wishlistRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
+app.use("/api/items", require("./routes/itemRoutes"));
 app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
-app.use("/api/users", require("./routes/userAddressRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
 
