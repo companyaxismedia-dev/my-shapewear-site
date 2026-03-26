@@ -6,7 +6,7 @@ export default function OrderCard({ order }) {
 
   if (!order) return null
 
-  const product = order?.products?.[0] || order?.items?.[0]
+  const product = (order?.products && order.products[0]) || (order?.items && order.items[0]);
 
   return (
 

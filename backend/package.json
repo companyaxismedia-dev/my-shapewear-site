@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "migrate:products": "node migrations/migrateProducts.js"
+    "migrate:products": "node migrations/migrateProducts.js",
+    "migrate:remove-order-status": "node migrations/removeOrderLevelStatus.js"
   },
   "keywords": [],
   "author": "",

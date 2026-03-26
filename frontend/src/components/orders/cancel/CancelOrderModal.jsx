@@ -44,10 +44,10 @@ export default function CancelOrderModal({ orderId, onClose, productImage, saved
 
                             </div>
 
-                            <img
+                            {/* <img
                                 src={productImage || "/placeholder.jpg"}
                                 className="w-[72px] h-[72px] object-cover rounded"
-                            />
+                            /> */}
 
                         </div>
 
@@ -69,7 +69,7 @@ export default function CancelOrderModal({ orderId, onClose, productImage, saved
                                 onClick={() => router.push(`/order/${orderId}/cancel`)}
                                 className="flex-1 flex items-center justify-center text-blue-600 font-medium hover:bg-gray-50"
                             >
-                                Cancel Order
+                                Cancel All
                             </button>
 
                         </div>

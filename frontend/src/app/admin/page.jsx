@@ -57,10 +57,20 @@ function StatusBadge({ status }) {
       "bg-admin-pending-light text-admin-pending border border-admin-pending/20",
     Delivered:
       "bg-admin-delivered-light text-admin-delivered border border-admin-delivered/20",
+    "Exchange Delivered":
+      "bg-admin-delivered-light text-admin-delivered border border-admin-delivered/20",
     Shipped:
       "bg-admin-shipped-light text-admin-shipped border border-admin-shipped/20",
+    "Out for Delivery":
+      "bg-admin-shipped-light text-admin-shipped border border-admin-shipped/20",
+    Processing:
+      "bg-admin-pending-light text-admin-pending border border-admin-pending/20",
+    Packed:
+      "bg-admin-pending-light text-admin-pending border border-admin-pending/20",
     Cancelled:
       "bg-destructive/10 text-destructive border border-destructive/20",
+    Returned:
+      "bg-admin-pending-light text-admin-pending border border-admin-pending/20",
   };
 
   return (

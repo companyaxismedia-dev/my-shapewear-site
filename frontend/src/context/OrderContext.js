@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { API_BASE } from "@/lib/api";
 
@@ -12,7 +12,7 @@ export const OrderProvider = ({ children }) => {
 
     /* ================= FETCH ALL ORDERS ================= */
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             setLoading(true);
 
@@ -33,15 +33,18 @@ export const OrderProvider = ({ children }) => {
                 orderNumber: o.orderNumber,
                 createdAt: o.createdAt,
 
-                status: (() => {
+                status: (o.status || "Order Placed").trim(),
+                statusGroup: (() => {
                     const s = o.status?.toLowerCase();
 
-                    if (["processing", "shipped", "out for delivery"].includes(s))
+                    if (["processing", "packed", "shipped", "out for delivery", "partially delivered"].includes(s))
                         return "on-the-way";
 
                     if (s === "delivered") return "delivered";
 
                     if (s === "cancelled") return "cancelled";
+
+                    if (["returned", "partially returned"].includes(s)) return "returned";
 
                     return "on-the-way";
                 })(),
@@ -52,6 +55,7 @@ export const OrderProvider = ({ children }) => {
                     size: p.size,
                     price: p.price,
                     quantity: p.quantity,
+                    itemStatus: p.itemStatus,
                 })),
             }));
 
@@ -61,15 +65,15 @@ export const OrderProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchOrders();
-    }, []);
+    }, [fetchOrders]);
 
     /* ================= FETCH SINGLE ORDER ================= */
 
-    const fetchOrderById = async (id) => {
+    const fetchOrderById = useCallback(async (id) => {
         if (!id || id === "null") {
             console.log("Invalid order id:", id);
             return null;
@@ -93,44 +97,45 @@ export const OrderProvider = ({ children }) => {
 
             if (!o) return null;
 
-            const status = (o.status || "").toLowerCase().trim();
-
             return {
                 id: o._id,
-                trackingId: o.trackingId,
-                courier: o.courier,
-
-                userInfo: o.userInfo,
-
-                canEditAddress:
-                    ["order placed", "processing"].includes(status),
-
                 orderNumber: o.orderNumber,
-
+                createdAt: o.createdAt,
                 status: (o.status || "Order Placed").trim(),
-                items: o.products.map((p) => ({
+                canEditAddress: o.canEditAddress,
+                canEditPhone: o.canEditPhone,
+                userInfo: o.userInfo,
+                products: o.products || [],
+                items: (o.products || []).map((p) => ({
                     name: p.name,
                     img: p.img,
                     size: p.size,
                     price: p.price,
-                    listingPrice: p.listingPrice,
+                    mrp: p.mrp,
                     quantity: p.quantity,
+                    lineTotal: p.lineTotal,
+                    itemStatus: p.itemStatus,
+                    estimatedDelivery: p.estimatedDelivery || o.shipment?.estimatedDelivery || null,
+                    deliveredAt: p.deliveredAt || null,
+                    itemStatusHistory: p.itemStatusHistory || [],
                 })),
-
-                listingPrice: o.listingPrice || 0,
-
-                subtotal: o.subtotal || o.totalAmount,
-
-                discount: o.discount || 0,
-
-                fees: o.fees || 0,
-
-                totalAmount: o.finalAmount || o.totalAmount,
+                pricing: o.pricing || {},
+                subtotal: o.pricing?.subtotal || 0,
+                discount: (o.pricing?.productDiscount || 0) + (o.pricing?.couponDiscount || 0),
+                fees: (o.pricing?.shippingCharge || 0) + (o.pricing?.platformFee || 0),
+                totalAmount: o.pricing?.totalAmount || 0,
+                coupon: o.coupon || {},
                 offersEarned: o.offersEarned || [],
-
-                trackingEvents: (o.trackingEvents || []).map((s) => ({
+                shipment: o.shipment || {},
+                trackingId: o.shipment?.trackingId || "",
+                courier: o.shipment?.courier || "",
+                trackingUrl: o.shipment?.trackingUrl || "",
+                estimatedDelivery: o.shipment?.estimatedDelivery || null,
+                deliveredAt: o.shipment?.deliveredAt || null,
+                statusHistory: o.statusHistory || [],
+                trackingEvents: (o.trackingEvents || o.statusHistory || []).map((s) => ({
                     status: s.status,
-                    time: s.time,
+                    message: s.message,
                     date: s.date
                         ? new Date(s.date).toLocaleDateString("en-IN", {
                             day: "2-digit",
@@ -138,35 +143,154 @@ export const OrderProvider = ({ children }) => {
                             year: "numeric",
                         })
                         : "",
-                })),
-
+                    reason: s.reason,
+                })) || [],
                 deliveryAddress: {
-                    address: o.userInfo?.address,
+                    addressLine1: o.userInfo?.addressLine1,
+                    addressLine2: o.userInfo?.addressLine2,
                     city: o.userInfo?.city,
                     state: o.userInfo?.state,
                     pincode: o.userInfo?.pincode,
+                    country: o.userInfo?.country,
                 },
                 recipientName: o.userInfo?.name,
                 recipientPhone: o.userInfo?.phone,
-
-                paymentMethod: o.paymentType,
-
+                payment: o.payment || {},
+                paymentMethod: o.payment?.method,
+                paymentStatus: o.payment?.status,
+                invoiceNumber: o.invoiceNumber,
+                supportTicketIds: o.supportTicketIds || [],
             };
         } catch (err) {
             console.error("Order fetch error", err);
             return null;
         }
-    };
+    }, []);
+
+    /* ================= CANCEL ITEM ================= */
+    const cancelItem = useCallback(async (orderId, itemIndex, reason, comment) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            const token = user?.token;
+
+            if (!token) return null;
+
+            const res = await axios.put(
+                `${API_BASE}/api/items/${orderId}/${itemIndex}/cancel`,
+                { reason, comment },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            return res.data;
+        } catch (err) {
+            console.error("Cancel item error", err);
+            throw err;
+        }
+    }, []);
+
+    /* ================= REQUEST RETURN ================= */
+    const requestReturnItem = useCallback(async (orderId, itemIndex, reason, images) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            const token = user?.token;
+
+            if (!token) return null;
+
+            const res = await axios.put(
+                `${API_BASE}/api/items/${orderId}/${itemIndex}/return`,
+                { reason, images },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            return res.data;
+        } catch (err) {
+            console.error("Return item error", err);
+            throw err;
+        }
+    }, []);
+
+    /* ================= REQUEST EXCHANGE ================= */
+    const requestExchangeItem = useCallback(async (orderId, itemIndex, reason, newSize, newColor, newProductId) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            const token = user?.token;
+
+            if (!token) return null;
+
+            const res = await axios.put(
+                `${API_BASE}/api/items/${orderId}/${itemIndex}/exchange`,
+                { reason, newSize, newColor, newProductId },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            return res.data;
+        } catch (err) {
+            console.error("Exchange item error", err);
+            throw err;
+        }
+    }, []);
+
+    /* ================= GET ITEM DETAILS ================= */
+    const getItemDetails = useCallback(async (orderId, itemIndex) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            const token = user?.token;
+
+            if (!token) return null;
+
+            const res = await axios.get(
+                `${API_BASE}/api/items/${orderId}/${itemIndex}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            return res.data;
+        } catch (err) {
+            console.error("Get item details error", err);
+            return null;
+        }
+    }, []);
+
+    const value = useMemo(
+        () => ({
+            orders,
+            loading,
+            fetchOrders,
+            fetchOrderById,
+            cancelItem,
+            requestReturnItem,
+            requestExchangeItem,
+            getItemDetails,
+        }),
+        [
+            orders,
+            loading,
+            fetchOrders,
+            fetchOrderById,
+            cancelItem,
+            requestReturnItem,
+            requestExchangeItem,
+            getItemDetails,
+        ]
+    );
 
     return (
-        <OrderContext.Provider
-            value={{
-                orders,
-                loading,
-                fetchOrders,
-                fetchOrderById,
-            }}
-        >
+        <OrderContext.Provider value={value}>
             {children}
         </OrderContext.Provider>
     );

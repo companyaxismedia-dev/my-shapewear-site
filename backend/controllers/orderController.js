@@ -4,12 +4,33 @@ const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const User = require("../models/User");
 const Offer = require("../models/Offer");
+const {
+  applyBulkItemStatus,
+  buildOrderStatusHistory,
+  getOrderDerivedStatus,
+  orderMatchesStatus,
+} = require("../utils/orderStatus");
 
 const { Resend } = require("resend");
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
+
+function serializeOrder(orderDoc) {
+  const order =
+    typeof orderDoc?.toObject === "function" ? orderDoc.toObject() : orderDoc;
+  const status = getOrderDerivedStatus(order?.products || []);
+  const statusHistory = buildOrderStatusHistory(order?.products || []);
+
+  return {
+    ...order,
+    finalAmount: order?.pricing?.totalAmount ?? order?.finalAmount ?? 0,
+    status,
+    statusHistory,
+    trackingEvents: statusHistory,
+  };
+}
 
 /* =====================================================
    1️⃣ CREATE ORDER FROM CART (WITH OFFER SUPPORT)
@@ -70,41 +91,38 @@ exports.createOrder = async (req, res) => {
 
     /* ---------- PRODUCTS ---------- */
     const orderProducts = cart.items.map((item) => {
-
       if (!item.product) {
         throw new Error("Product missing in cart");
       }
-
       let selectedPrice = item.product.minPrice;
       let selectedMrp = item.product.mrp;
-
       item.product.variants.forEach((variant) => {
         variant.sizes.forEach((size) => {
-
           if (size.size === item.size) {
             selectedPrice = size.price;
             selectedMrp = size.mrp || size.price;
           }
-
         });
       });
-
+      const quantity = item.qty;
       return {
         productId: item.product._id,
-
         name: item.product.name,
-
         price: selectedPrice,
-
         listingPrice: selectedMrp,
-
-        quantity: item.qty,
-
+        quantity,
         size: item.size || "Standard",
-
-        img: item.product.thumbnail || ""
+        img: item.product.thumbnail || "",
+        lineTotal: selectedPrice * quantity,
+        itemStatus: "Order Placed",
+        itemStatusHistory: [
+          {
+            status: "Order Placed",
+            message: "Order created",
+            date: new Date(),
+          },
+        ],
       };
-
     });
 
     /* ---------- TOTAL ---------- */
@@ -200,50 +218,70 @@ exports.createOrder = async (req, res) => {
       "-" +
       Math.floor(100000 + Math.random() * 900000);
 
-    for (const item of orderProducts) {
 
-      const order = new Order({
-
-        orderNumber: orderNumber,
-
-        userId: req.user._id,
-
-        listingPrice: totalMrp,
-        subtotal: totalAmount,
-        discount: totalMrp - totalAmount,
-
-        userInfo: {
-          name: address.fullName,
-          phone: address.phone,
-          email: user.email,
-          address: address.addressLine,
-          city: address.city,
-          pincode: address.pincode,
-        },
-
-        products: [item],
-
-        totalAmount: totalAmount,
-        fees: fees,
-
-        offerCode: appliedOfferCode,
+    const order = new Order({
+      orderNumber: orderNumber,
+      userId: req.user._id,
+      userInfo: {
+        name: address.fullName,
+        phone: address.phone,
+        alternatePhone: address.alternatePhone || "",
+        email: user.email,
+        addressLine1: address.addressLine,
+        addressLine2: address.addressLine2 || "",
+        city: address.city,
+        state: address.state || "",
+        pincode: address.pincode,
+        country: address.country || "India",
+      },
+      products: orderProducts,
+      pricing: {
+        subtotal: totalMrp,
+        productDiscount: totalMrp - totalAmount,
+        couponDiscount: discountAmount,
+        shippingCharge: fees,
+        platformFee: 0,
+        tax: 0,
+        totalAmount: totalAmount + fees - discountAmount,
+      },
+      coupon: {
+        code: appliedOfferCode || "",
+        title: "",
+        discountType: offerCode ? (offer.discountType || "") : "",
+        discountValue: offerCode ? (offer.discountValue || 0) : 0,
         discountAmount: discountAmount,
-        finalAmount: totalAmount + fees - discountAmount,
-
+      },
+      offersEarned: offersEarned,
+      shipment: {
+        trackingId: "",
+        courier: "",
+        trackingUrl: "",
+        estimatedDelivery: null,
+        shippedAt: null,
+        deliveredAt: null,
+      },
+      canEditAddress: true,
+      canEditPhone: true,
+      lockedAt: null,
+      cancellation: {
+        cancelReason: "",
+        cancelComment: "",
+        refundMode: "Original",
+        cancelledAt: null,
+      },
+      payment: {
+        method: finalPaymentType,
+        status: "Pending",
         paymentId: paymentId || "N/A",
-        paymentType: finalPaymentType,
+        paidAt: null,
+        paymentChanged: false,
+        paymentChangedAt: null,
+      },
+      invoiceNumber: "",
+      supportTicketIds: [],
+    });
 
-        status: "Order Placed",
-
-        canEditAddress: true,
-        canEditPhone: true,
-
-        statusHistory: [{ status: "Order Placed" }],
-
-      });
-
-      savedOrder = await order.save();
-    }
+    savedOrder = await order.save();
 
     /* ---------- STOCK REDUCE (FIXED VERSION) ---------- */
     /* ---------- STOCK REDUCE (FIXED VERSION) ---------- */
@@ -328,16 +366,6 @@ exports.getMyOrders = async (req, res) => {
       userId: req.user._id,
     };
 
-    /* ========= STATUS FILTER ========= */
-    if (status && status !== "all") {
-      if (status === "on-the-way") {
-        filter.status = "Shipped";
-      } else {
-        filter.status =
-          status.charAt(0).toUpperCase() + status.slice(1);
-      }
-    }
-
     /* ========= TIME FILTER ========= */
     if (time && time !== "all") {
       const now = new Date();
@@ -374,9 +402,13 @@ exports.getMyOrders = async (req, res) => {
       createdAt: -1,
     });
 
+    const filteredOrders = orders
+      .filter((order) => orderMatchesStatus(order.products, status))
+      .map(serializeOrder);
+
     return res.status(200).json({
       success: true,
-      orders,
+      orders: filteredOrders,
     });
 
   } catch (error) {
@@ -410,7 +442,7 @@ exports.trackOrder = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      order
+      order: serializeOrder(order),
     });
 
   } catch {
@@ -433,7 +465,7 @@ exports.getAllOrders = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      orders,
+      orders: orders.map(serializeOrder),
     });
 
   } catch (error) {
@@ -477,27 +509,9 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    order.status = status;
-    /* ===== LOCK ADDRESS + PHONE AFTER SHIPPING ===== */
-
-    if (status === "Shipped") {
-      order.canEditAddress = false;
-      order.canEditPhone = false;
-      order.lockedAt = new Date();
-    }
-
-    if (trackingId) {
-      order.trackingId = trackingId;
-    }
-    if (status === "Shipped" && !order.courier) {
-      order.courier = "ShadowFax";
-    }
-
-    order.statusHistory.push({ status });
-    order.trackingEvents.push({
-      status,
-      time: new Date().toLocaleTimeString(),
-      date: new Date().toLocaleDateString(),
+    applyBulkItemStatus(order, status, {
+      trackingId,
+      message: `Bulk order update to ${status}`,
     });
 
     await order.save();
@@ -505,7 +519,7 @@ exports.updateOrderStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Order updated",
-      order,
+      order: serializeOrder(order),
     });
 
   } catch (error) {
@@ -546,7 +560,7 @@ exports.getOrderById = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      order,
+      order: serializeOrder(order),
     });
 
   } catch (error) {
@@ -577,7 +591,9 @@ exports.cancelOrder = async (req, res) => {
       });
     }
 
-    if (["Shipped", "Delivered", "Cancelled"].includes(order.status)) {
+    const currentStatus = getOrderDerivedStatus(order.products);
+
+    if (["Shipped", "Out for Delivery", "Delivered", "Cancelled"].includes(currentStatus)) {
       return res.status(400).json({
         success: false,
         message: "Order cannot be cancelled now"
@@ -586,26 +602,14 @@ exports.cancelOrder = async (req, res) => {
 
     /* ========= UPDATE ORDER ========= */
 
-    order.status = "Cancelled";
-
-    order.cancelReason = reason;
-    order.cancelComment = comment;
-    order.refundMode = refundMode;
-    order.cancelledAt = new Date();
-
-    /* ========= STATUS HISTORY ========= */
-
-    order.statusHistory.push({
-      status: "Cancelled",
-      reason: reason
-    });
-
-    /* ========= TRACKING EVENTS ========= */
-
-    order.trackingEvents.push({
-      status: "Cancelled",
-      time: new Date().toLocaleTimeString(),
-      date: new Date().toLocaleDateString()
+    order.cancellation.cancelReason = reason;
+    order.cancellation.cancelComment = comment;
+    order.cancellation.refundMode = refundMode || "Original";
+    order.cancellation.cancelledAt = new Date();
+    applyBulkItemStatus(order, "Cancelled", {
+      message: `Order cancelled${reason ? ` - ${reason}` : ""}`,
+      reason,
+      comment,
     });
 
     await order.save();
@@ -613,7 +617,7 @@ exports.cancelOrder = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Order cancelled successfully",
-      order
+      order: serializeOrder(order)
     });
 
   } catch (error) {
@@ -649,32 +653,36 @@ exports.updateOrderAddress = async (req, res) => {
 
     /* ===== CHANGE BLOCK AFTER SHIPPING ===== */
 
-    if (
-      ["Shipped", "Out for Delivery", "Delivered", "Cancelled"]
-        .includes(order.status)
-    ) {
+    const currentStatus = getOrderDerivedStatus(order.products);
+
+    if (["Shipped", "Out for Delivery", "Delivered", "Cancelled"].includes(currentStatus)) {
       return res.status(400).json({
         success: false,
         message: "Address cannot be changed after order is shipped"
       });
     }
 
-    const { name, phone, address, city, pincode } = req.body;
+
+    const { name, phone, alternatePhone, email, addressLine1, addressLine2, city, state, pincode, country } = req.body;
 
     /* ===== UPDATE DATA ===== */
-
     if (name) order.userInfo.name = name;
     if (phone) order.userInfo.phone = phone;
-    if (address) order.userInfo.address = address;
+    if (alternatePhone) order.userInfo.alternatePhone = alternatePhone;
+    if (email) order.userInfo.email = email;
+    if (addressLine1) order.userInfo.addressLine1 = addressLine1;
+    if (addressLine2) order.userInfo.addressLine2 = addressLine2;
     if (city) order.userInfo.city = city;
+    if (state) order.userInfo.state = state;
     if (pincode) order.userInfo.pincode = pincode;
+    if (country) order.userInfo.country = country;
 
     await order.save();
 
     res.status(200).json({
       success: true,
       message: "Address updated",
-      order
+      order: serializeOrder(order)
     });
 
   } catch (error) {
@@ -714,11 +722,11 @@ exports.updateOrderPhone = async (req, res) => {
       });
     }
 
-    const { name, primary, alternate } = req.body;
+
+    const { name, phone, alternatePhone } = req.body;
 
     /* ===== NOTHING TO UPDATE ===== */
-
-    if (!name && !primary && !alternate) {
+    if (!name && !phone && !alternatePhone) {
       return res.status(400).json({
         success: false,
         message: "Nothing to update"
@@ -726,17 +734,16 @@ exports.updateOrderPhone = async (req, res) => {
     }
 
     /* ===== UPDATE DATA ===== */
-
     if (name) order.userInfo.name = name;
-    if (primary) order.userInfo.phone = primary;
-    if (alternate) order.userInfo.alternatePhone = alternate;
+    if (phone) order.userInfo.phone = phone;
+    if (alternatePhone) order.userInfo.alternatePhone = alternatePhone;
 
     await order.save();
 
     res.status(200).json({
       success: true,
       message: "Phone updated successfully",
-      order
+      order: serializeOrder(order)
     });
 
   } catch (error) {
@@ -776,7 +783,9 @@ exports.updatePayment = async (req, res) => {
     
     /* ===== BLOCK PAYMENT CHANGE FOR FINAL ORDERS ===== */
 
-    if (["Cancelled", "Delivered"].includes(order.status)) {
+    const currentStatus = getOrderDerivedStatus(order.products);
+
+    if (["Cancelled", "Delivered"].includes(currentStatus)) {
       return res.status(400).json({
         success: false,
         message: "Payment cannot be changed for this order"
@@ -785,7 +794,7 @@ exports.updatePayment = async (req, res) => {
 
     /* ===== BLOCK AFTER SHIPPING ===== */
 
-    if (["Shipped", "Out for Delivery"].includes(order.status)) {
+    if (["Shipped", "Out for Delivery"].includes(currentStatus)) {
       return res.status(400).json({
         success: false,
         message: "Payment cannot be changed after order is shipped"
@@ -794,7 +803,7 @@ exports.updatePayment = async (req, res) => {
 
     /* ===== ONLY COD ORDERS CAN CHANGE PAYMENT ===== */
 
-    if (order.paymentType !== "COD") {
+    if (order.payment.method !== "COD") {
       return res.status(400).json({
         success: false,
         message: "Only COD orders can change payment method"
@@ -817,7 +826,7 @@ exports.updatePayment = async (req, res) => {
 
     /* ===== ONLY ONE TIME CHANGE ===== */
 
-    if (order.paymentChanged) {
+    if (order.payment.paymentChanged) {
       return res.status(400).json({
         success: false,
         message: "Payment method already changed once"
@@ -826,27 +835,25 @@ exports.updatePayment = async (req, res) => {
 
     /* ===== UPDATE PAYMENT ===== */
 
+
     if (paymentMethod) {
-      order.paymentType = paymentMethod;
+      order.payment.method = paymentMethod;
     }
-
     if (paymentStatus) {
-      order.paymentStatus = paymentStatus;
+      order.payment.status = paymentStatus;
     }
-
     if (paymentId) {
-      order.paymentId = paymentId;
+      order.payment.paymentId = paymentId;
     }
-
-    order.paymentChanged = true;
-    order.paymentChangedAt = new Date();
+    order.payment.paymentChanged = true;
+    order.payment.paymentChangedAt = new Date();
 
     await order.save();
 
     return res.status(200).json({
       success: true,
       message: "Payment updated successfully",
-      order
+      order: serializeOrder(order)
     });
 
   } catch (error) {

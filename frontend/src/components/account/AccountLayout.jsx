@@ -15,15 +15,14 @@ import MyCoupons from "./MyCoupons";
 
 export default function AccountLayout() {
 
-  const pathname = usePathname();
-  // Extract section from pathname, e.g. /account/coupons => "coupons"
-  const sectionMatch = pathname.match(/account\/(\w+)/);
-  const section = sectionMatch ? sectionMatch[1] : "dashboard";
-  const [activeSection, setActiveSection] = useState(section);
+const pathname = usePathname();
 
-  useEffect(() => {
-    setActiveSection(section);
-  }, [section]);
+const section = pathname?.split("/")[2] || "dashboard";
+const [activeSection, setActiveSection] = useState(section);
+
+useEffect(() => {
+  setActiveSection(section);
+}, [section]);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -50,26 +49,21 @@ export default function AccountLayout() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "var(--color-bg)" }}>
-      {/* Header - Full width, sticky above everything */}
       <div className="sticky top-0 z-20 flex justify-center" style={{ background: "var(--color-bg-alt)", borderBottom: "1px solid var(--color-border)", padding: "20px 16px" }}>
         <h1 style={{ fontFamily: "var(--font-display)", fontSize: "28px", fontWeight: 700, color: "var(--color-heading)", margin: 0, letterSpacing: "-0.5px" }}>
           🔒 My Account
         </h1>
       </div>
 
-      {/* Main content flex - sidebar + content below header */}
       <div className="flex flex-col md:flex-row flex-1">
-        {/* Sidebar - Visible on desktop, drawer on mobile */}
         <AccountSidebar
           activeSection={activeSection}
           onSectionChange={setActiveSection}
         />
 
-        {/* Main Content - Full width on mobile, flex-1 on desktop */}
         <div className="flex-1 w-full">
-          {/* Content */}
           <div className="container-imkaa" style={{ paddingTop: "32px", paddingBottom: "32px", scrollBehavior: "smooth" }}>
-            <div className="card-imkaa" style={{ padding: "24px" }}>
+            <div className="card-imkaa" style={{ padding: "24px", overflow: "visible" }}>
               {renderContent()}
             </div>
           </div>
@@ -78,3 +72,39 @@ export default function AccountLayout() {
     </div>
   );
 }
+
+
+// logic for the top navigation in the acccount page
+// const menuItems = [
+//     { id: "orders", label: "Orders", icon: ShoppingBag },
+//     { id: "coupons", label: "Coupons", icon: Ticket },
+//     { id: "personal-info", label: "Profile", icon: User },
+//     { id: "wallet", label: "Wallet", icon: Wallet },
+//     { id: "bank-details", label: "Bank", icon: Banknote },
+//     { id: "address-book", label: "Address", icon: MapPin },
+//     { id: "notifications", label: "Alerts", icon: Bell },
+// ];
+
+//             <div className="md:hidden mb-6 px-4 lg:px-6" style={{ background: "var(--color-bg-alt)", borderBottom: "1px solid var(--color-border)", marginLeft: "-16px", marginRight: "-16px", marginTop: "-32px", paddingLeft: "16px", paddingRight: "16px", paddingTop: "16px", paddingBottom: "16px" }}>
+//                 <div className="flex gap-2 overflow-x-auto pb-2">
+//                     {menuItems.map((item) => {
+//                         const Icon = item.icon;
+//                         const isActive = item.id === "orders";
+//                         return (
+//                             <Link
+//                                 key={item.id}
+//                                 href={`/account?tab=${item.id}`}
+//                                 className="flex items-center gap-1 px-3 py-2 rounded-full flex-shrink-0 text-sm font-medium whitespace-nowrap transition"
+//                                 style={{
+//                                     background: isActive ? "var(--color-primary)" : "var(--color-card)",
+//                                     color: isActive ? "white" : "var(--color-body)",
+//                                     border: `1px solid ${isActive ? "var(--color-primary)" : "var(--color-border)"}`,
+//                                 }}
+//                             >
+//                                 <Icon size={16} />
+//                                 <span>{item.label}</span>
+//                             </Link>
+//                         );
+//                     })}
+//                 </div>
+//             </div>

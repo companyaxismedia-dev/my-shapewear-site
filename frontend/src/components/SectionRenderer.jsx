@@ -21,7 +21,7 @@ export default function SectionRenderer({ section, compact = false }) {
     // return preset?.subtitle || "Curated pieces designed for comfort and confidence.";
     return preset?.subtitle || "";
   };
-   
+
 
   const resolveImage = (src) => {
     if (!src) return src;
@@ -95,36 +95,36 @@ export default function SectionRenderer({ section, compact = false }) {
     return (
       <section className={wrapClassName}>
         <div className={compact ? "" : "container-imkaa"}>
-            <SectionHeading title={section.title} />
-            <div className={getGridClasses(effectiveCols)}>
-              {itemsToDisplay.map((block) => {
-                const data = block.data || {};
-                const hasLink = data.link && data.link.trim();
-                const handleClick = (e) => {
-                  if (!hasLink) e.preventDefault();
-                };
-                const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
-                return (
-                  <a
-                    key={block._id}
-                    href={hasLink ? data.link : "#"}
-                    className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
-                    {...linkProps}
-                  >
-                    <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
-                      {renderBlockContent(block)}
+          <SectionHeading title={section.title} />
+          <div className={getGridClasses(effectiveCols)}>
+            {itemsToDisplay.map((block) => {
+              const data = block.data || {};
+              const hasLink = data.link && data.link.trim();
+              const handleClick = (e) => {
+                if (!hasLink) e.preventDefault();
+              };
+              const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
+              return (
+                <a
+                  key={block._id}
+                  href={hasLink ? data.link : "#"}
+                  className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  {...linkProps}
+                >
+                  <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
+                    {renderBlockContent(block)}
+                  </div>
+                  {data.title && (
+                    <div className="p-4 text-center">
+                      <p className="title-product">
+                        {data.title}
+                      </p>
                     </div>
-                    {data.title && (
-                      <div className="p-4 text-center">
-                        <p className="title-product">
-                          {data.title}
-                        </p>
-                      </div>
-                    )}
-                  </a>
-                );
-              })}
-            </div>
+                  )}
+                </a>
+              );
+            })}
+          </div>
         </div>
       </section>
     );
@@ -137,36 +137,36 @@ export default function SectionRenderer({ section, compact = false }) {
     return (
       <section className={wrapClassName}>
         <div className={compact ? "" : "container-imkaa"}>
-            <SectionHeading title={section.title} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {itemsToDisplay.map((block) => {
-                const data = block.data || {};
-                const hasLink = data.link && data.link.trim();
-                const handleClick = (e) => {
-                  if (!hasLink) e.preventDefault();
-                };
-                const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
-                return (
-                  <a
-                    key={block._id}
-                    href={hasLink ? data.link : "#"}
-                    className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
-                    {...linkProps}
-                  >
-                    <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
-                      {renderBlockContent(block)}
+          <SectionHeading title={section.title} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {itemsToDisplay.map((block) => {
+              const data = block.data || {};
+              const hasLink = data.link && data.link.trim();
+              const handleClick = (e) => {
+                if (!hasLink) e.preventDefault();
+              };
+              const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
+              return (
+                <a
+                  key={block._id}
+                  href={hasLink ? data.link : "#"}
+                  className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  {...linkProps}
+                >
+                  <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
+                    {renderBlockContent(block)}
+                  </div>
+                  {data.title && (
+                    <div className="p-4 text-center">
+                      <p className="title-product">
+                        {data.title}
+                      </p>
                     </div>
-                    {data.title && (
-                      <div className="p-4 text-center">
-                        <p className="title-product">
-                          {data.title}
-                        </p>
-                      </div>
-                    )}
-                  </a>
-                );
-              })}
-            </div>
+                  )}
+                </a>
+              );
+            })}
+          </div>
         </div>
       </section>
     );
@@ -179,36 +179,36 @@ export default function SectionRenderer({ section, compact = false }) {
     return (
       <section className={wrapClassName}>
         <div className={compact ? "" : "container-imkaa"}>
-            <SectionHeading title={section.title} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-              {itemsToDisplay.map((block) => {
-                const data = block.data || {};
-                const hasLink = data.link && data.link.trim();
-                const handleClick = (e) => {
-                  if (!hasLink) e.preventDefault();
-                };
-                const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
-                return (
-                  <a
-                    key={block._id}
-                    href={hasLink ? data.link : "#"}
-                    className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
-                    {...linkProps}
-                  >
-                    <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
-                      {renderBlockContent(block)}
+          <SectionHeading title={section.title} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+            {itemsToDisplay.map((block) => {
+              const data = block.data || {};
+              const hasLink = data.link && data.link.trim();
+              const handleClick = (e) => {
+                if (!hasLink) e.preventDefault();
+              };
+              const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
+              return (
+                <a
+                  key={block._id}
+                  href={hasLink ? data.link : "#"}
+                  className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  {...linkProps}
+                >
+                  <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
+                    {renderBlockContent(block)}
+                  </div>
+                  {data.title && (
+                    <div className="p-4 text-center">
+                      <p className="title-product">
+                        {data.title}
+                      </p>
                     </div>
-                    {data.title && (
-                      <div className="p-4 text-center">
-                        <p className="title-product">
-                          {data.title}
-                        </p>
-                      </div>
-                    )}
-                  </a>
-                );
-              })}
-            </div>
+                  )}
+                </a>
+              );
+            })}
+          </div>
         </div>
       </section>
     );
@@ -221,45 +221,45 @@ export default function SectionRenderer({ section, compact = false }) {
     return (
       <section style={{ paddingTop: compact ? 14 : 20, paddingBottom: compact ? 14 : 20 }}>
         <div className={compact ? "" : "container-imkaa"}>
-            {itemsToDisplay.map((block) => {
-              const data = block.data || {};
-              const desktopUrl = data.desktopUrl || data.image || data.img || data.src;
-              const mobileUrl = data.mobileUrl;
-              const hasLink = data.link && data.link.trim();
-              const handleClick = (e) => {
-                if (!hasLink) e.preventDefault();
-              };
-              const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
+          {itemsToDisplay.map((block) => {
+            const data = block.data || {};
+            const desktopUrl = data.desktopUrl || data.image || data.img || data.src;
+            const mobileUrl = data.mobileUrl;
+            const hasLink = data.link && data.link.trim();
+            const handleClick = (e) => {
+              if (!hasLink) e.preventDefault();
+            };
+            const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
 
-              return (
-                <a
-                  key={block._id}
-                  href={hasLink ? data.link : "#"}
-                  className={`block w-full card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
-                  {...linkProps}
-                >
-                  <div className="w-full" style={{ background: "var(--color-bg-alt)" }}>
-                    <picture>
-                      {mobileUrl ? (
-                        <source srcSet={resolveImage(mobileUrl)} media="(max-width: 767px)" />
-                      ) : null}
-                      {desktopUrl ? (
-                        <img
-                          src={resolveImage(desktopUrl)}
-                          alt={data.altText || "Short Banner"}
-                          className="w-full h-auto object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-64 flex items-center justify-center" style={{ color: "var(--color-muted)" }}>
-                          No image
-                        </div>
-                      )}
-                    </picture>
-                  </div>
-                </a>
-              );
-            })}
+            return (
+              <a
+                key={block._id}
+                href={hasLink ? data.link : "#"}
+                className={`block w-full card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                {...linkProps}
+              >
+                <div className="w-full" style={{ background: "var(--color-bg-alt)" }}>
+                  <picture>
+                    {mobileUrl ? (
+                      <source srcSet={resolveImage(mobileUrl)} media="(max-width: 767px)" />
+                    ) : null}
+                    {desktopUrl ? (
+                      <img
+                        src={resolveImage(desktopUrl)}
+                        alt={data.altText || "Short Banner"}
+                        className="w-full h-auto object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-64 flex items-center justify-center" style={{ color: "var(--color-muted)" }}>
+                        No image
+                      </div>
+                    )}
+                  </picture>
+                </div>
+              </a>
+            );
+          })}
         </div>
       </section>
     );
@@ -285,7 +285,7 @@ export default function SectionRenderer({ section, compact = false }) {
                 if (!hasLink) e.preventDefault();
               };
               const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
-              
+
               return (
                 <a
                   key={block._id}

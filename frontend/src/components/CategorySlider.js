@@ -83,7 +83,7 @@ export default function CategorySlider() {
           {categoryBanners.map((item, index) => (
             <SwiperSlide key={index}>
               <div className="h-full">
-                <div className="category-card h-full flex flex-col">
+                <div className="category-card h-full flex flex-col justify-between">
                   <Link href={item.path} className="block">
                     <div
                       className="relative w-full overflow-hidden"
@@ -105,14 +105,22 @@ export default function CategorySlider() {
                     </div>
                   </Link>
 
-                  <div className="pt-4 flex flex-col flex-1">
+                  <div className="pt-4 flex flex-col flex-1 min-h-[180px]">
                     <h3 className="title-product" style={{ fontSize: 18, marginBottom: 6 }}>
                       {item.title}
                     </h3>
                     <p className="text-muted-sm" style={{ fontSize: 14, marginBottom: 14 }}>
                       {item.desc}
                     </p>
-                    <Link href={item.path} className="btn-secondary-imkaa w-fit mt-auto">
+                    <Link
+                      href={item.path}
+                      className="btn-secondary-imkaa mt-auto self-center text-center"
+                      style={{
+                        padding: "10px 16px",
+                        fontSize: "13px",
+                        lineHeight: 1.2,
+                      }}
+                    >
                       Explore Collection
                     </Link>
                   </div>

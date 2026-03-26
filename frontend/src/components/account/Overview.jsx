@@ -70,23 +70,48 @@ export default function Overview() {
   return (
     <div className="overview-container" style={{ padding: "32px 0" }}>
       <div className="card-imkaa" style={{ padding: "24px", marginBottom: "32px", textAlign: "center" }}>
-        <img src="/public/image/profile-placeholder.png" alt="Profile" style={{ width: 80, height: 80, borderRadius: "50%", marginBottom: 16 }} />
-        <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>sj.joshi5213@gmail.com</div>
+        <img
+          src="/image/profile-placeholder.png"
+          alt="Profile"
+          style={{ width: 80, height: 80, borderRadius: "50%", marginBottom: 16 }}
+        />
+        <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>user@gmail.com</div>
         <button className="btn-secondary-imkaa" style={{ marginBottom: 16 }}>EDIT PROFILE</button>
       </div>
-      <div className="overview-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+      <div
+        className="overview-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 24,
+        }}
+      >
         {overviewItems.map((item) => {
           const Icon = item.icon;
           return (
             <div
               key={item.id}
               className="overview-item card-imkaa"
-              style={{ padding: "24px", cursor: "pointer", textAlign: "center" }}
+              style={{
+                padding: "24px",
+                cursor: "pointer",
+                textAlign: "center",
+              }}
               onClick={() => router.push(item.link)}
             >
-              <Icon size={32} style={{ marginBottom: 12, color: "var(--color-primary)" }} />
-              <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 8 }}>{item.label}</div>
-              <div style={{ color: "var(--color-body)", fontSize: 13 }}>{item.description}</div>
+              <Icon
+                size={32}
+                style={{ color: "var(--color-primary)" }}
+                className="block mx-auto md:mb-3"
+              />
+
+              <div style={{ fontWeight: 600, fontSize: 16, marginTop: 10 }}>
+                {item.label}
+              </div>
+
+              <div className="hidden md:block" style={{ color: "var(--color-body)", fontSize: 13 }}>
+                {item.description}
+              </div>
             </div>
           );
         })}

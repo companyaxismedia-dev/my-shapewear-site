@@ -39,8 +39,30 @@ export function useOrders(startDate, endDate, page = 1, limit = 10, search = "",
         headers:{Authorization:`Bearer ${token}`}
       });
 
+
       if(resOrders && resOrders.success){
-        setOrders(resOrders.orders || []);
+        // Map orders to new schema if needed
+        setOrders((resOrders.orders || []).map((o) => ({
+          id: o.id || o._id,
+          orderNumber: o.orderNumber,
+          createdAt: o.createdAt,
+          status: o.status,
+          customer: o.customer,
+          phone: o.phone,
+          payment: o.payment,
+          paymentMethod: o.paymentMethod,
+          total: o.total,
+          items: o.items,
+          shipment: o.shipment,
+          products: o.products,
+          userInfo: o.userInfo,
+          pricing: o.pricing,
+          coupon: o.coupon,
+          offersEarned: o.offersEarned,
+          statusHistory: o.statusHistory,
+          invoiceNumber: o.invoiceNumber,
+          supportTicketIds: o.supportTicketIds,
+        })));
         setTotal(resOrders.total || 0);
         setPages(resOrders.pages || 1);
       }

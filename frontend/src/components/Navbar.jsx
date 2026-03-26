@@ -103,7 +103,7 @@ function NavActions({ isSearchOpen, setIsSearchOpen, setLoginOpen, setRegisterOp
         openRegister={() => setRegisterOpen(true)}
       />
       <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
-      <LinkNav href="/cart" className="relative p-1.5 transition-colors" style={{ color: "var(--color-body)" }}>
+      <LinkNav href="/checkout/cart" className="relative p-1.5 transition-colors" style={{ color: "var(--color-body)" }}>
         <ShoppingCart size={22} className="hover:text-[var(--color-primary)] transition-colors" />
         {cartCount > 0 && (
           <span
@@ -156,7 +156,7 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
             <User size={20} />
             {user ? (
               <span style={{ fontFamily: "var(--font-body)", fontWeight: 500 }}>
-                Hi, {user.name}
+                Hi, {user?.name || (typeof window !== 'undefined' && JSON.parse(localStorage.getItem('user') || '{}').name) || 'User'}
               </span>
             ) : (
               <div className="flex gap-3">

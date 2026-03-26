@@ -1,44 +1,57 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import OrderModal from "@/components/admin/modals/OrderModal";
+import { API_BASE } from "@/lib/api";
 import { toast } from "sonner";
+
+const formatMoney = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
+
+const resolveImageUrl = (item) => {
+  const rawImage =
+    item?.img ||
+    item?.image ||
+    item?.images?.[0]?.url ||
+    item?.images?.[0] ||
+    "";
+
+  if (!rawImage) return "";
+  if (rawImage.startsWith("http")) return rawImage;
+  return `${API_BASE}${rawImage}`;
+};
 
 export default function AdminOrderDetail() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params?.id;
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [itemsOpen, setItemsOpen] = useState(true);
-  const [summaryOpen, setSummaryOpen] = useState(true);
-  const [timeline, setTimeline] = useState(true);
-
   const [showFulfillModal, setShowFulfillModal] = useState(false);
 
   useEffect(() => {
     if (!id) return;
+
     const fetchOrder = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('adminToken');
-        const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/admin/orders/details', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        const token = localStorage.getItem("adminToken");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/orders/details`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ ids: [id] }),
         });
         const data = await res.json();
-        if (!data.success) throw new Error(data.message || 'Failed to fetch order');
-        const ord = (data.orders && data.orders[0]) || null;
-        setOrder(ord);
-        setStatus(ord?.status || 'Order Placed');
+        if (!data.success) throw new Error(data.message || "Failed to fetch order");
+        setOrder((data.orders && data.orders[0]) || null);
       } catch (err) {
         console.error(err);
-        toast.error(err.message || 'Failed to load order');
+        toast.error(err.message || "Failed to load order");
       } finally {
         setLoading(false);
       }
@@ -47,202 +60,230 @@ export default function AdminOrderDetail() {
     fetchOrder();
   }, [id]);
 
-  const updateStatus = async () => {
-    try {
-      setSaving(true);
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + '/api/admin/orders/status', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ orderId: id, status }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || 'Update failed');
-      setOrder(data.order || order);
-      toast.success('Status updated');
-    } catch (err) {
-      console.error(err);
-      toast.error(err.message || 'Update failed');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const selectedItemIndex = useMemo(() => {
+    const rawIndex = Number(searchParams.get("item") || 0);
+    if (!Number.isFinite(rawIndex) || rawIndex < 0) return 0;
+    return rawIndex;
+  }, [searchParams]);
 
   if (loading) return <div className="p-6">Loading order...</div>;
   if (!order) return <div className="p-6">Order not found</div>;
 
-  const sortedTimeline = [...(order.statusHistory || [])].sort(
+  const products = order.products || [];
+  const activeItem = products[selectedItemIndex] || products[0] || null;
+  const activeImage = resolveImageUrl(activeItem);
+  const itemTimeline = [...(activeItem?.itemStatusHistory || [])].sort(
     (a, b) =>
-      new Date(b.date || order.updatedAt) -
-      new Date(a.date || order.updatedAt)
+      new Date(b.date || order.updatedAt || order.createdAt) -
+      new Date(a.date || order.updatedAt || order.createdAt)
   );
 
+  const openItem = (itemIndex) => {
+    router.push(`/admin/orders/${id}?item=${itemIndex}`);
+  };
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="admin-card p-4 flex items-start justify-between gap-4">
+    <div className="space-y-6 p-6">
+      <div className="admin-card flex flex-wrap items-start justify-between gap-4 p-5">
         <div>
-          <h1 className="text-2xl font-semibold">Order ID: {String(order._id)}</h1>
-          <div className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleString()} • from {order.source || 'Store'}</div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-sm">{order.paymentStatus || 'Payment pending'}</span>
-            <span className="px-2 py-1 rounded bg-red-100 text-red-800 text-sm">{order.status || 'Unfulfilled'}</span>
+          <h1 className="text-2xl font-semibold">Order ID: {String(order.orderNumber || order._id)}</h1>
+          <div className="mt-1 text-sm text-gray-500">
+            {new Date(order.createdAt).toLocaleString()} | {order.userInfo?.name || "Guest"}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm text-yellow-800">
+              {order.paymentStatus || order.payment?.status || "Payment pending"}
+            </span>
+            <span className="rounded-full bg-rose-100 px-3 py-1 text-sm text-rose-700">
+              {activeItem?.itemStatus || order.status || "Order Placed"}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button className="btn-muted">Restock</button>
-          <button className="btn-muted">Edit</button>
-          <button className="btn-muted">More actions</button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setShowFulfillModal(true)} className="btn-muted">
+            Update Item Statuses
+          </button>
+          <button className="btn-primary">Create shipping label</button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-4">
-          {/* Order Item card */}
-          <div className="admin-card p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold">Order Item</h2>
-              <div className="text-sm text-gray-500">{(order.products || []).length} item(s)</div>
-            </div>
-
-            <div className="mt-3">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500">{(order.products || []).length} item(s)</div>
-                <button onClick={() => setItemsOpen(v => !v)} className="text-sm text-gray-500">{itemsOpen ? 'Collapse ▲' : 'Expand ▼'}</button>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_360px]">
+        <div className="space-y-6">
+          <div className="admin-card p-5">
+            <div className="grid gap-5 lg:grid-cols-[180px_minmax(0,1fr)]">
+              <div className="overflow-hidden rounded-2xl bg-gray-100">
+                {activeImage ? (
+                  <img
+                    src={activeImage}
+                    alt={activeItem?.name || "Order item"}
+                    className="h-full min-h-[180px] w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex min-h-[180px] items-center justify-center text-sm text-gray-400">
+                    No image
+                  </div>
+                )}
               </div>
 
-              {itemsOpen && (
-                <div className="mt-3 space-y-4">
-                  {(order.products || []).map((p, idx) => (
-                    <div key={p._id || idx} className="border rounded p-3 bg-white flex items-start gap-4">
-                      <div className="w-20 h-20 bg-gray-50 rounded overflow-hidden flex-shrink-0">
-                        {/* Order model uses `img` and `img` string; fallback to images array */}
-                        {p.img ? <img src={p.img} alt={p.name} className="w-full h-full object-cover" /> : (p.images?.[0] ? <img src={p.images[0].url || p.images[0]} alt={p.name} className="w-full h-full object-cover" /> : null)}
-                      </div>
-
-                      <div className="flex-1">
-                        {/* category above name if available */}
-                        {p.category && <div className="text-xs text-gray-400">{p.category}</div>}
-                        <div className="font-medium">{p.name}</div>
-                        <div className="text-sm text-gray-500 mt-1">Size: {p.size || 'Standard'} • Color: {p.color || '-'}</div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-sm">{p.quantity} x ₹{(p.price ?? p.salePrice ?? 0).toFixed(2)}</div>
-                        <div className="font-semibold">₹{((p.quantity || 0) * (p.price || 0)).toFixed(2)}</div>
-                      </div>
-                    </div>
-                  ))}
-
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.22em] text-gray-400">Selected Item</div>
+                  <h2 className="mt-2 text-2xl font-semibold text-gray-900">
+                    {activeItem?.name || "Order item"}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Size: {activeItem?.size || "-"} | Color: {activeItem?.color || "-"} | Qty: {activeItem?.quantity || 1}
+                  </p>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* action buttons moved outside individual item boxes: show below the items, right-aligned */}
-          <div className="flex justify-end gap-3 mt-2">
-            <button onClick={() => setShowFulfillModal(true)} className="btn-muted">Update Order Status</button>
-            <button className="btn-primary">Create shipping label</button>
-          </div>
-
-
-          {/* Order Summary */}
-          <div className="admin-card p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold">Order Summary</h2>
-              <span className="px-2 py-1 rounded bg-yellow-50 text-yellow-700 text-sm">{order.paymentStatus || 'Payment pending'}</span>
-            </div>
-
-            <div className="mt-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm text-gray-500">Summary</h4>
-                <button onClick={() => setSummaryOpen(v => !v)} className="text-sm text-gray-500">{summaryOpen ? 'Collapse ▲' : 'Expand ▼'}</button>
-              </div>
-
-              {summaryOpen && (
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                  <div>Subtotal</div><div className="text-right">₹{order.totalAmount ?? order.subtotal ?? 0}</div>
-                  <div>Discount</div><div className="text-right">-₹{order.discountAmount ?? order.discount ?? 0}</div>
-                  <div>Shipping</div><div className="text-right">₹{order.shippingCost ?? 0}</div>
-                  <div className="font-semibold">Total</div><div className="text-right font-semibold">₹{order.finalAmount ?? 0}</div>
-                </div>
-              )}
-
-              <div className="mt-4 flex justify-end gap-2">
-                <button className="btn-muted">Send invoice</button>
-                <button className="btn-primary">Collect payment</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Timeline / Comments */}
-          <div className="admin-card p-4">
-            <h3 className="font-semibold">Timeline</h3>
-            <div className="mt-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm text-gray-500">Order events and comments</h4>
-                <button onClick={() => setTimeline(v => !v)} className="text-sm text-gray-500">{timeline ? 'Collapse ▲' : 'Expand ▼'}</button>
-              </div>
-
-              <div className="mt-3 space-y-3">
-                {(timeline ? sortedTimeline : sortedTimeline.slice(0, 3)).map((h, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-muted/20 flex items-center justify-center text-sm">{(h.status || '').slice(0, 1)}</div>
-                    <div>
-                      <div className="text-sm font-medium">{h.status}</div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(h.date || order.updatedAt || order.createdAt).toLocaleString()}
-                      </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.18em] text-gray-400">Item Status</div>
+                    <div className="mt-2 font-medium">{activeItem?.itemStatus || "Order Placed"}</div>
+                  </div>
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.18em] text-gray-400">Unit Price</div>
+                    <div className="mt-2 font-medium">{formatMoney(activeItem?.price)}</div>
+                  </div>
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <div className="text-xs uppercase tracking-[0.18em] text-gray-400">Line Total</div>
+                    <div className="mt-2 font-medium">
+                      {formatMoney(activeItem?.lineTotal || (activeItem?.price || 0) * (activeItem?.quantity || 1))}
                     </div>
                   </div>
-                ))}
+                </div>
 
-                <textarea placeholder="Leave a comment..." className="input w-full mt-2" rows={3}></textarea>
+                <div className="rounded-2xl border border-gray-200 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.18em] text-gray-400">Latest Update</div>
+                      <div className="mt-1 text-base font-medium">
+                        {activeItem?.itemStatus || order.status || "Order Placed"}
+                      </div>
+                    </div>
+                    <div className="text-right text-sm text-gray-500">
+                      {new Date(
+                        itemTimeline[0]?.date || order.updatedAt || order.createdAt
+                      ).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-card p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold">Other items in this order</h3>
+                <p className="text-sm text-gray-500">
+                  Click an item to open that specific admin order detail view
+                </p>
+              </div>
+              <div className="text-sm text-gray-500">{products.length} item(s)</div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {products.map((item, itemIndex) => {
+                const itemImage = resolveImageUrl(item);
+                const isActive = itemIndex === selectedItemIndex;
+
+                return (
+                  <button
+                    key={`${item._id || itemIndex}-${itemIndex}`}
+                    type="button"
+                    onClick={() => openItem(itemIndex)}
+                    className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition ${
+                      isActive
+                        ? "border-rose-300 bg-rose-50/40"
+                        : "border-gray-200 bg-white hover:border-rose-200 hover:bg-rose-50/20"
+                    }`}
+                  >
+                    <div className="h-20 w-20 overflow-hidden rounded-xl bg-gray-100">
+                      {itemImage ? (
+                        <img src={itemImage} alt={item.name} className="h-full w-full object-cover" />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs uppercase tracking-[0.18em] text-gray-400">Product</div>
+                      <div className="truncate text-base font-medium">{item.name}</div>
+                      <div className="mt-1 text-sm text-gray-500">
+                        Size: {item.size || "-"} | Qty: {item.quantity || 1}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium">{item.itemStatus || "Order Placed"}</div>
+                      <div className="mt-1 text-sm text-gray-500">{formatMoney(item.lineTotal || item.price)}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="admin-card p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Order Summary</h3>
+              <span className="text-sm text-gray-500">{order.payment?.method || "COD"}</span>
+            </div>
+
+            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+                <span>Subtotal</span>
+                <span>{formatMoney(order.totalAmount ?? order.subtotal ?? order.pricing?.subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
+                <span>Total</span>
+                <span className="font-semibold">{formatMoney(order.finalAmount ?? order.pricing?.totalAmount)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right sidebar */}
-        <aside className="space-y-4">
-          <div className="admin-card p-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Notes</h3>
-              <button className="text-sm text-gray-500">✎</button>
+        <aside className="space-y-6">
+          <div className="admin-card p-5">
+            <h3 className="text-lg font-semibold">Item Timeline</h3>
+            <div className="mt-4 space-y-4">
+              {(itemTimeline.length
+                ? itemTimeline
+                : [
+                    {
+                      status: activeItem?.itemStatus || order.status,
+                      date: order.updatedAt || order.createdAt,
+                    },
+                  ]).map((event, index) => (
+                <div key={`${event.status}-${event.date}-${index}`} className="flex items-start gap-3">
+                  <div className="mt-1 h-3 w-3 rounded-full bg-rose-500" />
+                  <div>
+                    <div className="font-medium">{event.status}</div>
+                    <div className="text-sm text-gray-500">
+                      {new Date(event.date || order.updatedAt || order.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="mt-2 text-sm text-gray-600">{order.notes || 'No notes'}</div>
           </div>
 
-          <div className="admin-card p-4">
-            <h3 className="font-semibold">Customers</h3>
-            <div className="mt-2 text-sm">{order.userInfo?.name || 'Guest'}</div>
-            <div className="text-xs text-gray-500 mt-1">{(order.userInfo?.orderCount || 1)} order(s)</div>
+          <div className="admin-card p-5">
+            <h3 className="text-lg font-semibold">Customer</h3>
+            <div className="mt-3 space-y-2 text-sm">
+              <div>{order.userInfo?.name || "Guest"}</div>
+              <div className="text-gray-500">{order.userInfo?.email || "-"}</div>
+              <div className="text-gray-500">{order.userInfo?.phone || "-"}</div>
+            </div>
           </div>
 
-          <div className="admin-card p-4">
-            <h3 className="font-semibold">Contact Information</h3>
-            <div className="mt-2 text-sm">{order.userInfo?.email || '-'}</div>
-            <div className="text-sm">{order.userInfo?.phone || '-'}</div>
-          </div>
-
-          <div className="admin-card p-4">
-            <h3 className="font-semibold">Shipping address</h3>
-            <div className="mt-2 text-sm">{order.shippingAddress?.address || order.userInfo?.address || '-'}</div>
-            <div className="text-sm text-gray-500 mt-2">{order.shippingAddress?.phone || ''}</div>
-            <a className="text-sm text-primary mt-2 inline-block">View Map</a>
-          </div>
-
-          <div className="admin-card p-4">
-            <h3 className="font-semibold">Billing address</h3>
-            <div className="mt-2 text-sm">{order.billingAddress?.address || 'Same as shipping'}</div>
-          </div>
-
-          <div className="admin-card p-4">
-            <h3 className="font-semibold">Conversion summary</h3>
-            <div className="mt-2 text-sm text-gray-500">There aren't any conversion details available for this order.</div>
+          <div className="admin-card p-5">
+            <h3 className="text-lg font-semibold">Shipping Address</h3>
+            <div className="mt-3 text-sm text-gray-600">
+              {order.shippingAddress?.address || order.userInfo?.address || "-"}
+            </div>
           </div>
         </aside>
       </div>
+
       {showFulfillModal && (
         <OrderModal
           orderId={order._id}
@@ -250,8 +291,8 @@ export default function AdminOrderDetail() {
           show={showFulfillModal}
           onClose={() => setShowFulfillModal(false)}
           onUpdated={(data) => {
-            if (data && data.order) setOrder(data.order)
-            else if (data && data._id) setOrder(data)
+            if (data?.order) setOrder(data.order);
+            else if (data?._id) setOrder(data);
           }}
         />
       )}

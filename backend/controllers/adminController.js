@@ -7,6 +7,26 @@ const ImportModel = require('../models/Import');
 const XLSX = require('xlsx');
 const fs = require('fs');
 const path = require('path');
+const {
+  applyBulkItemStatus,
+  buildOrderStatusHistory,
+  getOrderDerivedStatus,
+  orderMatchesStatus,
+} = require("../utils/orderStatus");
+
+function serializeOrder(orderDoc) {
+  const order =
+    typeof orderDoc?.toObject === "function" ? orderDoc.toObject() : orderDoc;
+  const status = getOrderDerivedStatus(order?.products || []);
+  const statusHistory = buildOrderStatusHistory(order?.products || []);
+
+  return {
+    ...order,
+    finalAmount: order?.pricing?.totalAmount ?? order?.finalAmount ?? 0,
+    status,
+    statusHistory,
+  };
+}
 
 
 // dynamic controller to fetch the counts in the amdin panel
@@ -37,7 +57,7 @@ exports.getCounts = async (req, res) => {
       id: "#" + o._id.toString().slice(-10),
       customer: o.userInfo?.name || "Customer",
       amount: o.finalAmount || o.totalAmount || 0,
-      status: o.status || "Order Placed",
+      status: getOrderDerivedStatus(o.products || []),
     }));
 
     // Fetch last 3 published products for recent products section
@@ -662,45 +682,50 @@ exports.getOrders = async (req, res) => {
         $lte: new Date(endDate),
       };
     }
-    // Status filter: support explicit status, comma-separated list, or special token 'Unfulfilled'
-    if (status && status !== "All") {
-      const statuses = status.split(",").map((s) => s.trim()).filter(Boolean);
-      if (statuses.length === 1) {
-        if (statuses[0] === "Unfulfilled") {
-          filter.status = { $ne: "Delivered" };
-        } else {
-          filter.status = statuses[0];
-        }
-      } else if (statuses.length > 1) {
-        // If the list includes 'Unfulfilled' together with explicit statuses,
-        // build an $or that matches either the explicit statuses or any non-Delivered status.
-        if (statuses.includes("Unfulfilled")) {
-          const explicit = statuses.filter((s) => s !== "Unfulfilled");
-          const ors = [];
-          if (explicit.length) ors.push({ status: { $in: explicit } });
-          ors.push({ status: { $ne: "Delivered" } });
-          filter.$or = ors;
-        } else {
-          filter.status = { $in: statuses };
-        }
-      }
-    }
-    const total = await Order.countDocuments(filter);
+    const requestedStatuses = (status || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    const ordersRaw = await Order.find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const ordersRaw = await Order.find(filter).sort({ createdAt: -1 });
 
-    const orders = ordersRaw.map((o) => ({
-      id: "#" + o._id.toString().slice(-4),
-      orderId: o._id,
-      date: o.createdAt,
+    const filteredOrdersRaw = !requestedStatuses.length
+      ? ordersRaw
+      : ordersRaw.filter((order) =>
+          requestedStatuses.some((requestedStatus) =>
+            orderMatchesStatus(order.products, requestedStatus)
+          )
+        );
+
+    const total = filteredOrdersRaw.length;
+
+    const orders = filteredOrdersRaw
+      .slice((page - 1) * limit, page * limit)
+      .map((o) => ({
+      id: o._id.toString(),
+      orderNumber: o.orderNumber,
+      createdAt: o.createdAt,
       customer: o.userInfo?.name || "Customer",
-      payment: o.paymentStatus,
-      total: o.finalAmount,
+      phone: o.userInfo?.phone || "",
+      payment: o.payment?.status || "Pending",
+      paymentMethod: o.payment?.method || "COD",
+      total: o.pricing?.totalAmount ?? 0,
       items: o.products?.length || 0,
-      status: o.status,
+      status: getOrderDerivedStatus(o.products || []),
+      shipment: o.shipment || {},
+      products: (o.products || []).map((product, itemIndex) => ({
+        itemIndex,
+        name: product?.name || "Product",
+        img: product?.img || "",
+        size: product?.size || "",
+        color: product?.color || "",
+        quantity: product?.quantity || 1,
+        price: product?.price || 0,
+        lineTotal:
+          product?.lineTotal || (product?.price || 0) * (product?.quantity || 1),
+        itemStatus: product?.itemStatus || "Order Placed",
+      })),
+      userInfo: o.userInfo || {},
     }));
 
     res.json({
@@ -725,8 +750,8 @@ exports.getOrdersDetails = async (req, res) => {
       return res.status(400).json({ success: false, message: "ids array required" });
     }
 
-    const orders = await Order.find({ _id: { $in: ids } }).sort({ createdAt: -1 });
-
+    const ordersRaw = await Order.find({ _id: { $in: ids } }).sort({ createdAt: -1 });
+    const orders = ordersRaw.map((o) => serializeOrder(o));
     res.json({ success: true, orders });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -767,33 +792,25 @@ exports.getOrderAnalytics = async (req, res) => {
       { $sort: { _id: 1 } },
     ]);
 
-    /* ================= RETURN ORDERS ================= */
-    const returnOrders = await Order.countDocuments({
-      ...match,
-      status: "Cancelled",
-    });
+    const analyticsOrders = await Order.find(match).lean();
 
-    /* ================= FULFILLED ORDERS ================= */
-    const fulfilledOrders = await Order.aggregate([
-      {
-        $match: {
-          ...match,
-          status: "Delivered",
-        },
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: {
-              format: "%Y-%m-%d",
-              date: "$createdAt",
-            },
-          },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
+    const returnOrders = analyticsOrders.filter((order) =>
+      ["Cancelled", "Returned"].includes(
+        getOrderDerivedStatus(order.products || [])
+      )
+    ).length;
+
+    const fulfilledCounts = new Map();
+    for (const order of analyticsOrders) {
+      const derivedStatus = getOrderDerivedStatus(order.products || []);
+      if (derivedStatus !== "Delivered") continue;
+      const day = new Date(order.createdAt).toISOString().slice(0, 10);
+      fulfilledCounts.set(day, (fulfilledCounts.get(day) || 0) + 1);
+    }
+
+    const fulfilledOrders = [...fulfilledCounts.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([day, count]) => ({ _id: day, count }));
 
     res.json({
       success: true,
@@ -823,16 +840,16 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    order.status = status;
-    if (trackingId) order.trackingId = trackingId;
-
-    order.statusHistory.push({ status });
+    applyBulkItemStatus(order, status, {
+      trackingId,
+      message: `Bulk order update to ${status}`,
+    });
 
     await order.save();
 
     res.json({
       success: true,
-      order,
+      order: serializeOrder(order),
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -932,11 +949,17 @@ exports.getCustomerById = async (req, res) => {
     const user = await User.findById(id).select('-password');
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    const orders = await Order.find({ userId: id }).sort({ createdAt: -1 });
+    const ordersRaw = await Order.find({ userId: id }).sort({ createdAt: -1 });
+    const orders = ordersRaw.map((order) => serializeOrder(order));
 
     const totalOrders = orders.length;
-    const totalSpent = orders.reduce((s, o) => s + (o.finalAmount || 0), 0);
-    const completedOrders = orders.filter((o) => o.status === 'Delivered').length;
+    const totalSpent = orders.reduce(
+      (s, o) => s + (o.pricing?.totalAmount || o.finalAmount || 0),
+      0
+    );
+    const completedOrders = orders.filter(
+      (o) => o.status === 'Delivered'
+    ).length;
 
     // Spending over last 12 months
     const now = new Date();

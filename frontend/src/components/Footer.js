@@ -86,10 +86,10 @@ export default function Footer() {
 
       {/* ── Main Footer ── */}
       <div className="max-w-[1280px] mx-auto px-6 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-8 md:gap-10">
 
           {/* Brand Column */}
-          <div className="lg:col-span-2">
+          <div className="col-span-2 lg:col-span-2">
             <h3 style={{ fontFamily: PLAYFAIR, fontWeight: 700, fontSize: '28px', color: '#4A2E35', marginBottom: '10px' }}>
               IMKAA
             </h3>
@@ -102,7 +102,7 @@ export default function Footer() {
               <p style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
                 Stay in Touch
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="email"
                   placeholder="Your email address"
@@ -118,19 +118,21 @@ export default function Footer() {
                     fontFamily: INTER,
                   }}
                 />
-                <button style={{
-                  background: '#C56F7F',
-                  color: '#FFF9FA',
-                  border: 'none',
-                  borderRadius: '9999px',
-                  padding: '10px 18px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  fontFamily: INTER,
-                  whiteSpace: 'nowrap',
-                }}>
-                  Subscribe
+                <button
+                  className="w-full sm:w-auto"
+                  style={{
+                    background: '#C56F7F',
+                    color: '#FFF9FA',
+                    border: 'none',
+                    borderRadius: '9999px',
+                    padding: '10px 18px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: INTER,
+                    whiteSpace: 'nowrap',
+                  }}
+                >                  Subscribe
                 </button>
               </div>
             </div>
@@ -158,8 +160,8 @@ export default function Footer() {
           </div>
 
           {/* Shop Column */}
-          <div>
-            <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
+          <div className="min-w-0">
+            <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px', wordBreak: 'break-word', }}>
               Shop
             </h4>
             <ul className="space-y-2">
@@ -177,7 +179,7 @@ export default function Footer() {
           </div>
 
           {/* Support Column */}
-          <div>
+          <div className="min-w-0">
             <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
               Support
             </h4>
@@ -196,36 +198,46 @@ export default function Footer() {
           </div>
 
           {/* Company + Contact Column */}
-          <div>
+          {/* Company Column */}
+          <div className="min-w-0">
             <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>
               Company
             </h4>
-            <ul className="space-y-2 mb-8">
+            <ul className="space-y-2">
               {companyLinks.map((l) => (
                 <li key={l.label}>
-                  <Link href={l.link}
+                  <Link
+                    href={l.link}
                     style={{ fontFamily: INTER, fontSize: '14px', color: '#A06C7B', display: 'block', lineHeight: 1.8, textDecoration: 'none', transition: 'color 0.15s' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = '#C56F7F'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = '#A06C7B'}>
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#A06C7B'}
+                  >
                     {l.label}
                   </Link>
                 </li>
               ))}
             </ul>
+          </div>
 
+          {/* Contact Column */}
+          <div className="min-w-0">
             <h4 style={{ fontFamily: INTER, fontWeight: 600, fontSize: '13px', color: '#8E4F61', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
               Contact
             </h4>
             <div className="space-y-2">
-              <a href="tel:+919811180043"
+              <a
+                href="tel:+919811180043"
                 className="flex items-center gap-2"
-                style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}>
+                style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}
+              >
                 <Phone size={13} style={{ color: '#C56F7F', flexShrink: 0 }} />
                 +91 9811 180 043
               </a>
-              <a href="mailto:support@imkaa.com"
+              <a
+                href="mailto:support@imkaa.com"
                 className="flex items-center gap-2"
-                style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}>
+                style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}
+              >
                 <Mail size={13} style={{ color: '#C56F7F', flexShrink: 0 }} />
                 support@imkaa.com
               </a>
@@ -237,7 +249,7 @@ export default function Footer() {
 
       {/* ── Bottom Bar ── */}
       <div style={{ borderTop: '1px solid #E8D6DB' }}>
-        <div className="max-w-[1280px] mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="max-w-[1280px] mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
           <p style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B' }}>
             © {new Date().getFullYear()} IMKAA. All rights reserved. Made with ♥ in India.
           </p>

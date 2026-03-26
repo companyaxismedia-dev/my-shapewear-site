@@ -9,19 +9,17 @@ export default function PriceDetails({ order }) {
 
   if (!order) return null;
 
-  const mrp = order.listingPrice || order.subtotal || 0;
-  const sellingPrice = order.subtotal || 0;
-
-  const discount = Math.max(mrp - sellingPrice, 0);
-
-  const fees = order.fees || 0;
-
-  const total = order.totalAmount || sellingPrice + fees;
-
+  // Support both direct and nested pricing object
+  const pricing = order.pricing || {};
+  const mrp = pricing.subtotal || order.listingPrice || order.subtotal || 0;
+  const sellingPrice = pricing.subtotal || order.subtotal || 0;
+  const discount = (pricing.productDiscount || 0) + (pricing.couponDiscount || 0) || Math.max(mrp - sellingPrice, 0);
+  const fees = (pricing.shippingCharge || 0) + (pricing.platformFee || 0) || order.fees || 0;
+  const total = pricing.totalAmount || order.totalAmount || sellingPrice + fees;
   const paymentMethod =
-    order.paymentMethod === "COD"
+    (order.payment?.method || order.paymentMethod) === "COD"
       ? "Cash On Delivery"
-      : order.paymentMethod || "Online";
+      : order.payment?.method || order.paymentMethod || "Online";
 
   return (
     <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200 w-full">

@@ -164,11 +164,12 @@ export default function CheckoutPage() {
     const body = {
       fullName: formData.get("name"),
       phone: formData.get("mobile"),
+      altPhone: formData.get("altPhone") || "",
       pincode: formData.get("pincode"),
-      addressLine: formData.get("address"),
-      locality: formData.get("locality"),
       city: formData.get("city"),
       state: formData.get("state"),
+      addressLine: formData.get("address"),
+      landmark: formData.get("landmark") || "",
       addressType: formData.get("type"),
       isDefault: formData.get("isDefault") === "on",
     };
@@ -220,59 +221,76 @@ const sellingPrice = cartItems.reduce(
   };
 
   /* ================= CONTINUE ================= */
-  const goToPayment = async () => {
+  // Add state for paymentType and couponCode
+  const [paymentType, setPaymentType] = useState("cod");
+  const [couponCode, setCouponCode] = useState("");
 
+  const goToPayment = async () => {
     if (!selectedAddressId) {
       alert("Please select delivery address");
       return;
     }
+    if (!cartItems || cartItems.length === 0) {
+      alert("Your cart is empty. Please add items to cart.");
+      return;
+    }
 
     try {
-
       const token = getToken();
+      // Build products array for order schema
+      const products = cartItems.map((item) => {
+        const price = item.product.minPrice || item.product.price;
+        const quantity = item.qty;
+        return {
+          productId: item.product._id,
+          name: item.product.name,
+          img: item.product.img,
+          size: item.size,
+          color: item.color,
+          price,
+          quantity,
+          lineTotal: price * quantity,
+        };
+      });
 
-const res = await fetch(`${API_BASE}/api/orders`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`
-  },
-  body: JSON.stringify({
-    addressId: selectedAddressId
-  })
-});
+      const orderPayload = {
+        addressId: selectedAddressId,
+        products,
+        paymentType,
+        offerCode: couponCode,
+      };
+      const res = await fetch(`${API_BASE}/api/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(orderPayload)
+      });
 
-if (!res.ok) {
-  const errData = await res.json();
-  alert(errData.message || "Order create failed");
-  return;
-}
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(errData.message || "Order create failed");
+        return;
+      }
 
-const data = await res.json();
-
-console.log("ORDER RESPONSE:", data);
-
-if (!data || !data.orderId) {
-  alert("Order creation failed");
-  return;
-}
-
-const orderId = data.orderId;
-console.log("ORDER API RESPONSE:", data);
-
-if (!orderId) {
-  alert("Order ID missing");
-  return;
-}
-
-window.location.href =
-  `/payment?order=${orderId}&address=${selectedAddressId}`;
-
+      const data = await res.json();
+      console.log("ORDER RESPONSE:", data);
+      if (!data || !data.orderId) {
+        alert("Order creation failed");
+        return;
+      }
+      const orderId = data.orderId;
+      console.log("ORDER API RESPONSE:", data);
+      if (!orderId) {
+        alert("Order ID missing");
+        return;
+      }
+      window.location.href = `/payment?order=${orderId}&address=${selectedAddressId}`;
     } catch (err) {
       console.log(err);
       alert("Order create error");
     }
-
   };
 
   if (loading)
@@ -346,6 +364,28 @@ window.location.href =
         <div ref={priceSectionRef} className="w-full md:w-[320px] space-y-4">
           <DeliveryEstimates cartItems={cartItems} />
 
+          {/* Payment Type and Coupon UI */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Payment Type</label>
+            <select
+              value={paymentType}
+              onChange={e => setPaymentType(e.target.value)}
+              className="w-full border rounded p-2"
+            >
+              <option value="cod">Cash on Delivery</option>
+              <option value="prepaid">Prepaid</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Coupon Code</label>
+            <input
+              type="text"
+              value={couponCode}
+              onChange={e => setCouponCode(e.target.value)}
+              className="w-full border rounded p-2"
+              placeholder="Enter coupon code (optional)"
+            />
+          </div>
           <PriceDetails
             {...cartSummary}
             showContinue={true}
