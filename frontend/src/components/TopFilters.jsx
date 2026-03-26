@@ -3,10 +3,10 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { ChevronDown, X } from "lucide-react";
 
-const TOP_FILTERS = ["Back","Bundles","Closure","Country of Origin","Coverage","Fabrics","Features","Knit or Woven","Multipack Set",
+export const TOP_FILTERS = ["Back","Bundles","Closure","Country of Origin","Coverage","Fabrics","Features","Knit or Woven","Multipack Set",
   "Net Quantity Unit","Number of Items","Padding","Patterns","Personalization","Print or Pattern Types","Rating","Seam","Size",
   "Sport","Straps","Style","Sustainable","Technology","Theme","Type","Wash Care","Wiring",];
-const FILTER_OPTIONS = {
+export const FILTER_OPTIONS = {
   Back: ["Full Back", "Racerback", "U-Back", "Cross Back", "Backless", "Criss Cross Back", "T Back", "Transparent Back"],
   Bundles: ["Single", "Pack of 2", "Pack of 3", "Pack of 4", "Pack of 5", "Pack of 6"],
   Closure: ["Hook and Eye", "Slip-On", "Front Open", "Back Open", "Zipper", "Front Closure", "Back Closure"],

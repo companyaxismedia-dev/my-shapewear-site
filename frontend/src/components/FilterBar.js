@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Search, ChevronDown, ChevronUp, X } from "lucide-react";
+import { API_BASE } from "@/lib/api";
 const FALLBACK_COLORS = [
   { name: "Black", code: "#000000", count: 13526 },
   { name: "Pink", code: "#f687b3", count: 10182 },
@@ -59,67 +60,90 @@ const getRatingColor = (rating) => {
   if (rating >= 3.5) return "#f5a623"; // orange
   return "#ff6f61";                    // red
 };
-const getApiBase = () => {
-  if (
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1")
-  ) {
-    return "http://localhost:5000";
-  }
-  return "https://my-shapewear-site.onrender.com";
-};
 export default function FilterBar({
   filters = {},
   setFilters = () => { },
   setPage = () => { },
   category,
 }) {
+  const [metaLoaded, setMetaLoaded] = useState(false);
   const [backendColors, setBackendColors] = useState([]);
   const [backendSizes, setBackendSizes] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
-  useEffect(() => {
-    const API_BASE = getApiBase();
-    fetch(`${API_BASE}/api/products/filters`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          if (data.colors?.length) {
-            const mapped = data.colors.map((colorName) => {
-              const existing = FALLBACK_COLORS.find(
-                (fc) => fc.name.toLowerCase() === colorName.toLowerCase()
-              );
-              return {
-                name: colorName,
-                code: existing?.code || COLOR_CODE_MAP[colorName.toLowerCase()] || "#ccc",
-                count: existing?.count || 0,
-              };
-            });
-            setBackendColors(mapped);
-          }
-          if (data.sizes?.length) {
-            setBackendSizes(data.sizes);
-          }
-        }
-      })
-      .catch(() => { });
-  }, []);
+  const [priceBounds, setPriceBounds] = useState({ min: 0, max: 6600 });
 
   useEffect(() => {
-    const API_BASE = getApiBase();
-
     if (!category) return;
+    setMetaLoaded(false);
 
-    fetch(`${API_BASE}/api/products/subcategories?category=${category}`)
+    const params = new URLSearchParams();
+    params.set("category", category);
+
+    if (filters.subCategory) params.set("subCategory", filters.subCategory);
+    if (filters.color) params.set("color", filters.color);
+    if (filters.size) params.set("size", filters.size);
+    if (filters.rating) params.set("rating", filters.rating);
+    if (filters.discount) params.set("discount", filters.discount);
+    if (filters.gender) params.set("gender", filters.gender);
+    if (filters.minPrice !== undefined && filters.minPrice !== "") {
+      params.set("minPrice", filters.minPrice);
+    }
+    if (filters.maxPrice !== undefined && filters.maxPrice !== "") {
+      params.set("maxPrice", filters.maxPrice);
+    }
+
+    fetch(`${API_BASE}/api/products/filters-meta?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          setSubCategories(data.subcategories);
-        }
+        if (!data.success) return;
+
+        setSubCategories(data.subcategories || []);
+
+        const mappedColors = (data.colors || []).map((colorItem) => {
+          const existing = FALLBACK_COLORS.find(
+            (fc) => fc.name.toLowerCase() === colorItem.name.toLowerCase()
+          );
+
+          return {
+            name: colorItem.name,
+            code:
+              colorItem.colorCode ||
+              existing?.code ||
+              COLOR_CODE_MAP[colorItem.name.toLowerCase()] ||
+              "#ccc",
+            count: colorItem.count || 0,
+          };
+        });
+
+        setBackendColors(mappedColors);
+        setBackendSizes(data.sizes || []);
+
+        const nextMin = Number(data.priceRange?.min ?? 0);
+        const nextMax = Number(data.priceRange?.max ?? 6600);
+        setPriceBounds({
+          min: Number.isFinite(nextMin) ? nextMin : 0,
+          max: Number.isFinite(nextMax) && nextMax > nextMin ? nextMax : Math.max(nextMin + 100, 6600),
+        });
+        setMetaLoaded(true);
+      })
+      .catch(() => {
+        setMetaLoaded(true);
       });
-  }, [category]);
-  const COLORS = backendColors.length > 0 ? backendColors : FALLBACK_COLORS;
-  const SIZES = backendSizes.length > 0 ? backendSizes : FALLBACK_SIZES;
+  }, [
+    category,
+    filters.subCategory,
+    filters.color,
+    filters.size,
+    filters.rating,
+    filters.discount,
+    filters.gender,
+    filters.minPrice,
+    filters.maxPrice,
+  ]);
+  const COLORS = metaLoaded ? backendColors : FALLBACK_COLORS;
+  const SIZES = metaLoaded
+    ? backendSizes
+    : FALLBACK_SIZES.map((size) => ({ name: size, count: 0 }));
 
   const [collapsed, setCollapsed] = useState({});
   const toggleCollapse = (key) =>
@@ -133,8 +157,6 @@ export default function FilterBar({
   const [subCatSearchOpen, setSubCatSearchOpen] = useState(false);
   const [colorSearchOpen, setColorSearchOpen] = useState(false);
   const [sizeSearchOpen, setSizeSearchOpen] = useState(false);
-  const priceMin = parseInt(filters.minPrice || "0", 10);
-  const priceMax = parseInt(filters.maxPrice || "6600", 10);
   const filteredSubCats = useMemo(
     () => subCategories.filter((sc) =>
       sc.name.toLowerCase().includes(subCatSearch.toLowerCase())
@@ -149,10 +171,32 @@ export default function FilterBar({
   );
   const filteredSizes = useMemo(
     () => SIZES.filter((s) =>
-      s.toLowerCase().includes(sizeSearch.toLowerCase())
+      (s.name || s).toLowerCase().includes(sizeSearch.toLowerCase())
     ),
     [sizeSearch, SIZES]
   );
+
+  const priceFloor = Number.isFinite(priceBounds.min) ? priceBounds.min : 0;
+  const priceCeiling =
+    Number.isFinite(priceBounds.max) && priceBounds.max > priceFloor
+      ? priceBounds.max
+      : Math.max(priceFloor + 100, 6600);
+  const priceMin =
+    filters.minPrice !== undefined && filters.minPrice !== ""
+      ? parseInt(filters.minPrice, 10)
+      : priceFloor;
+  const priceMax =
+    filters.maxPrice !== undefined && filters.maxPrice !== ""
+      ? parseInt(filters.maxPrice, 10)
+      : priceCeiling;
+  const priceSpan = Math.max(priceCeiling - priceFloor, 1);
+  const sliderHandleSize = 18;
+  const sliderEdgeInset = sliderHandleSize / 2;
+  const formatPriceRangeLabel = () => {
+    const minLabel = `₹${priceMin}`;
+    const maxLabel = priceMax >= priceCeiling ? `₹${priceCeiling.toLocaleString()}+` : `₹${priceMax}`;
+    return `${minLabel} - ${maxLabel}`;
+  };
 
   const INITIAL_SUBCAT = 8;
   const INITIAL_COLORS = 10;
@@ -243,26 +287,20 @@ export default function FilterBar({
   return (
     <div
       style={{
-        width: 252,
-        minWidth: 252,
+        width: "100%",
+        minWidth: 0,
         backgroundColor: "#fff",
-        borderRight: "1px solid #e8e8e8",
-
         position: "relative",
         top: 0,
         zIndex: 1,
-        
-maxHeight: "calc(100vh - 56px)",
-overflowY: "auto",
-        overflowX: "hidden",
+        overflow: "visible",
         fontFamily: "'Assistant', Arial, sans-serif",
         flexShrink: 0,
       }}
     >
       <div
         style={{
-          position: "sticky",
-          top: 0,
+          position: "relative",
           backgroundColor: "#fff",
           zIndex: 20,
           padding: "16px 16px 12px",
@@ -466,34 +504,35 @@ overflowY: "auto",
         onToggle={() => toggleCollapse("price")}
       >
         <div style={{ padding: "0 16px 16px" }}>
-          <div style={{ position: "relative", height: 36, marginBottom: 4 }}>
+          <div style={{ position: "relative", height: 28, marginBottom: 10 }}>
             <div
               style={{
                 position: "absolute",
-                top: 16,
-                left: 0,
-                right: 0,
+                top: 11,
+                left: sliderEdgeInset,
+                right: sliderEdgeInset,
                 height: 3,
-                backgroundColor: "#e8e8e8",
-                borderRadius: 2,
+                backgroundColor: "#f1d8df",
+                borderRadius: 9999,
               }}
             />
             <div
               style={{
                 position: "absolute",
-                top: 16,
-                left: `${(priceMin / 6600) * 100}%`,
-                right: `${100 - (priceMax / 6600) * 100}%`,
+                top: 11,
+                left: `calc(${sliderEdgeInset}px + ${((priceMin - priceFloor) / priceSpan) * 100}% - ${(sliderEdgeInset * ((priceMin - priceFloor) / priceSpan))}px)`,
+                right: `calc(${sliderEdgeInset}px + ${((100 - ((priceMax - priceFloor) / priceSpan) * 100))}% - ${(sliderEdgeInset * (1 - ((priceMax - priceFloor) / priceSpan)))}px)`,
                 height: 3,
                 backgroundColor: "#ff3f6c",
-                borderRadius: 2,
+                borderRadius: 9999,
               }}
             />
             <input
+              className="price-range-input"
               type="range"
-              min={0}
-              max={6600}
-              step={100}
+              min={priceFloor}
+              max={priceCeiling}
+              step={50}
               value={priceMin}
               onChange={(e) => {
                 const val = Math.min(parseInt(e.target.value), priceMax - 100);
@@ -503,20 +542,21 @@ overflowY: "auto",
               style={{
                 position: "absolute",
                 top: 6,
-                left: 0,
-                width: "100%",
-                height: 20,
-                opacity: 0,
-                cursor: "pointer",
+                left: sliderEdgeInset,
+                width: `calc(100% - ${sliderEdgeInset * 2}px)`,
+                height: 12,
+                background: "transparent",
+                pointerEvents: "none",
                 zIndex: 3,
                 margin: 0,
               }}
             />
             <input
+              className="price-range-input"
               type="range"
-              min={0}
-              max={6600}
-              step={100}
+              min={priceFloor}
+              max={priceCeiling}
+              step={50}
               value={priceMax}
               onChange={(e) => {
                 const val = Math.max(parseInt(e.target.value), priceMin + 100);
@@ -526,60 +566,26 @@ overflowY: "auto",
               style={{
                 position: "absolute",
                 top: 6,
-                left: 0,
-                width: "100%",
-                height: 20,
-                opacity: 0,
-                cursor: "pointer",
+                left: sliderEdgeInset,
+                width: `calc(100% - ${sliderEdgeInset * 2}px)`,
+                height: 12,
+                background: "transparent",
+                pointerEvents: "none",
                 zIndex: 4,
                 margin: 0,
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                top: 10,
-                left: `${(priceMin / 6600) * 100}%`,
-                width: 14,
-                height: 14,
-                borderRadius: "50%",
-                backgroundColor: "#ff3f6c",
-                border: "2px solid #fff",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                transform: "translateX(-50%)",
-                zIndex: 5,
-                pointerEvents: "none",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                top: 10,
-                left: `${(priceMax / 6600) * 100}%`,
-                width: 14,
-                height: 14,
-                borderRadius: "50%",
-                backgroundColor: "#ff3f6c",
-                border: "2px solid #fff",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                transform: "translateX(-50%)",
-                zIndex: 5,
-                pointerEvents: "none",
               }}
             />
           </div>
 
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
               fontSize: 13,
               color: "#282c3f",
               fontWeight: 600,
+              lineHeight: 1.4,
             }}
           >
-            <span>{"Rs."}{priceMin}</span>
-            <span>{"Rs."}{priceMax}+</span>
+            <span>{formatPriceRangeLabel()}</span>
           </div>
         </div>
       </FilterSection>
@@ -779,10 +785,11 @@ overflowY: "auto",
             }}
           >
             {visibleSizes.map((size) => {
-              const checked = isSizeChecked(size);
+              const sizeValue = size.name || size;
+              const checked = isSizeChecked(sizeValue);
               return (
                 <label
-                  key={size}
+                  key={sizeValue}
                   style={{
                     display: "flex", alignItems: "center", gap: 8, padding: "5px 0", cursor: "pointer", fontSize: 14, color: "#282c3f",
                     fontWeight: checked ? 600 : 400,
@@ -790,7 +797,7 @@ overflowY: "auto",
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() => handleSizeToggle(size)}
+                    onChange={() => handleSizeToggle(sizeValue)}
                     style={{
                       width: 16,
                       height: 16,
@@ -800,7 +807,12 @@ overflowY: "auto",
                       margin: 0,
                     }}
                   />
-                  {size}
+                  <span style={{ flex: 1 }}>{sizeValue}</span>
+                  {size.count > 0 && (
+                    <span style={{ fontSize: 12, color: "#94969f", flexShrink: 0 }}>
+                      ({size.count})
+                    </span>
+                  )}
                 </label>
               );
             })}
@@ -884,17 +896,42 @@ overflowY: "auto",
           })}
         </div>
       </FilterSection>
-      <div style={{ height: 60 }} />
-      <style>{`div::-webkit-scrollbar {width: 5px;}
-        div::-webkit-scrollbar-track {
+      <div style={{ height: 28 }} />
+      <style>{`
+        .price-range-input {
+          -webkit-appearance: none;
+          appearance: none;
+        }
+        .price-range-input::-webkit-slider-runnable-track {
           background: transparent;
+          height: 3px;
         }
-        div::-webkit-scrollbar-thumb {
-          background: #d4d5d9;
-          border-radius: 4px;
+        .price-range-input::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          pointer-events: auto;
+          width: 18px;
+          height: 18px;
+          border-radius: 9999px;
+          background: #ff3f6c;
+          border: 3px solid #fff;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+          cursor: pointer;
+          margin-top: -8px;
         }
-        div::-webkit-scrollbar-thumb:hover {
-          background: #94969f;
+        .price-range-input::-moz-range-track {
+          background: transparent;
+          height: 3px;
+        }
+        .price-range-input::-moz-range-thumb {
+          pointer-events: auto;
+          width: 18px;
+          height: 18px;
+          border-radius: 9999px;
+          background: #ff3f6c;
+          border: 3px solid #fff;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+          cursor: pointer;
         }
       `}</style>
     </div>

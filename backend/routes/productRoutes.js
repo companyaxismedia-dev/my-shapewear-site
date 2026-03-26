@@ -4,6 +4,7 @@ const Product = require("../models/Product");
 
 const {
   getProducts,
+  getProductFilterMeta,
   getProductById,
   getProductBySlug,
   createProduct,
@@ -20,6 +21,7 @@ const { protect, admin } = require("../middleware/authMiddleware");
 
 /* 🔹 GET ALL PRODUCTS (Filter + Search + Pagination) */
 router.get("/", getProducts);
+router.get("/filters-meta", getProductFilterMeta);
 
 /* 🔹 GET FEATURED PRODUCTS */
 router.get("/featured", async (req, res) => {

@@ -3,11 +3,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { useCart } from "@/context/CartContext";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
-
-import { Heart, Star, } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 import { getImageUrl } from "./helpers";
 import Image from "next/image";
-
 
 export function ProductCard({ item, onOpenDetails }) {
     const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
@@ -18,18 +16,7 @@ export function ProductCard({ item, onOpenDetails }) {
     const isWishlisted = wishlist.some((p) => p._id === item._id);
     const cardRef = useRef(null);
 
-    // for the simgle image to show 
-    const image = getImageUrl(
-        item.variants?.[0]?.images?.[0]?.url
-    );
-
-    // for the sliding image effect to be on the home page 
-    const images =
-        item?.variants?.[0]?.images?.length
-            ? item.variants[0].images.map((img) =>
-                getImageUrl(img.url)
-            )
-            : [getImageUrl(item.thumbnail)];
+    const image = getImageUrl(item.variants?.[0]?.images?.[0]?.url);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -55,47 +42,45 @@ export function ProductCard({ item, onOpenDetails }) {
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 1500);
     };
-    console.log("ITEM DATA:", item);
+
+    const imageSrc = getImageUrl(item.thumbnail);
+    const usePlainImg = imageSrc.includes("localhost") || imageSrc.includes("uploads");
+
     return (
         <div
             ref={cardRef}
-            className="product-card-imkaa group"
+            className="group flex h-full min-h-0 flex-col overflow-hidden rounded-[14px] border border-[#efdbe0] bg-white shadow-[0_2px_10px_rgba(74,46,53,0.04)] transition-transform duration-300 hover:-translate-y-[3px] hover:shadow-[0_10px_24px_rgba(74,46,53,0.08)]"
         >
-            {/* IMAGE CONTAINER */}
-            <div className="relative aspect-[3/4] overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
-                {/* Use regular img for API-served images, Next.js Image for public images */}
-                {getImageUrl(item.thumbnail).includes('localhost') || getImageUrl(item.thumbnail).includes('uploads') ? (
+            <div
+                className="relative aspect-[4/5] overflow-hidden bg-[#fcefea]"
+                style={{ background: "var(--color-bg-alt)" }}
+            >
+                {usePlainImg ? (
                     <img
-                        src={getImageUrl(item.thumbnail)}
+                        src={imageSrc}
                         alt={item.name}
                         onClick={onOpenDetails}
                         loading="lazy"
-                        className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"}`}
+                        className={`h-full w-full cursor-pointer object-cover object-top transition-transform duration-500 ${showSizes ? "scale-105 blur-sm" : "group-hover:scale-105"}`}
                     />
                 ) : (
                     <Image
-                        src={getImageUrl(item.thumbnail)}
+                        src={imageSrc}
                         fill
-                        sizes="(max-width:768px) 100vw, 33vw"
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 25vw, 20vw"
                         alt={item.name}
                         loading="lazy"
                         onClick={onOpenDetails}
-                        className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"}`}
+                        className={`cursor-pointer object-cover object-top transition-transform duration-500 ${showSizes ? "scale-105 blur-sm" : "group-hover:scale-105"}`}
                     />
                 )}
+
                 <button
                     onClick={() => {
                         if (!user) return alert("Please login to use wishlist");
-                        isWishlisted
-                            ? removeFromWishlist(item._id)
-                            : toggleWishlist(item);
+                        isWishlisted ? removeFromWishlist(item._id) : toggleWishlist(item);
                     }}
-                    className="absolute top-2 right-2 z-20 rounded-full w-[32px] h-[32px] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
-                    style={{
-                        background: "rgba(255,255,255,0.92)",
-                        border: "1px solid var(--color-border)",
-                        boxShadow: "0 6px 18px rgba(74,46,53,0.10)",
-                    }}
+                    className="absolute right-2 top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-[#ead7dd] bg-[rgba(255,255,255,0.92)] shadow-[0_6px_18px_rgba(74,46,53,0.10)] transition-transform hover:scale-110"
                 >
                     <Heart
                         size={16}
@@ -103,45 +88,29 @@ export function ProductCard({ item, onOpenDetails }) {
                     />
                 </button>
 
-                {/* RATING BADGE */}
                 {item.rating > 0 && (
-                    <div
-                        className="absolute bottom-2 left-2 px-2 py-1 text-xs font-semibold z-10 flex items-center gap-1"
-                        style={{
-                            background: "rgba(255,255,255,0.92)",
-                            border: "1px solid var(--color-border)",
-                            borderRadius: 9999,
-                            boxShadow: "0 6px 18px rgba(74,46,53,0.10)",
-                            color: "var(--color-body)",
-                        }}
-                    >
-                        {item.rating}
-                        {/* <Star size={10} className="fill-[#14958f] stroke-[#14958f]" /> */}
-                        <span
-                            className={
-                                item.rating >= 3
-                                    ? ""
-                                    : ""
-                            }
-                            style={{ color: "var(--color-primary)" }}
-                        >
-                            ★
-                        </span>
-
-                        <span className="product-card-meta font-normal text-[11px]">
+                    <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1 rounded-full border border-[#ead7dd] bg-[rgba(255,255,255,0.92)] px-2 py-1 text-[11px] font-semibold text-[#6f5560] shadow-[0_6px_18px_rgba(74,46,53,0.10)]">
+                        <span>{item.rating}</span>
+                        <Star size={10} className="fill-[#C56F7F] stroke-[#C56F7F]" />
+                        <span className="text-[11px] font-normal leading-[1.25] text-[#8c7480]">
                             | {item.numReviews || 0}
                         </span>
                     </div>
                 )}
 
-                {/* SIZE OVERLAY */}
                 {showSizes && (
-                    <div className="absolute inset-0 flex items-center justify-center z-[15] p-3" style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(8px)" }}>
+                    <div
+                        className="absolute inset-0 z-[15] flex items-center justify-center p-3"
+                        style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(8px)" }}
+                    >
                         <div className="text-center">
-                            <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--color-primary)" }}>
+                            <p
+                                className="mb-3 text-[11px] font-semibold uppercase tracking-widest"
+                                style={{ color: "var(--color-primary)" }}
+                            >
                                 SELECT SIZE
                             </p>
-                            <div className="flex flex-wrap gap-2 justify-center">
+                            <div className="flex flex-wrap justify-center gap-2">
                                 {item.variants?.[0]?.sizes?.map((s, i) => (
                                     <button
                                         key={i}
@@ -163,14 +132,12 @@ export function ProductCard({ item, onOpenDetails }) {
                     </div>
                 )}
 
-                {/* SUCCESS MESSAGE */}
                 {showSuccess && (
                     <div
-                        className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold px-3.5 py-1.5 z-20 whitespace-nowrap"
+                        className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-[11px] font-semibold"
                         style={{
                             background: "var(--color-primary)",
                             color: "#FFF9FA",
-                            borderRadius: 9999,
                             boxShadow: "0 10px 24px rgba(74,46,53,0.18)",
                         }}
                     >
@@ -179,31 +146,33 @@ export function ProductCard({ item, onOpenDetails }) {
                 )}
             </div>
 
-            {/* DETAILS SECTION */}
-            <div className="p-4 flex flex-col flex-1" style={{ background: "var(--color-card)" }}>
-                <h3 className="product-card-title mb-1 truncate">
-                    {item.name}
-                </h3>
-                <p className="product-card-meta mb-3 truncate">
-                    {item.shortDescription}
-                </p>
+            <div className="flex min-h-[112px] flex-col gap-2 bg-white px-3 py-3">
+                <div className="grid min-h-[58px] gap-[3px]">
+                    <h3 className="line-clamp-1 text-[13px] font-semibold leading-[1.2] text-[#5b3c46]">
+                        {item.name}
+                    </h3>
+                    <p className="line-clamp-1 min-h-[13px] text-[11px] leading-[1.25] text-[#8c7480]">
+                        {item.shortDescription || " "}
+                    </p>
 
-                <div className="flex items-baseline gap-1.5">
-                    <span className="product-card-price">₹{item.minPrice}</span>
-                    {item.mrp > item.minPrice && (
-                        <>
-                            <span className="product-card-meta line-through">₹{item.mrp}</span>
-                            <span className="product-card-meta font-semibold" style={{ color: "var(--color-primary)" }}>
-                                ({item.discount}% OFF)
-                            </span>
-                        </>
-                    )}
+                    <div className="mb-0 flex min-h-[16px] flex-wrap items-baseline gap-1.5">
+                        <span className="text-[12px] font-bold text-[#a04f62]">{`\u20B9${item.minPrice}`}</span>
+                        {item.mrp > item.minPrice && (
+                            <>
+                                <span className="text-[11px] leading-[1.25] text-[#8c7480] line-through">
+                                    {`\u20B9${item.mrp}`}
+                                </span>
+                                <span className="text-[11px] font-semibold leading-[1.25]" style={{ color: "var(--color-primary)" }}>
+                                    ({item.discount}% OFF)
+                                </span>
+                            </>
+                        )}
+                    </div>
                 </div>
 
-                {/* ADD TO BAG BUTTON */}
                 <button
                     onClick={() => setShowSizes(true)}
-                    className="btn-primary-imkaa mt-auto w-full"
+                    className="mt-auto flex h-[34px] w-full items-center justify-center rounded-[8px] bg-[#c56f7f] px-[14px] text-[12px] font-semibold tracking-[0.01em] text-[#fff9fa] transition-colors duration-200 hover:bg-[#b45e6f]"
                 >
                     Add to Bag
                 </button>

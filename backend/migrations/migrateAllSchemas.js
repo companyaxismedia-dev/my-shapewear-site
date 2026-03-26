@@ -245,14 +245,39 @@ async function migrateAllSchemas() {
 
     for (const category of allCategories) {
       const updates = {};
+      const unset = {};
 
       if (category.isActive === null || category.isActive === undefined) updates.isActive = true;
       if (!category.metaTitle) updates.metaTitle = category.name || "";
       if (!category.metaDescription) updates.metaDescription = "";
-      if (!category.mataKeywords) updates.mataKeywords = [];
+      if (!category.metaKeywords) {
+        updates.metaKeywords = Array.isArray(category.mataKeywords) ? category.mataKeywords : [];
+      }
+      if (!category.slug && category.name) {
+        updates.slug = String(category.name)
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-");
+      }
+      if (!Array.isArray(category.subCategories)) updates.subCategories = [];
+      if (!Array.isArray(category.ancestors)) updates.ancestors = [];
+      if (category.level === null || category.level === undefined) updates.level = 0;
+      if (category.sortOrder === null || category.sortOrder === undefined) updates.sortOrder = 0;
+      if (category.parent === undefined) updates.parent = null;
+      if (Object.prototype.hasOwnProperty.call(category, "image")) unset.image = "";
+      if (Object.prototype.hasOwnProperty.call(category, "mataKeywords")) unset.mataKeywords = "";
 
-      if (Object.keys(updates).length > 0) {
-        await Category.findByIdAndUpdate(category._id, { $set: updates }, { new: true });
+      if (Object.keys(updates).length > 0 || Object.keys(unset).length > 0) {
+        await Category.findByIdAndUpdate(
+          category._id,
+          {
+            ...(Object.keys(updates).length > 0 ? { $set: updates } : {}),
+            ...(Object.keys(unset).length > 0 ? { $unset: unset } : {}),
+          },
+          { new: true }
+        );
         categoriesUpdated++;
       }
     }
