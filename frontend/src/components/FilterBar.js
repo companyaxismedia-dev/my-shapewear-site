@@ -65,6 +65,7 @@ export default function FilterBar({
   setFilters = () => { },
   setPage = () => { },
   category,
+  baseSubCategory = "",
 }) {
   const [metaLoaded, setMetaLoaded] = useState(false);
   const [backendColors, setBackendColors] = useState([]);
@@ -79,7 +80,8 @@ export default function FilterBar({
     const params = new URLSearchParams();
     params.set("category", category);
 
-    if (filters.subCategory) params.set("subCategory", filters.subCategory);
+    const effectiveSubCategory = filters.subCategory || baseSubCategory;
+    if (effectiveSubCategory) params.set("subCategory", effectiveSubCategory);
     if (filters.color) params.set("color", filters.color);
     if (filters.size) params.set("size", filters.size);
     if (filters.rating) params.set("rating", filters.rating);
@@ -131,6 +133,7 @@ export default function FilterBar({
       });
   }, [
     category,
+    baseSubCategory,
     filters.subCategory,
     filters.color,
     filters.size,

@@ -12,6 +12,11 @@ import { ProductCard } from "./ProductCard";
 import { ProductDetailsModal } from "./ProductDetailsModal";
 import CategoryBreadcrumb from "./CategoryBreadcrumb";
 import { API_BASE } from "@/lib/api";
+import {
+    collectCategoryFilterKeys,
+    fetchCategoryTree,
+    findCategoryBySegments,
+} from "@/lib/categories";
 
 const SORT_OPTIONS = [
     "Recommended",
@@ -49,13 +54,18 @@ const toTopFilterKey = (categoryName) => {
     return categoryName.toLowerCase().replace(/\s+/g, "_");
 };
 
-export default function CategoryPage({ category }) {
+export default function CategoryPage({ categoryPath = [] }) {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [categoryLoading, setCategoryLoading] = useState(true);
     const [filters, setFilters] = useState({});
     const [page, setPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+    const [resolvedCategory, setResolvedCategory] = useState(null);
+    const [rootCategory, setRootCategory] = useState(null);
+    const [baseSubCategory, setBaseSubCategory] = useState("");
+    const [categoryError, setCategoryError] = useState("");
 
     const [sortOpen, setSortOpen] = useState(false);
     const [sort, setSort] = useState("Recommended");
@@ -75,7 +85,43 @@ export default function CategoryPage({ category }) {
 
     useEffect(() => {
         setPage(1);
-    }, [category]);
+        setFilters({});
+    }, [categoryPath.join("/")]);
+
+    useEffect(() => {
+        const loadCategory = async () => {
+            try {
+                setCategoryLoading(true);
+                setCategoryError("");
+
+                const tree = await fetchCategoryTree();
+                const currentCategory = findCategoryBySegments(tree, categoryPath);
+
+                if (!currentCategory) {
+                    setResolvedCategory(null);
+                    setRootCategory(null);
+                    setBaseSubCategory("");
+                    setCategoryError("Category not found");
+                    return;
+                }
+
+                const root = tree.find((item) => item.slug === categoryPath[0]) || currentCategory;
+                const nextBaseSubCategory =
+                    categoryPath.length > 1 ? collectCategoryFilterKeys(currentCategory).join(",") : "";
+
+                setResolvedCategory(currentCategory);
+                setRootCategory(root);
+                setBaseSubCategory(nextBaseSubCategory);
+            } catch (error) {
+                console.error("Error resolving category:", error);
+                setCategoryError("Unable to load category");
+            } finally {
+                setCategoryLoading(false);
+            }
+        };
+
+        loadCategory();
+    }, [categoryPath.join("/")]);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -92,9 +138,16 @@ export default function CategoryPage({ category }) {
                     Object.entries(filters).filter(([_, v]) => v !== "")
                 );
 
+                if (!rootCategory?.slug) {
+                    setProducts([]);
+                    setTotalItems(0);
+                    return;
+                }
+
+                const effectiveSubCategory = filters.subCategory || baseSubCategory;
                 const query = new URLSearchParams({
                     ...cleanFilters,
-                    category: category,
+                    category: rootCategory.slug,
                     page,
                     limit: 20,
                     ...(sort === "Price: Low to High" && { sort: "price_asc" }),
@@ -103,6 +156,7 @@ export default function CategoryPage({ category }) {
                     ...(sort === "Customer Rating" && { sort: "rating" }),
                     ...(sort === "What's New" && { sort: "newest" }),
                     ...(sort === "Popularity" && { sort: "popularity" }),
+                    ...(effectiveSubCategory && { subCategory: effectiveSubCategory }),
                 }).toString();
 
                 const res = await fetch(`${API_BASE}/api/products?${query}`,
@@ -117,14 +171,14 @@ export default function CategoryPage({ category }) {
                     setTotalItems(data.total || data.products.length);
                 }
             } catch (error) {
-                console.error(`Error fetching ${category}:`, error);
+                console.error(`Error fetching ${rootCategory?.slug || "category"}:`, error);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchProducts();
-    }, [filters, page, sort, category]);
+    }, [filters, page, sort, rootCategory?.slug, baseSubCategory]);
 
     useEffect(() => {
         const handler = (e) => {
@@ -174,10 +228,10 @@ export default function CategoryPage({ category }) {
                 </div>
                 <div className="category-page-header-shell">
                     <div className="hidden md:block">
-                        <CategoryBreadcrumb currentLabel={category} totalItems={totalItems} />
+                        <CategoryBreadcrumb currentLabel={resolvedCategory?.name || categoryPath[categoryPath.length - 1]} totalItems={totalItems} />
                     </div>
                     <div className="md:hidden">
-                        <CategoryBreadcrumb currentLabel={category} totalItems={totalItems} mobile />
+                        <CategoryBreadcrumb currentLabel={resolvedCategory?.name || categoryPath[categoryPath.length - 1]} totalItems={totalItems} mobile />
                     </div>
                 </div>
                 <div className="category-page-layout">
@@ -188,7 +242,8 @@ export default function CategoryPage({ category }) {
                                 filters={filters}
                                 setFilters={setFilters}
                                 setPage={setPage}
-                                category={category}
+                                category={rootCategory?.slug}
+                                baseSubCategory={baseSubCategory}
                             />
                         </div>
                     </aside>
@@ -239,7 +294,17 @@ export default function CategoryPage({ category }) {
 
                         {/* PRODUCTS GRID */}
                         <main className="category-page-main">
-                            {loading ? (
+                            {categoryLoading ? (
+                                <div className="text-center py-20">
+                                    <div className="w-9 h-9 border-4 border-[#e8e8e8] border-t-[#ff3f6c] rounded-full animate-spin mx-auto mb-3" />
+                                    <p className="text-[#94969f] text-sm">Loading category...</p>
+                                </div>
+                            ) : categoryError ? (
+                                <div className="text-center py-20">
+                                    <h2 className="text-lg font-bold text-[#282c3f]">{categoryError}</h2>
+                                    <p className="text-sm text-[#94969f] mt-2">Please try another category.</p>
+                                </div>
+                            ) : loading ? (
                                 <div className="text-center py-20">
                                     <div className="w-9 h-9 border-4 border-[#e8e8e8] border-t-[#ff3f6c] rounded-full animate-spin mx-auto mb-3" />
                                     <p className="text-[#94969f] text-sm">Loading products...</p>
@@ -384,7 +449,8 @@ export default function CategoryPage({ category }) {
 
                         {mobileFilterOpen && (
                             <MobileFilterDrawer
-                                category={category}
+                                category={rootCategory?.slug}
+                                baseSubCategory={baseSubCategory}
                                 filters={draftFilters}
                                 setFilters={setDraftFilters}
                                 activeSection={mobileFilterSection}
@@ -403,6 +469,7 @@ export default function CategoryPage({ category }) {
 
 function MobileFilterDrawer({
     category,
+    baseSubCategory,
     filters,
     setFilters,
     activeSection,
@@ -420,9 +487,11 @@ function MobileFilterDrawer({
 
     useEffect(() => {
         const params = new URLSearchParams();
+        if (!category) return;
         params.set("category", category);
 
-        if (filters.subCategory) params.set("subCategory", filters.subCategory);
+        const effectiveSubCategory = filters.subCategory || baseSubCategory;
+        if (effectiveSubCategory) params.set("subCategory", effectiveSubCategory);
         if (filters.color) params.set("color", filters.color);
         if (filters.size) params.set("size", filters.size);
         if (filters.rating) params.set("rating", filters.rating);
@@ -444,7 +513,7 @@ function MobileFilterDrawer({
                 });
             })
             .catch(() => { });
-    }, [category, filters]);
+    }, [category, baseSubCategory, filters]);
 
     const rangeMin = Number(meta.priceRange?.min ?? 0);
     const rangeMax = Number(meta.priceRange?.max ?? 6600);

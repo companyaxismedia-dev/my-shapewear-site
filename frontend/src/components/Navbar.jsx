@@ -12,60 +12,52 @@ import WishlistButton from "@/app/wishlist/WishlistButton";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
+import { fetchCategoryTree } from "@/lib/categories";
 
-const NAV_LINKS_SIMPLE = [
-  { name: "Bras", path: "/bra" },
-  { name: "Panties", path: "/panties" },
-  { name: "Lingerie", path: "/lingerie" },
-  { name: "Shapewear", path: "/shapewear" },
-  { name: "Curvy", path: "/curvy" },
-  { name: "Tummy Control", path: "/tummy-control" },
+const FALLBACK_NAV_CATEGORIES = [
+  { name: "Bras", href: "/bra", subCategories: [] },
+  { name: "Panties", href: "/panties", subCategories: [] },
+  { name: "Lingerie", href: "/lingerie", subCategories: [] },
+  { name: "Shapewear", href: "/shapewear", subCategories: [] },
+  { name: "Curvy", href: "/curvy", subCategories: [] },
+  { name: "Tummy Control", href: "/tummy-control", subCategories: [] },
 ];
 
-const NAV_LINKS_HOME = [
-  { name: "Panties", path: "/panties" },
-  { name: "Lingerie", path: "/lingerie" },
-  { name: "Shapewear", path: "/shapewear" },
-  { name: "Curvy", path: "/curvy" },
-  { name: "Tummy Control", path: "/tummy-control" },
-  { name: "Accessories", path: "/accessories" },
-];
+const normalizeNavCategories = (nodes = [], path = []) =>
+  nodes.map((node) => {
+    const nextPath = [...path, node.slug];
+    return {
+      _id: node._id,
+      name: node.name,
+      slug: node.slug,
+      href: `/${nextPath.join("/")}`,
+      subCategories: normalizeNavCategories(node.subCategories || [], nextPath),
+    };
+  });
 
-const BRA_CATEGORIES = {
-  styles: [
-    { name: "Padded Bras", path: "/bra/padded" },
-    { name: "Push-up Bras", path: "/bra/push-up" },
-    { name: "T-Shirt Bras", path: "/bra/t-shirt" },
-    { name: "Bralettes", path: "/bra/bralette" },
-    { name: "Sports Bras", path: "/bra/sports" },
-  ],
-  padding: [
-    { name: "Non Padded", path: "/bra/non-padded" },
-    { name: "Lightly Padded", path: "/bra/lightly-padded" },
-    { name: "Heavily Padded", path: "/bra/heavily-padded" },
-  ],
-  coverage: [
-    { name: "Full Coverage", path: "/bra/full" },
-    { name: "Medium Coverage", path: "/bra/medium" },
-    { name: "Demi Cup", path: "/bra/demi" },
-  ],
-  solutions: [
-    { name: "Backless Solution", path: "/bra/backless" },
-    { name: "Bridal Wear", path: "/bra/bridal" },
-    { name: "Maternity Bras", path: "/bra/maternity" },
-    { name: "Teenager Bras", path: "/bra/teenager" },
-  ],
+const useNavbarCategories = () => {
+  const [categories, setCategories] = useState(FALLBACK_NAV_CATEGORIES);
+
+  useEffect(() => {
+    let active = true;
+
+    fetchCategoryTree()
+      .then((tree) => {
+        if (!active) return;
+        const normalized = normalizeNavCategories(tree);
+        if (normalized.length) {
+          setCategories(normalized);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return categories;
 };
-
-const DRAWER_LINKS = [
-  { name: "Home", path: "/" },
-  { name: "Bras", path: "/bra" },
-  { name: "Panties", path: "/panties" },
-  { name: "Lingerie", path: "/lingerie" },
-  { name: "Shapewear", path: "/shapewear" },
-  { name: "Curvy", path: "/curvy" },
-  { name: "Tummy Control", path: "/tummy-control" },
-];
 
 // SHARED COMPONENTS
 
@@ -131,8 +123,15 @@ function MobileSearchToggle({ isSearchOpen, setIsSearchOpen }) {
 }
 
 // Mobile Drawer Component
-function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, registerOpen, setRegisterOpen, isSearchOpen, setIsSearchOpen }) {
+function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, registerOpen, setRegisterOpen, isSearchOpen, setIsSearchOpen, categories = [] }) {
   const { user, logout } = useAuth();
+  const drawerLinks = [
+    { name: "Home", path: "/" },
+    ...categories.map((category) => ({
+      name: category.name,
+      path: category.href,
+    })),
+  ];
 
   if (!menuOpen) return null;
 
@@ -187,9 +186,9 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
 
         {/* Drawer Links */}
         <div className="flex flex-col divide-y" style={{ divideColor: "var(--color-border)" }}>
-          {DRAWER_LINKS.map((link) => (
+          {drawerLinks.map((link, index) => (
             <LinkNav
-              key={link.name}
+              key={`${link.path}-${link.name}-${index}`}
               href={link.path}
               onClick={() => setMenuOpen(false)}
               className="px-6 py-4 text-sm font-medium transition-colors"
@@ -260,11 +259,12 @@ function NavModals({ loginOpen, setLoginOpen, registerOpen, setRegisterOpen }) {
 // HOME NAVBAR
 function HomeNavbar({ onLoginToggle }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isBraHovered, setIsBraHovered] = useState(false);
+  const [hoveredCategorySlug, setHoveredCategorySlug] = useState(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { user } = useAuth();
+  const categories = useNavbarCategories();
 
   useEffect(() => {
     if (onLoginToggle) {
@@ -316,58 +316,87 @@ function HomeNavbar({ onLoginToggle }) {
               Home
             </LinkNav>
 
-            {/* Bras Dropdown */}
-            <div className="relative group"
-              onMouseEnter={() => setIsBraHovered(true)}
-              onMouseLeave={() => setIsBraHovered(false)}>
-              <LinkNav href="/bra"
-                className="flex items-center gap-1 px-3 py-1.5 imkaa-nav-link rounded-full transition">
-                Bras
-                <ChevronDown size={13}
-                  className={`transition-transform duration-300 ${isBraHovered ? "rotate-180" : ""}`}
-                  style={{ color: "var(--color-primary)" }} />
-              </LinkNav>
+            {categories.map((category, categoryIndex) => {
+              const hasChildren = category.subCategories.length > 0;
+              const isHovered = hoveredCategorySlug === category.slug;
 
-              {isBraHovered && (
-                <div className="fixed top-[110px] left-0 w-full z-[110]"
-                  onMouseEnter={() => setIsBraHovered(true)}
-                  onMouseLeave={() => setIsBraHovered(false)}>
-                  <div className="h-3 w-full bg-transparent" />
-                  <div className="shadow-2xl border-t flex animate-in fade-in slide-in-from-top-2"
-                    style={{ background: "var(--color-bg)", borderTopColor: "var(--color-border)" }}>
-                    <div className="w-3/4 grid grid-cols-4 gap-8 p-10" style={{ background: "var(--color-bg)" }}>
-                      {Object.entries(BRA_CATEGORIES).map(([key, items]) => (
-                        <div key={key}>
-                          <h3 className="mb-4 pb-2 border-b" style={{
-                            fontFamily: "var(--font-display)",
-                            fontWeight: 600, color: "var(--color-primary)", fontSize: '14px',
-                            borderBottomColor: "var(--color-border)", textTransform: 'capitalize'
-                          }}>{key}</h3>
-                          <ul className="flex flex-col gap-2.5">
-                            {items.map((item) => (
-                              <li key={item.name}>
-                                <LinkNav href={item.path}
-                                  className="transition-all hover:translate-x-1 block text-sm"
-                                  style={{ color: "var(--color-body)", fontWeight: 500, fontSize: '13px' }}>
-                                  {item.name}
-                                </LinkNav>
-                              </li>
-                            ))}
-                          </ul>
+              return (
+                <div
+                  key={`${category._id || category.slug || category.name}-${categoryIndex}`}
+                  className="relative group"
+                  onMouseEnter={() => setHoveredCategorySlug(category.slug)}
+                  onMouseLeave={() => setHoveredCategorySlug(null)}
+                >
+                  <LinkNav
+                    href={category.href}
+                    className="flex items-center gap-1 px-3 py-1.5 imkaa-nav-link rounded-full transition"
+                  >
+                    {category.name}
+                    {hasChildren ? (
+                      <ChevronDown
+                        size={13}
+                        className={`transition-transform duration-300 ${isHovered ? "rotate-180" : ""}`}
+                        style={{ color: "var(--color-primary)" }}
+                      />
+                    ) : null}
+                  </LinkNav>
+
+                  {hasChildren && isHovered ? (
+                    <div
+                      className="fixed top-[110px] left-0 w-full z-[110]"
+                      onMouseEnter={() => setHoveredCategorySlug(category.slug)}
+                      onMouseLeave={() => setHoveredCategorySlug(null)}
+                    >
+                      <div className="h-3 w-full bg-transparent" />
+                      <div
+                        className="shadow-2xl border-t flex animate-in fade-in slide-in-from-top-2"
+                        style={{ background: "var(--color-bg)", borderTopColor: "var(--color-border)" }}
+                      >
+                        <div
+                          className="w-3/4 grid grid-cols-4 gap-8 p-10"
+                          style={{ background: "var(--color-bg)" }}
+                        >
+                          {category.subCategories.map((childCategory, childIndex) => (
+                            <div
+                              key={`${childCategory._id || childCategory.slug || childCategory.name}-${childIndex}`}
+                            >
+                              <h3
+                                className="mb-4 pb-2 border-b"
+                                style={{
+                                  fontFamily: "var(--font-display)",
+                                  fontWeight: 600,
+                                  color: "var(--color-primary)",
+                                  fontSize: "14px",
+                                  borderBottomColor: "var(--color-border)",
+                                }}
+                              >
+                                <LinkNav href={childCategory.href}>{childCategory.name}</LinkNav>
+                              </h3>
+                              <ul className="flex flex-col gap-2.5">
+                                {(childCategory.subCategories.length
+                                  ? childCategory.subCategories
+                                  : [childCategory]
+                                ).map((item, itemIndex) => (
+                                  <li key={`${item._id || item.slug || item.name}-${itemIndex}`}>
+                                    <LinkNav
+                                      href={item.href}
+                                      className="transition-all hover:translate-x-1 block text-sm"
+                                      style={{ color: "var(--color-body)", fontWeight: 500, fontSize: "13px" }}
+                                    >
+                                      {item.name}
+                                    </LinkNav>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
                 </div>
-              )}
-            </div>
-
-            {NAV_LINKS_HOME.map((link) => (
-              <Link key={link.name} href={link.path}
-                className="imkaa-nav-link px-3 py-1.5 rounded-full transition">
-                {link.name}
-              </Link>
-            ))}
+              );
+            })}
 
             <LinkNav href="/exclusive"
               className="px-4 py-1.5 rounded-full text-sm font-semibold transition"
@@ -387,6 +416,7 @@ function HomeNavbar({ onLoginToggle }) {
         setRegisterOpen={setRegisterOpen}
         isSearchOpen={isSearchOpen}
         setIsSearchOpen={setIsSearchOpen}
+        categories={categories}
       />
 
       <NavModals
@@ -405,6 +435,7 @@ function SimpleNavbar({ onLoginToggle }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const categories = useNavbarCategories();
 
   useEffect(() => {
     if (onLoginToggle) {
@@ -450,10 +481,10 @@ function SimpleNavbar({ onLoginToggle }) {
 
             {/* Center: Desktop Navigation */}
             <nav className="hidden lg:flex items-center justify-center flex-1 gap-4">
-              {NAV_LINKS_SIMPLE.map((link) => (
+              {categories.map((link, index) => (
                 <LinkNav
-                  key={link.name}
-                  href={link.path}
+                  key={`${link._id || link.slug || link.name}-${index}`}
+                  href={link.href}
                   className="simple-nav-link px-3 py-2 rounded transition"
                 >
                   {link.name}
@@ -485,6 +516,7 @@ function SimpleNavbar({ onLoginToggle }) {
         setRegisterOpen={setRegisterOpen}
         isSearchOpen={isSearchOpen}
         setIsSearchOpen={setIsSearchOpen}
+        categories={categories}
       />
 
       <NavModals

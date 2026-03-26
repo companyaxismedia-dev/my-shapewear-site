@@ -14,30 +14,13 @@ import { ProductDetailsModal } from "./category/ProductDetailsModal";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import SectionRenderer from "./SectionRenderer";
+import { fetchCategoryTree } from "@/lib/categories";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-const categoryMap = {
-  bra: "bra",
-  panties: "panties",
-  lingerie: "lingerie",
-  curvy: "curvy",
-  shapewear: "shapewear",
-  "tummy-control": "shapewear",
-};
-
-const homeSections = [
-  { id: "bra", title: "Trending Bras", path: "/bra", count: 8 },
-  { id: "panties", title: "Comfy Panties", path: "/panties", count: 8 },
-  { id: "lingerie", title: "Lingerie Sets", path: "/lingerie", count: 8 },
-  { id: "curvy", title: "Curvy Collection", path: "/curvy", count: 8 },
-  { id: "shapewear", title: "Shapewear Styles", path: "/shapewear", count: 8 },
-  { id: "tummy-control", title: "Tummy Control", path: "/tummy-control", count: 8 },
-];
 
 export default function AutoSliceSlider({
   bannerSections = [],
@@ -47,16 +30,26 @@ export default function AutoSliceSlider({
   const [productsData, setProductsData] = useState({});
   const [loading, setLoading] = useState(true);
   const [hoveredProductId, setHoveredProductId] = useState({});
+  const [homeSections, setHomeSections] = useState([]);
   const swiperRefs = useRef({});
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const requests = homeSections.map(async (section) => {
-          const backendCategory = categoryMap[section.id];
+        const categoryTree = await fetchCategoryTree();
+        const dynamicSections = categoryTree.slice(0, 6).map((category) => ({
+          id: category.slug,
+          title: category.name,
+          path: `/${category.slug}`,
+          count: 8,
+          categorySlug: category.slug,
+        }));
 
+        setHomeSections(dynamicSections);
+
+        const requests = dynamicSections.map(async (section) => {
           const res = await fetch(
-            `${API_BASE}/api/products?category=${backendCategory}&limit=10`,
+            `${API_BASE}/api/products?category=${section.categorySlug}&limit=10`,
             { cache: "force-cache" }
           );
           const result = await res.json();

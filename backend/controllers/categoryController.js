@@ -198,6 +198,32 @@ exports.getAdminCategories = async (req, res) => {
   }
 };
 
+exports.getPublicCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({ isActive: true })
+      .sort({ level: 1, sortOrder: 1, name: 1 })
+      .lean();
+
+    const countsBySlug = await getProductCountsBySlug(categories.map((category) => category.slug));
+    const categoriesWithCounts = categories.map((category) => ({
+      ...category,
+      productCount: countsBySlug.get(category.slug) || 0,
+      subCategoryCount: Array.isArray(category.subCategories) ? category.subCategories.length : 0,
+    }));
+
+    res.status(200).json({
+      success: true,
+      categories: categoriesWithCounts,
+      tree: buildTree(categoriesWithCounts),
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || "Failed to fetch categories",
+    });
+  }
+};
+
 exports.createCategory = async (req, res) => {
   try {
     const payload = await buildCategoryPayload(req.body);
