@@ -83,35 +83,6 @@ export function ProductCard({ item, onOpenDetails }) {
                         className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes ? "blur-sm scale-105" : "group-hover:scale-105"}`}
                     />
                 )}
-
-                {/* <Swiper
-                    modules={[Autoplay]}
-                    slidesPerView={1}
-                    loop={images.length > 1}
-                    autoplay={
-                        images.length > 1
-                            ? { delay: 2200, disableOnInteraction: false }
-                            : false
-                    }
-                    allowTouchMove={false}
-                    nested={true}
-                    className="w-full h-full"
-                >
-                    {images.map((img, index) => (
-                        <SwiperSlide key={index}>
-                            <img
-                                src={img}
-                                alt={item.name}
-                                onClick={onOpenDetails}
-                                className={`cursor-pointer w-full h-full object-cover object-top transition-transform duration-500 ${showSizes
-                                        ? "blur-sm scale-105"
-                                        : "group-hover:scale-105"
-                                    }`}
-                            />
-                        </SwiperSlide>
-                    ))}
-                </Swiper> */}
-
                 <button
                     onClick={() => {
                         if (!user) return alert("Please login to use wishlist");

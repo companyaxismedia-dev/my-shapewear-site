@@ -335,20 +335,6 @@ function HomeNavbar({ onLoginToggle }) {
                   <div className="h-3 w-full bg-transparent" />
                   <div className="shadow-2xl border-t flex animate-in fade-in slide-in-from-top-2"
                     style={{ background: "var(--color-bg)", borderTopColor: "var(--color-border)" }}>
-                    <div className="w-1/4 border-r flex flex-col"
-                      style={{ background: "var(--color-bg-alt)", borderRightColor: "var(--color-border)" }}>
-                      <div className="p-6 border-b" style={{ borderBottomColor: "var(--color-border)" }}>
-                        <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--color-primary)", fontSize: '18px' }}>
-                          Bra Collections
-                        </span>
-                      </div>
-                      {['Shop By Style', 'By Padding', 'By Coverage', 'Specific Solutions'].map((s) => (
-                        <div key={s} className="p-4 border-b cursor-pointer transition"
-                          style={{ borderBottomColor: "var(--color-border)", color: "var(--color-body)", fontSize: '13px', fontWeight: 500 }}>
-                          {s}
-                        </div>
-                      ))}
-                    </div>
                     <div className="w-3/4 grid grid-cols-4 gap-8 p-10" style={{ background: "var(--color-bg)" }}>
                       {Object.entries(BRA_CATEGORIES).map(([key, items]) => (
                         <div key={key}>
