@@ -1,5 +1,92 @@
 const Product = require("../models/Product");
 
+const parseCsv = (value) =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const buildProductFilter = (query = {}) => {
+  const filter = { isActive: true, status: "published" };
+
+  if (query.category) {
+    filter.category = query.category;
+  }
+
+  if (query.subCategory) {
+    const subCats = parseCsv(query.subCategory);
+    if (subCats.length) {
+      filter.subCategory = { $in: subCats };
+    }
+  }
+
+  if (query.keyword) {
+    const regex = new RegExp(query.keyword, "i");
+    filter.$or = [{ name: regex }, { brand: regex }, { "variants.color": regex }];
+  }
+
+  if (query.minPrice || query.maxPrice) {
+    filter.minPrice = {};
+
+    if (query.minPrice !== undefined && query.minPrice !== "") {
+      filter.minPrice.$gte = Number(query.minPrice);
+    }
+
+    if (query.maxPrice !== undefined && query.maxPrice !== "") {
+      filter.minPrice.$lte = Number(query.maxPrice);
+    }
+
+    if (!Object.keys(filter.minPrice).length) {
+      delete filter.minPrice;
+    }
+  }
+
+  if (query.color) {
+    const colors = parseCsv(query.color);
+    if (colors.length) {
+      filter["variants.color"] = { $in: colors };
+    }
+  }
+
+  if (query.size) {
+    const sizes = parseCsv(query.size);
+    if (sizes.length) {
+      filter.variants = {
+        $elemMatch: {
+          sizes: {
+            $elemMatch: {
+              size: { $in: sizes },
+              stock: { $gt: 0 },
+            },
+          },
+        },
+      };
+    }
+  }
+
+  if (query.rating) {
+    filter.rating = { $gte: Number(query.rating) };
+  }
+
+  if (query.discount) {
+    filter.discount = { $gte: Number(query.discount) };
+  }
+
+  if (query.gender) {
+    filter.gender = query.gender;
+  }
+
+  if (query.featured === "true") filter.isFeatured = true;
+  if (query.bestSeller === "true") filter.isBestSeller = true;
+  if (query.isNewArrival === "true") filter.isNewArrival = true;
+
+  if (query.inStock === "true") {
+    filter.totalStock = { $gt: 0 };
+  }
+
+  return filter;
+};
+
 /* ======================================================
    GET ALL PRODUCTS (ENTERPRISE FILTER SYSTEM)
 ====================================================== */
@@ -7,100 +94,25 @@ exports.getProducts = async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
     const limit = Math.max(Number(req.query.limit) || 12, 1);
-     
-    const filter = { isActive: true, status: "published" };
-
-/* ================= CATEGORY ================= */
-if (req.query.category) {
-  filter.category = req.query.category;
-}
-
-if (req.query.subCategory) {
-  const subCats = req.query.subCategory.split(",");
-  filter.subCategory = { $in: subCats };
-}
-
-/* ================= SEARCH ================= */
-if (req.query.keyword) {
-  const regex = new RegExp(req.query.keyword, "i");
-
-  filter.$or = [
-    { name: regex },
-    { brand: regex },
-    { "variants.color": regex },
-  ];
-}
-
-/* ================= PRICE RANGE ================= */
-if (req.query.minPrice || req.query.maxPrice) {
-  filter.minPrice = {};
-
-  if (req.query.minPrice) {
-    filter.minPrice.$gte = Number(req.query.minPrice);
-  }
-
-  if (req.query.maxPrice) {
-    filter.minPrice.$lte = Number(req.query.maxPrice);
-  }
-}
-
-/* ================= COLOR (MULTI SUPPORT) ================= */
-if (req.query.color) {
-  const colors = req.query.color.split(",");
-  filter["variants.color"] = { $in: colors };
-}
-
-/* ================= SIZE (MULTI SUPPORT) ================= */
-if (req.query.size) {
-  const sizes = req.query.size.split(",");
-
-  filter.variants = {
-    $elemMatch: {
-      sizes: {
-        $elemMatch: {
-          size: { $in: sizes },
-          stock: { $gt: 0 },
-        },
-      },
-    },
-  };
-}
-
-/* ================= RATING ================= */
-if (req.query.rating) {
-  filter.rating = { $gte: Number(req.query.rating) };
-}
-
-/* ================= DISCOUNT ================= */
-if (req.query.discount) {
-  filter.discount = { $gte: Number(req.query.discount) };
-}
-
-/* ================= FLAGS ================= */
-if (req.query.featured === "true") filter.isFeatured = true;
-if (req.query.bestSeller === "true") filter.isBestSeller = true;
-if (req.query.isNewArrival === "true") filter.isNewArrival = true;
-
-/* ================= STOCK ================= */
-if (req.query.inStock === "true") {
-
-  filter.totalStock = { $gt: 0 };
-}
+    const filter = buildProductFilter(req.query);
 
     /* ================= SORTING ================= */
     let sortOption = { createdAt: -1 };
 
     switch (req.query.sort) {
       case "priceLow":
+      case "price_asc":
         sortOption = { minPrice: 1 };
         break;
       case "priceHigh":
+      case "price_desc":
         sortOption = { minPrice: -1 };
         break;
       case "rating":
         sortOption = { rating: -1 };
         break;
       case "discount":
+      case "discount_desc":
         sortOption = { discount: -1 };
         break;
       case "newest":
@@ -134,6 +146,7 @@ if (req.query.inStock === "true") {
         products,
         page,
         pages: Math.ceil(total / limit),
+        total,
         totalProducts: total,
       });
 
@@ -144,6 +157,122 @@ if (req.query.inStock === "true") {
       });
     }
   };
+
+exports.getProductFilterMeta = async (req, res) => {
+  try {
+    const query = { ...req.query };
+    const categoryFilter = buildProductFilter(query);
+
+    const subCategoryFilter = buildProductFilter({
+      ...query,
+      subCategory: "",
+    });
+    const colorFilter = buildProductFilter({
+      ...query,
+      color: "",
+    });
+    const sizeFilter = buildProductFilter({
+      ...query,
+      size: "",
+    });
+    const priceFilter = buildProductFilter({
+      ...query,
+      minPrice: "",
+      maxPrice: "",
+    });
+
+    const [subcategories, colors, sizes, priceRange] = await Promise.all([
+      Product.aggregate([
+        { $match: subCategoryFilter },
+        { $match: { subCategory: { $exists: true, $ne: "" } } },
+        { $group: { _id: "$subCategory", count: { $sum: 1 } } },
+        { $sort: { count: -1, _id: 1 } },
+      ]),
+      Product.aggregate([
+        { $match: colorFilter },
+        { $unwind: "$variants" },
+        { $match: { "variants.color": { $exists: true, $ne: "" } } },
+        {
+          $group: {
+            _id: {
+              productId: "$_id",
+              color: "$variants.color",
+              colorCode: "$variants.colorCode",
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.color",
+            colorCode: { $first: "$_id.colorCode" },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1, _id: 1 } },
+      ]),
+      Product.aggregate([
+        { $match: sizeFilter },
+        { $unwind: "$variants" },
+        { $unwind: "$variants.sizes" },
+        { $match: { "variants.sizes.size": { $exists: true, $ne: "" } } },
+        {
+          $group: {
+            _id: {
+              productId: "$_id",
+              size: "$variants.sizes.size",
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.size",
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      Product.aggregate([
+        { $match: priceFilter },
+        {
+          $group: {
+            _id: null,
+            min: { $min: "$minPrice" },
+            max: { $max: "$minPrice" },
+          },
+        },
+      ]),
+    ]);
+
+    const totalMatchingProducts = await Product.countDocuments(categoryFilter);
+
+    res.json({
+      success: true,
+      totalMatchingProducts,
+      subcategories: subcategories.map((item) => ({
+        name: item._id,
+        count: item.count,
+      })),
+      colors: colors.map((item) => ({
+        name: item._id,
+        colorCode: item.colorCode || "",
+        count: item.count,
+      })),
+      sizes: sizes.map((item) => ({
+        name: item._id,
+        count: item.count,
+      })),
+      priceRange: {
+        min: priceRange[0]?.min ?? 0,
+        max: priceRange[0]?.max ?? 0,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
   /* ======================================================
     GET PRODUCT BY ID

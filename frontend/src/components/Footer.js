@@ -13,13 +13,13 @@ import {
   Lock,
   ShieldCheck,
 } from "lucide-react";
+import { fetchCategoryTree } from "@/lib/categories";
 
 const INTER = "'Inter', sans-serif";
 const PLAYFAIR = "'Playfair Display', serif";
 
 export default function Footer() {
-
-  const shopLinks = [
+  const [shopLinks, setShopLinks] = React.useState([
     { label: "Bras", link: "/bra" },
     { label: "Panties", link: "/panties" },
     { label: "Lingerie", link: "/lingerie" },
@@ -27,7 +27,29 @@ export default function Footer() {
     { label: "Curvy Collection", link: "/curvy" },
     { label: "Tummy Control", link: "/tummy-control" },
     { label: "Sale", link: "/exclusive" },
-  ];
+  ]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    fetchCategoryTree()
+      .then((tree) => {
+        if (!active || !tree.length) return;
+
+        setShopLinks([
+          ...tree.slice(0, 6).map((category) => ({
+            label: category.name,
+            link: `/${category.slug}`,
+          })),
+          { label: "Sale", link: "/exclusive" },
+        ]);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const supportLinks = [
     { label: "Track Your Order", link: "/order" },
