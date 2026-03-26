@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { X, Tag, Gift, Bookmark, ChevronRight, ChevronDown, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import LoginModal from "../authPage/LoginModal";
+import LoginModal from "../../authPage/LoginModal";
 import { useEffect } from "react";
 import Link from "next/link";
 import { useWishlist } from '@/context/WishlistContext';
@@ -563,7 +563,7 @@ export default function CartPage() {
                     return;
                   }
 
-                  window.location.href = '/checkout';
+                  window.location.href = '/checkout/address';
                 }}
               >
                 PLACE ORDER

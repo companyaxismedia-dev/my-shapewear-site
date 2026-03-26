@@ -1,4 +1,5 @@
 const Order = require("../models/Order")
+const { getOrderDerivedStatus } = require("../utils/orderStatus")
 
 /* =====================================================
    BOT MESSAGE HANDLER
@@ -22,20 +23,28 @@ exports.handleMessage = async (message, orderId) => {
       return botReply("Sorry, I couldn't find your order.")
     }
 
+    const orderStatus = getOrderDerivedStatus(order.products || [])
+    const activeItems = (order.products || []).filter(
+      (item) => item.itemStatus !== "Cancelled"
+    )
+    const primaryItem = activeItems[0] || order.products?.[0]
+
     /* ========= INTENT MATCHING ========= */
 
     if (match(text, ["where is my order", "order status", "track order"])) {
 
       return botReply(
-        `Your order is currently *${order.status}*.`,
+        `Your order is currently *${orderStatus}*.`,
         quickOptions()
       )
     }
 
     if (match(text, ["delivery", "delivery date", "when will it arrive"])) {
 
-      if (order.estimatedDelivery) {
-        const date = new Date(order.estimatedDelivery).toDateString()
+      if (primaryItem?.estimatedDelivery || order.shipment?.estimatedDelivery) {
+        const date = new Date(
+          primaryItem?.estimatedDelivery || order.shipment?.estimatedDelivery
+        ).toDateString()
 
         return botReply(
           `Estimated delivery date is *${date}*.`,
@@ -51,10 +60,10 @@ exports.handleMessage = async (message, orderId) => {
 
     if (match(text, ["tracking", "tracking id", "track shipment"])) {
 
-      if (order.trackingId) {
+      if (order.shipment?.trackingId) {
 
         return botReply(
-          `Your tracking ID is *${order.trackingId}*.`,
+          `Your tracking ID is *${order.shipment.trackingId}*.`,
           quickOptions()
         )
       }
@@ -67,7 +76,7 @@ exports.handleMessage = async (message, orderId) => {
 
     if (match(text, ["cancel", "cancel order"])) {
 
-      if (["Order Placed", "Processing"].includes(order.status)) {
+      if (["Order Placed", "Processing", "Packed"].includes(orderStatus)) {
 
         return botReply(
           "You can cancel this order from the order details page.",

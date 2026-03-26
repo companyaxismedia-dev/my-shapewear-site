@@ -7,7 +7,9 @@ export default function OrderModal({ orderId, order, show, onClose, onUpdated })
   const statuses = [
     "Order Placed",
     "Processing",
+    "Packed",
     "Shipped",
+    "Out for Delivery",
     "Delivered",
     "Cancelled",
   ]
@@ -46,7 +48,7 @@ export default function OrderModal({ orderId, order, show, onClose, onUpdated })
       <div className="absolute inset-0 bg-black opacity-40" onClick={onClose}></div>
 
       <div className="relative z-10 w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
-        <h3 className="text-lg font-semibold">Update Order Status</h3>
+        <h3 className="text-lg font-semibold">Update Item Statuses</h3>
 
         <form onSubmit={handleSubmit} className="mt-4">
           <label className="block text-sm text-gray-700">Status</label>

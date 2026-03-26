@@ -159,7 +159,6 @@ async function migrateAllSchemas() {
       if (!order.trackingEvents) updates.trackingEvents = [];
       if (!order.discountAmount) updates.discountAmount = 0;
       if (!order.trackingId) updates.trackingId = "";
-      if (!order.status) updates.status = "Order Placed";
       if (!order.paymentType) updates.paymentType = "COD";
       if (!order.paymentStatus) updates.paymentStatus = "Pending";
 
@@ -324,7 +323,6 @@ async function migrateAllSchemas() {
         name: "Orders",
         model: Order,
         checks: [
-          { field: "status", count: await Order.countDocuments({ status: { $exists: false } }) },
           { field: "userInfo", count: await Order.countDocuments({ userInfo: { $exists: false } }) },
         ],
       },

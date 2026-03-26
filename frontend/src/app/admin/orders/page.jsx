@@ -8,6 +8,13 @@ import { toast } from "sonner";
 import ConfirmModalButton from "@/components/admin/modals/ConfirmModalButton";
 import { Search } from "lucide-react";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import { API_BASE } from "@/lib/api";
+
+const resolveImageUrl = (imagePath) => {
+    if (!imagePath) return "";
+    if (imagePath.startsWith("http")) return imagePath;
+    return `${API_BASE}${imagePath}`;
+};
 
 export default function OrdersPage() {
 
@@ -21,7 +28,7 @@ export default function OrdersPage() {
     const [searchOpen, setSearchOpen] = useState(false);
     const searchRef = useRef(null);
 
-    const statuses = ["Order Placed", "Processing", "Shipped", "Delivered", "Cancelled"];
+    const statuses = ["Order Placed", "Processing", "Packed", "Shipped", "Out for Delivery", "Delivered", "Cancelled"];
     const [selectedStatuses, setSelectedStatuses] = useState([]);
 
     // compute backend status param: if Unfulfilled tab and user selected statuses, pass comma list; otherwise use defaults
@@ -73,10 +80,21 @@ export default function OrdersPage() {
     const filteredOrders = useMemo(() => {
         if (!orders) return [];
         if (filterTab === "All") return orders;
-        if (filterTab === "Unfulfilled") return orders.filter(o => o.status !== "Delivered");
-        if (filterTab === "Fulfilled") return orders.filter(o => o.status === "Delivered");
+        if (filterTab === "Unfulfilled") return orders.filter(o => !["Delivered", "Exchange Delivered"].includes(o.status));
+        if (filterTab === "Fulfilled") return orders.filter(o => ["Delivered", "Exchange Delivered"].includes(o.status));
         return orders;
     }, [orders, filterTab]);
+
+    const flattenedOrderItems = useMemo(() => {
+        return filteredOrders.flatMap((order) =>
+            (order.products || []).map((product, itemIndex) => ({
+                rowId: `${order.id}-${itemIndex}`,
+                order,
+                product,
+                itemIndex,
+            }))
+        );
+    }, [filteredOrders]);
 
     const quickRange = (range) => {
         const end = new Date();
@@ -172,7 +190,7 @@ export default function OrdersPage() {
 
     const router = useRouter();
 
-    const openOrder = (order) => {
+    const openOrder = (order, itemIndex = 0) => {
         // navigate to admin order detail page
         try {
             const id = order.id || order._id;
@@ -181,7 +199,7 @@ export default function OrdersPage() {
                 console.error("Order ID is missing or invalid", order);
                 return;
             }
-            router.push(`/admin/orders/${id}`);
+            router.push(`/admin/orders/${id}?item=${itemIndex}`);
         } catch (err) {
             console.error("navigation error", err);
         }
@@ -258,7 +276,7 @@ export default function OrdersPage() {
                 body: JSON.stringify({ orderId: id, status: 'Delivered' }),
             })));
 
-            toast.success('Orders marked as Delivered');
+            toast.success('Selected item statuses updated to Delivered');
             setBulkConfirmOpen(false);
             refetch();
         } catch (err) {
@@ -274,7 +292,7 @@ export default function OrdersPage() {
                 items={[
                     { label: "Home", href: "/admin" },
                     { label: "MyShop", href: "" },
-                    { label: "AllProducts", href: "/admin/products" },
+                    { label: "All Orders", href: "/admin/products" },
                 ]}
                 mode={null}
             />
@@ -408,7 +426,7 @@ export default function OrdersPage() {
                     )}
 
                     <button onClick={exportSelected} className="btn-muted">Export selected</button>
-                    <button onClick={() => setBulkConfirmOpen(true)} className="btn-primary">Mark Fulfilled</button>
+                    <button onClick={() => setBulkConfirmOpen(true)} className="btn-primary">Mark Delivered</button>
                 </div>
             </div>
 
@@ -434,20 +452,58 @@ export default function OrdersPage() {
                     <tbody>
                         {loading ? (
                             <tr><td colSpan="9" className="p-6 text-center">Loading orders...</td></tr>
-                        ) : filteredOrders.length === 0 ? (
+                        ) : flattenedOrderItems.length === 0 ? (
                             <tr><td colSpan="9" className="p-6 text-center">No orders found</td></tr>
                         ) : (
-                            filteredOrders.map((order, index) => (
-                                <tr key={order.id || index} className="transition-colors hover:bg-muted/10">
-                                    <td className="p-3"><input type="checkbox" checked={selected.has(order.id)} onChange={() => toggleRow(order.id)} /></td>
-                                    <td className="p-3">{order.orderNumber || order.id}</td>
-                                    <td className="p-3">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ''}</td>
-                                    <td className="p-3">{order.customer || 'Guest'}</td>
-                                    <td className="p-3">{order.payment || 'Pending'}</td>
-                                    <td className="p-3">₹{order.total ?? 0}</td>
-                                    <td className="p-3">{order.items ?? 0}</td>
-                                    <td className="p-3">{order.status}</td>
-                                    <td className="p-3"> <button onClick={() => openOrder(order)} className="mr-3 btn-muted">Open</button> <span>⋯</span></td>
+                            flattenedOrderItems.map(({ rowId, order, product, itemIndex }) => (
+                                <tr
+                                    key={rowId}
+                                    className="cursor-pointer transition-colors hover:bg-muted/10"
+                                    onClick={() => openOrder(order, itemIndex)}
+                                >
+                                    <td className="p-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.has(order.id)}
+                                            onChange={() => toggleRow(order.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    </td>
+                                    <td className="p-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-12 w-12 overflow-hidden rounded-lg bg-gray-100">
+                                                {product.img ? (
+                                                    <img
+                                                        src={resolveImageUrl(product.img)}
+                                                        alt={product.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : null}
+                                            </div>
+                                            <div>
+                                                <div className="font-medium">{order.orderNumber || order.id}</div>
+                                                <div className="text-xs text-gray-500">{product.name}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-3">{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ""}</td>
+                                    <td className="p-3">{order.customer || "Guest"}</td>
+                                    <td className="p-3">{order.payment || "Pending"}</td>
+                                    <td className="p-3">Rs. {product.lineTotal ?? order.total ?? 0}</td>
+                                    <td className="p-3">Size: {product.size || "-"} | Qty: {product.quantity || 1}</td>
+                                    <td className="p-3">{product.itemStatus || order.status}</td>
+                                    <td className="p-3">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openOrder(order, itemIndex);
+                                            }}
+                                            className="mr-3 btn-muted"
+                                        >
+                                            Open
+                                        </button>
+                                        <span className="text-lg text-gray-400">...</span>
+                                    </td>
                                 </tr>
                             ))
                         )}
@@ -481,7 +537,7 @@ export default function OrdersPage() {
                 open={bulkConfirmOpen}
                 onClose={() => setBulkConfirmOpen(false)}
                 onConfirm={performBulkFulfill}
-                title={"Mark selected orders as Fulfilled?"}
+                title={"Mark all selected order items as Delivered?"}
                 btnName={"Confirm"}
             />
 

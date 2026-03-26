@@ -103,7 +103,7 @@ function NavActions({ isSearchOpen, setIsSearchOpen, setLoginOpen, setRegisterOp
         openRegister={() => setRegisterOpen(true)}
       />
       <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
-      <LinkNav href="/cart" className="relative p-1.5 transition-colors" style={{ color: "var(--color-body)" }}>
+      <LinkNav href="/checkout/cart" className="relative p-1.5 transition-colors" style={{ color: "var(--color-body)" }}>
         <ShoppingCart size={22} className="hover:text-[var(--color-primary)] transition-colors" />
         {cartCount > 0 && (
           <span
