@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import Image from "next/image";
-import { fetchCategoryTree } from "@/lib/categories";
+import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -45,8 +45,9 @@ export default function CategorySlider() {
     fetchCategoryTree()
       .then((tree) => {
         if (!active) return;
+        const navbarCategories = filterNavbarCategories(tree);
 
-        const banners = tree.slice(0, 6).map((category) => ({
+        const banners = navbarCategories.slice(0, 6).map((category) => ({
           img: categoryVisuals[category.slug]?.img || "/image/CategorySlider/shapewear.png",
           path: `/${category.slug}`,
           alt: category.name,

@@ -422,35 +422,36 @@ export function AdminLayout({ children }) {
           sidebarCollapsed ? "lg:ml-16" : "ml-0 lg:ml-64"
         )}
       >
-        <header className="sticky top-0 z-10 h-16 bg-card border-b border-border flex items-center px-4 gap-4 backdrop-blur-md">
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg hover:bg-muted text-muted-foreground"
-          >
-            {sidebarCollapsed ? (
-              <Menu className="w-5 h-5" />
-            ) : (
-              <X className="w-5 h-5" />
-            )}
-          </button>
+        <header className="sticky top-0 z-10 min-h-16 bg-card border-b border-border px-3 py-3 backdrop-blur-md sm:px-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="p-2 rounded-lg hover:bg-muted text-muted-foreground"
+            >
+              {sidebarCollapsed ? (
+                <Menu className="w-5 h-5" />
+              ) : (
+                <X className="w-5 h-5" />
+              )}
+            </button>
 
-          <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            {parentItem ? (
-              <>
-                <parentItem.icon className="w-4 h-4" />
-                <span>/</span>
-                <span className="text-foreground font-medium">{parentItem.title}</span>
-              </>
-            ) : (
-              <>
-                <Home className="w-4 h-4" />
-                <span>/</span>
-                <span className="text-foreground font-medium">Dashboard</span>
-              </>
-            )}
-          </nav>
+            <nav className="min-w-0 flex items-center gap-1.5 text-xs text-muted-foreground sm:text-sm">
+              {parentItem ? (
+                <>
+                  <parentItem.icon className="w-4 h-4 shrink-0" />
+                  <span>/</span>
+                  <span className="truncate text-foreground font-medium">{parentItem.title}</span>
+                </>
+              ) : (
+                <>
+                  <Home className="w-4 h-4 shrink-0" />
+                  <span>/</span>
+                  <span className="truncate text-foreground font-medium">Dashboard</span>
+                </>
+              )}
+            </nav>
 
-          <div className="ml-auto flex items-center gap-3">
+            <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
             <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-sm w-48 lg:w-64">
               <Search className="w-4 h-4" />
               <input
@@ -462,15 +463,17 @@ export function AdminLayout({ children }) {
 
             <Link
               href="/admin/products/add"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
             >
               <span className="text-base leading-none">+</span>
               <span className="hidden sm:block">Add Product</span>
+              <span className="sm:hidden">Add</span>
             </Link>
+          </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+        <main className="flex-1 p-3 sm:p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );

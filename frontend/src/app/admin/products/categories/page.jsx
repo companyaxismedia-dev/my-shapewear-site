@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useEffectEvent, useState } from "react";
-import { Layers3, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers3, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import PaginationComponent from "@/components/admin/common/PaginationComponent";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -16,6 +17,7 @@ const emptyForm = {
   metaDescription: "",
   metaKeywords: "",
   isActive: true,
+  showInNavbar: true,
   sortOrder: 0,
 };
 
@@ -38,6 +40,44 @@ const flattenTree = (nodes, depth = 0) =>
 const hasAncestor = (category, ancestorId) =>
   Array.isArray(category?.ancestors) &&
   category.ancestors.some((item) => String(item) === String(ancestorId));
+
+function HierarchyTree({ nodes = [], level = 0 }) {
+  if (!nodes.length) return null;
+
+  return (
+    <div className={level === 0 ? "space-y-6" : "space-y-4"}>
+      {nodes.map((node) => (
+        <div key={node._id} className="relative">
+          <div className={`relative ${level > 0 ? "pl-8" : ""}`}>
+            {level > 0 ? (
+              <span className="absolute left-0 top-1 h-7 w-5 rounded-bl-xl border-b-2 border-l-2 border-border/70" />
+            ) : null}
+
+            <div className="rounded-xl border border-border/70 bg-background px-4 py-3 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-base font-semibold text-foreground">{node.name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    /{node.slug} - {getLevelLabel(node.level)}
+                  </p>
+                </div>
+                <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                  {node.productCount} products
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {node.subCategories?.length ? (
+            <div className={`${level > 0 ? "ml-10" : "ml-4"} mt-3 border-l-2 border-border/70 pl-4`}>
+              <HierarchyTree nodes={node.subCategories} level={level + 1} />
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function CategoryFormModal({
   open,
@@ -179,6 +219,21 @@ function CategoryFormModal({
             />
           </div>
 
+          <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-3">
+            <div>
+              <p className="text-sm font-medium">Show In Navbar</p>
+              <p className="text-xs text-muted-foreground">
+                Show this category in navbar and home navigation sections.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-primary"
+              checked={form.showInNavbar}
+              onChange={(e) => setForm((prev) => ({ ...prev, showInNavbar: e.target.checked }))}
+            />
+          </div>
+
           <div className="md:col-span-2 flex justify-end gap-2">
             <button type="button" onClick={onClose} className="btn-muted px-4 py-2">
               Cancel
@@ -208,6 +263,10 @@ export default function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [editingCategory, setEditingCategory] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
 
   const fetchCategories = useEffectEvent(async (searchValue = "") => {
     try {
@@ -232,6 +291,7 @@ export default function CategoriesPage() {
 
       setCategories(flattenTree(data.tree || []));
       setTree(data.tree || []);
+      setSelectedIds([]);
     } catch (error) {
       toast.error(error.message || "Failed to load categories");
     } finally {
@@ -242,6 +302,10 @@ export default function CategoriesPage() {
   useEffect(() => {
     fetchCategories(search);
   }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, limit]);
 
   const resetForm = () => {
     setForm({ ...emptyForm });
@@ -309,6 +373,7 @@ export default function CategoriesPage() {
         ? category.metaKeywords.join(", ")
         : category.metaKeywords || "",
       isActive: category.isActive !== false,
+      showInNavbar: category.showInNavbar !== false,
       sortOrder: category.sortOrder ?? 0,
     });
     setFormOpen(true);
@@ -322,30 +387,71 @@ export default function CategoriesPage() {
     : categories;
 
   const handleDelete = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget && selectedIds.length === 0) return;
 
     try {
       const token = localStorage.getItem("adminToken");
-      const res = await fetch(`${API_BASE}/api/admin/categories/${deleteTarget._id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const isBulkDelete = !deleteTarget && selectedIds.length > 0;
+      const res = await fetch(
+        isBulkDelete
+          ? `${API_BASE}/api/admin/categories/delete-many`
+          : `${API_BASE}/api/admin/categories/${deleteTarget._id}`,
+        {
+          method: isBulkDelete ? "POST" : "DELETE",
+          headers: {
+            ...(isBulkDelete ? { "Content-Type": "application/json" } : {}),
+            Authorization: `Bearer ${token}`,
+          },
+          ...(isBulkDelete ? { body: JSON.stringify({ ids: selectedIds }) } : {}),
+        }
+      );
 
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to delete category");
       }
 
-      toast.success("Category deleted successfully");
+      toast.success(
+        isBulkDelete ? "Selected categories deleted successfully" : "Category deleted successfully"
+      );
       setDeleteOpen(false);
       setDeleteTarget(null);
+      setSelectedIds([]);
       fetchCategories(search);
     } catch (error) {
       toast.error(error.message || "Failed to delete category");
     }
   };
+
+  const totalPages = Math.max(1, Math.ceil(categories.length / limit));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * limit;
+  const paginatedCategories = categories.slice(pageStart, pageStart + limit);
+  const allVisibleSelected =
+    paginatedCategories.length > 0 &&
+    paginatedCategories.every((category) => selectedIds.includes(category._id));
+
+  const toggleCategorySelection = (categoryId) => {
+    setSelectedIds((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
+  const toggleSelectAllVisible = () => {
+    const visibleIds = paginatedCategories.map((category) => category._id);
+
+    setSelectedIds((prev) => {
+      if (allVisibleSelected) {
+        return prev.filter((id) => !visibleIds.includes(id));
+      }
+
+      return Array.from(new Set([...prev, ...visibleIds]));
+    });
+  };
+
+  const selectedCount = selectedIds.length;
 
   return (
     <>
@@ -360,7 +466,7 @@ export default function CategoriesPage() {
 
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">All Categories</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">All Categories</h1>
           <p className="text-sm text-muted-foreground">
             Manage category hierarchy with main, sub, and nested subcategories.
           </p>
@@ -371,7 +477,7 @@ export default function CategoriesPage() {
             setForm({ ...emptyForm });
             setFormOpen(true);
           }}
-          className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
+          className="btn-primary flex w-full items-center justify-center gap-2 px-4 py-2 text-sm sm:w-auto"
         >
           <Plus size={15} /> Add Category
         </button>
@@ -379,14 +485,29 @@ export default function CategoriesPage() {
 
       <div className="mb-4 grid gap-4 lg:grid-cols-[1.5fr,1fr]">
         <div className="admin-card p-4">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none transition focus:border-primary"
-              placeholder="Search category, slug, or description..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="relative w-full md:max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none transition focus:border-primary"
+                placeholder="Search category, slug, or description..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            {selectedCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteOpen(true);
+                }}
+                className="btn-destructive flex w-full items-center justify-center gap-2 px-4 py-2 text-sm md:ml-auto md:w-auto"
+              >
+                <Trash2 size={15} /> Delete Categories ({selectedCount})
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -403,112 +524,158 @@ export default function CategoriesPage() {
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr,1.85fr]">
         <div className="admin-card p-4">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">Hierarchy Preview</h2>
-            <p className="text-sm text-muted-foreground">
-              Nested categories appear here in tree order.
-            </p>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold">Hierarchy Preview</h2>
+              <p className="text-sm text-muted-foreground">
+                Expand to inspect the parent, subcategory, and child-category tree.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewOpen((prev) => !prev)}
+              className="btn-muted flex items-center gap-2 px-3 py-2 text-sm"
+            >
+              {previewOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              {previewOpen ? "Hide" : "Expand"}
+            </button>
           </div>
 
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading categories...</p>
           ) : tree.length === 0 ? (
             <p className="text-sm text-muted-foreground">No categories found yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {categories.map((category) => (
-                <div
-                  key={category._id}
-                  className="rounded-lg border border-border bg-background px-3 py-3"
-                  style={{ marginLeft: `${category.depth * 18}px` }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium">{category.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        /{category.slug} - {getLevelLabel(category.level)}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                      {category.productCount} products
-                    </span>
-                  </div>
-                </div>
-              ))}
+          ) : !previewOpen ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center">
+              <p className="text-sm font-medium text-foreground">Hierarchy preview is collapsed</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Click Expand to view the full parent-child tree.
+              </p>
             </div>
+          ) : (
+            <HierarchyTree nodes={tree} />
           )}
         </div>
 
-        <div className="admin-card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/40">
-              <tr>
-                <th className="p-3 text-left">Name</th>
-                <th className="p-3 text-left">Slug</th>
-                <th className="p-3 text-left">Parent</th>
-                <th className="p-3 text-left">Level</th>
-                <th className="p-3 text-left">Children</th>
-                <th className="p-3 text-left">Products</th>
-                <th className="p-3 text-left">Created</th>
-                <th className="p-3 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={8} className="p-6 text-center text-muted-foreground">
-                    Loading categories...
-                  </td>
-                </tr>
-              ) : categories.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-6 text-center text-muted-foreground">
-                    No categories available.
-                  </td>
-                </tr>
-              ) : (
-                categories.map((category) => (
-                  <tr key={category._id} className="border-b">
-                    <td className="p-3">
-                      <div
-                        className="flex items-center gap-2"
-                        style={{ paddingLeft: `${category.depth * 16}px` }}
-                      >
-                        <span className="font-medium">{category.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-3 text-muted-foreground">{category.slug}</td>
-                    <td className="p-3">{category.parent?.name || "Main Category"}</td>
-                    <td className="p-3">{getLevelLabel(category.level)}</td>
-                    <td className="p-3">{category.subCategoryCount}</td>
-                    <td className="p-3">{category.productCount}</td>
-                    <td className="p-3">
-                      {new Date(category.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="p-3">
-                      <button
-                        onClick={() => {
-                          openEditModal(category);
-                        }}
-                        className="btn-muted flex items-center gap-1 px-3 py-1.5"
-                      >
-                        <Pencil size={14} /> Edit
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDeleteTarget(category);
-                          setDeleteOpen(true);
-                        }}
-                        className="btn-destructive flex items-center gap-1 px-3 py-1.5"
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </td>
+        <div className="space-y-4">
+          <div className="admin-card overflow-hidden">
+            <div className="overflow-x-auto p-4">
+              <table className="w-full min-w-[980px] text-xs sm:text-sm">
+                <thead>
+                  <tr className="bg-muted/30 text-left text-foreground">
+                    <th className="w-12 px-4 py-4">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary"
+                        checked={allVisibleSelected}
+                        onChange={toggleSelectAllVisible}
+                        aria-label="Select all visible categories"
+                      />
+                    </th>
+                    <th className="px-4 py-4 font-semibold">Name</th>
+                    <th className="px-4 py-4 font-semibold">Slug</th>
+                    <th className="px-4 py-4 font-semibold">Parent</th>
+                    <th className="px-4 py-4 font-semibold">Level</th>
+                    <th className="px-4 py-4 font-semibold">Children</th>
+                    <th className="px-4 py-4 font-semibold">Products</th>
+                    <th className="px-4 py-4 font-semibold">Created</th>
+                    <th className="px-4 py-4 font-semibold">Navbar</th>
+                    <th className="px-4 py-4 text-right font-semibold">Actions</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
+                        Loading categories...
+                      </td>
+                    </tr>
+                  ) : categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
+                        No categories available.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedCategories.map((category) => {
+                      const isSelected = selectedIds.includes(category._id);
+
+                      return (
+                        <tr key={category._id} className="border-b border-border/60 last:border-b-0">
+                          <td className="px-4 py-5 align-middle">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 accent-primary"
+                              checked={isSelected}
+                              onChange={() => toggleCategorySelection(category._id)}
+                              aria-label={`Select ${category.name}`}
+                            />
+                          </td>
+                          <td className="px-4 py-5">
+                            <div className="flex items-center font-semibold text-foreground">
+                              {category.name}
+                            </div>
+                          </td>
+                          <td className="px-4 py-5 text-muted-foreground">{category.slug}</td>
+                          <td className="px-4 py-5">{category.parent?.name || "Main Category"}</td>
+                          <td className="px-4 py-5">{getLevelLabel(category.level)}</td>
+                          <td className="px-4 py-5">{category.subCategoryCount}</td>
+                          <td className="px-4 py-5">{category.productCount}</td>
+                          <td className="px-4 py-5">
+                            {new Date(category.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-5">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                category.showInNavbar !== false
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {category.showInNavbar !== false ? "Shown" : "Hidden"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-5">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  openEditModal(category);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                              >
+                                <Pencil size={14} /> Edit
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setDeleteTarget(category);
+                                  setDeleteOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {!loading && categories.length > 0 ? (
+            <PaginationComponent
+              currentPage={currentPage}
+              totalPages={totalPages}
+              limit={limit}
+              onPageChange={setPage}
+              onLimitChange={setLimit}
+              className="mt-0 px-0 py-0"
+            />
+          ) : null}
+
         </div>
       </div>
 
@@ -530,7 +697,11 @@ export default function CategoriesPage() {
           setDeleteTarget(null);
         }}
         onConfirm={handleDelete}
-        title={`Delete ${deleteTarget?.name || "category"}?`}
+        title={
+          deleteTarget
+            ? `Delete ${deleteTarget?.name || "category"}?`
+            : `Delete ${selectedCount} selected categor${selectedCount === 1 ? "y" : "ies"}?`
+        }
         btnName="Delete"
       />
     </>

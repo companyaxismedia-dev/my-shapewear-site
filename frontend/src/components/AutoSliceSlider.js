@@ -14,7 +14,7 @@ import { ProductDetailsModal } from "./category/ProductDetailsModal";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import SectionRenderer from "./SectionRenderer";
-import { fetchCategoryTree } from "@/lib/categories";
+import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -37,7 +37,7 @@ export default function AutoSliceSlider({
     const loadProducts = async () => {
       try {
         const categoryTree = await fetchCategoryTree();
-        const dynamicSections = categoryTree.slice(0, 6).map((category) => ({
+        const dynamicSections = filterNavbarCategories(categoryTree).slice(0, 6).map((category) => ({
           id: category.slug,
           title: category.name,
           path: `/${category.slug}`,

@@ -48,7 +48,6 @@ export default function InventoryPage() {
         const res = await fetch(`${API_BASE}/api/admin/inventory?limit=1000`, {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Cache-Control": "public, max-age=3600",
           },
         });
 
@@ -88,11 +87,9 @@ export default function InventoryPage() {
         ...(categoryFilter && { category: categoryFilter }),
       });
 
-      // Fetch inventory with cache control headers
       const res = await fetch(`${API_BASE}/api/admin/inventory?${params}`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Cache-Control": "public, max-age=0, must-revalidate",
         },
       });
 

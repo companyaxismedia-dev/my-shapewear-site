@@ -13,7 +13,7 @@ import {
   Lock,
   ShieldCheck,
 } from "lucide-react";
-import { fetchCategoryTree } from "@/lib/categories";
+import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
 
 const INTER = "'Inter', sans-serif";
 const PLAYFAIR = "'Playfair Display', serif";
@@ -35,9 +35,11 @@ export default function Footer() {
     fetchCategoryTree()
       .then((tree) => {
         if (!active || !tree.length) return;
+        const navbarCategories = filterNavbarCategories(tree);
+        if (!navbarCategories.length) return;
 
         setShopLinks([
-          ...tree.slice(0, 6).map((category) => ({
+          ...navbarCategories.slice(0, 6).map((category) => ({
             label: category.name,
             link: `/${category.slug}`,
           })),
