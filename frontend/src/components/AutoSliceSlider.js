@@ -163,7 +163,7 @@ export default function AutoSliceSlider({
   }
 
   return (
-    <div className="flex flex-col gap-7 lg:gap-11">
+    <div className="flex flex-col gap-3 lg:gap-8  ">
       {visibleSections.map((section, index) => {
         const products = productsData[section.id]?.slice(0, section.count) || [];
         const enableLoop = products.length >= 5;

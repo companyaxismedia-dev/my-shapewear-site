@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUpLeft, Search, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -29,12 +30,24 @@ const resolveProductImage = (item) => {
   return `${API_BASE}${imagePath}`;
 };
 
-const SearchSection = ({ onToggleMobileSearch }) => {
+const SearchSection = ({
+  onToggleMobileSearch,
+  mobileMode = "icon",
+  mobileFixed = false,
+  mobileClassName = "",
+  mobilePlaceholder = "Search for brands & products",
+  mobileOpen,
+  setMobileOpen,
+}) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isMobileSearchVisible, setIsMobileSearchVisible] = useState(false);
+  const [internalMobileSearchVisible, setInternalMobileSearchVisible] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  const isMobileSearchVisible =
+    typeof mobileOpen === "boolean" ? mobileOpen : internalMobileSearchVisible;
 
   const router = useRouter();
 
@@ -66,6 +79,10 @@ const SearchSection = ({ onToggleMobileSearch }) => {
   }, []);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (query) fetchResults(query);
     }, 300);
@@ -77,13 +94,21 @@ const SearchSection = ({ onToggleMobileSearch }) => {
     if (e) e.preventDefault();
     if (query.trim()) {
       setIsOpen(false);
-      setIsMobileSearchVisible(false);
+      if (setMobileOpen) {
+        setMobileOpen(false);
+      } else {
+        setInternalMobileSearchVisible(false);
+      }
       router.push(`/search?q=${encodeURIComponent(query)}`);
     }
   };
 
   const handleToggleMobile = (visible) => {
-    setIsMobileSearchVisible(visible);
+    if (setMobileOpen) {
+      setMobileOpen(visible);
+    } else {
+      setInternalMobileSearchVisible(visible);
+    }
     if (onToggleMobileSearch) onToggleMobileSearch(visible);
   };
 
@@ -102,11 +127,11 @@ const SearchSection = ({ onToggleMobileSearch }) => {
       {results.map((item) => (
         <li
           key={item._id}
-          onClick={() => {
-            router.push(`/product/${item.slug}`);
-            setIsOpen(false);
-            setIsMobileSearchVisible(false);
-          }}
+            onClick={() => {
+              router.push(`/product/${item.slug}`);
+              setIsOpen(false);
+              handleToggleMobile(false);
+            }}
           className="flex cursor-pointer items-center gap-3 border-b border-gray-50 px-4 py-3 text-sm hover:bg-pink-50 last:border-none"
         >
           <img
@@ -122,6 +147,65 @@ const SearchSection = ({ onToggleMobileSearch }) => {
       ))}
     </ul>
   );
+
+  const renderMobileResultsList = () => {
+    const mobileSuggestions = Array.from(
+      new Set(
+        results.flatMap((item) =>
+          [item?.name, item?.category, item?.subCategory]
+            .map((value) => String(value || "").trim())
+            .filter(
+              (value) =>
+                value &&
+                value.toLowerCase().includes(query.toLowerCase())
+            )
+        )
+      )
+    ).slice(0, 8);
+
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center px-4 py-8">
+          <Loader2 className="animate-spin text-pink-600" size={20} />
+        </div>
+      );
+    }
+
+    if (!query) {
+      return null;
+    }
+
+    if (mobileSuggestions.length === 0) {
+      return (
+        <div className="px-4 py-4 text-sm text-gray-500">
+          No products found for "{query}"
+        </div>
+      );
+    }
+
+    return (
+      <ul className="divide-y divide-gray-100">
+        {mobileSuggestions.map((suggestion) => (
+          <li
+            key={suggestion}
+            onClick={() => {
+              setQuery(suggestion);
+              setIsOpen(false);
+              handleToggleMobile(false);
+              router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+            }}
+            className="flex cursor-pointer items-center gap-3 px-4 py-3 text-sm hover:bg-pink-50"
+          >
+            <Search size={16} className="shrink-0 text-[#c4b4ba]" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[15px] text-[#4a2e35]">{suggestion}</p>
+            </div>
+            <ArrowUpLeft size={16} className="shrink-0 text-[#c4b4ba]" />
+          </li>
+        ))}
+      </ul>
+    );
+  };
 
   return (
     <div className="relative">
@@ -150,44 +234,75 @@ const SearchSection = ({ onToggleMobileSearch }) => {
         {isOpen && query && renderResultsList()}
       </div>
 
-      <div className="md:hidden">
-        <button
-          onClick={() => handleToggleMobile(true)}
-          className="rounded-full p-2 text-gray-700 hover:bg-gray-100"
-        >
-          <Search size={24} />
-        </button>
+      <div className={`md:hidden ${mobileClassName}`}>
+        {mobileMode === "bar" ? (
+          <button
+            type="button"
+            onClick={() => handleToggleMobile(true)}
+            className={`flex w-full items-center gap-3 rounded-full border border-[#eadfe3] bg-white px-4 text-left text-sm text-[#9d8b91] shadow-sm ${
+              mobileFixed ? "py-3" : "py-2.5"
+            }`}
+          >
+            <Search size={18} className="text-[#9d8b91]" />
+            <span>{mobilePlaceholder}</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => handleToggleMobile(true)}
+            className="rounded-full p-2 text-gray-700 hover:bg-gray-100"
+          >
+            <Search size={24} />
+          </button>
+        )}
       </div>
 
-      {isMobileSearchVisible && (
-        <div className="fixed inset-0 z-[999] flex flex-col bg-white p-4 md:hidden">
-          <div className="mb-4 flex items-center gap-3">
-            <button onClick={() => handleToggleMobile(false)}>
-              <X size={24} />
+      {isMounted && isMobileSearchVisible
+        ? createPortal(
+        <div className="fixed inset-0 z-[999] flex flex-col bg-white md:hidden">
+          <div className="flex items-center gap-3 border-b border-[#f0e7ea] px-4 py-3">
+            <button onClick={() => handleToggleMobile(false)} type="button">
+              <ArrowLeft size={22} className="text-[#4a2e35]" />
             </button>
 
             <form onSubmit={handleSearchSubmit} className="relative flex-1">
               <input
                 autoFocus
                 type="text"
-                placeholder="Search..."
-                className="w-full border-b-2 border-pink-500 py-2 text-lg outline-none"
+                placeholder={mobilePlaceholder}
+                className="w-full py-2 pl-1 pr-20 text-base outline-none placeholder:text-[#b4a4aa]"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
 
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setResults([]);
+                  }}
+                  className="absolute right-9 top-1/2 -translate-y-1/2 text-[#7f6a72]"
+                  aria-label="Clear search"
+                >
+                  <X size={18} />
+                </button>
+              ) : null}
+
               <button
                 type="submit"
                 className="absolute right-0 top-1/2 -translate-y-1/2"
+                aria-label="Search products"
               >
                 <Search size={20} className="text-pink-600" />
               </button>
             </form>
           </div>
 
-          <div className="relative flex-1">{query && renderResultsList()}</div>
-        </div>
-      )}
+          <div className="flex-1 overflow-y-auto bg-white">{renderMobileResultsList()}</div>
+        </div>,
+        document.body
+      )
+        : null}
     </div>
   );
 };

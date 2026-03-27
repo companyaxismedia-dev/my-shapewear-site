@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, Store, ShoppingCart, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle, Blinds,
+  Home, Store, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle, Blinds,
   Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2, UserCircle2
 } from "lucide-react";
 
@@ -29,7 +29,6 @@ const navItems = [
           { title: "All Products", href: "/admin/products" },
           { title: "Import Products", href: "/admin/products/multiple-import" },
           { title: "Draft Products", href: "/admin/products/drafts" },
-          { title: "Categories", href: "/admin/products/categories" },
         ],
       },
       { title: "Orders", href: "/admin/orders" },
@@ -45,9 +44,19 @@ const navItems = [
     ]
   },
   {
+    title: "Categories",
+    href: "/admin/categories",
+    icon: Blinds,
+  },
+  {
     title: "Customers",
     href: "/admin/customers",
     icon: UserCircle2,
+  },
+  {
+    title: "Inventory",
+    href: "/admin/inventory",
+    icon: Layers,
   },
   {
     title: "Shop Management",
@@ -58,11 +67,6 @@ const navItems = [
     title: "Analytics Report",
     href: "/admin/analytics",
     icon: BarChart3,
-  },
-  {
-    title: "Inventory",
-    href: "/admin/inventory",
-    icon: Layers,
   },
   {
     title: "Promotions",

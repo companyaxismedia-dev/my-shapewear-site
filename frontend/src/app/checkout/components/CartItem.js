@@ -6,15 +6,15 @@ export default function CartItem({ item }) {
   const { updateQty, removeItem } = useCart();
 
   return (
-    <div className="flex gap-6 border p-5 rounded-lg bg-white">
+    <div className="flex gap-6 rounded-[24px] border border-[#ecd9de] bg-white/95 p-5 shadow-[0_10px_30px_rgba(74,46,53,0.05)]">
       <img
         src={item.image}
-        className="w-28 h-36 object-cover rounded"
+        className="h-36 w-28 rounded-[18px] object-cover"
       />
 
       <div className="flex-1">
-        <h3 className="font-semibold">{item.name}</h3>
-        <p className="text-sm text-gray-500 mb-2">
+        <h3 className="font-semibold text-[#4a2e35]">{item.name}</h3>
+        <p className="mb-2 text-sm text-[#8d727b]">
           ₹{item.price}
         </p>
 
@@ -24,7 +24,7 @@ export default function CartItem({ item }) {
             onChange={(e) =>
               updateQty(item.id, e.target.value)
             }
-            className="border px-2 py-1 rounded"
+            className="rounded-full border border-[#e5d4d9] px-3 py-1.5 text-sm text-[#5a3c46] outline-none"
           >
             {[1, 2, 3, 4, 5].map((q) => (
               <option key={q}>{q}</option>
@@ -33,7 +33,7 @@ export default function CartItem({ item }) {
 
           <button
             onClick={() => removeItem(item.id)}
-            className="text-red-500 flex items-center gap-1"
+            className="flex items-center gap-1 text-[#c56f7f]"
           >
             <Trash2 size={16} /> Remove
           </button>

@@ -52,7 +52,15 @@ export const CartProvider = ({ children }) => {
             selectedVariant?.images?.[0]?.url ||
             "/fallback.jpg";
 
-          const availableSizes = selectedVariant?.sizes?.map((s) => s.size) || [];
+          const availableSizes = [
+            ...new Set(
+              (product.variants || []).flatMap((variant) =>
+                (variant?.sizes || [])
+                  .filter((s) => s?.size)
+                  .map((s) => s.size),
+              ),
+            ),
+          ];
 
           return {
             id: `guest-${index}`, // simple id for guest
@@ -175,7 +183,15 @@ export const CartProvider = ({ children }) => {
             selectedVariant?.images?.[0]?.url ||
             "/fallback.jpg";
 
-          const availableSizes = selectedVariant?.sizes?.map((s) => s.size) || [];
+          const availableSizes = [
+            ...new Set(
+              (product.variants || []).flatMap((variant) =>
+                (variant?.sizes || [])
+                  .filter((s) => s?.size)
+                  .map((s) => s.size),
+              ),
+            ),
+          ];
 
           return {
             id: item.id,

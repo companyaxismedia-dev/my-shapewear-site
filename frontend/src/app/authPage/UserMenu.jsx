@@ -7,7 +7,6 @@ import { useState } from "react";
 
 export default function UserMenu({ openLogin, openRegister }) {
   const { user, logout } = useAuth();
-
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleUserClick = () => {
