@@ -77,7 +77,7 @@ export default function Home() {
     >
       <Navbar />
 
-      <main className="w-full mx-auto">
+      <main className="w-full mx-auto lg:pt-0">
         <Hero slides={heroSlides} />
         <HomeHero />
 
