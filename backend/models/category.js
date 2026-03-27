@@ -66,6 +66,11 @@ const categorySchema = new mongoose.Schema(
       default: true,
       index: true,
     },
+    showInNavbar: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
   },
   {
     timestamps: true,

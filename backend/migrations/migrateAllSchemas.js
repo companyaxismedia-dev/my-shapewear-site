@@ -248,6 +248,9 @@ async function migrateAllSchemas() {
       const unset = {};
 
       if (category.isActive === null || category.isActive === undefined) updates.isActive = true;
+      if (category.showInNavbar === null || category.showInNavbar === undefined) {
+        updates.showInNavbar = true;
+      }
       if (!category.metaTitle) updates.metaTitle = category.name || "";
       if (!category.metaDescription) updates.metaDescription = "";
       if (!category.metaKeywords) {

@@ -15,9 +15,9 @@ export default function SearchFilterComponent({
   const hasFilters = filters && filters.length > 0;
 
   return (
-    <div className={`flex items-center gap-3 flex-wrap ${className}`}>
+    <div className={`flex w-full flex-wrap items-center gap-3 ${className}`}>
       {/* SEARCH INPUT */}
-      <div className={`relative ${expandDirection === "left" ? "flex flex-row-reverse" : ""}`}>
+      <div className={`relative max-w-full ${expandDirection === "left" ? "flex flex-row-reverse" : ""}`}>
         {!isExpanded && showExpandButton ? (
           <button
             onClick={() => setIsExpanded(true)}
@@ -27,12 +27,12 @@ export default function SearchFilterComponent({
             <Search size={18} />
           </button>
         ) : (
-          <div className="relative">
+          <div className="relative w-full sm:min-w-[240px]">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500 pointer-events-none" />
             <input
               autoFocus
               type="text"
-              className="pl-11 pr-10 py-2.5 rounded-lg text-sm bg-white font-medium text-slate-700 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition hover:shadow-md"
+              className="w-full pl-11 pr-10 py-2.5 rounded-lg text-sm bg-white font-medium text-slate-700 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition hover:shadow-md"
               placeholder="Search..."
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
@@ -41,9 +41,7 @@ export default function SearchFilterComponent({
                   setIsExpanded(false);
                 }
               }}
-              style={{
-                width: expandDirection === "left" ? "240px" : "auto",
-              }}
+              style={expandDirection === "left" ? { width: "240px", maxWidth: "100%" } : undefined}
             />
             {searchValue && (
               <button
@@ -63,17 +61,17 @@ export default function SearchFilterComponent({
 
       {/* ADDITIONAL FILTERS */}
       {hasFilters && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {filters.map((filter) => {
             if (filter.type === "text") {
               return (
-                <div key={filter.id} className="relative">
+                <div key={filter.id} className="relative w-full sm:w-auto">
                   <input
                     type="text"
                     placeholder={filter.placeholder}
                     value={filter.value || ""}
                     onChange={(e) => filter.onChange(e.target.value)}
-                    className="px-4 py-2.5 rounded-lg text-sm bg-white font-medium text-slate-700 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition hover:shadow-md"
+                    className="w-full px-4 py-2.5 rounded-lg text-sm bg-white font-medium text-slate-700 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition hover:shadow-md"
                   />
                 </div>
               );
@@ -81,7 +79,7 @@ export default function SearchFilterComponent({
 
             if (filter.type === "number") {
               return (
-                <div key={filter.id} className="flex items-center gap-2">
+                <div key={filter.id} className="flex w-full items-center gap-2 sm:w-auto">
                   <span className="text-sm font-medium text-slate-700">
                     {filter.label}
                   </span>
@@ -98,11 +96,11 @@ export default function SearchFilterComponent({
 
             if (filter.type === "select") {
               return (
-                <div key={filter.id} className="relative">
+                <div key={filter.id} className="relative w-full sm:w-auto">
                   <select
                     value={filter.value || ""}
                     onChange={(e) => filter.onChange(e.target.value)}
-                    className="px-4 py-2.5 rounded-lg text-sm bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition hover:shadow-md cursor-pointer"
+                    className="w-full px-4 py-2.5 rounded-lg text-sm bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition hover:shadow-md cursor-pointer"
                   >
                     <option value="">{filter.placeholder}</option>
                     {filter.options &&

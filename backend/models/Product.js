@@ -125,19 +125,12 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: [
-        "bra",
-        "panties",
-        "lingerie",
-        "shapewear",
-        "curvy",
-        "tummy-control",
-        "non-padded"
-      ],
-      index: true
+      trim: true,
+      lowercase: true,
+      index: true,
     },
 
-    subCategory: { type: String, index: true },
+    subCategory: { type: String, trim: true, lowercase: true, index: true },
 
 
     shortDescription: String,

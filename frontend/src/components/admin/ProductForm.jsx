@@ -168,14 +168,14 @@ export const productSchema = yup.object().shape({
 function Card({ title, subtitle, children, className, action }) {
   return (
     <div className={cn("admin-card", className)}>
-      <div className={cn("px-5 py-4 border-b border-border flex items-center justify-between", !title && "hidden")}>
+      <div className={cn("px-4 py-4 border-b border-border flex flex-col gap-3 sm:px-5 sm:flex-row sm:items-center sm:justify-between", !title && "hidden")}>
         <div>
           <h2 className="text-sm font-semibold text-foreground">{title}</h2>
           {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
         {action}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </div>
   );
 }
@@ -443,7 +443,7 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <button
           type="button"
           onClick={() => fileRef.current?.click()}

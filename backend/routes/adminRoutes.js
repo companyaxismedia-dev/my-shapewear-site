@@ -31,8 +31,10 @@ router.delete("/products/drafts/:id", protect, admin, adminController.deleteDraf
 router.get("/products", protect, admin, adminController.getAllProducts);
 router.post("/products/delete-many", protect, admin, adminController.deleteManyProducts);
 
+//category section Routes
 router.get("/categories", protect, admin, categoryController.getAdminCategories);
 router.post("/categories", protect, admin, categoryController.createCategory);
+router.post("/categories/delete-many", protect, admin, categoryController.deleteManyCategories);
 router.put("/categories/:id", protect, admin, categoryController.updateCategory);
 router.delete("/categories/:id", protect, admin, categoryController.deleteCategory);
 

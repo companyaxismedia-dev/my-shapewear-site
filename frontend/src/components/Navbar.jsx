@@ -12,7 +12,7 @@ import WishlistButton from "@/app/wishlist/WishlistButton";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
-import { fetchCategoryTree } from "@/lib/categories";
+import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
 
 const FALLBACK_NAV_CATEGORIES = [
   { name: "Bras", href: "/bra", subCategories: [] },
@@ -44,7 +44,7 @@ const useNavbarCategories = () => {
     fetchCategoryTree()
       .then((tree) => {
         if (!active) return;
-        const normalized = normalizeNavCategories(tree);
+        const normalized = normalizeNavCategories(filterNavbarCategories(tree));
         if (normalized.length) {
           setCategories(normalized);
         }
@@ -278,9 +278,9 @@ function HomeNavbar({ onLoginToggle }) {
         {/* MAIN NAVBAR */}
         <div style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
           <div className="container-imkaa">
-            <div className="grid grid-cols-3 items-center min-h-[56px] md:min-h-[64px] lg:min-h-[68px]">
+            <div className="flex items-center justify-between min-h-[56px] md:min-h-[64px] lg:min-h-[68px] lg:grid lg:grid-cols-3">
               {/* Left: Hamburger */}
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-1">
                 <button
                   className="lg:hidden p-2 rounded-md transition"
                   style={{ color: "var(--color-body)", background: "transparent" }}
@@ -288,15 +288,19 @@ function HomeNavbar({ onLoginToggle }) {
                 >
                   <Menu size={24} />
                 </button>
+
+                <div className="flex min-w-0 items-center lg:hidden -ml-1">
+                  <Logo width="w-[96px]" height="h-[30px]" />
+                </div>
               </div>
 
               {/* Center: Logo */}
-              <div className="flex items-center justify-center">
+              <div className="hidden items-center justify-center lg:flex">
                 <Logo />
               </div>
 
               {/* Right: Actions */}
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex shrink-0 items-center justify-end gap-2">
                 <NavActions
                   isSearchOpen={isSearchOpen}
                   setIsSearchOpen={setIsSearchOpen}
