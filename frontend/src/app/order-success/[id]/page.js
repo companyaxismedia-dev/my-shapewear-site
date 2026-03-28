@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import {Check,Truck,Edit2,ChevronLeft,ChevronRight} from "lucide-react";
 import Footer from "@/components/Footer";
 import { API_BASE } from "@/lib/api";
+import CheckoutStepper from "@/app/checkout/components/CheckoutStepper";
 
 export default function OrderSuccessPage() {
   const router = useRouter();
@@ -84,6 +85,7 @@ export default function OrderSuccessPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+      <CheckoutStepper currentStep="confirmation" />
 
       <main className="flex-1 w-full px-4 py-8">
         <div className="max-w-2xl mx-auto">

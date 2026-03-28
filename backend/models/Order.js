@@ -360,7 +360,7 @@ const OrderSchema = new mongoose.Schema(
       },
       platformFee: {
         type: Number,
-        default: 0,
+        default: 30,
         min: 0,
       },
       tax: {

@@ -13,7 +13,32 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
+  const [cartSummary, setCartSummary] = useState({
+    total: 0,
+    subTotal: 0,
+    discount: 0,
+    shipping: 0,
+    platformFee: 30,
+    youPay: 30,
+  });
   const token = user?.token;
+
+  const buildSummary = (items = []) => {
+    const total = items.reduce((sum, item) => sum + (item.mrp || 0) * (item.quantity || 0), 0);
+    const subTotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 0), 0);
+    const discount = Math.max(total - subTotal, 0);
+    const shipping = 0;
+    const platformFee = 30;
+
+    return {
+      total,
+      subTotal,
+      discount,
+      shipping,
+      platformFee,
+      youPay: subTotal + shipping + platformFee,
+    };
+  };
 
   /* ================= LOAD GUEST ================= */
   const loadGuestCart = async () => {
@@ -21,6 +46,7 @@ export const CartProvider = ({ children }) => {
 
     if (!guest.length) {
       setCartItems([]);
+      setCartSummary(buildSummary([]));
       return;
     }
 
@@ -79,6 +105,7 @@ export const CartProvider = ({ children }) => {
             deliveryDate: "5-7 Business Days",
             returnText: "3 days return available",
             availableSizes,
+            lineTotal: price * item.quantity,
           };
         } catch (error) {
           // Product was deleted or not found - filter it out
@@ -92,7 +119,9 @@ export const CartProvider = ({ children }) => {
     );
 
     // Filter out null items (deleted products)
-    setCartItems(formatted.filter(item => item !== null));
+    const filteredItems = formatted.filter((item) => item !== null);
+    setCartItems(filteredItems);
+    setCartSummary(buildSummary(filteredItems));
   };
 
   /* ================= LOAD CART ================= */
@@ -154,70 +183,14 @@ export const CartProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${user?.token}` },
       });
 
-      const formatted = res.data.items
-        .map((item) => {
-          // Skip deleted products
-          if (!item.product) {
-            return null;
-          }
-
-          const product = item.product;
-
-          // find selected variant
-          const selectedVariant =
-            product.variants?.find((v) => v.color === item.color) ||
-            product.variants?.[0];
-
-          // find selected size
-          const selectedSizeObj =
-            selectedVariant?.sizes?.find((s) => s.size === item.size) ||
-            selectedVariant?.sizes?.[0];
-
-          const price = selectedSizeObj?.price || product.minPrice || 0;
-          const mrp = selectedSizeObj?.mrp || product.mrp || price;
-          const discount =
-            mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
-
-          const image =
-            product.thumbnail ||
-            selectedVariant?.images?.[0]?.url ||
-            "/fallback.jpg";
-
-          const availableSizes = [
-            ...new Set(
-              (product.variants || []).flatMap((variant) =>
-                (variant?.sizes || [])
-                  .filter((s) => s?.size)
-                  .map((s) => s.size),
-              ),
-            ),
-          ];
-
-          return {
-            id: item.id,
-            productId: product._id,
-            slug: product.slug,
-            name: product.name,
-            brand: product.brand || "Glovia",
-            price,
-            mrp,
-            discount,
-            image,
-            quantity: item.qty,
-            size: item.size,
-            color: item.color,
-            seller: "Glovia Glamour",
-            deliveryDate: "5-7 Business Days",
-            returnText: "3 days return available",
-            availableSizes,
-          };
-        })
-        .filter(item => item !== null); // Remove deleted products
+      const formatted = Array.isArray(res.data.items) ? res.data.items : [];
 
       setCartItems(formatted);
+      setCartSummary(res.data.summary || buildSummary(formatted));
     } catch (error) {
       console.error("Error fetching cart:", error);
       setCartItems([]);
+      setCartSummary(buildSummary([]));
     }
   };
 
@@ -342,6 +315,7 @@ export const CartProvider = ({ children }) => {
     <CartContext.Provider
       value={{
         cartItems,
+        cartSummary,
         addToCart,
         updateQty,
         updateSize,

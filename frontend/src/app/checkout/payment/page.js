@@ -9,6 +9,7 @@ import { BankOfferSection } from "@/components/payment/BankOfferSection";
 import { PaymentMethodsList } from "@/components/payment/PaymentMethodsList";
 import { PaymentDetailsPanel } from "@/components/payment/PaymentDetailsPanel";
 import { PriceDetailsSection } from "@/components/payment/PriceDetailsSection";
+import CheckoutStepper from "../components/CheckoutStepper";
 
 export default function PaymentPage() {
     return (
@@ -70,31 +71,7 @@ function PaymentPageContent() {
     }, [finalOrderId]);
     return (
         <div className="min-h-screen bg-[var(--color-bg-alt)] text-[#4a2e35]">
-            <header className="sticky top-0 z-40 border-b border-[#f0e4e8] bg-[rgba(255,253,252,0.96)] backdrop-blur">
-                <div className="container-imkaa flex h-[72px] items-center justify-between">
-
-                    <div className="text-sm font-semibold tracking-[0.3em] text-[#c56f7f]">GLOVIA</div>
-
-                    <div className="hidden items-center gap-3 text-[13px] font-semibold tracking-[2px] uppercase sm:flex">
-                        <span className="text-[#8d727b]">Bag</span>
-                        <span className="text-[#cbb6bd]">----------</span>
-                        <span className="text-[#8d727b]">Address</span>
-                        <span className="text-[#cbb6bd]">----------</span>
-                        <span className="text-[#c56f7f]">Payment</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[2px]">
-                        <svg
-                            className="h-4 w-4 text-[#c56f7f]"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
-                        </svg>
-                        <span className="text-[#5a3c46]">100% Secure</span>
-                    </div>
-                </div>
-            </header>
+            <CheckoutStepper currentStep="payment" />
 
             <main className="container-imkaa px-4 py-8">
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -520,12 +520,19 @@ function HomeNavbar({ onLoginToggle, pathname }) {
                         >
                           <div className="h-3 w-full bg-transparent" />
                           <div
-                            className="shadow-2xl border-t flex animate-in fade-in slide-in-from-top-2"
-                            style={{ background: "var(--color-bg)", borderTopColor: "var(--color-border)" }}
+                            className="animate-in fade-in slide-in-from-top-2 border-t shadow-2xl"
+                            style={{
+                              background: "var(--color-bg)",
+                              borderTopColor: "var(--color-border)",
+                            }}
                           >
                             <div
-                              className="w-3/4 grid grid-cols-4 gap-8 p-10"
-                              style={{ background: "var(--color-bg)" }}
+                              className="mx-auto grid gap-8 px-10 pb-10 pt-6"
+                              style={{
+                                background: "var(--color-bg)",
+                                width: `min(${Math.max(category.subCategories.length, 2) * 300}px, 92vw)`,
+                                gridTemplateColumns: `repeat(${Math.max(category.subCategories.length, 1)}, minmax(0, 1fr))`,
+                              }}
                             >
                               {category.subCategories.map((childCategory, childIndex) => (
                                 <div
@@ -659,6 +666,7 @@ function HomeNavbar({ onLoginToggle, pathname }) {
 // SIMPLE NAVBAR (for non-home pages)
 function SimpleNavbar({ onLoginToggle, pathname }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hoveredCategorySlug, setHoveredCategorySlug] = useState(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -715,19 +723,95 @@ function SimpleNavbar({ onLoginToggle, pathname }) {
 
             {/* Center: Desktop Navigation */}
             <nav className="hidden lg:flex items-center justify-center flex-1 gap-4">
-              {categories.map((link, index) => (
-                <LinkNav
-                  key={`${link._id || link.slug || link.name}-${index}`}
-                  href={link.href}
-                  className="simple-nav-link px-3 py-2 rounded transition"
-                  style={{
-                    color: isPathActive(link.href) ? "var(--color-primary)" : undefined,
-                    fontWeight: isPathActive(link.href) ? 600 : undefined,
-                  }}
-                >
-                  {link.name}
-                </LinkNav>
-              ))}
+              {categories.map((category, index) => {
+                const hasChildren = category.subCategories.length > 0;
+                const isHovered = hoveredCategorySlug === category.slug;
+
+                return (
+                  <div
+                    key={`${category._id || category.slug || category.name}-${index}`}
+                    className="relative"
+                    onMouseEnter={() => setHoveredCategorySlug(category.slug)}
+                    onMouseLeave={() => setHoveredCategorySlug(null)}
+                  >
+                    <LinkNav
+                      href={category.href}
+                      className="simple-nav-link px-3 py-2 rounded transition"
+                      style={{
+                        color: isPathActive(category.href) || isHovered ? "var(--color-primary)" : undefined,
+                        fontWeight: isPathActive(category.href) || isHovered ? 600 : undefined,
+                      }}
+                    >
+                      {category.name}
+                    </LinkNav>
+
+                    {hasChildren && isHovered ? (
+                      <div
+                        className="fixed left-0 w-full z-[110]"
+                        style={{ top: "56px" }}
+                        onMouseEnter={() => setHoveredCategorySlug(category.slug)}
+                        onMouseLeave={() => setHoveredCategorySlug(null)}
+                      >
+                        <div
+                          className="animate-in fade-in slide-in-from-top-2 border-t shadow-2xl"
+                          style={{
+                            background: "var(--color-bg)",
+                            borderTopColor: "var(--color-border)",
+                          }}
+                        >
+                          <div
+                            className="mx-auto grid gap-8 px-10 pb-10 pt-6"
+                            style={{
+                              background: "var(--color-bg)",
+                              width: `min(${Math.max(category.subCategories.length, 2) * 300}px, 92vw)`,
+                              gridTemplateColumns: `repeat(${Math.max(category.subCategories.length, 1)}, minmax(0, 1fr))`,
+                            }}
+                          >
+                            {category.subCategories.map((childCategory, childIndex) => (
+                              <div
+                                key={`${childCategory._id || childCategory.slug || childCategory.name}-${childIndex}`}
+                              >
+                                <h3
+                                  className="mb-4 border-b pb-2"
+                                  style={{
+                                    fontFamily: "var(--font-display)",
+                                    fontWeight: 600,
+                                    color: "var(--color-primary)",
+                                    fontSize: "14px",
+                                    borderBottomColor: "var(--color-border)",
+                                  }}
+                                >
+                                  <LinkNav href={childCategory.href}>{childCategory.name}</LinkNav>
+                                </h3>
+                                <ul className="flex flex-col gap-2.5">
+                                  {(childCategory.subCategories.length
+                                    ? childCategory.subCategories
+                                    : [childCategory]
+                                  ).map((item, itemIndex) => (
+                                    <li key={`${item._id || item.slug || item.name}-${itemIndex}`}>
+                                      <LinkNav
+                                        href={item.href}
+                                        className="block text-sm transition-all hover:translate-x-1"
+                                        style={{
+                                          color: "var(--color-body)",
+                                          fontWeight: 500,
+                                          fontSize: "13px",
+                                        }}
+                                      >
+                                        {item.name}
+                                      </LinkNav>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </nav>
 
             {/* Right: Actions (Search, User, Wishlist, Cart) */}
