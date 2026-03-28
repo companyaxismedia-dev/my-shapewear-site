@@ -89,17 +89,10 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
       return;
     }
 
-    // ✅ Phone validation (ADD THIS)
-    if (formData.phone && formData.phone.trim().length !== 10) {
-      setError("Enter valid 10 digit phone number");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const payload = formData.phone
-        ? { phone: formData.phone.trim() }
-        : { email: formData.email.toLowerCase().trim() };
+      const payload = formData.email
+        ? { email: formData.email.toLowerCase().trim() }
+        : { phone: formData.phone.trim() };
 
       const res = await axios.post(`${API_BASE}/api/otp/send`, payload);
 
@@ -149,10 +142,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
         err.response?.data?.message ||
         "Invalid OTP or Registration failed"
       );
-
-      setFormData({ ...formData, otp: "" });
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -200,7 +190,6 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
           <input
             type="text"
             placeholder="Phone Number"
-            maxLength={10}
             className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
             value={formData.phone}
             onChange={(e) =>
@@ -232,7 +221,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
 
             <div className="w-1/2 p-[1px] text-white rounded-[10px] font-bold cursor-pointer text-[14px] disabled:opacity-70">
               <GoogleLogin
-                text="signup"
+              text="signup"
                 onSuccess={handleGoogleSuccess}
                 onError={() => {
                   setError("Google Login Failed");
@@ -246,54 +235,20 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
         <form onSubmit={handleRegister}>
           <div className="text-[13px] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px]">
             OTP sent to{" "}
-            <b>{formData.phone || formData.email}</b>
+            <b>{formData.email || formData.phone}</b>
           </div>
 
-          <div className="flex justify-between gap-2 my-4">
-            {[...Array(6)].map((_, index) => (
-              <input
-                key={index}
-                type="text"
-                maxLength={1}
-                value={formData.otp[index] || ""}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^0-9]/g, "");
-
-                  if (!value) return;
-
-                  const newOtp = formData.otp.split("");
-                  newOtp[index] = value;
-
-                  const finalOtp = newOtp.join("");
-                  setFormData({ ...formData, otp: finalOtp });
-
-                  // 👉 auto focus next
-                  const next = e.target.nextSibling;
-                  if (next) next.focus();
-
-                  // ✅ auto submit
-                  if (finalOtp.length === 6) {
-                    handleRegister(e);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Backspace") {
-                    const newOtp = formData.otp.split("");
-                    newOtp[index] = "";
-
-                    setFormData({
-                      ...formData,
-                      otp: newOtp.join(""),
-                    });
-
-                    const prev = e.target.previousSibling;
-                    if (prev) prev.focus();
-                  }
-                }}
-                className="w-12 h-12 text-center border rounded-lg text-lg font-bold focus:ring-2 focus:ring-pink-500 outline-none"
-              />
-            ))}
-          </div>
+          <input
+            type="text"
+            placeholder="Enter 6-Digit OTP"
+            className="w-full p-[14px] my-[10px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
+            value={formData.otp}
+            onChange={(e) =>
+              setFormData({ ...formData, otp: e.target.value })
+            }
+            required
+            maxLength={6}
+          />
 
           <button
             type="submit"
