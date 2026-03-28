@@ -3,7 +3,6 @@ const { Resend } = require("resend");
 const jwt = require("jsonwebtoken");
 const Otp = require("../models/Otp");
 const User = require("../models/User");
-const axios = require("axios");
 
 /* =====================================================
    🔐 RESEND INITIALIZATION (Safe Mode)
@@ -90,23 +89,7 @@ exports.sendOTP = async (req, res) => {
         { upsert: true, new: true }
       );
 
-      try {
-  await axios.post(
-    "https://api.msg91.com/api/v5/otp",
-    {
-      mobile: `91${phone}`,
-    },
-    {
-      headers: {
-        authkey: process.env.MSG91_AUTH_KEY,
-      },
-    }
-  );
-
-  console.log("✅ SMS OTP sent via MSG91");
-} catch (err) {
-  console.error("❌ MSG91 ERROR:", err.response?.data || err.message);
-}
+      // ⚠️ Yaha future me SMS integration laga sakte ho
     }
 
     return res.status(200).json({

@@ -214,7 +214,7 @@ export default function CustomerDetailPage() {
 				items={[
 					{ label: "Home", href: "/admin" },
 					{ label: "All Customers", href: "/admin/customers" },
-					{ label: user?.name || (typeof window !== 'undefined' && JSON.parse(localStorage.getItem('user') || '{}').name) || "Customer", href: "/admin/customers/{id}" },
+				{ label: user?.name || "Customer", href: "/admin/customers/{id}" },
 				]}
 				mode={null}
 			/>

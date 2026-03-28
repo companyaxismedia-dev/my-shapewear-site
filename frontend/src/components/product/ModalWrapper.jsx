@@ -1,34 +1,55 @@
 "use client";
 
-import { useEffect } from "react";
 import { X } from "lucide-react";
+import { useEffect } from "react";
 
-export default function ModalWrapper({ title, onClose, children }) {
-
+export default function ModalWrapper({
+  title,
+  onClose,
+  children,
+  className = "",
+}) {
   useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "auto";
+    const handleEscape = (e) => {
+      if (e.key === "Escape") onClose?.();
     };
-  }, []);
+
+    document.addEventListener("keydown", handleEscape);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-lg shadow-xl relative">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#2f1d22]/35 p-2 sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative flex h-[96vh] w-[98vw] max-w-[1240px] flex-col overflow-hidden rounded-[32px] bg-white shadow-[0_24px_80px_rgba(74,46,53,0.18)] ${className}`}
+      >
+        <div className="flex min-h-[84px] items-center justify-between border-b border-[#e7d5db] px-5 sm:px-7">
+          <h2 className="font-playfair text-[24px] font-semibold leading-none text-[#4A2E35] sm:text-[30px]">
+            {title}
+          </h2>
 
-        {/* HEADER */}
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h3 className="font-semibold text-lg">{title}</h3>
-          <button onClick={onClose}>
-            <X className="w-5 h-5 text-gray-600 hover:text-black" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-12 w-12 items-center justify-center rounded-full text-[#4A2E35] transition hover:bg-[#f8edf1]"
+            aria-label="Close modal"
+          >
+            <X size={30} strokeWidth={2.2} />
           </button>
         </div>
 
-        {/* BODY */}
-        <div className="p-4 max-h-[70vh] overflow-y-auto">
+        <div className="min-h-0 flex-1">
           {children}
         </div>
-
       </div>
     </div>
   );

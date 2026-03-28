@@ -173,63 +173,63 @@ export default function ProductPage() {
   const detailSections = [
     product.materialCare?.length
       ? {
-          title: "Fabrics & Care",
-          content: (
-            <div className="space-y-2 text-[14px] leading-6 text-[#5f4a52]">
-              {product.materialCare.map((item, index) => (
-                <p key={`${item}-${index}`}>{item}</p>
-              ))}
-            </div>
-          ),
-        }
+        title: "Fabrics & Care",
+        content: (
+          <div className="space-y-2 text-[14px] leading-6 text-[#5f4a52]">
+            {product.materialCare.map((item, index) => (
+              <p key={`${item}-${index}`}>{item}</p>
+            ))}
+          </div>
+        ),
+      }
       : null,
     product.productDetails
       ? {
-          title: "Product Details",
-          content: <p className="text-[14px] leading-6 text-[#5f4a52]">{product.productDetails}</p>,
-        }
+        title: "Product Details",
+        content: <p className="text-[14px] leading-6 text-[#5f4a52]">{product.productDetails}</p>,
+      }
       : null,
     product.features?.length
       ? {
-          title: "Features",
-          content: (
-            <ul className="space-y-2 pl-4 text-[14px] leading-6 text-[#5f4a52]">
-              {product.features.map((feature, index) => (
-                <li key={`${feature}-${index}`}>{feature}</li>
-              ))}
-            </ul>
-          ),
-        }
+        title: "Features",
+        content: (
+          <ul className="space-y-2 pl-4 text-[14px] leading-6 text-[#5f4a52]">
+            {product.features.map((feature, index) => (
+              <li key={`${feature}-${index}`}>{feature}</li>
+            ))}
+          </ul>
+        ),
+      }
       : null,
     product.sizeAndFits?.length
       ? {
-          title: "Size & Fit",
-          content: (
-            <div className="grid gap-2 text-[14px] text-[#5f4a52] sm:grid-cols-2">
-              {product.sizeAndFits.map((item, index) => (
-                <div key={`${item.label}-${index}`} className="rounded-2xl border border-[#f0d9df] bg-[#fff8f6] px-4 py-3">
-                  <p className="text-[12px] text-[#9c828d]">{item.label}</p>
-                  <p className="mt-1 font-semibold text-[#553842]">{item.value}</p>
-                </div>
-              ))}
-            </div>
-          ),
-        }
+        title: "Size & Fit",
+        content: (
+          <div className="grid gap-2 text-[14px] text-[#5f4a52] sm:grid-cols-2">
+            {product.sizeAndFits.map((item, index) => (
+              <div key={`${item.label}-${index}`} className="rounded-2xl border border-[#f0d9df] bg-[#fff8f6] px-4 py-3">
+                <p className="text-[12px] text-[#9c828d]">{item.label}</p>
+                <p className="mt-1 font-semibold text-[#553842]">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        ),
+      }
       : null,
     product.specifications?.length
       ? {
-          title: "Specifications",
-          content: (
-            <div className="grid gap-2 text-[14px] text-[#5f4a52] sm:grid-cols-2">
-              {product.specifications.map((item, index) => (
-                <div key={`${item.key}-${index}`} className="rounded-2xl border border-[#f0d9df] bg-[#fff8f6] px-4 py-3">
-                  <p className="text-[12px] text-[#9c828d]">{item.key}</p>
-                  <p className="mt-1 font-semibold text-[#553842]">{item.value}</p>
-                </div>
-              ))}
-            </div>
-          ),
-        }
+        title: "Specifications",
+        content: (
+          <div className="grid gap-2 text-[14px] text-[#5f4a52] sm:grid-cols-2">
+            {product.specifications.map((item, index) => (
+              <div key={`${item.key}-${index}`} className="rounded-2xl border border-[#f0d9df] bg-[#fff8f6] px-4 py-3">
+                <p className="text-[12px] text-[#9c828d]">{item.key}</p>
+                <p className="mt-1 font-semibold text-[#553842]">{item.value}</p>
+              </div>
+            ))}
+          </div>
+        ),
+      }
       : null,
   ].filter(Boolean);
 
@@ -251,11 +251,10 @@ export default function ProductPage() {
                     onClick={() => setActiveMedia(media.src)}
                     onMouseEnter={() => setActiveMedia(media.src)}
                     onFocus={() => setActiveMedia(media.src)}
-                    className={`overflow-hidden rounded-2xl border bg-[#fff8f6] ${
-                      activeMedia === media.src
-                        ? "border-[#c56f7f] shadow-[0_0_0_2px_rgba(197,111,127,0.16)]"
-                        : "border-[#ead7dd]"
-                    }`}
+                    className={`overflow-hidden rounded-2xl border bg-[#fff8f6] ${activeMedia === media.src
+                      ? "border-[#c56f7f] shadow-[0_0_0_2px_rgba(197,111,127,0.16)]"
+                      : "border-[#ead7dd]"
+                      }`}
                   >
                     {media.type === "video" ? (
                       <video src={media.src} muted className="aspect-[4/5] h-full w-full object-cover" />
@@ -324,11 +323,10 @@ export default function ProductPage() {
                           <button
                             type="button"
                             onClick={() => handleVariantChange(variant)}
-                            className={`h-11 w-11 overflow-hidden rounded-full border-2 ${
-                              selectedVariant?.color === variant.color
-                                ? "border-[#c56f7f] shadow-[0_0_0_3px_rgba(197,111,127,0.15)]"
-                                : "border-[#dfccd2]"
-                            }`}
+                            className={`h-11 w-11 overflow-hidden rounded-full border-2 ${selectedVariant?.color === variant.color
+                              ? "border-[#c56f7f] shadow-[0_0_0_3px_rgba(197,111,127,0.15)]"
+                              : "border-[#dfccd2]"
+                              }`}
                           >
                             {isImageSwatch ? (
                               <img src={getImageUrl(variant.colorCode)} alt={variant.color} className="h-full w-full object-cover" />
@@ -360,11 +358,10 @@ export default function ProductPage() {
                         type="button"
                         disabled={sizeItem.stock === 0}
                         onClick={() => setSelectedSize(sizeItem)}
-                        className={`h-12 w-12 rounded-full border text-sm font-semibold ${
-                          selectedSize?.size === sizeItem.size
-                            ? "border-[#c56f7f] bg-[#c56f7f] text-white"
-                            : "border-[#dfccd2] bg-white text-[#4a2e35]"
-                        } ${sizeItem.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
+                        className={`h-12 w-12 rounded-full border text-sm font-semibold ${selectedSize?.size === sizeItem.size
+                          ? "border-[#c56f7f] bg-[#c56f7f] text-white"
+                          : "border-[#dfccd2] bg-white text-[#4a2e35]"
+                          } ${sizeItem.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
                       >
                         {sizeItem.size}
                       </button>
@@ -403,9 +400,8 @@ export default function ProductPage() {
             {detailSections.map((section, index) => (
               <section
                 key={`${section.title}-${index}`}
-                className={`rounded-[22px] border border-[#ead7dd] bg-white p-5 shadow-[0_4px_18px_rgba(74,46,53,0.04)] ${
-                  section.title === "Specifications" || section.title === "Customer Reviews" ? "" : ""
-                }`}
+                className={`rounded-[22px] border border-[#ead7dd] bg-white p-5 shadow-[0_4px_18px_rgba(74,46,53,0.04)] ${section.title === "Specifications" || section.title === "Customer Reviews" ? "" : ""
+                  }`}
               >
                 <h3 className="font-['Inter'] text-[22px] font-bold text-[#4a2e35]">{section.title}</h3>
                 <div className="mt-3">{section.content}</div>
@@ -517,9 +513,8 @@ export default function ProductPage() {
                             key={`${variant.color}-${index}`}
                             type="button"
                             onClick={() => handleVariantChange(variant)}
-                            className={`relative h-16 w-16 min-w-16 overflow-hidden rounded-2xl border-2 ${
-                              selectedVariant?.color === variant.color ? "border-[#c56f7f]" : "border-[#f0d9df]"
-                            }`}
+                            className={`relative h-16 w-16 min-w-16 overflow-hidden rounded-2xl border-2 ${selectedVariant?.color === variant.color ? "border-[#c56f7f]" : "border-[#f0d9df]"
+                              }`}
                           >
                             <img src={previewImage} alt={variant.color} className="h-full w-full object-cover" />
                           </button>
@@ -544,11 +539,10 @@ export default function ProductPage() {
                           type="button"
                           disabled={sizeItem.stock === 0}
                           onClick={() => setSelectedSize(sizeItem)}
-                          className={`flex h-14 min-w-14 items-center justify-center rounded-2xl border text-[18px] font-semibold ${
-                            selectedSize?.size === sizeItem.size
-                              ? "border-[#c56f7f] bg-[#c56f7f] text-white"
-                              : "border-[#ead7dd] bg-white text-[#3a2c31]"
-                          } ${sizeItem.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
+                          className={`flex h-14 min-w-14 items-center justify-center rounded-2xl border text-[18px] font-semibold ${selectedSize?.size === sizeItem.size
+                            ? "border-[#c56f7f] bg-[#c56f7f] text-white"
+                            : "border-[#ead7dd] bg-white text-[#3a2c31]"
+                            } ${sizeItem.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
                         >
                           {sizeItem.size}
                         </button>
@@ -637,8 +631,15 @@ export default function ProductPage() {
         </div>
       </div>
 
-      {showSizeChart ? <SizeChartModal onClose={() => setShowSizeChart(false)} /> : null}
-      {showCalcSize ? <CalculateSizeModal onClose={() => setShowCalcSize(false)} /> : null}
+      {showSizeChart ? (
+        <SizeChartModal
+          onClose={() => setShowSizeChart(false)}
+          category={selectedVariant?.category || product?.category || product?.mainCategory}
+        />
+      ) : null}
+      {product?.category === "bra" && showCalcSize ? (
+        <CalculateSizeModal onClose={() => setShowCalcSize(false)} />
+      ) : null}
       <Footer />
     </div>
   );

@@ -1,41 +1,3 @@
-// Get current user profile
-exports.getProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch profile" });
-  }
-};
-
-// Update current user profile
-exports.updateProfile = async (req, res) => {
-  try {
-    const { name, email, phone, gender, birthday } = req.body;
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
-    if (gender) user.gender = gender;
-    if (birthday) user.birthday = birthday;
-
-    await user.save();
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      gender: user.gender,
-      birthday: user.birthday,
-      role: user.role,
-    });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to update profile" });
-  }
-};
 const User = require("../models/User");
 const Otp = require("../models/Otp");
 const jwt = require("jsonwebtoken");
@@ -448,6 +410,64 @@ exports.resetPassword = async (req, res) => {
     console.error("RESET PASSWORD ERROR:", error);
     return res.status(400).json({
       message: "Invalid or expired reset token",
+    });
+  }
+};
+
+/* ======================================================
+   GET PROFILE
+====================================================== */
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json(user);
+  } catch (error) {
+    console.error("GET PROFILE ERROR:", error);
+    return res.status(500).json({
+      message: "Failed to fetch profile",
+    });
+  }
+};
+
+/* ======================================================
+   UPDATE PROFILE
+====================================================== */
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const { name, email, phone } = req.body;
+
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email.toLowerCase().trim();
+    if (phone !== undefined) user.phone = phone;
+
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      role: updatedUser.role,
+    });
+  } catch (error) {
+    console.error("UPDATE PROFILE ERROR:", error);
+    return res.status(500).json({
+      message: "Failed to update profile",
     });
   }
 };
