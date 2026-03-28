@@ -155,21 +155,21 @@ export default function DraftProductsPage() {
                 mode={null}
             />
 
-            <h1 className="text-2xl font-bold mb-5">Draft Products</h1>
+            <h1 className="mb-5 text-xl font-bold sm:text-2xl">Draft Products</h1>
 
             {/* TOP NAV */}
-            <div className="admin-card p-4 mb-4 flex justify-between flex-wrap gap-3">
-                <div className="flex gap-2">
+            <div className="admin-card mb-4 flex flex-col gap-3 p-4 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex w-full flex-wrap gap-2 xl:w-auto">
                     <button
                         onClick={() => router.push("/admin/products/add")}
-                        className="btn-primary px-4 py-2 flex items-center gap-2 text-sm"
+                        className="btn-primary flex w-full items-center justify-center gap-2 px-4 py-2 text-sm sm:w-auto"
                     >
                         <Plus size={15} /> New Draft
                     </button>
 
                 </div>
 
-                <div className="flex gap-2 items-center ">
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center xl:w-auto">
                     <SearchFilterComponent
                         searchValue={search}
                         onSearchChange={(val) => setSearch(val)}
@@ -185,7 +185,7 @@ export default function DraftProductsPage() {
                             setDeleteTarget(null);
                             setDeleteOpen(true);
                         }}
-                        className="btn-destructive px-4 py-2 flex items-center gap-2 text-sm whitespace-nowrap"
+                        className="btn-destructive flex w-full items-center justify-center gap-2 whitespace-nowrap px-4 py-2 text-sm sm:w-auto"
                     >
                         <Trash2 size={15} /> Delete Product
                     </button>

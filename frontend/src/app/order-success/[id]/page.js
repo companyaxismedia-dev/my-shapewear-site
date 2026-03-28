@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import {
-  Check,
-  Truck,
-  Edit2,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-
+import {Check,Truck,Edit2,ChevronLeft,ChevronRight} from "lucide-react";
 import Footer from "@/components/Footer";
 import { API_BASE } from "@/lib/api";
 
@@ -134,7 +127,7 @@ export default function OrderSuccessPage() {
             </div>
 
             <button
-              onClick={() => router.push("/order")}
+              onClick={() => router.push(`/order/${order.id || order._id}`)}
               className="text-xs font-semibold text-pink-500 border border-pink-500 px-3 py-2 rounded hover:bg-pink-500 hover:text-white"
             >
               ORDER DETAILS
@@ -193,10 +186,10 @@ export default function OrderSuccessPage() {
             </button>
 
             <button
-              onClick={() => router.push("/order")}
+              onClick={() => router.push("/account/orders")}
               className="px-8 py-3 text-sm font-bold text-white bg-pink-500 rounded"
             >
-              VIEW ORDER
+              VIEW ORDERS
             </button>
 
           </div>

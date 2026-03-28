@@ -1,21 +1,5 @@
 const mongoose = require("mongoose");
 
-const ORDER_STATUS = [
-  "Order Placed",
-  "Processing",
-  "Packed",
-  "Shipped",
-  "Out for Delivery",
-  "Delivered",
-  "Cancelled",
-  "Partially Cancelled",
-  "Partially Delivered",
-  "Partially Returned",
-  "Returned",
-  "Partially Exchanged",
-  "Exchanged",
-];
-
 const ITEM_STATUS = [
   "Order Placed",
   "Processing",
@@ -460,14 +444,6 @@ const OrderSchema = new mongoose.Schema(
       },
     },
 
-    /* ================= OVERALL ORDER STATUS ================= */
-    status: {
-      type: String,
-      enum: ORDER_STATUS,
-      default: "Order Placed",
-      index: true,
-    },
-
     /* ================= EDIT LOCK SYSTEM ================= */
     canEditAddress: {
       type: Boolean,
@@ -506,30 +482,6 @@ const OrderSchema = new mongoose.Schema(
         default: null,
       },
     },
-
-    /* ================= STATUS HISTORY ================= */
-    statusHistory: [
-      {
-        status: {
-          type: String,
-          enum: ORDER_STATUS,
-        },
-        message: {
-          type: String,
-          default: "",
-          trim: true,
-        },
-        date: {
-          type: Date,
-          default: Date.now,
-        },
-        reason: {
-          type: String,
-          default: "",
-          trim: true,
-        },
-      },
-    ],
 
     /* ================= PAYMENT ================= */
     payment: {
@@ -583,25 +535,11 @@ const OrderSchema = new mongoose.Schema(
 );
 
 /* ======================================================
-   AUTO PUSH ORDER STATUS HISTORY
-====================================================== */
-OrderSchema.pre("save", function () {
-  if (this.isNew || this.isModified("status")) {
-    this.statusHistory.push({
-      status: this.status,
-      message: this.isNew ? "Order created" : "Order status updated",
-      date: new Date(),
-    });
-  }
-});
-
-/* ======================================================
    INDEXES
 ====================================================== */
 OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ "userInfo.phone": 1, createdAt: -1 });
 OrderSchema.index({ userId: 1, createdAt: -1 });
-OrderSchema.index({ status: 1 });
 OrderSchema.index({ createdAt: -1 });
 OrderSchema.index({ "shipment.trackingId": 1 });
 OrderSchema.index({ "products.sku": 1 });

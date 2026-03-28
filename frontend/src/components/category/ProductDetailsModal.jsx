@@ -12,34 +12,9 @@ export function ProductDetailsModal({ product, onClose }) {
     const [variant, setVariant] = useState(product.variants?.[0]);
     const [size, setSize] = useState("");
 
-    // const image =
-    //   variant?.images?.[0]
-    //     ? `${API_BASE}${variant.images[0]}`
-    //     : "/fallback.jpg";
-    // const image = getImageUrl(
-    //     variant?.images?.[0]
-    // );
-    //     const image = getImageUrl(
-    //     variant?.images?.[0]
-    // );
-
-
     const image = getImageUrl(
         variant?.images?.[0]?.url || variant?.images?.[0]
     );
-
-    // const handleCartAdd = () => {
-    //     if (!size) return alert("Select size");
-
-    //     addToCart({
-    //         productId: product._id,
-    //         size,
-    //         quantity: 1,
-    //     });
-
-    //     alert("Added to cart");
-    // };
-
 
     const handleCartAdd = () => {
         if (!size) return alert("Select size");

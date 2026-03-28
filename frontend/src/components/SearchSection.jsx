@@ -1,23 +1,56 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUpLeft, Search, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-const SearchSection = ({ onToggleMobileSearch }) => {
+const resolveProductImage = (item) => {
+  const primaryVariantImage =
+    item?.variants?.[0]?.images?.find?.((img) => img?.isPrimary)?.url ||
+    item?.variants?.[0]?.images?.[0]?.url ||
+    item?.variants?.[0]?.images?.[0];
+
+  const imagePath = item?.thumbnail || item?.image || primaryVariantImage || "";
+
+  if (!imagePath || typeof imagePath !== "string") {
+    return "/placeholder.jpg";
+  }
+
+  if (
+    imagePath.startsWith("http") ||
+    imagePath.startsWith("blob:") ||
+    imagePath.startsWith("data:")
+  ) {
+    return imagePath;
+  }
+
+  return `${API_BASE}${imagePath}`;
+};
+
+const SearchSection = ({
+  onToggleMobileSearch,
+  mobileMode = "icon",
+  mobileFixed = false,
+  mobileClassName = "",
+  mobilePlaceholder = "Search for brands & products",
+  mobileOpen,
+  setMobileOpen,
+}) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isMobileSearchVisible, setIsMobileSearchVisible] =
-    useState(false);
+  const [internalMobileSearchVisible, setInternalMobileSearchVisible] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  const isMobileSearchVisible =
+    typeof mobileOpen === "boolean" ? mobileOpen : internalMobileSearchVisible;
 
   const router = useRouter();
 
-  /* ================= FETCH RESULTS FROM BACKEND ================= */
   const fetchResults = useCallback(async (searchTerm) => {
     if (!searchTerm.trim()) {
       setResults([]);
@@ -28,15 +61,13 @@ const SearchSection = ({ onToggleMobileSearch }) => {
 
     try {
       const response = await fetch(
-        `${API_BASE}/api/products?keyword=${encodeURIComponent(
-          searchTerm
-        )}&limit=6`
+        `${API_BASE}/api/products?keyword=${encodeURIComponent(searchTerm)}&limit=6`
       );
 
       const data = await response.json();
 
       if (data.success) {
-        setResults(data.products);
+        setResults(data.products || []);
       } else {
         setResults([]);
       }
@@ -47,7 +78,10 @@ const SearchSection = ({ onToggleMobileSearch }) => {
     }
   }, []);
 
-  /* ================= DEBOUNCE ================= */
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (query) fetchResults(query);
@@ -56,76 +90,127 @@ const SearchSection = ({ onToggleMobileSearch }) => {
     return () => clearTimeout(timeoutId);
   }, [query, fetchResults]);
 
-  /* ================= SUBMIT SEARCH ================= */
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
     if (query.trim()) {
       setIsOpen(false);
-      setIsMobileSearchVisible(false);
+      if (setMobileOpen) {
+        setMobileOpen(false);
+      } else {
+        setInternalMobileSearchVisible(false);
+      }
       router.push(`/search?q=${encodeURIComponent(query)}`);
     }
   };
 
   const handleToggleMobile = (visible) => {
-    setIsMobileSearchVisible(visible);
-    if (onToggleMobileSearch)
-      onToggleMobileSearch(visible);
+    if (setMobileOpen) {
+      setMobileOpen(visible);
+    } else {
+      setInternalMobileSearchVisible(visible);
+    }
+    if (onToggleMobileSearch) onToggleMobileSearch(visible);
   };
 
-  /* ================= DROPDOWN RESULTS ================= */
   const renderResultsList = () => (
-    <ul className="absolute top-full left-0 z-[110] w-full rounded-md border border-gray-200 bg-white shadow-xl max-h-80 overflow-y-auto">
+    <ul className="absolute top-full left-0 z-[110] max-h-80 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-xl">
       {isLoading && (
         <li className="flex items-center justify-center p-4">
-          <Loader2
-            className="animate-spin text-pink-600"
-            size={20}
-          />
+          <Loader2 className="animate-spin text-pink-600" size={20} />
         </li>
       )}
 
       {!isLoading && results.length === 0 && query && (
-        <li className="px-4 py-3 text-sm text-gray-500">
-          No products found for "{query}"
-        </li>
+        <li className="px-4 py-3 text-sm text-gray-500">No products found for "{query}"</li>
       )}
 
       {results.map((item) => (
         <li
           key={item._id}
-          onClick={() => {
-            router.push(`/product/${item.slug}`);
-            setIsOpen(false);
-            setIsMobileSearchVisible(false);
-          }}
-          className="cursor-pointer px-4 py-3 text-sm hover:bg-pink-50 border-b border-gray-50 last:border-none flex gap-3 items-center"
+            onClick={() => {
+              router.push(`/product/${item.slug}`);
+              setIsOpen(false);
+              handleToggleMobile(false);
+            }}
+          className="flex cursor-pointer items-center gap-3 border-b border-gray-50 px-4 py-3 text-sm hover:bg-pink-50 last:border-none"
         >
           <img
-            src={item.variants?.[0]?.images?.[0] ? `${API_BASE}${item.variants[0].images[0]}`: "/placeholder.jpg"}
-            className="w-10 h-12 object-cover rounded"
+            src={resolveProductImage(item)}
+            className="h-12 w-10 rounded object-cover"
             alt={item.name}
           />
           <div>
-            <p className="font-medium text-gray-800">
-              {item.name}
-            </p>
-            <p className="text-xs text-gray-400">
-              ₹{item.price}
-            </p>
+            <p className="font-medium text-gray-800">{item.name}</p>
+            <p className="text-xs text-gray-400">Rs. {item.minPrice ?? item.price ?? ""}</p>
           </div>
         </li>
       ))}
     </ul>
   );
 
+  const renderMobileResultsList = () => {
+    const mobileSuggestions = Array.from(
+      new Set(
+        results.flatMap((item) =>
+          [item?.name, item?.category, item?.subCategory]
+            .map((value) => String(value || "").trim())
+            .filter(
+              (value) =>
+                value &&
+                value.toLowerCase().includes(query.toLowerCase())
+            )
+        )
+      )
+    ).slice(0, 8);
+
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center px-4 py-8">
+          <Loader2 className="animate-spin text-pink-600" size={20} />
+        </div>
+      );
+    }
+
+    if (!query) {
+      return null;
+    }
+
+    if (mobileSuggestions.length === 0) {
+      return (
+        <div className="px-4 py-4 text-sm text-gray-500">
+          No products found for "{query}"
+        </div>
+      );
+    }
+
+    return (
+      <ul className="divide-y divide-gray-100">
+        {mobileSuggestions.map((suggestion) => (
+          <li
+            key={suggestion}
+            onClick={() => {
+              setQuery(suggestion);
+              setIsOpen(false);
+              handleToggleMobile(false);
+              router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+            }}
+            className="flex cursor-pointer items-center gap-3 px-4 py-3 text-sm hover:bg-pink-50"
+          >
+            <Search size={16} className="shrink-0 text-[#c4b4ba]" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[15px] text-[#4a2e35]">{suggestion}</p>
+            </div>
+            <ArrowUpLeft size={16} className="shrink-0 text-[#c4b4ba]" />
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
     <div className="relative">
-      {/* DESKTOP */}
-      <div className="hidden md:block w-72 lg:w-60">
-        <form
-          onSubmit={handleSearchSubmit}
-          className="relative"
-        >
+      <div className="hidden w-72 md:block lg:w-60">
+        <form onSubmit={handleSearchSubmit} className="relative">
           <input
             type="text"
             placeholder="Search for bras, panties..."
@@ -135,12 +220,12 @@ const SearchSection = ({ onToggleMobileSearch }) => {
               setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
-            className="w-full rounded-full border border-gray-300 py-1 pl-4 pr-12 text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
+            className="w-full rounded-full border border-gray-300 py-1 pl-4 pr-12 text-sm transition-all focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
           />
 
           <button
             type="submit"
-            className="absolute right-0 top-0 h-full px-4 text-gray-400 hover:text-pink-600 transition-colors"
+            className="absolute right-0 top-0 h-full px-4 text-gray-400 transition-colors hover:text-pink-600"
           >
             <Search size={18} />
           </button>
@@ -149,56 +234,75 @@ const SearchSection = ({ onToggleMobileSearch }) => {
         {isOpen && query && renderResultsList()}
       </div>
 
-      {/* MOBILE ICON */}
-      <div className="md:hidden">
-        <button
-          onClick={() => handleToggleMobile(true)}
-          className="p-2 text-gray-700 hover:bg-gray-100 rounded-full"
-        >
-          <Search size={24} />
-        </button>
+      <div className={`md:hidden ${mobileClassName}`}>
+        {mobileMode === "bar" ? (
+          <button
+            type="button"
+            onClick={() => handleToggleMobile(true)}
+            className={`flex w-full items-center gap-3 rounded-full border border-[#eadfe3] bg-white px-4 text-left text-sm text-[#9d8b91] shadow-sm ${
+              mobileFixed ? "py-3" : "py-2.5"
+            }`}
+          >
+            <Search size={18} className="text-[#9d8b91]" />
+            <span>{mobilePlaceholder}</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => handleToggleMobile(true)}
+            className="rounded-full p-2 text-gray-700 hover:bg-gray-100"
+          >
+            <Search size={24} />
+          </button>
+        )}
       </div>
 
-      {/* MOBILE FULL SCREEN */}
-      {isMobileSearchVisible && (
-        <div className="fixed inset-0 bg-white z-[999] p-4 flex flex-col md:hidden">
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={() => handleToggleMobile(false)}
-            >
-              <X size={24} />
+      {isMounted && isMobileSearchVisible
+        ? createPortal(
+        <div className="fixed inset-0 z-[999] flex flex-col bg-white md:hidden">
+          <div className="flex items-center gap-3 border-b border-[#f0e7ea] px-4 py-3">
+            <button onClick={() => handleToggleMobile(false)} type="button">
+              <ArrowLeft size={22} className="text-[#4a2e35]" />
             </button>
 
-            <form
-              onSubmit={handleSearchSubmit}
-              className="flex-1 relative"
-            >
+            <form onSubmit={handleSearchSubmit} className="relative flex-1">
               <input
                 autoFocus
                 type="text"
-                placeholder="Search..."
-                className="w-full border-b-2 border-pink-500 py-2 text-lg outline-none"
+                placeholder={mobilePlaceholder}
+                className="w-full py-2 pl-1 pr-20 text-base outline-none placeholder:text-[#b4a4aa]"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
 
+              {query ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setResults([]);
+                  }}
+                  className="absolute right-9 top-1/2 -translate-y-1/2 text-[#7f6a72]"
+                  aria-label="Clear search"
+                >
+                  <X size={18} />
+                </button>
+              ) : null}
+
               <button
                 type="submit"
                 className="absolute right-0 top-1/2 -translate-y-1/2"
+                aria-label="Search products"
               >
-                <Search
-                  size={20}
-                  className="text-pink-600"
-                />
+                <Search size={20} className="text-pink-600" />
               </button>
             </form>
           </div>
 
-          <div className="relative flex-1">
-            {query && renderResultsList()}
-          </div>
-        </div>
-      )}
+          <div className="flex-1 overflow-y-auto bg-white">{renderMobileResultsList()}</div>
+        </div>,
+        document.body
+      )
+        : null}
     </div>
   );
 };

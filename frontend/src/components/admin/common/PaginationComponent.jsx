@@ -47,7 +47,7 @@ export default function PaginationComponent({
   };
 
   return (
-    <div className={`flex justify-between items-center gap-6 px-4 py-2 ${className}`}>
+    <div className={`flex flex-col gap-3 px-4 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between ${className}`}>
       {/* LEFT: ROWS PER PAGE */}
       <div className="flex items-center gap-3">
         <span className="text-sm font-medium text-slate-700">Rows per page</span>
@@ -63,7 +63,7 @@ export default function PaginationComponent({
       </div>
 
       {/* CENTER: PAGINATION */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:flex-1">
         {/* PREVIOUS BUTTON */}
         <button
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
@@ -118,7 +118,7 @@ export default function PaginationComponent({
       </div>
 
       {/* RIGHT: PAGE INFO */}
-      <div className="text-sm font-medium text-slate-700">
+      <div className="text-sm font-medium text-slate-700 sm:text-right">
         <span className="text-slate-500">Page</span>{" "}
         <span className="font-bold text-blue-600">{currentPage}</span>{" "}
         <span className="text-slate-500">of</span> <span className="font-bold">{totalPages}</span>

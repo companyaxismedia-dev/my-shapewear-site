@@ -51,6 +51,14 @@ export const findCategoryBySegments = (nodes = [], segments = []) => {
   return currentNode;
 };
 
+export const filterNavbarCategories = (nodes = []) =>
+  nodes
+    .filter((node) => node?.showInNavbar !== false)
+    .map((node) => ({
+      ...node,
+      subCategories: filterNavbarCategories(node.subCategories || []),
+    }));
+
 export const fetchCategoryTree = async () => {
   const res = await fetch(`${API_BASE}/api/categories`, { cache: "no-store" });
   const data = await res.json();

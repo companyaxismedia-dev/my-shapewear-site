@@ -1,13 +1,11 @@
 import { Suspense } from "react";
 import Navbar from "@/components/Navbar";
-import FilterBar from "@/components/FilterBar";
 import SearchResults from "./SearchResults";
 
 export default function SearchPage() {
   return (
     <div className="min-h-screen" style={{ background: "var(--color-bg)" }}>
       <Navbar />
-      <FilterBar />
 
       <Suspense
         fallback={

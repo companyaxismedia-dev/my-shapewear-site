@@ -10,6 +10,9 @@ const toSlug = (value = "") =>
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
+const escapeRegex = (value = "") =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const normalizeKeywords = (value) => {
   if (Array.isArray(value)) {
     return value.map((item) => String(item || "").trim()).filter(Boolean);
@@ -19,6 +22,54 @@ const normalizeKeywords = (value) => {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+};
+
+const ensureUniqueCategoryNameInParent = async ({ name, parentId = null, categoryId = null }) => {
+  const query = {
+    parent: parentId,
+    name: { $regex: `^${escapeRegex(name)}$`, $options: "i" },
+  };
+
+  if (categoryId) {
+    query._id = { $ne: categoryId };
+  }
+
+  const conflict = await Category.findOne(query).select("_id");
+
+  if (conflict) {
+    const error = new Error("Category name already exists in this parent category");
+    error.status = 409;
+    throw error;
+  }
+};
+
+const resolveUniqueSlug = async ({ baseSlug, parentCategory = null, categoryId = null }) => {
+  const queryBase = categoryId ? { _id: { $ne: categoryId } } : {};
+  const parentId = parentCategory?._id || null;
+  const parentPrefix = parentCategory?.slug ? `${parentCategory.slug}-` : "";
+
+  let candidate = baseSlug;
+  let existing = await Category.findOne({ ...queryBase, slug: candidate }).select("_id parent");
+
+  if (!existing) {
+    return candidate;
+  }
+
+  if (String(existing.parent || "") === String(parentId || "")) {
+    const error = new Error("Category slug already exists in this parent category");
+    error.status = 409;
+    throw error;
+  }
+
+  candidate = `${parentPrefix}${baseSlug}`;
+  let suffix = 2;
+
+  while (await Category.findOne({ ...queryBase, slug: candidate }).select("_id")) {
+    candidate = `${parentPrefix}${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return candidate;
 };
 
 const buildCategoryPayload = async (body, existingCategory = null) => {
@@ -42,6 +93,10 @@ const buildCategoryPayload = async (body, existingCategory = null) => {
         ? normalizeKeywords(body.metaKeywords)
         : existingCategory?.metaKeywords || [],
     isActive: body.isActive !== undefined ? Boolean(body.isActive) : existingCategory?.isActive ?? true,
+    showInNavbar:
+      body.showInNavbar !== undefined
+        ? Boolean(body.showInNavbar)
+        : existingCategory?.showInNavbar ?? true,
     sortOrder:
       body.sortOrder !== undefined && body.sortOrder !== ""
         ? Number(body.sortOrder)
@@ -99,8 +154,7 @@ const buildTree = (categories) => {
   const roots = [];
 
   const sortedCategories = [...categories].sort((a, b) => {
-    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
-    return a.name.localeCompare(b.name);
+    return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
   });
 
   sortedCategories.forEach((category) => {
@@ -174,7 +228,7 @@ exports.getAdminCategories = async (req, res) => {
     }
 
     const categories = await Category.find(filter)
-      .sort({ level: 1, sortOrder: 1, name: 1 })
+      .sort({ createdAt: 1 })
       .populate("parent", "_id name slug")
       .lean();
 
@@ -201,7 +255,7 @@ exports.getAdminCategories = async (req, res) => {
 exports.getPublicCategories = async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true })
-      .sort({ level: 1, sortOrder: 1, name: 1 })
+      .sort({ createdAt: 1 })
       .lean();
 
     const countsBySlug = await getProductCountsBySlug(categories.map((category) => category.slug));
@@ -237,7 +291,7 @@ exports.createCategory = async (req, res) => {
         });
       }
 
-      parentCategory = await Category.findById(payload.parent).select("_id ancestors");
+      parentCategory = await Category.findById(payload.parent).select("_id ancestors slug");
       if (!parentCategory) {
         return res.status(404).json({
           success: false,
@@ -245,6 +299,16 @@ exports.createCategory = async (req, res) => {
         });
       }
     }
+
+    await ensureUniqueCategoryNameInParent({
+      name: payload.name,
+      parentId: parentCategory?._id || null,
+    });
+
+    payload.slug = await resolveUniqueSlug({
+      baseSlug: payload.slug,
+      parentCategory,
+    });
 
     const category = await Category.create({
       ...payload,
@@ -270,7 +334,7 @@ exports.createCategory = async (req, res) => {
     res.status(isDuplicate ? 409 : error.status || 500).json({
       success: false,
       message: isDuplicate
-        ? "Category name or slug already exists at this level"
+        ? "Category name already exists in this parent category"
         : error.message || "Failed to create category",
     });
   }
@@ -317,7 +381,7 @@ exports.updateCategory = async (req, res) => {
         });
       }
 
-      parentCategory = await Category.findById(payload.parent).select("_id ancestors");
+      parentCategory = await Category.findById(payload.parent).select("_id ancestors slug");
       if (!parentCategory) {
         return res.status(404).json({
           success: false,
@@ -326,6 +390,18 @@ exports.updateCategory = async (req, res) => {
       }
     }
 
+    await ensureUniqueCategoryNameInParent({
+      name: payload.name,
+      parentId: parentCategory?._id || null,
+      categoryId: category._id,
+    });
+
+    payload.slug = await resolveUniqueSlug({
+      baseSlug: payload.slug,
+      parentCategory,
+      categoryId: category._id,
+    });
+
     category.name = payload.name;
     category.slug = payload.slug;
     category.description = payload.description;
@@ -333,6 +409,7 @@ exports.updateCategory = async (req, res) => {
     category.metaDescription = payload.metaDescription;
     category.metaKeywords = payload.metaKeywords;
     category.isActive = payload.isActive;
+    category.showInNavbar = payload.showInNavbar;
     category.sortOrder = payload.sortOrder;
     category.parent = parentCategory?._id || null;
     category.ancestors = parentCategory ? [...parentCategory.ancestors, parentCategory._id] : [];
@@ -363,7 +440,7 @@ exports.updateCategory = async (req, res) => {
     res.status(isDuplicate ? 409 : error.status || 500).json({
       success: false,
       message: isDuplicate
-        ? "Category name or slug already exists at this level"
+        ? "Category name already exists in this parent category"
         : error.message || "Failed to update category",
     });
   }
@@ -410,6 +487,70 @@ exports.deleteCategory = async (req, res) => {
     res.status(error.status || 500).json({
       success: false,
       message: error.message || "Failed to delete category",
+    });
+  }
+};
+
+exports.deleteManyCategories = async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids)
+      ? req.body.ids.filter((id) => mongoose.Types.ObjectId.isValid(id))
+      : [];
+
+    if (!ids.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid categories selected",
+      });
+    }
+
+    const selectedCategories = await Category.find({
+      _id: { $in: ids },
+    }).select("_id parent");
+
+    if (!selectedCategories.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Selected categories not found",
+      });
+    }
+
+    const categoriesToDelete = await Category.find({
+      $or: [{ _id: { $in: ids } }, { ancestors: { $in: ids } }],
+    })
+      .select("_id slug")
+      .lean();
+
+    const slugsToDelete = categoriesToDelete.map((item) => item.slug);
+    const linkedProducts = await Product.countDocuments({
+      $or: [{ category: { $in: slugsToDelete } }, { subCategory: { $in: slugsToDelete } }],
+    });
+
+    if (linkedProducts > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "One or more selected category trees are linked to products and cannot be deleted",
+      });
+    }
+
+    await Promise.all(
+      selectedCategories.map((category) =>
+        updateParentReference(category.parent, category._id, "remove")
+      )
+    );
+
+    await Category.deleteMany({
+      _id: { $in: categoriesToDelete.map((item) => item._id) },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Categories deleted successfully",
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || "Failed to delete categories",
     });
   }
 };

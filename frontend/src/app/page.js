@@ -1,42 +1,35 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import OfferSection from "@/components/OfferSection";
 import HomeHero from "@/components/HomeHero";
 import CategorySlider from "@/components/CategorySlider";
 import AutoSliceSlider from "@/components/AutoSliceSlider";
 import Footer from "@/components/Footer";
-import { Truck, ShieldCheck, RotateCcw, Zap } from "lucide-react";
 import PageSections from "@/components/PageSections";
 
 export default function Home() {
   const [heroSlides, setHeroSlides] = useState([]);
+  const [allSections, setAllSections] = useState([]);
+  const [usedBannerIds, setUsedBannerIds] = useState([]);
 
   useEffect(() => {
-    const loadHeroSlides = async () => {
+    const loadHomePage = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/pages/home`);
         const data = await res.json();
-        
-        console.log("📄 Page Data:", data);
-        console.log("📋 All Sections:", data.sections);
-        
-        // Extract only hero_slider sections and convert blocks to slides format
-        const heroSections = data.sections?.filter((s) => {
-          console.log(`Section Type: "${s.type}" | Blocks: ${s.blocks?.length}`);
-          return s.type === "hero_slider";
-        }) || [];
-        
-        console.log("🎬 Hero Sections Found:", heroSections.length, heroSections);
-        
+
+        const sections = data?.sections || [];
+        setAllSections(sections);
+
+        const heroSections = sections.filter((s) => s.type === "hero_slider");
+
         const slides = [];
-        
         heroSections.forEach((section) => {
-          if (section.blocks && Array.isArray(section.blocks)) {
+          if (Array.isArray(section.blocks)) {
             section.blocks.forEach((block) => {
-              console.log("Block Data:", block.data);
               slides.push({
                 _id: block._id,
                 desktopUrl: block.data?.desktopUrl || block.data?.image,
@@ -47,30 +40,54 @@ export default function Home() {
             });
           }
         });
-        
-        console.log("🖼️ Final Slides Array:", slides);
+
         setHeroSlides(slides);
       } catch (err) {
-        console.error("Failed to load hero slides", err);
+        console.error("Failed to load home page", err);
       }
     };
 
-    loadHeroSlides();
+    loadHomePage();
   }, []);
 
+  const bannerSections = useMemo(() => {
+    return allSections.filter(
+      (section) =>
+        section.type !== "hero_slider" &&
+        (section.layoutType === "banner" ||
+          section.layoutType === "short_banner" ||
+          section.type === "promo_banner")
+    );
+  }, [allSections]);
+
+  const remainingSections = useMemo(() => {
+    const usedIdsSet = new Set(usedBannerIds);
+
+    return allSections.filter((section) => {
+      if (section.type === "hero_slider") return false;
+      if (usedIdsSet.has(section._id)) return false;
+      return true;
+    });
+  }, [allSections, usedBannerIds]);
+
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: "var(--color-bg)" }}>
+    <div
+      className="min-h-screen overflow-x-hidden"
+      style={{ background: "var(--color-bg)" }}
+    >
       <Navbar />
 
-      <main className="w-full mx-auto">
+      <main className="w-full mx-auto lg:pt-0">
         <Hero slides={heroSlides} />
         <HomeHero />
 
         <div className="space-y-0">
           <CategorySlider />
 
-          {/* Exclusive collections */}
-          <section className="section-padding" style={{ background: "var(--color-bg)" }}>
+          <section
+            className="section-padding"
+            style={{ background: "var(--color-bg)" }}
+          >
             <div className="container-imkaa">
               <div className="section-heading-block">
                 <h2 className="heading-section">Our Exclusive Collections</h2>
@@ -79,14 +96,19 @@ export default function Home() {
                 </p>
               </div>
 
-              <AutoSliceSlider />
+              <AutoSliceSlider
+                bannerSections={bannerSections}
+                onUsedBannerIdsChange={setUsedBannerIds}
+              />
             </div>
           </section>
 
-          {/* Dynamic sections from CMS */}
-          <section className="py-10 md:py-14" style={{ background: "var(--color-bg-alt)" }}>
+          <section
+            className="py-10 md:py-14"
+            style={{ background: "var(--color-bg-alt)" }}
+          >
             <div className="container-imkaa">
-              <PageSections slug="home" compact />
+              <PageSections sections={remainingSections} compact />
             </div>
           </section>
         </div>

@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
         />
       </head>
 
-      <body className="antialiased touch-manipulation">
+      <body className="antialiased touch-manipulation" suppressHydrationWarning>
         
         {/* ✅ SONNER TOASTER FOR NOTIFICATIONS */}
         <ToasterProvider />

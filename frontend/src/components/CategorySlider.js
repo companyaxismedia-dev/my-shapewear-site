@@ -4,53 +4,68 @@ import React from "react";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import Image from "next/image";
+import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import Image from "next/image";
 
-const categoryBanners = [
-  {
+const categoryVisuals = {
+  bra: {
     img: "/image/CategorySlider/bra.png",
-    path: "/bra",
-    alt: "Bras",
-    title: "Bras",
     desc: "Everyday support with premium comfort.",
   },
-  {
+  panties: {
     img: "/image/CategorySlider/panties.png",
-    path: "/panties",
-    alt: "Panties",
-    title: "Panties",
-    desc: "Soft essentials designed for all‑day ease.",
+    desc: "Soft essentials designed for all-day ease.",
   },
-  {
+  shapewear: {
     img: "/image/CategorySlider/shapewear.png",
-    path: "/shapewear",
-    alt: "Shapewear",
-    title: "Shapewear",
     desc: "Smooth, sculpt, and move with confidence.",
   },
-  {
+  curvy: {
     img: "/image/CategorySlider/curvy-1.png",
-    path: "/curvy",
-    alt: "Curvy Collection",
-    title: "Curvy",
     desc: "Designed for beautiful curves and comfort.",
   },
-  {
+  "tummy-control": {
     img: "/image/CategorySlider/tummy-contol.png",
-    path: "/tummy-control",
-    alt: "Tummy Control",
-    title: "Tummy Control",
     desc: "Targeted shaping with a soft feel.",
   },
-];
+};
 
 const MAX_SLIDES_VIEW = 5;
 
 export default function CategorySlider() {
+  const [categoryBanners, setCategoryBanners] = React.useState([]);
+
+  React.useEffect(() => {
+    let active = true;
+
+    fetchCategoryTree()
+      .then((tree) => {
+        if (!active) return;
+        const navbarCategories = filterNavbarCategories(tree);
+
+        const banners = navbarCategories.slice(0, 6).map((category) => ({
+          img: categoryVisuals[category.slug]?.img || "/image/CategorySlider/shapewear.png",
+          path: `/${category.slug}`,
+          alt: category.name,
+          title: category.name,
+          desc:
+            categoryVisuals[category.slug]?.desc ||
+            "Explore bestselling styles in this collection.",
+        }));
+
+        setCategoryBanners(banners);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const enableLoop = categoryBanners.length > MAX_SLIDES_VIEW;
 
   return (
@@ -63,13 +78,11 @@ export default function CategorySlider() {
 
         <Swiper
           modules={[Autoplay, Navigation, Pagination]}
-          observer={true}
-          observeParents={true}
-          watchOverflow={true}
+          observer
+          observeParents
+          watchOverflow
           loop={enableLoop}
-          autoplay={
-            enableLoop ? { delay: 3500, disableOnInteraction: false } : false
-          }
+          autoplay={enableLoop ? { delay: 3500, disableOnInteraction: false } : false}
           breakpoints={{
             320: { slidesPerView: 2, spaceBetween: 10 },
             480: { slidesPerView: 3, spaceBetween: 12 },
@@ -80,8 +93,8 @@ export default function CategorySlider() {
           navigation={categoryBanners.length > 1}
           className="categorySwiper"
         >
-          {categoryBanners.map((item, index) => (
-            <SwiperSlide key={index}>
+          {categoryBanners.map((item) => (
+            <SwiperSlide key={item.path}>
               <div className="h-full">
                 <div className="category-card h-full flex flex-col justify-between">
                   <Link href={item.path} className="block">

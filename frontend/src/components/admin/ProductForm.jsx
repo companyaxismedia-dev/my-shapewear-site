@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, useEffect, useEffectEvent, forwardRef, useImperativeHandle } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -16,16 +16,6 @@ import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import ImportModal from "./ImportModal";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const CATEGORIES = [
-  { value: "bra", label: "Bra" },
-  { value: "panties", label: "Panties" },
-  { value: "lingerie", label: "Lingerie" },
-  { value: "shapewear", label: "Shapewear" },
-  { value: "curvy", label: "Curvy" },
-  { value: "tummy-control", label: "Tummy Control" },
-  { value: "non-padded", label: "Non-Padded" },
-];
-
 const ALL_SIZES = [
   "XS", "S", "M", "L", "XL", "XXL", "XXXL",
   "28A", "30A", "32A", "34A", "36A", "38A",
@@ -70,6 +60,37 @@ const inp =
 // Helper function for error styling
 const getInputClass = (hasError) =>
   cn(inp, hasError && "border-red-500 bg-red-50 focus:ring-red-500");
+
+const flattenCategoryTree = (nodes = [], depth = 0) =>
+  nodes.flatMap((node) => [
+    { ...node, depth },
+    ...flattenCategoryTree(node.subCategories || [], depth + 1),
+  ]);
+
+const findCategoryPathBySlug = (nodes = [], slug, trail = []) => {
+  if (!slug) return [];
+
+  for (const node of nodes) {
+    const nextTrail = [...trail, node];
+    if (node.slug === slug) {
+      return nextTrail;
+    }
+
+    const childPath = findCategoryPathBySlug(node.subCategories || [], slug, nextTrail);
+    if (childPath.length) {
+      return childPath;
+    }
+  }
+
+  return [];
+};
+
+const getCategoryLevelLabel = (level) => {
+  if (level === 0) return "Product Category";
+  if (level === 1) return "Sub Category";
+  if (level === 2) return "Sub-Sub Category";
+  return `Sub Category Level ${level}`;
+};
 
 // Validation Schema
 export const productSchema = yup.object().shape({
@@ -147,14 +168,14 @@ export const productSchema = yup.object().shape({
 function Card({ title, subtitle, children, className, action }) {
   return (
     <div className={cn("admin-card", className)}>
-      <div className={cn("px-5 py-4 border-b border-border flex items-center justify-between", !title && "hidden")}>
+      <div className={cn("px-4 py-4 border-b border-border flex flex-col gap-3 sm:px-5 sm:flex-row sm:items-center sm:justify-between", !title && "hidden")}>
         <div>
           <h2 className="text-sm font-semibold text-foreground">{title}</h2>
           {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
         </div>
         {action}
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </div>
   );
 }
@@ -422,7 +443,7 @@ function ImageUploadArea({ images, onAdd, onRemove, onSetPrimary }) {
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
@@ -486,6 +507,10 @@ export const ProductForm = forwardRef(function ProductForm({
   const [uploadedVideo, setUploadedVideo] = useState({});
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [categoryTree, setCategoryTree] = useState([]);
+  const [flatCategories, setFlatCategories] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
 
   // Initialize form with React Hook Form and Yup validation
   const {
@@ -533,6 +558,8 @@ export const ProductForm = forwardRef(function ProductForm({
   const watchedSpecifications = watch("specifications");
   const watchedOffers = watch("offers");
   const watchedPincodes = watch("pincodes");
+  const watchedCategory = watch("category");
+  const watchedSubCategory = watch("subCategory");
 
   // Initialize form data when editing
   useEffect(() => {
@@ -608,6 +635,69 @@ export const ProductForm = forwardRef(function ProductForm({
     }
   }, [mode, initialData, reset]);
 
+  const fetchCategories = useEffectEvent(async () => {
+    try {
+      setCategoryLoading(true);
+      const token = localStorage.getItem("adminToken");
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/api/admin/categories`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to load categories");
+      }
+
+      const tree = data.tree || [];
+      setCategoryTree(tree);
+      setFlatCategories(flattenCategoryTree(tree));
+    } catch (error) {
+      toast.error(error.message || "Failed to load categories");
+    } finally {
+      setCategoryLoading(false);
+    }
+  });
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (!categoryTree.length) return;
+
+    const activeCategorySlug = watchedCategory || initialData?.category || "";
+    const activeSubCategorySlug = watchedSubCategory || initialData?.subCategory || "";
+
+    const rootPath = findCategoryPathBySlug(categoryTree, activeCategorySlug);
+    const deepestPath = findCategoryPathBySlug(categoryTree, activeSubCategorySlug);
+
+    let selectedPath = rootPath;
+    if (
+      deepestPath.length &&
+      rootPath.length &&
+      deepestPath[0]?._id === rootPath[0]?._id
+    ) {
+      selectedPath = deepestPath;
+    }
+
+    if (!selectedPath.length) {
+      setSelectedCategoryIds([]);
+      return;
+    }
+
+    setSelectedCategoryIds(selectedPath.map((item) => item._id));
+    setValue("category", selectedPath[0]?.slug || "", { shouldValidate: true });
+    setValue(
+      "subCategory",
+      selectedPath.length > 1 ? selectedPath[selectedPath.length - 1]?.slug || "" : "",
+      { shouldValidate: true }
+    );
+  }, [categoryTree, initialData, watchedCategory, watchedSubCategory, setValue]);
+
   useImperativeHandle(ref, () => ({
     save: async () => {
       // run validation and return values
@@ -616,6 +706,64 @@ export const ProductForm = forwardRef(function ProductForm({
       return { valid, values };
     },
   }));
+
+  const getChildCategories = (parentId = null) =>
+    flatCategories.filter((category) => {
+      const currentParentId =
+        typeof category.parent === "object"
+          ? category.parent?._id || null
+          : category.parent || null;
+      return String(currentParentId || "") === String(parentId || "");
+    });
+
+  const handleCategoryLevelChange = (levelIndex, selectedId) => {
+    const nextSelectedIds = [
+      ...selectedCategoryIds.slice(0, levelIndex),
+      selectedId,
+    ].filter(Boolean);
+
+    setSelectedCategoryIds(nextSelectedIds);
+
+    const selectedNodes = nextSelectedIds
+      .map((id) => flatCategories.find((category) => category._id === id))
+      .filter(Boolean);
+
+    const rootCategory = selectedNodes[0];
+    const deepestCategory = selectedNodes[selectedNodes.length - 1];
+
+    setValue("category", rootCategory?.slug || "", {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue(
+      "subCategory",
+      selectedNodes.length > 1 ? deepestCategory?.slug || "" : "",
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      }
+    );
+  };
+
+  const categoryLevels = [];
+  let currentParentId = null;
+  let currentOptions = getChildCategories(null);
+  let levelIndex = 0;
+
+  while (currentOptions.length > 0) {
+    categoryLevels.push({
+      level: levelIndex,
+      options: currentOptions,
+      selectedId: selectedCategoryIds[levelIndex] || "",
+    });
+
+    const nextSelectedId = selectedCategoryIds[levelIndex];
+    if (!nextSelectedId) break;
+
+    currentParentId = nextSelectedId;
+    currentOptions = getChildCategories(currentParentId);
+    levelIndex += 1;
+  }
 
   const updateSizeDetail = (variantId, size, field, value) => {
     const currentVariants = getValues("variants");
@@ -1036,24 +1184,52 @@ export const ProductForm = forwardRef(function ProductForm({
 
         {/* Category */}
         <Card title="Category">
-          <div className="flex gap-4">
-            <Field label="Product Category" required error={errors.category?.message} half>
-              <select
-                className={getInputClass(!!errors.category)}
-                {...register("category")}
-              >
-                <option value="">Select category...</option>
-                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-            </Field>
-            <Field label="Sub Category" half hint="e.g. Full Coverage, Sports, Lace">
-              <input
-                className={inp}
-                placeholder="e.g. Full Coverage"
-                {...register("subCategory")}
-              />
-            </Field>
-          </div>
+          <input type="hidden" {...register("category")} />
+          <input type="hidden" {...register("subCategory")} />
+
+          {categoryLoading ? (
+            <p className="text-sm text-muted-foreground">Loading categories...</p>
+          ) : categoryLevels.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No categories found. Add categories first in the categories page.
+            </p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {categoryLevels.map((levelConfig) => (
+                <Field
+                  key={levelConfig.level}
+                  label={getCategoryLevelLabel(levelConfig.level)}
+                  required={levelConfig.level === 0}
+                  error={levelConfig.level === 0 ? errors.category?.message : undefined}
+                  hint={
+                    levelConfig.level > 0 && levelConfig.level === categoryLevels.length - 1
+                      ? "Only shown when the selected parent has children"
+                      : undefined
+                  }
+                  half
+                >
+                  <select
+                    className={getInputClass(levelConfig.level === 0 && !!errors.category)}
+                    value={levelConfig.selectedId}
+                    onChange={(e) =>
+                      handleCategoryLevelChange(levelConfig.level, e.target.value)
+                    }
+                  >
+                    <option value="">
+                      {levelConfig.level === 0
+                        ? "Select category..."
+                        : `Select ${getCategoryLevelLabel(levelConfig.level).toLowerCase()}...`}
+                    </option>
+                    {levelConfig.options.map((categoryOption) => (
+                      <option key={categoryOption._id} value={categoryOption._id}>
+                        {categoryOption.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Variants */}

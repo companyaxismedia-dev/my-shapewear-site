@@ -295,49 +295,49 @@ const sellingPrice = cartItems.reduce(
 
   if (loading)
     return (
-      <div className="p-10 text-center text-sm text-gray-500">
+      <div className="bg-[var(--color-bg)] p-10 text-center text-sm text-[#8d727b]">
         Loading checkout...
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--color-bg-alt)] text-[#4a2e35]">
 
       {/* HEADER */}
-      <header className="border-b bg-white sticky top-0 z-50">
-        <div className="max-w-[1100px] mx-auto h-[78px] px-4 flex items-center relative">
+      <header className="sticky top-0 z-50 border-b border-[#f0e4e8] bg-[rgba(255,253,252,0.96)] backdrop-blur">
+        <div className="container-imkaa relative flex h-[78px] items-center">
 
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
-            <span className="text-[13px] tracking-[3px] font-semibold uppercase text-[#03a685]">
+            <span className="text-[13px] tracking-[3px] font-semibold uppercase text-[#c56f7f]">
               BAG
             </span>
-            <span className="mx-4 text-[#94969f] text-[11px]">------------</span>
-            <span className="text-[13px] tracking-[3px] font-semibold uppercase text-[#03a685]">
+            <span className="mx-4 text-[#cbb6bd] text-[11px]">------------</span>
+            <span className="text-[13px] tracking-[3px] font-semibold uppercase text-[#c56f7f]">
               ADDRESS
             </span>
-            <span className="mx-4 text-[#94969f] text-[11px]">------------</span>
-            <span className="text-[13px] tracking-[3px] font-semibold uppercase text-[#696b79]">
+            <span className="mx-4 text-[#cbb6bd] text-[11px]">------------</span>
+            <span className="text-[13px] tracking-[3px] font-semibold uppercase text-[#8d727b]">
               PAYMENT
             </span>
           </div>
 
-          <div className="ml-auto flex items-center gap-2 text-[12px] font-bold tracking-[2px] text-[#282c3f] uppercase">
-            <ShieldCheck className="w-4 h-4 text-[#03a685]" />
+          <div className="ml-auto flex items-center gap-2 text-[12px] font-bold uppercase tracking-[2px] text-[#5a3c46]">
+            <ShieldCheck className="h-4 w-4 text-[#c56f7f]" />
             100% Secure
           </div>
         </div>
       </header>
 
       {/* MAIN */}
-      <main className="max-w-[1100px] mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
+      <main className="container-imkaa flex flex-col gap-8 px-4 py-8 md:flex-row">
 
         <div className="flex-1">
           <div className="flex justify-between mb-6">
-            <h2 className="text-lg font-bold">Select Delivery Address</h2>
+            <h2 className="text-xl font-semibold text-[#4a2e35]">Select Delivery Address</h2>
 
             <button
               onClick={handleAddAddress}
-              className="border px-4 h-10 text-xs font-bold uppercase"
+              className="h-10 rounded-full border border-[#dcbfc7] px-4 text-xs font-bold uppercase text-[#c56f7f]"
             >
               Add New Address
             </button>
@@ -354,7 +354,7 @@ const sellingPrice = cartItems.reduce(
 
           <button
             onClick={handleAddAddress}
-            className="w-full mt-4 border-2 border-dashed p-4 rounded flex items-center justify-center gap-2 text-pink-500 font-bold"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-[24px] border border-dashed border-[#dcbfc7] bg-white/90 p-4 font-semibold text-[#c56f7f]"
           >
             <Plus className="w-5 h-5" />
             Add New Address
@@ -365,24 +365,24 @@ const sellingPrice = cartItems.reduce(
           <DeliveryEstimates cartItems={cartItems} />
 
           {/* Payment Type and Coupon UI */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Payment Type</label>
+          <div className="mb-4 rounded-[24px] border border-[#ecd9de] bg-white/95 p-4 shadow-[0_10px_30px_rgba(74,46,53,0.05)]">
+            <label className="mb-1 block text-sm font-medium text-[#5a3c46]">Payment Type</label>
             <select
               value={paymentType}
               onChange={e => setPaymentType(e.target.value)}
-              className="w-full border rounded p-2"
+              className="w-full rounded-full border border-[#e5d4d9] bg-white px-4 py-2.5 text-sm text-[#5a3c46] outline-none"
             >
               <option value="cod">Cash on Delivery</option>
               <option value="prepaid">Prepaid</option>
             </select>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Coupon Code</label>
+          <div className="mb-4 rounded-[24px] border border-[#ecd9de] bg-white/95 p-4 shadow-[0_10px_30px_rgba(74,46,53,0.05)]">
+            <label className="mb-1 block text-sm font-medium text-[#5a3c46]">Coupon Code</label>
             <input
               type="text"
               value={couponCode}
               onChange={e => setCouponCode(e.target.value)}
-              className="w-full border rounded p-2"
+              className="w-full rounded-full border border-[#e5d4d9] bg-white px-4 py-2.5 text-sm text-[#5a3c46] outline-none"
               placeholder="Enter coupon code (optional)"
             />
           </div>
@@ -398,10 +398,10 @@ const sellingPrice = cartItems.reduce(
 
       {/* ADDRESS MODAL */}
       {isAddressModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-[400px] rounded-lg overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-[400px] overflow-hidden rounded-[28px] border border-[#ecd9de] bg-white">
 
-            <div className="p-4 border-b font-bold text-sm uppercase">
+            <div className="border-b border-[#f0e4e8] p-4 text-sm font-bold uppercase text-[#4a2e35]">
               {editingAddress ? "Edit Address" : "Add New Address"}
             </div>
 

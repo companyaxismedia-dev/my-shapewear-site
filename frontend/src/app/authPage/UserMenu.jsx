@@ -7,7 +7,6 @@ import { useState } from "react";
 
 export default function UserMenu({ openLogin, openRegister }) {
   const { user, logout } = useAuth();
-
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleUserClick = () => {
@@ -86,7 +85,7 @@ ${dropdownOpen ? "opacity-100 visible" : "opacity-0 invisible"}
         ) : (
           <>
             <div className="p-5 border-b">
-              <p className="font-semibold">Hi, {user?.name || (typeof window !== 'undefined' && JSON.parse(localStorage.getItem('user') || '{}').name) || 'User'}</p>
+              <p className="font-semibold">Hi, {user?.name || 'User'}</p>
             </div>
 
             <div className="flex flex-col text-sm">

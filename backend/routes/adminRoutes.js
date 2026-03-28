@@ -6,6 +6,7 @@ const multer = require('multer');
 const memUpload = multer({ storage: multer.memoryStorage() });
 
 const adminController = require("../controllers/adminController");
+const categoryController = require("../controllers/categoryController");
 
 //routes for the count in the admin dashboard cards
 router.get("/stats/counts", protect, admin, adminController.getCounts);
@@ -29,6 +30,13 @@ router.delete("/products/drafts/:id", protect, admin, adminController.deleteDraf
 // GENERAL PRODUCTS ROUTES
 router.get("/products", protect, admin, adminController.getAllProducts);
 router.post("/products/delete-many", protect, admin, adminController.deleteManyProducts);
+
+//category section Routes
+router.get("/categories", protect, admin, categoryController.getAdminCategories);
+router.post("/categories", protect, admin, categoryController.createCategory);
+router.post("/categories/delete-many", protect, admin, categoryController.deleteManyCategories);
+router.put("/categories/:id", protect, admin, categoryController.updateCategory);
+router.delete("/categories/:id", protect, admin, categoryController.deleteCategory);
 
 // GENERIC :id ROUTES - MUST BE LAST
 router.put("/products/:id/publish", protect, admin, adminController.publishDraft);

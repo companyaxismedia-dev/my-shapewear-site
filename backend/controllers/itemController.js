@@ -1,6 +1,19 @@
 require("dotenv").config();
 
 const Order = require("../models/Order");
+const { buildOrderStatusHistory, getOrderDerivedStatus } = require("../utils/orderStatus");
+
+function serializeOrder(orderDoc) {
+  const order =
+    typeof orderDoc?.toObject === "function" ? orderDoc.toObject() : orderDoc;
+
+  return {
+    ...order,
+    finalAmount: order?.pricing?.totalAmount ?? order?.finalAmount ?? 0,
+    status: getOrderDerivedStatus(order?.products || []),
+    statusHistory: buildOrderStatusHistory(order?.products || []),
+  };
+}
 
 /* =====================================================
    1️⃣ CANCEL SPECIFIC ITEM
@@ -69,13 +82,9 @@ exports.cancelItem = async (req, res) => {
       date: new Date(),
     });
 
-    // Update order status if all items are cancelled
     const allCancelled = order.products.every((p) => p.cancellation?.isCancelled);
     if (allCancelled) {
-      order.status = "Cancelled";
       order.cancellation.cancelledAt = new Date();
-    } else {
-      order.status = "Partially Cancelled";
     }
 
     await order.save();
@@ -83,7 +92,7 @@ exports.cancelItem = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Item cancelled successfully",
-      order,
+      order: serializeOrder(order),
       item,
     });
   } catch (error) {
@@ -167,18 +176,12 @@ exports.requestReturnItem = async (req, res) => {
       date: new Date(),
     });
 
-    // Update order status
-    const anyReturned = order.products.some((p) => p.itemStatus === "Return Requested" || p.itemStatus === "Returned");
-    if (anyReturned && !order.products.every((p) => p.itemStatus === "Returned")) {
-      order.status = "Partially Returned";
-    }
-
     await order.save();
 
     return res.status(200).json({
       success: true,
       message: "Return request submitted successfully",
-      order,
+      order: serializeOrder(order),
       item,
     });
   } catch (error) {
@@ -264,18 +267,12 @@ exports.requestExchangeItem = async (req, res) => {
       date: new Date(),
     });
 
-    // Update order status
-    const anyExchanged = order.products.some((p) => p.itemStatus === "Exchange Requested" || p.itemStatus === "Exchanged");
-    if (anyExchanged && !order.products.every((p) => p.itemStatus === "Exchanged")) {
-      order.status = "Partially Exchanged";
-    }
-
     await order.save();
 
     return res.status(200).json({
       success: true,
       message: "Exchange request submitted successfully",
-      order,
+      order: serializeOrder(order),
       item,
     });
   } catch (error) {

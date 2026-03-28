@@ -6,13 +6,13 @@ export default function EmptyCart() {
         alt="Empty"
         className="w-40 mb-6"
       />
-      <h2 className="text-2xl font-semibold mb-2">
+      <h2 className="mb-2 text-2xl font-semibold text-[#4a2e35]">
         Hey, it feels so light!
       </h2>
-      <p className="text-gray-500 mb-6">
+      <p className="mb-6 text-[#8d727b]">
         There is nothing in your bag. Let's add some items.
       </p>
-      <button className="border border-pink-600 text-pink-600 px-6 py-2 rounded hover:bg-pink-50">
+      <button className="rounded-full border border-[#c56f7f] px-6 py-2 text-sm font-semibold text-[#c56f7f]">
         ADD ITEMS FROM WISHLIST
       </button>
     </div>
