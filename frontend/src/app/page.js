@@ -9,6 +9,7 @@ import CategorySlider from "@/components/CategorySlider";
 import AutoSliceSlider from "@/components/AutoSliceSlider";
 import Footer from "@/components/Footer";
 import PageSections from "@/components/PageSections";
+import HomeReviewsSection from "@/components/HomeReviewsSection";
 
 export default function Home() {
   const [heroSlides, setHeroSlides] = useState([]);
@@ -111,6 +112,8 @@ export default function Home() {
               <PageSections sections={remainingSections} compact />
             </div>
           </section>
+          <HomeReviewsSection />
+
         </div>
       </main>
 

@@ -19,7 +19,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "https://my-shapewear-site.vercel.app",
-  "https://www.damietree.com"
+  "https://www.gloviaglamour.com"
 ];
 
 const corsOptions = {
@@ -130,6 +130,7 @@ app.use("/api/items", require("./routes/itemRoutes"));
 app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
+app.use("/api/reviews", require("./routes/reviewRoutes"));
 
 const { bannerRouter, adminRouter, pagesRouter } = require("./routes/bannerRoutes");
 app.use("/api/banner", bannerRouter);
@@ -144,6 +145,8 @@ app.use("/api/chat", require("./routes/chatRoutes"));
 
 /* ================= SUPPORT ================= */
 app.use("/api/support", require("./routes/ticketRoutes"));
+
+
 
 app.use((req, res) => {
   res.status(404).json({

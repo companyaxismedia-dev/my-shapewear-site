@@ -250,6 +250,16 @@ export const TUMMY_CONTROL_SIZE_ROWS_IN = [
 ];
 
 /* =========================
+   CURVY SIZE DATA
+========================= */
+export const CURVY_SIZE_ROWS_IN = [
+    { size: "XL", chest: "40-42", waist: "34-36", hip: "42-44" },
+    { size: "XXL", chest: "42-44", waist: "36-38", hip: "44-46" },
+    { size: "3XL", chest: "44-46", waist: "38-40", hip: "46-48" },
+    { size: "4XL", chest: "46-48", waist: "40-42", hip: "48-50" },
+];
+
+/* =========================
    HELPERS
 ========================= */
 export function convertRangeToCm(range, decimal = false) {
@@ -338,7 +348,7 @@ export const SIZE_CHART_CONFIG = {
         heading: "Tummy Control Size Chart",
     },
     curvy: {
-        type: "tummy-control",
+        type: "curvy",
         heading: "Curvy Size Chart",
     },
 };
