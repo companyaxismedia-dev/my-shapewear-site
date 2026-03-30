@@ -1,12 +1,13 @@
 import "./globals.css";
 import Script from "next/script";
-import { ToasterProvider } from "@/components/Providers";
+import { AuthTransitionOverlay, ToasterProvider } from "@/components/Providers";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { OrderProvider } from "@/context/OrderContext";
 import { ChatProvider } from "@/context/ChatContext";
+import RouteProgressBar from "@/components/loaders/RouteProgressBar";
 
 export const metadata = {
   title: "Shapewear Store | Premium Collection",
@@ -30,6 +31,7 @@ export default function RootLayout({ children }) {
       </head>
 
       <body className="antialiased touch-manipulation" suppressHydrationWarning>
+        <RouteProgressBar />
         
         {/* ✅ SONNER TOASTER FOR NOTIFICATIONS */}
         <ToasterProvider />
@@ -38,6 +40,7 @@ export default function RootLayout({ children }) {
         <GoogleOAuthProvider clientId="559542040158-doovmkf989qnidk43m125itm7ricr9ip.apps.googleusercontent.com">
 
           <AuthProvider>
+            <AuthTransitionOverlay />
             <CartProvider>
               <WishlistProvider>
                 <OrderProvider>

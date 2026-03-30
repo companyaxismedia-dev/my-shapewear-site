@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Search, Package, Truck, MapPin, Phone, ArrowLeft, CheckCircle2, Clock, ShieldCheck, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { ButtonLoaderLabel, TrackResultSkeleton } from "@/components/loaders/Loaders";
 
 export default function TrackOrder() {
   const [phone, setPhone] = useState("");
@@ -75,12 +76,18 @@ export default function TrackOrder() {
               className="btn-primary-imkaa"
               style={{ height: 50, borderRadius: 0 }}
             >
-              {loading ? "Searching..." : "Track Order"}
+              {loading ? <ButtonLoaderLabel label="Searching..." /> : "Track Order"}
             </button>
           </div>
         </form>
 
         <AnimatePresence>
+          {loading && !orderData && !error ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <TrackResultSkeleton />
+            </motion.div>
+          ) : null}
+
           {error && (
             <motion.div
               initial={{ opacity: 0 }}

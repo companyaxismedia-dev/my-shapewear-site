@@ -10,15 +10,22 @@ import AutoSliceSlider from "@/components/AutoSliceSlider";
 import Footer from "@/components/Footer";
 import PageSections from "@/components/PageSections";
 import HomeReviewsSection from "@/components/HomeReviewsSection";
+import {
+  BannerSkeleton,
+  SectionHeadingSkeleton,
+  SkeletonBlock,
+} from "@/components/loaders/Loaders";
 
 export default function Home() {
   const [heroSlides, setHeroSlides] = useState([]);
   const [allSections, setAllSections] = useState([]);
   const [usedBannerIds, setUsedBannerIds] = useState([]);
+  const [homeLoading, setHomeLoading] = useState(true);
 
   useEffect(() => {
     const loadHomePage = async () => {
       try {
+        setHomeLoading(true);
         const res = await fetch(`${API_BASE}/api/pages/home`);
         const data = await res.json();
 
@@ -45,6 +52,8 @@ export default function Home() {
         setHeroSlides(slides);
       } catch (err) {
         console.error("Failed to load home page", err);
+      } finally {
+        setHomeLoading(false);
       }
     };
 
@@ -79,7 +88,11 @@ export default function Home() {
       <Navbar />
 
       <main className="mx-auto w-full pt-[112px] lg:pt-0">
-        <Hero slides={heroSlides} />
+        {homeLoading ? (
+          <BannerSkeleton className="min-h-[320px] md:min-h-[420px]" />
+        ) : (
+          <Hero slides={heroSlides} />
+        )}
         <HomeHero />
 
         <div className="space-y-0">
@@ -90,12 +103,16 @@ export default function Home() {
             style={{ background: "var(--color-bg)" }}
           >
             <div className="container-imkaa">
-              <div className="section-heading-block">
-                <h2 className="heading-section">Our Exclusive Collections</h2>
-                <p className="section-subtitle">
-                  Curated for comfort, confidence, and everyday elegance.
-                </p>
-              </div>
+              {homeLoading ? (
+                <SectionHeadingSkeleton />
+              ) : (
+                <div className="section-heading-block">
+                  <h2 className="heading-section">Our Exclusive Collections</h2>
+                  <p className="section-subtitle">
+                    Curated for comfort, confidence, and everyday elegance.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="section-full-bleed">
@@ -110,9 +127,16 @@ export default function Home() {
             className="py-8 md:py-10 lg:py-10"
             style={{ background: "var(--color-bg-alt)" }}
           >
-            <div className="container-imkaa">
-              <PageSections sections={remainingSections} compact />
-            </div>
+            {homeLoading ? (
+              <div className="container-imkaa space-y-6">
+                <SkeletonBlock className="h-[220px] rounded-[28px]" />
+                <SkeletonBlock className="h-[220px] rounded-[28px]" />
+              </div>
+            ) : (
+              <div className="container-imkaa">
+                <PageSections sections={remainingSections} compact />
+              </div>
+            )}
           </section>
           <HomeReviewsSection />
 

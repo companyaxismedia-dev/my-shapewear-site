@@ -5,8 +5,13 @@ import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
 import { GoogleLogin } from "@react-oauth/google";
+import {
+  AuthStatusLoader,
+  ButtonLoaderLabel,
+} from "@/components/loaders/Loaders";
+import { toast } from "sonner";
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /* ================= REUSABLE INPUT ================= */
 export function AuthInput({
@@ -14,6 +19,8 @@ export function AuthInput({
   placeholder,
   value,
   onChange,
+  inputMode,
+  autoComplete,
 }) {
   return (
     <input
@@ -21,8 +28,10 @@ export function AuthInput({
       placeholder={placeholder}
       value={value}
       onChange={onChange}
+      inputMode={inputMode}
+      autoComplete={autoComplete}
       required
-      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none transition"
+      className="w-full rounded-[18px] border border-[#e6d4d9] bg-white/95 px-4 py-3.5 text-[15px] text-[#4f3940] placeholder:text-[#a89198] outline-none transition focus:border-[#c56f7f] focus:ring-4 focus:ring-[#f4dde3]"
     />
   );
 }
@@ -33,14 +42,17 @@ export function AuthButton({
   type = "button",
   onClick,
   loading,
+  loadingLabel = "Please wait...",
   variant = "primary",
 }) {
   const base =
-    "w-full py-3 rounded-lg font-semibold transition active:scale-95";
+    "flex w-full items-center justify-center rounded-[18px] px-4 py-3.5 text-[15px] font-semibold tracking-[0.02em] transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-75";
 
   const styles = {
-    primary: "bg-pink-600 text-white hover:bg-pink-700",
-    outline: "border border-gray-300 hover:bg-gray-100",
+    primary:
+      "bg-[linear-gradient(135deg,#c56f7f_0%,#e48398_100%)] text-white shadow-[0_16px_32px_rgba(197,111,127,0.24)] hover:brightness-[1.03]",
+    outline:
+      "border border-[#d9c1c9] bg-white text-[#6e525a] hover:border-[#c56f7f] hover:bg-[#fff5f8]",
   };
 
   return (
@@ -50,7 +62,7 @@ export function AuthButton({
       disabled={loading}
       className={`${base} ${styles[variant]}`}
     >
-      {loading ? "Please wait..." : children}
+      {loading ? <ButtonLoaderLabel label={loadingLabel} /> : children}
     </button>
   );
 }
@@ -59,9 +71,11 @@ export function AuthButton({
 export function AuthDivider() {
   return (
     <div className="flex items-center gap-3 my-4">
-      <div className="flex-1 h-px bg-gray-300"></div>
-      <span className="text-gray-500 text-sm">OR</span>
-      <div className="flex-1 h-px bg-gray-300"></div>
+      <div className="h-px flex-1 bg-[#eadde1]"></div>
+      <span className="text-xs font-medium uppercase tracking-[0.32em] text-[#9b8189]">
+        Or
+      </span>
+      <div className="h-px flex-1 bg-[#eadde1]"></div>
     </div>
   );
 }
@@ -69,7 +83,7 @@ export function AuthDivider() {
 /* ================= GOOGLE LOGIN BUTTON ================= */
 export function GoogleLoginButton({ onSuccess }) {
   return (
-    <div className="w-full">
+    <div className="w-full overflow-hidden rounded-[18px] border border-[#e6d4d9] bg-white shadow-[0_8px_20px_rgba(74,46,53,0.04)]">
       <GoogleLogin
         onSuccess={async (credentialResponse) => {
           try {
@@ -79,13 +93,10 @@ export function GoogleLoginButton({ onSuccess }) {
             );
             onSuccess(res);
           } catch (error) {
-            alert(
-              error.response?.data?.message ||
-                "Google login failed"
-            );
+            toast.error(error.response?.data?.message || "Google login failed");
           }
         }}
-        onError={() => alert("Google Login Failed")}
+        onError={() => toast.error("Google Login Failed")}
         width="100%"
         size="large"
         shape="rectangular"
@@ -140,13 +151,10 @@ export default function LoginModal({
       role: res.data.role,
     };
 
-    localStorage.setItem(
-      "userInfo",
-      JSON.stringify({ user: userData, token })
-    );
-
-    login(userData, token);
-    alert("Successfully Logged In ✅");
+    login(userData, token, {
+      successMessage: "Successfully logged in",
+      pendingLabel: "Signing you in...",
+    });
     onClose();
   };
 
@@ -170,7 +178,7 @@ export default function LoginModal({
 
       handleAuthSuccess(res);
     } catch (err) {
-      alert(err.response?.data?.message || "Login failed");
+      toast.error(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -196,7 +204,7 @@ export default function LoginModal({
 
       setView("verifyOtp");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to send OTP");
+      toast.error(err.response?.data?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -222,7 +230,7 @@ export default function LoginModal({
 
       handleAuthSuccess(res);
     } catch (err) {
-      alert(err.response?.data?.message || "Invalid OTP");
+      toast.error(err.response?.data?.message || "Invalid OTP");
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -248,7 +256,7 @@ export default function LoginModal({
 
       setView("verifyForgotOtp");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed");
+      toast.error(err.response?.data?.message || "Failed");
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -279,7 +287,7 @@ export default function LoginModal({
 
       setView("reset");
     } catch (err) {
-      alert(err.response?.data?.message || "Invalid OTP");
+      toast.error(err.response?.data?.message || "Invalid OTP");
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -288,8 +296,10 @@ export default function LoginModal({
 
   /* ===== RESET PASSWORD ===== */
   const resetPassword = async () => {
-    if (password !== confirm)
-      return alert("Passwords do not match");
+    if (password !== confirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
 
     setActiveAction("resetPassword");
     setLoading(true);
@@ -307,11 +317,10 @@ export default function LoginModal({
       );
 
       localStorage.removeItem("resetToken");
-      alert("Password reset successful ✅");
 
       handleAuthSuccess(res);
     } catch (err) {
-      alert(err.response?.data?.message || "Reset failed");
+      toast.error(err.response?.data?.message || "Reset failed");
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -320,8 +329,36 @@ export default function LoginModal({
 
   return (
     <AuthModal isOpen={isOpen} onClose={onClose}>
+      {loading ? (
+        <AuthStatusLoader
+          className="mb-4"
+          title={
+            activeAction === "passwordLogin" || activeAction === "verifyLoginOtp"
+              ? "Signing you in"
+              : activeAction === "sendLoginOtp"
+                ? "Sending OTP"
+                : activeAction === "forgotPassword" || activeAction === "verifyForgotOtp"
+                  ? "Verifying your account"
+                  : "Updating your password"
+          }
+          description="Please wait while we securely process your request."
+        />
+      ) : null}
+
       <div className="space-y-5">
-        <h2 className="text-2xl font-bold">Login</h2>
+        <div className="space-y-2">
+          <div className="space-y-1">
+            <h2
+              className="text-[34px] leading-none text-[#4a2e35]"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Login
+            </h2>
+            <p className="text-sm text-[#876c74]">
+              Access your wishlist, saved bag, orders, and exclusive offers.
+            </p>
+          </div>
+        </div>
 
         {step === 1 && (
           <form
@@ -335,9 +372,9 @@ export default function LoginModal({
             <AuthInput
               placeholder="Email or Mobile Number"
               value={identifier}
-              onChange={(e) =>
-                setIdentifier(e.target.value)
-              }
+              inputMode="email"
+              autoComplete="username"
+              onChange={(e) => setIdentifier(e.target.value)}
             />
 
             <AuthButton type="submit">
@@ -354,8 +391,8 @@ export default function LoginModal({
 
         {step === 2 && view === "password" && (
           <>
-            <p className="text-sm text-gray-600">
-              {identifier}
+            <p className="rounded-2xl border border-[#f0e1e6] bg-[#fff7f9] px-4 py-3 text-sm text-[#7f666d]">
+              Signing in as <span className="font-semibold text-[#4a2e35]">{identifier}</span>
             </p>
 
             <form
@@ -366,27 +403,28 @@ export default function LoginModal({
                 type="password"
                 placeholder="Password"
                 value={password}
-                onChange={(e) =>
-                  setPassword(e.target.value)
-                }
+                autoComplete="current-password"
+                onChange={(e) => setPassword(e.target.value)}
               />
 
-              <AuthButton
-                type="submit"
-                loading={
-                  loading &&
+            <AuthButton
+              type="submit"
+              loading={
+                loading &&
                   activeAction ===
                     "passwordLogin"
-                }
-              >
-                Login
-              </AuthButton>
+              }
+              loadingLabel="Signing in..."
+            >
+              Login
+            </AuthButton>
             </form>
 
             <div className="text-right">
               <button
+                type="button"
                 onClick={forgotPassword}
-                className="text-sm text-pink-600"
+                className="text-sm font-medium text-[#b95b70] transition hover:text-[#9f4659]"
               >
                 Forgot Password?
               </button>
@@ -399,9 +437,10 @@ export default function LoginModal({
               onClick={sendLoginOtp}
               loading={
                 loading &&
-                activeAction ===
-                  "sendLoginOtp"
+                  activeAction ===
+                    "sendLoginOtp"
               }
+              loadingLabel="Sending OTP..."
             >
               Login via OTP
             </AuthButton>
@@ -409,89 +448,94 @@ export default function LoginModal({
         )}
 
         {view === "verifyOtp" && (
-          <>
+          <div className="space-y-4">
+            <p className="rounded-2xl border border-[#f0e1e6] bg-[#fff7f9] px-4 py-3 text-sm text-[#7f666d]">
+              Enter the OTP sent to <span className="font-semibold text-[#4a2e35]">{identifier}</span>
+            </p>
             <AuthInput
               placeholder="Enter OTP"
               value={otp}
-              onChange={(e) =>
-                setOtp(e.target.value)
-              }
+              inputMode="numeric"
+              onChange={(e) => setOtp(e.target.value)}
             />
 
             <AuthButton
               onClick={verifyLoginOtp}
               loading={
                 loading &&
-                activeAction ===
-                  "verifyLoginOtp"
+                  activeAction ===
+                    "verifyLoginOtp"
               }
+              loadingLabel="Verifying OTP..."
             >
               Verify OTP
             </AuthButton>
-          </>
+          </div>
         )}
 
         {view === "verifyForgotOtp" && (
-          <>
+          <div className="space-y-4">
+            <p className="rounded-2xl border border-[#f0e1e6] bg-[#fff7f9] px-4 py-3 text-sm text-[#7f666d]">
+              Verify the OTP to reset your password for <span className="font-semibold text-[#4a2e35]">{identifier}</span>
+            </p>
             <AuthInput
               placeholder="Enter OTP"
               value={otp}
-              onChange={(e) =>
-                setOtp(e.target.value)
-              }
+              inputMode="numeric"
+              onChange={(e) => setOtp(e.target.value)}
             />
 
             <AuthButton
               onClick={verifyForgotOtp}
               loading={
                 loading &&
-                activeAction ===
-                  "verifyForgotOtp"
+                  activeAction ===
+                    "verifyForgotOtp"
               }
+              loadingLabel="Verifying OTP..."
             >
               Verify OTP
             </AuthButton>
-          </>
+          </div>
         )}
 
         {view === "reset" && (
-          <>
+          <div className="space-y-4">
             <AuthInput
               type="password"
               placeholder="New Password"
               value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
+              autoComplete="new-password"
+              onChange={(e) => setPassword(e.target.value)}
             />
             <AuthInput
               type="password"
               placeholder="Confirm Password"
               value={confirm}
-              onChange={(e) =>
-                setConfirm(e.target.value)
-              }
+              autoComplete="new-password"
+              onChange={(e) => setConfirm(e.target.value)}
             />
 
             <AuthButton
               onClick={resetPassword}
               loading={
                 loading &&
-                activeAction ===
-                  "resetPassword"
+                  activeAction ===
+                    "resetPassword"
               }
+              loadingLabel="Updating password..."
             >
               Change Password
             </AuthButton>
-          </>
+          </div>
         )}
       </div>
 
-      <p className="mt-5 text-sm text-gray-600">
+      <p className="mt-6 text-sm text-[#80666e]">
         New user?{" "}
         <span
           onClick={openRegister}
-          className="text-pink-600 font-semibold cursor-pointer hover:underline"
+          className="cursor-pointer font-semibold text-[#c0566d] transition hover:text-[#a8455a]"
         >
           Register
         </span>

@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Send,
 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function SupportCenter() {
 
@@ -42,7 +43,7 @@ export default function SupportCenter() {
       !ticketData.subject ||
       !ticketData.message
     ) {
-      alert("Please fill all fields")
+      toast.error("Please fill all fields")
       return
     }
 
@@ -111,7 +112,7 @@ export default function SupportCenter() {
   const handleChatStart = async () => {
 
     if (!orderId) {
-      alert("Order ID missing")
+      toast.error("Order ID missing")
       return
     }
 

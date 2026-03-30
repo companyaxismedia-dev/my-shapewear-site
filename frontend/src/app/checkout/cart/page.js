@@ -21,11 +21,26 @@ import LoginModal from "../../authPage/LoginModal";
 import { API_BASE } from "@/lib/api";
 import CheckoutStepper from "../components/CheckoutStepper";
 import EmptyCart from "../components/EmptyCart";
+import {
+  ButtonLoaderLabel,
+  CartItemsSkeleton,
+  OfferListSkeleton,
+  OrderSummarySkeleton,
+} from "@/components/loaders/Loaders";
 
 const formatPrice = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
 
 export default function CartPage() {
-  const { cartItems, cartSummary, updateQty, removeItem, updateSize } = useCart();
+  const {
+    cartItems,
+    cartSummary,
+    updateQty,
+    removeItem,
+    updateSize,
+    cartLoading,
+    summaryLoading,
+    pendingItemIds,
+  } = useCart();
   const { toggleWishlist } = useWishlist();
   const { user } = useAuth();
 
@@ -129,7 +144,7 @@ export default function CartPage() {
   const visibleOffers = showAllOffers ? offers : offers.slice(0, 1);
   const selectedCount = cartItems.length;
 
-  if (cartItems.length === 0) {
+  if (!cartLoading && cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-white text-[#4a2e35]">
         <div className="fixed left-0 right-0 top-0 z-50 bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)]">
@@ -189,7 +204,7 @@ export default function CartPage() {
               </div>
 
               {offersLoading ? (
-                <p className="text-[13px] text-[#6d5f65]">Loading offers...</p>
+                <OfferListSkeleton rows={2} />
               ) : visibleOffers.length > 0 ? (
                 <>
                   <div className="space-y-2 text-[13px] text-[#5f4b52]">
@@ -242,10 +257,14 @@ export default function CartPage() {
           </div>
 
           <div className="space-y-3 px-3">
-            {cartItems.map((item) => (
+            {cartLoading ? (
+              <CartItemsSkeleton count={3} />
+            ) : cartItems.map((item) => (
               <div
                 key={`mobile-${item.id}`}
-                className="rounded-[4px] border border-[#ece5e8] bg-white p-3 shadow-[0_4px_14px_rgba(45,28,35,0.05)]"
+                className={`rounded-[4px] border border-[#ece5e8] bg-white p-3 shadow-[0_4px_14px_rgba(45,28,35,0.05)] ${
+                  pendingItemIds[item.id] ? "opacity-70" : ""
+                }`}
               >
                 <div className="flex gap-3">
                   <Link href={`/product/${item.slug}`} className="block shrink-0">
@@ -285,6 +304,7 @@ export default function CartPage() {
                         <span className="text-[13px] font-semibold text-[#3f3036]">Size:</span>
                         <select
                           value={item.size}
+                          disabled={Boolean(pendingItemIds[item.id])}
                           onChange={(e) => updateSize(item.id, e.target.value)}
                           className="h-8 min-w-[66px] rounded-[2px] border border-[#d8cdd2] bg-white px-2 text-[13px] font-medium text-[#2f2428] outline-none"
                         >
@@ -300,6 +320,7 @@ export default function CartPage() {
                         <span className="text-[13px] font-semibold text-[#3f3036]">Qty:</span>
                         <select
                           value={item.quantity}
+                          disabled={Boolean(pendingItemIds[item.id])}
                           onChange={(e) => updateQty(item.id, Number(e.target.value))}
                           className="h-8 min-w-[66px] rounded-[2px] border border-[#d8cdd2] bg-white px-2 text-[13px] font-medium text-[#2f2428] outline-none"
                         >
@@ -339,9 +360,10 @@ export default function CartPage() {
                   <button
                     type="button"
                     onClick={() => handleMoveSingleToWishlist(item)}
+                    disabled={Boolean(pendingItemIds[item.id])}
                     className="transition hover:text-[#b27b86]"
                   >
-                    Save for later
+                    {pendingItemIds[item.id] === "remove" ? <ButtonLoaderLabel label="Moving..." /> : "Save for later"}
                   </button>
                   <button
                     type="button"
@@ -349,9 +371,10 @@ export default function CartPage() {
                       setSelectedProduct(item);
                       setShowMoveModal(true);
                     }}
+                    disabled={Boolean(pendingItemIds[item.id])}
                     className="transition hover:text-[#b27b86]"
                   >
-                    Remove
+                    {pendingItemIds[item.id] === "remove" ? <ButtonLoaderLabel label="Removing..." /> : "Remove"}
                   </button>
                 </div>
               </div>
@@ -359,6 +382,10 @@ export default function CartPage() {
           </div>
 
           <div className="bg-white px-4 py-4">
+            {summaryLoading ? (
+              <OrderSummarySkeleton lines={5} />
+            ) : (
+              <>
             <h3 className="text-[13px] font-semibold uppercase text-[#4a3c42]">
               Price Details ({selectedCount} Item{selectedCount > 1 ? "s" : ""})
             </h3>
@@ -427,6 +454,8 @@ export default function CartPage() {
                 </div>
               </div>
             </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -465,7 +494,7 @@ export default function CartPage() {
 
                     <div className="space-y-2 text-[13px] text-[#5f4b52]">
                       {offersLoading ? (
-                        <p>Loading offers...</p>
+                        <OfferListSkeleton rows={2} />
                       ) : visibleOffers.length > 0 ? (
                         visibleOffers.map((offer) => (
                           <div key={offer._id || offer.code || offer.title} className="flex gap-2">
@@ -511,10 +540,14 @@ export default function CartPage() {
               </div>
 
               <div className="space-y-4">
-                {cartItems.map((item) => (
+                {cartLoading ? (
+                  <CartItemsSkeleton count={3} />
+                ) : cartItems.map((item) => (
                   <div
                     key={item.id}
-                    className="overflow-hidden rounded-[4px] border border-[#ece5e8] bg-white shadow-[0_6px_18px_rgba(45,28,35,0.05)]"
+                    className={`overflow-hidden rounded-[4px] border border-[#ece5e8] bg-white shadow-[0_6px_18px_rgba(45,28,35,0.05)] ${
+                      pendingItemIds[item.id] ? "opacity-70" : ""
+                    }`}
                   >
                     <div className="flex gap-4 p-4">
                       <Link href={`/product/${item.slug}`} className="block shrink-0 self-start">
@@ -555,6 +588,7 @@ export default function CartPage() {
                             <span>Qty:</span>
                             <select
                               value={item.quantity}
+                              disabled={Boolean(pendingItemIds[item.id])}
                               onChange={(e) => updateQty(item.id, Number(e.target.value))}
                               className="h-9 min-w-[64px] rounded-[2px] border border-[#d8cdd2] bg-white px-2 text-[13px] font-medium text-[#2f2428] outline-none"
                             >
@@ -570,6 +604,7 @@ export default function CartPage() {
                             <span>Size:</span>
                             <select
                               value={item.size}
+                              disabled={Boolean(pendingItemIds[item.id])}
                               onChange={(e) => updateSize(item.id, e.target.value)}
                               className="h-9 min-w-[64px] rounded-[2px] border border-[#d8cdd2] bg-white px-2 text-[13px] font-medium text-[#2f2428] outline-none"
                             >
@@ -620,19 +655,27 @@ export default function CartPage() {
                     <div className="flex items-center gap-6 border-t border-[#eee3e6] px-4 py-3 text-[13px] font-medium text-[#3a2d32]">
                       <button
                         onClick={() => handleMoveSingleToWishlist(item)}
+                        disabled={Boolean(pendingItemIds[item.id])}
                         className="transition hover:text-[#b27b86]"
                       >
-                        Save for later
+                        {pendingItemIds[item.id] === "remove" ? <ButtonLoaderLabel label="Moving..." /> : "Save for later"}
                       </button>
                       <button
                         onClick={() => {
                           setSelectedProduct(item);
                           setShowMoveModal(true);
                         }}
+                        disabled={Boolean(pendingItemIds[item.id])}
                         className="flex items-center gap-2 transition hover:text-[#b27b86]"
                       >
-                        <Trash2 className="h-4 w-4" />
-                        Remove
+                        {pendingItemIds[item.id] === "remove" ? (
+                          <ButtonLoaderLabel label="Removing..." />
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4" />
+                            Remove
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -655,6 +698,9 @@ export default function CartPage() {
                 Proceed To Checkout
               </button>
 
+              {summaryLoading ? (
+                <OrderSummarySkeleton lines={6} />
+              ) : (
               <div className="rounded-[4px] border border-[#ece5e8] bg-white p-6 shadow-[0_6px_18px_rgba(45,28,35,0.05)]">
                 <h3 className="mb-5 text-[16px] font-medium text-[#2f2428]">Order Summary</h3>
 
@@ -716,6 +762,7 @@ export default function CartPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               <div className="rounded-[4px] border border-[#ece5e8] bg-[#fffafb] p-4 text-[12px] leading-5 text-[#6f6167] shadow-[0_6px_18px_rgba(45,28,35,0.05)]">
                 By placing this order, you agree to our{" "}

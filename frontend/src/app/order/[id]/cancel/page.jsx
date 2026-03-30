@@ -10,6 +10,7 @@ import CancelReasonSelect from "@/components/orders/cancel/CancelReasonSelect";
 import AddressListModal from "@/components/orders/AddressListModal";
 import AddEditAddressModal from "@/components/orders/AddEditAddressModal";
 import ChangePhoneNumberModal from "@/components/orders/ChangePhoneNumberModal";
+import { toast } from "sonner";
 
 
 
@@ -49,7 +50,7 @@ export default function CancelPage() {
                 }
             );
 
-            alert("Order cancelled successfully");
+            toast.success("Order cancelled successfully");
 
         } catch (err) {
             console.error("Cancel error", err);

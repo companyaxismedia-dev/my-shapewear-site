@@ -17,6 +17,7 @@ import {
     fetchCategoryTree,
     findCategoryBySegments,
 } from "@/lib/categories";
+import { ProductGridSkeleton, SkeletonBlock } from "@/components/loaders/Loaders";
 
 const SORT_OPTIONS = [
     "Recommended",
@@ -295,9 +296,12 @@ export default function CategoryPage({ categoryPath = [] }) {
                         {/* PRODUCTS GRID */}
                         <main className="category-page-main">
                             {categoryLoading ? (
-                                <div className="text-center py-20">
-                                    <div className="w-9 h-9 border-4 border-[#e8e8e8] border-t-[#ff3f6c] rounded-full animate-spin mx-auto mb-3" />
-                                    <p className="text-[#94969f] text-sm">Loading category...</p>
+                                <div className="space-y-6 py-4">
+                                    <div className="space-y-3">
+                                        <SkeletonBlock className="h-5 w-56 rounded-full" />
+                                        <SkeletonBlock className="h-4 w-72 max-w-full rounded-full" />
+                                    </div>
+                                    <ProductGridSkeleton count={10} />
                                 </div>
                             ) : categoryError ? (
                                 <div className="text-center py-20">
@@ -305,10 +309,7 @@ export default function CategoryPage({ categoryPath = [] }) {
                                     <p className="text-sm text-[#94969f] mt-2">Please try another category.</p>
                                 </div>
                             ) : loading ? (
-                                <div className="text-center py-20">
-                                    <div className="w-9 h-9 border-4 border-[#e8e8e8] border-t-[#ff3f6c] rounded-full animate-spin mx-auto mb-3" />
-                                    <p className="text-[#94969f] text-sm">Loading products...</p>
-                                </div>
+                                <ProductGridSkeleton count={10} />
                             ) : products.length === 0 ? (
                                 <div className="text-center py-20">
                                     <h2 className="text-lg font-bold text-[#282c3f]">No products found</h2>

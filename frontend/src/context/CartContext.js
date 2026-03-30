@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
+import { toast } from "sonner";
 
 const CartContext = createContext();
 
@@ -13,6 +14,9 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
+  const [cartLoading, setCartLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [pendingItemIds, setPendingItemIds] = useState({});
   const [cartSummary, setCartSummary] = useState({
     total: 0,
     subTotal: 0,
@@ -42,11 +46,13 @@ export const CartProvider = ({ children }) => {
 
   /* ================= LOAD GUEST ================= */
   const loadGuestCart = async () => {
+    setCartLoading(true);
     const guest = JSON.parse(localStorage.getItem("guestCart") || "[]");
 
     if (!guest.length) {
       setCartItems([]);
       setCartSummary(buildSummary([]));
+      setCartLoading(false);
       return;
     }
 
@@ -122,11 +128,13 @@ export const CartProvider = ({ children }) => {
     const filteredItems = formatted.filter((item) => item !== null);
     setCartItems(filteredItems);
     setCartSummary(buildSummary(filteredItems));
+    setCartLoading(false);
   };
 
   /* ================= LOAD CART ================= */
   useEffect(() => {
     const loadCart = async () => {
+      setCartLoading(true);
       if (user) {
         await mergeGuestCart();
         await fetchCart();
@@ -179,6 +187,7 @@ export const CartProvider = ({ children }) => {
 
   const fetchCart = async () => {
     try {
+      setCartLoading(true);
       const res = await axios.get(`${API_BASE}/api/cart`, {
         headers: { Authorization: `Bearer ${user?.token}` },
       });
@@ -191,6 +200,8 @@ export const CartProvider = ({ children }) => {
       console.error("Error fetching cart:", error);
       setCartItems([]);
       setCartSummary(buildSummary([]));
+    } finally {
+      setCartLoading(false);
     }
   };
 
@@ -250,6 +261,8 @@ export const CartProvider = ({ children }) => {
 
   /* ================= UPDATE ================= */
   const updateQty = async (itemId, quantity) => {
+    setPendingItemIds((prev) => ({ ...prev, [itemId]: "quantity" }));
+    setSummaryLoading(true);
     if (user) {
       await axios.put(
         `${API_BASE}/api/cart/${itemId}`,
@@ -266,9 +279,17 @@ export const CartProvider = ({ children }) => {
         await loadGuestCart();
       }
     }
+    setPendingItemIds((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+    setSummaryLoading(false);
   };
 
   const updateSize = async (itemId, size) => {
+    setPendingItemIds((prev) => ({ ...prev, [itemId]: "size" }));
+    setSummaryLoading(true);
     if (user) {
       try {
         await axios.put(
@@ -279,7 +300,7 @@ export const CartProvider = ({ children }) => {
 
         await fetchCart();
       } catch (err) {
-        alert(err?.response?.data?.message || "Size update failed");
+        toast.error(err?.response?.data?.message || "Size update failed");
         console.log(err?.response?.data);
       }
     } else {
@@ -291,10 +312,18 @@ export const CartProvider = ({ children }) => {
         await loadGuestCart();
       }
     }
+    setPendingItemIds((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+    setSummaryLoading(false);
   };
 
   /* ================= REMOVE ================= */
   const removeItem = async (itemId) => {
+    setPendingItemIds((prev) => ({ ...prev, [itemId]: "remove" }));
+    setSummaryLoading(true);
     if (user) {
       await axios.delete(`${API_BASE}/api/cart/${itemId}`, {
         headers: { Authorization: `Bearer ${user?.token}` },
@@ -309,6 +338,12 @@ export const CartProvider = ({ children }) => {
         await loadGuestCart();
       }
     }
+    setPendingItemIds((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+    setSummaryLoading(false);
   };
 
   return (
@@ -316,6 +351,9 @@ export const CartProvider = ({ children }) => {
       value={{
         cartItems,
         cartSummary,
+        cartLoading,
+        summaryLoading,
+        pendingItemIds,
         addToCart,
         updateQty,
         updateSize,

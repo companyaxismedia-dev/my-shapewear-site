@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { API_BASE } from "@/lib/api";
+import { ButtonLoaderLabel, InlineSpinner } from "@/components/loaders/Loaders";
+import { toast } from "sonner";
 
 export default function AddressForm({
   editingAddress = null,
@@ -66,7 +68,7 @@ export default function AddressForm({
 
     const token = getToken();
     if (!token) {
-      alert("Login required");
+      toast.error("Login required");
       return;
     }
 
@@ -106,7 +108,7 @@ export default function AddressForm({
       const data = await res.json();
 
       if (!data.success) {
-        alert(data.message || "Address save failed");
+        toast.error(data.message || "Address save failed");
         return;
       }
 
@@ -119,7 +121,7 @@ export default function AddressForm({
       }, 150);
     } catch (err) {
       console.log(err);
-      alert("Something went wrong");
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -170,7 +172,8 @@ export default function AddressForm({
             />
 
             {pinLoading && (
-              <p className="mt-1 text-[11px] text-[#8d727b]">
+              <p className="mt-1 inline-flex items-center gap-2 text-[11px] text-[#8d727b]">
+                <InlineSpinner className="h-3.5 w-3.5" />
                 Checking pincode...
               </p>
             )}
@@ -298,7 +301,7 @@ export default function AddressForm({
               : "bg-[#b27b86] text-white hover:bg-[#9f6571]"
             }`}
         >
-          {loading ? "Saving..." : "Save"}
+          {loading ? <ButtonLoaderLabel label="Saving..." /> : "Save"}
         </button>
       </div>
     </form>

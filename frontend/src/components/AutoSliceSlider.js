@@ -15,6 +15,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import SectionRenderer from "./SectionRenderer";
 import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
+import { toast } from "sonner";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -379,7 +380,10 @@ function ProductCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            if (!user) return alert("Please login to use wishlist");
+            if (!user) {
+              toast.error("Please login to use wishlist");
+              return;
+            }
 
             isWishlisted
               ? removeFromWishlist(product._id)

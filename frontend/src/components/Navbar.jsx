@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
 import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
+import { SkeletonBlock } from "@/components/loaders/Loaders";
 
 const FALLBACK_NAV_CATEGORIES = [
   { name: "Bras", href: "/bra", subCategories: [] },
@@ -82,6 +83,7 @@ function Logo({ width = "w-[150px]", height = "h-[40px]" }) {
 // Nav Actions Component (Search, User, Wishlist, Cart)
 function NavActions({ isSearchOpen, setIsSearchOpen, setLoginOpen, setRegisterOpen }) {
   const { cartItems } = useCart();
+  const { loading: authLoading } = useAuth();
   const cartCount = cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
 
   return (
@@ -90,11 +92,20 @@ function NavActions({ isSearchOpen, setIsSearchOpen, setLoginOpen, setRegisterOp
         <SearchSection onToggleMobileSearch={(val) => setIsSearchOpen(val)} />
       </div>
 
-      <UserMenu
-        openLogin={() => setLoginOpen(true)}
-        openRegister={() => setRegisterOpen(true)}
-      />
-      <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
+      {authLoading ? (
+        <div className="flex items-center gap-2">
+          <SkeletonBlock className="h-8 w-8 rounded-full" />
+          <SkeletonBlock className="h-8 w-8 rounded-full" />
+        </div>
+      ) : (
+        <>
+          <UserMenu
+            openLogin={() => setLoginOpen(true)}
+            openRegister={() => setRegisterOpen(true)}
+          />
+          <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
+        </>
+      )}
       <LinkNav href="/checkout/cart" className="relative p-1.5 transition-colors" style={{ color: "var(--color-body)" }}>
         <ShoppingCart size={22} className="hover:text-[var(--color-primary)] transition-colors" />
         {cartCount > 0 && (
@@ -305,7 +316,10 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
 
           {user && (
             <button
-              onClick={() => { logout(); setMenuOpen(false); }}
+              onClick={() => {
+                setMenuOpen(false);
+                logout();
+              }}
               className="rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2 text-left transition-colors"
               style={{ color: "var(--color-primary-hover)", fontFamily: "var(--font-body)" }}
             >
