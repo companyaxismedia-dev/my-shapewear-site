@@ -273,19 +273,6 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
 
         {/* Drawer Links */}
         <div className="flex flex-col gap-1 px-3 py-3">
-          <LinkNav
-            href="/"
-            onClick={() => setMenuOpen(false)}
-            className="rounded-xl px-4 py-3 text-sm font-medium transition-colors"
-            style={{
-              color: pathname === "/" ? "var(--color-primary)" : "var(--color-heading)",
-              fontFamily: "var(--font-body)",
-              fontWeight: 600,
-              background: pathname === "/" ? "rgba(197, 111, 127, 0.08)" : "transparent",
-            }}
-          >
-            Home
-          </LinkNav>
 
           <div className="space-y-1">
             {renderCategoryTree(categories)}
@@ -479,11 +466,6 @@ function HomeNavbar({ onLoginToggle, pathname }) {
               style={{ background: "var(--color-bg-alt)", borderBottomColor: "var(--color-border)" }}
             >
               <div className="container-imkaa flex items-center justify-center gap-2 py-2 xl:gap-4">
-                <LinkNav href="/" className="imkaa-nav-link px-3 py-1.5 rounded-full transition"
-                  style={{ color: "var(--color-primary)", fontWeight: 600 }}>
-                  Home
-                </LinkNav>
-
                 {categories.map((category, categoryIndex) => {
                   const hasChildren = category.subCategories.length > 0;
                   const isHovered = hoveredCategorySlug === category.slug;

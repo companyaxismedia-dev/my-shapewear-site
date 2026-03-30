@@ -86,7 +86,7 @@ export default function Home() {
           <CategorySlider />
 
           <section
-            className="section-padding"
+            className="section-padding lg:!py-10"
             style={{ background: "var(--color-bg)" }}
           >
             <div className="container-imkaa">
@@ -96,7 +96,9 @@ export default function Home() {
                   Curated for comfort, confidence, and everyday elegance.
                 </p>
               </div>
+            </div>
 
+            <div className="section-full-bleed">
               <AutoSliceSlider
                 bannerSections={bannerSections}
                 onUsedBannerIdsChange={setUsedBannerIds}
@@ -105,7 +107,7 @@ export default function Home() {
           </section>
 
           <section
-            className="py-10 md:py-14"
+            className="py-8 md:py-10 lg:py-10"
             style={{ background: "var(--color-bg-alt)" }}
           >
             <div className="container-imkaa">

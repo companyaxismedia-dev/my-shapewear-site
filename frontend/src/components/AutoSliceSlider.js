@@ -163,7 +163,7 @@ export default function AutoSliceSlider({
   }
 
   return (
-    <div className="flex flex-col gap-3 lg:gap-8  ">
+    <div className="flex flex-col gap-3 lg:gap-4">
       {visibleSections.map((section, index) => {
         const products = productsData[section.id]?.slice(0, section.count) || [];
         const enableLoop = products.length >= 5;
@@ -183,7 +183,7 @@ export default function AutoSliceSlider({
 
             {/* 🟢 Slider */}
             <div className="w-full">
-              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 lg:mb-3 mb-3">
                 <div>
                   {/* <h3
                     className="heading-section"

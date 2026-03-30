@@ -69,7 +69,7 @@ export default function CategorySlider() {
   const enableLoop = categoryBanners.length > MAX_SLIDES_VIEW;
 
   return (
-    <section className="section-padding w-full" style={{ background: "var(--color-bg-alt)" }}>
+    <section className="section-padding lg:!py-10 w-full" style={{ background: "var(--color-bg-alt)" }}>
       <div className="container-imkaa">
         <div className="section-heading-block">
           <h2 className="heading-section">Shop By Category</h2>
@@ -90,7 +90,7 @@ export default function CategorySlider() {
             1024: { slidesPerView: 5, spaceBetween: 20 },
           }}
           pagination={false}
-          navigation={categoryBanners.length > 1}
+          navigation={false}
           className="categorySwiper"
         >
           {categoryBanners.map((item) => (

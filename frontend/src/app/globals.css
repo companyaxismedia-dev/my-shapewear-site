@@ -531,6 +531,60 @@ footer.imkaa-footer {
   margin-bottom: 8px;
 }
 
+.mobile-banner-strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-banner-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-banner-slide {
+  flex: 0 0 min(78vw, 300px);
+  scroll-snap-align: start;
+}
+
+.banner-block-card {
+  border-radius: 0;
+}
+
+.full-banner-bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+.section-full-bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-left: clamp(12px, 2vw, 24px);
+  padding-right: clamp(12px, 2vw, 24px);
+  box-sizing: border-box;
+}
+
+.homePageSwiper .swiper-button-prev,
+.homePageSwiper .swiper-button-next {
+  display: none !important;
+}
+
+.categorySwiper .swiper-button-prev,
+.categorySwiper .swiper-button-next {
+  display: none !important;
+}
+
+.full-banner-card picture,
+.full-banner-card img {
+  display: block;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
   .section-heading-block {
     margin-bottom: 22px;
@@ -544,6 +598,26 @@ footer.imkaa-footer {
 
   .product-card-media {
     aspect-ratio: 4 / 5;
+  }
+
+  .mobile-banner-slide {
+    flex-basis: min(78vw, 300px);
+  }
+
+  .full-banner-card {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .full-banner-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .full-banner-card > div {
+    background: transparent !important;
   }
 }
 

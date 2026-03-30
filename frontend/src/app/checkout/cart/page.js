@@ -20,6 +20,7 @@ import Footer from "@/components/Footer";
 import LoginModal from "../../authPage/LoginModal";
 import { API_BASE } from "@/lib/api";
 import CheckoutStepper from "../components/CheckoutStepper";
+import EmptyCart from "../components/EmptyCart";
 
 const formatPrice = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
 
@@ -130,15 +131,12 @@ export default function CartPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white text-[#4a2e35]">
         <div className="fixed left-0 right-0 top-0 z-50 bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)]">
           <Navbar />
         </div>
-        <div className="flex min-h-screen items-center justify-center px-4 pt-28 lg:pt-20">
-          <div className="text-center">
-            <h2 className="text-2xl font-semibold text-[#2f2428]">Your cart is empty</h2>
-            <p className="mt-2 text-sm text-[#8d727b]">Add some products to get started.</p>
-          </div>
+        <div className="pt-[112px] lg:pt-[88px]">
+          <EmptyCart />
         </div>
         <Footer />
       </div>
