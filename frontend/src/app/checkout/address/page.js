@@ -10,6 +10,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AddressForm from "@/components/checkout/AddressForm";
 import CheckoutStepper from "../components/CheckoutStepper";
+import {
+  AddressCardSkeleton,
+  ButtonLoaderLabel,
+  OrderSummarySkeleton,
+} from "@/components/loaders/Loaders";
+import { toast } from "sonner";
 
 const formatPrice = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
 
@@ -158,12 +164,12 @@ export default function CheckoutAddressPage() {
 
   const handleContinue = async () => {
     if (!selectedAddressId) {
-      alert("Please select a delivery address");
+      toast.error("Please select a delivery address");
       return;
     }
 
     if (!cartItems.length) {
-      alert("Your cart is empty");
+      toast.error("Your cart is empty");
       return;
     }
 
@@ -187,14 +193,14 @@ export default function CheckoutAddressPage() {
       const data = await response.json();
 
       if (!response.ok || !data?.orderId) {
-        alert(data?.message || "Order creation failed");
+        toast.error(data?.message || "Order creation failed");
         return;
       }
 
       router.push(`/checkout/payment?order=${data.orderId}&address=${selectedAddressId}`);
     } catch (error) {
       console.error("Create order error:", error);
-      alert("Order create error");
+      toast.error("Order create error");
     } finally {
       setPlacingOrder(false);
     }
@@ -206,8 +212,11 @@ export default function CheckoutAddressPage() {
         <div className="fixed left-0 right-0 top-0 z-50 bg-white shadow-[0_2px_14px_rgba(0,0,0,0.06)]">
           <Navbar />
         </div>
-        <div className="flex min-h-screen items-center justify-center px-4 pt-28 lg:pt-20 text-sm text-[#8d727b]">
-          Loading address details...
+        <div className="px-4 pb-10 pt-28 lg:mx-auto lg:max-w-[1140px] lg:px-7 lg:pt-24">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] xl:gap-9">
+            <AddressCardSkeleton count={3} />
+            <OrderSummarySkeleton lines={6} />
+          </div>
         </div>
       </div>
     );
@@ -422,7 +431,7 @@ export default function CheckoutAddressPage() {
               onClick={handleContinue}
               disabled={!selectedAddressId || placingOrder}
             >
-              {placingOrder ? "Processing..." : "Continue To Payment"}
+              {placingOrder ? <ButtonLoaderLabel label="Processing..." /> : "Continue To Payment"}
             </button>
           </div>
         </div>
@@ -571,7 +580,7 @@ export default function CheckoutAddressPage() {
                   onClick={handleContinue}
                   disabled={!selectedAddressId || placingOrder}
                 >
-                  {placingOrder ? "Processing..." : "Continue To Payment"}
+                  {placingOrder ? <ButtonLoaderLabel label="Processing..." /> : "Continue To Payment"}
                 </button>
 
                 <div className="rounded-[4px] border border-[#ece5e8] bg-white p-6 shadow-[0_6px_18px_rgba(45,28,35,0.05)]">

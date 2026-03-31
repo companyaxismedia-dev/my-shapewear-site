@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { toast } from "sonner";
 
 export default function BraSizeCalculator() {
 
@@ -12,7 +13,7 @@ export default function BraSizeCalculator() {
     const calculateSize = () => {
 
         if (!underbust || !overbust) {
-            alert("Please enter both measurements");
+            toast.error("Please enter both measurements");
             return;
         }
 

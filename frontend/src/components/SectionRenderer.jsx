@@ -65,7 +65,8 @@ export default function SectionRenderer({ section, compact = false }) {
           <img
             src={resolveImage(desktopUrl || mobileUrl)}
             alt={imageAlt}
-            className="w-full h-full object-cover"
+            className="block w-full h-full object-cover"
+            loading="lazy"
           />
         ) : null}
       </picture>
@@ -138,7 +139,38 @@ export default function SectionRenderer({ section, compact = false }) {
       <section className={wrapClassName}>
         <div className={compact ? "" : "container-imkaa"}>
           <SectionHeading title={section.title} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="mobile-banner-strip md:hidden">
+            {itemsToDisplay.map((block) => {
+              const data = block.data || {};
+              const hasLink = data.link && data.link.trim();
+              const handleClick = (e) => {
+                if (!hasLink) e.preventDefault();
+              };
+              const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
+
+              return (
+                <a
+                  key={block._id}
+                  href={hasLink ? data.link : "#"}
+                  className={`mobile-banner-slide card-imkaa banner-block-card ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  {...linkProps}
+                >
+                  <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
+                    {renderBlockContent(block)}
+                  </div>
+                  {data.title && (
+                    <div className="p-4 text-center">
+                      <p className="title-product">
+                        {data.title}
+                      </p>
+                    </div>
+                  )}
+                </a>
+              );
+            })}
+          </div>
+
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {itemsToDisplay.map((block) => {
               const data = block.data || {};
               const hasLink = data.link && data.link.trim();
@@ -150,7 +182,7 @@ export default function SectionRenderer({ section, compact = false }) {
                 <a
                   key={block._id}
                   href={hasLink ? data.link : "#"}
-                  className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  className={`block card-imkaa banner-block-card ${hasLink ? "cursor-pointer" : "cursor-default"}`}
                   {...linkProps}
                 >
                   <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
@@ -180,7 +212,7 @@ export default function SectionRenderer({ section, compact = false }) {
       <section className={wrapClassName}>
         <div className={compact ? "" : "container-imkaa"}>
           <SectionHeading title={section.title} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 gap-3 md:gap-6">
             {itemsToDisplay.map((block) => {
               const data = block.data || {};
               const hasLink = data.link && data.link.trim();
@@ -192,7 +224,7 @@ export default function SectionRenderer({ section, compact = false }) {
                 <a
                   key={block._id}
                   href={hasLink ? data.link : "#"}
-                  className={`block card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  className={`block card-imkaa banner-block-card ${hasLink ? "cursor-pointer" : "cursor-default"}`}
                   {...linkProps}
                 >
                   <div className="overflow-hidden" style={{ background: "var(--color-bg-alt)" }}>
@@ -232,12 +264,12 @@ export default function SectionRenderer({ section, compact = false }) {
             const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
 
             return (
-              <a
-                key={block._id}
-                href={hasLink ? data.link : "#"}
-                className={`block w-full card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
-                {...linkProps}
-              >
+                <a
+                  key={block._id}
+                  href={hasLink ? data.link : "#"}
+                  className={`block w-full card-imkaa banner-block-card ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  {...linkProps}
+                >
                 <div className="w-full" style={{ background: "var(--color-bg-alt)" }}>
                   <picture>
                     {mobileUrl ? (
@@ -274,7 +306,7 @@ export default function SectionRenderer({ section, compact = false }) {
 
     return (
       <section style={{ paddingTop: compact ? 14 : 20, paddingBottom: compact ? 14 : 20 }}>
-        <div className={compact ? "" : "container-imkaa"}>
+        <div className="full-banner-bleed">
           <div className="space-y-4">
             {itemsToDisplay.map((block) => {
               const data = block.data || {};
@@ -290,7 +322,7 @@ export default function SectionRenderer({ section, compact = false }) {
                 <a
                   key={block._id}
                   href={hasLink ? data.link : "#"}
-                  className={`block w-full card-imkaa ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                  className={`block w-full card-imkaa banner-block-card full-banner-card ${hasLink ? "cursor-pointer" : "cursor-default"}`}
                   {...linkProps}
                 >
                   <div className="w-full" style={{ background: "var(--color-bg-alt)" }}>

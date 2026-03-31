@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -29,7 +30,10 @@ export default function OTPPage() {
 
     const result = await res.json();
 
-    if (!res.ok) return alert(result.message);
+    if (!res.ok) {
+      toast.error(result.message);
+      return;
+    }
 
     localStorage.setItem("adminToken", result.token);
     // localStorage.setItem("adminRole", result.role);

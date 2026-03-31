@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Heart, Star } from "lucide-react";
 import { getImageUrl } from "./helpers";
 import Image from "next/image";
+import { toast } from "sonner";
 
 export function ProductCard({ item, onOpenDetails }) {
     const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
@@ -77,7 +78,10 @@ export function ProductCard({ item, onOpenDetails }) {
 
                 <button
                     onClick={() => {
-                        if (!user) return alert("Please login to use wishlist");
+                        if (!user) {
+                            toast.error("Please login to use wishlist");
+                            return;
+                        }
                         isWishlisted ? removeFromWishlist(item._id) : toggleWishlist(item);
                     }}
                     className="absolute right-2 top-2 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-[#ead7dd] bg-[rgba(255,255,255,0.92)] shadow-[0_6px_18px_rgba(74,46,53,0.10)] transition-transform hover:scale-110"

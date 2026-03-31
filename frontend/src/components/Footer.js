@@ -87,19 +87,19 @@ export default function Footer() {
       {/* ── Trust Bar ── */}
       <div style={{ background: '#FCEFEA', borderBottom: '1px solid #EAD7DD' }}>
         <div className="max-w-[1280px] mx-auto px-6 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-3 md:gap-6">
             {[
               { icon: <Truck size={22} />, title: "Free Shipping", desc: "On orders above ₹999" },
               { icon: <ShieldCheck size={22} />, title: "Discreet Packaging", desc: "100% private delivery" },
               { icon: <RotateCcw size={22} />, title: "Easy Returns", desc: "7-day no-question returns" },
               { icon: <Lock size={22} />, title: "Quick COD", desc: "Pay on delivery" },
             ].map((b) => (
-              <div key={b.title} className="flex flex-col items-center text-center gap-2">
+              <div key={b.title} className="flex flex-col items-center text-center gap-1.5 md:gap-2">
                 <div style={{ color: '#C56F7F' }}>{b.icon}</div>
-                <p style={{ fontFamily: INTER, fontWeight: 600, fontSize: '14px', color: '#5A3C46' }}>
+                <p className="text-[11px] leading-tight md:text-[14px]" style={{ fontFamily: INTER, fontWeight: 600, color: '#5A3C46' }}>
                   {b.title}
                 </p>
-                <p style={{ fontFamily: INTER, fontSize: '13px', color: '#8C7480' }}>
+                <p className="text-[10px] leading-tight md:text-[13px]" style={{ fontFamily: INTER, color: '#8C7480' }}>
                   {b.desc}
                 </p>
               </div>

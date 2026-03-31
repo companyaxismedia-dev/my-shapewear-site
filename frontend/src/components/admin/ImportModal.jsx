@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import { productSchema } from "./ProductForm";
 import { API_BASE } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function ImportModal({ open, onClose }) {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function ImportModal({ open, onClose }) {
         } catch (err) {
           console.error(err);
           setParsing(false);
-          alert('Invalid JSON file');
+          toast.error("Invalid JSON file");
         }
       };
       reader.readAsText(f);
@@ -56,7 +57,7 @@ export default function ImportModal({ open, onClose }) {
       } catch (err) {
         console.error(err);
         setParsing(false);
-        alert('Failed to parse file');
+        toast.error("Failed to parse file");
       }
     };
     reader.readAsArrayBuffer(f);

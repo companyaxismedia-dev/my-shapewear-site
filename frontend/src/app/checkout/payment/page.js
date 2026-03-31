@@ -10,10 +10,27 @@ import { PaymentMethodsList } from "@/components/payment/PaymentMethodsList";
 import { PaymentDetailsPanel } from "@/components/payment/PaymentDetailsPanel";
 import { PriceDetailsSection } from "@/components/payment/PriceDetailsSection";
 import CheckoutStepper from "../components/CheckoutStepper";
+import { OrderSummarySkeleton, SkeletonBlock } from "@/components/loaders/Loaders";
 
 export default function PaymentPage() {
     return (
-        <Suspense fallback={<div className="bg-[var(--color-bg)] p-10 text-center text-sm text-[#8d727b]">Loading payments.......</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen bg-[var(--color-bg-alt)] px-4 py-8">
+                <div className="container-imkaa">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        <div className="space-y-6 lg:col-span-2">
+                            <SkeletonBlock className="h-32 rounded-lg" />
+                            <SkeletonBlock className="h-8 w-56 rounded-full" />
+                            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                <SkeletonBlock className="h-[420px] rounded-lg" />
+                                <SkeletonBlock className="h-[420px] rounded-lg" />
+                            </div>
+                        </div>
+                        <OrderSummarySkeleton lines={6} />
+                    </div>
+                </div>
+            </div>
+        }>
             <PaymentPageContent />
         </Suspense>
     )

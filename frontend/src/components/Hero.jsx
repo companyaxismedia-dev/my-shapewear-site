@@ -71,7 +71,7 @@ export default function Hero({ slides }) {
                           src={resolveImage(item.desktopUrl)}
                           alt={item.altText || "Homepage Banner"}
                           className="w-full h-auto block select-none"
-                          style={{ objectFit: "cover", background: "#fff" }}
+                          style={{ objectFit: "cover" }}
                           loading={index === 0 ? "eager" : "lazy"}
                         />
                       </picture>
@@ -85,7 +85,7 @@ export default function Hero({ slides }) {
                         src={resolveImage(item.desktopUrl)}
                         alt={item.altText || "Homepage Banner"}
                         className="w-full h-auto block select-none"
-                        style={{ objectFit: "cover", background: "#fff" }}
+                        style={{ objectFit: "cover" }}
                         loading={index === 0 ? "eager" : "lazy"}
                       />
                     </picture>
@@ -141,15 +141,11 @@ export default function Hero({ slides }) {
 
           /* Keep full image visibility on Mobile */
           .hero-swiper img {
-            aspect-ratio: auto !important;
-            object-fit: contain !important;
-            object-position: center top !important;
-            width: 100% !important;
-            height: auto !important;
-            max-height: none !important;
-            display: block !important;
-            background: #fff !important;
-          }
+    aspect-ratio: auto !important; /* Remove the forced 2/3 ratio */
+    object-fit: cover !important;  /* Changed from contain to cover */
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;          }
         }
       `}</style>
     </section>

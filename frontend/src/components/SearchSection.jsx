@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, ArrowUpLeft, Search, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
+import { SearchSuggestionSkeleton } from "@/components/loaders/Loaders";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -114,11 +115,7 @@ const SearchSection = ({
 
   const renderResultsList = () => (
     <ul className="absolute top-full left-0 z-[110] max-h-80 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-xl">
-      {isLoading && (
-        <li className="flex items-center justify-center p-4">
-          <Loader2 className="animate-spin text-pink-600" size={20} />
-        </li>
-      )}
+      {isLoading ? <SearchSuggestionSkeleton rows={4} /> : null}
 
       {!isLoading && results.length === 0 && query && (
         <li className="px-4 py-3 text-sm text-gray-500">No products found for "{query}"</li>
@@ -165,8 +162,10 @@ const SearchSection = ({
 
     if (isLoading) {
       return (
-        <div className="flex items-center justify-center px-4 py-8">
-          <Loader2 className="animate-spin text-pink-600" size={20} />
+        <div className="px-4 py-4">
+          <div className="overflow-hidden rounded-xl border border-[#f0e7ea] bg-white">
+            <SearchSuggestionSkeleton rows={4} />
+          </div>
         </div>
       );
     }

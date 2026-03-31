@@ -18,6 +18,12 @@ import {
   Star,
   Truck,
 } from "lucide-react";
+import {
+  AsyncImage,
+  ButtonLoaderLabel,
+  ProductPageSkeleton,
+} from "@/components/loaders/Loaders";
+import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -44,6 +50,7 @@ export default function ProductPage() {
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [showCalcSize, setShowCalcSize] = useState(false);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
+  const [addingToCart, setAddingToCart] = useState(false);
   const mobileCarouselRef = useRef(null);
 
   useEffect(() => {
@@ -123,21 +130,26 @@ export default function ProductPage() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedSize) {
-      alert("Select size");
+      toast.error("Select size");
       return;
     }
 
-    addToCart({
-      productId: product._id,
-      name: product.name,
-      price,
-      image: activeMedia,
-      size: selectedSize.size,
-      quantity: 1,
-    });
-    alert("Added to bag");
+    try {
+      setAddingToCart(true);
+      await addToCart({
+        productId: product._id,
+        name: product.name,
+        price,
+        image: activeMedia,
+        size: selectedSize.size,
+        quantity: 1,
+      });
+      toast.success("Added to bag");
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   if (loading) {
@@ -146,7 +158,7 @@ export default function ProductPage() {
         <div className="fixed left-0 right-0 top-0 z-[60] border-b border-pink-50 bg-white shadow-sm">
           <Navbar />
         </div>
-        <div className="px-4 pb-10 pt-24 text-center text-sm text-[#8c7480]">Loading product...</div>
+        <ProductPageSkeleton />
         <Footer />
       </div>
     );
@@ -259,7 +271,12 @@ export default function ProductPage() {
                     {media.type === "video" ? (
                       <video src={media.src} muted className="aspect-[4/5] h-full w-full object-cover" />
                     ) : (
-                      <img src={media.src} alt={`${product.name} ${index + 1}`} className="aspect-[4/5] h-full w-full object-cover" />
+                      <AsyncImage
+                        src={media.src}
+                        alt={`${product.name} ${index + 1}`}
+                        className="aspect-[4/5] h-full w-full rounded-2xl"
+                        skeletonClassName="rounded-2xl"
+                      />
                     )}
                   </button>
                 ))}
@@ -269,7 +286,12 @@ export default function ProductPage() {
                 {activeIsVideo ? (
                   <video src={activeMedia} controls autoPlay className="min-h-[620px] w-full object-cover" />
                 ) : (
-                  <img src={activeMedia} alt={product.name} className="min-h-[620px] w-full object-cover" />
+                  <AsyncImage
+                    src={activeMedia}
+                    alt={product.name}
+                    className="min-h-[620px] w-full rounded-[28px]"
+                    skeletonClassName="rounded-[28px]"
+                  />
                 )}
               </div>
             </section>
@@ -329,7 +351,12 @@ export default function ProductPage() {
                               }`}
                           >
                             {isImageSwatch ? (
-                              <img src={getImageUrl(variant.colorCode)} alt={variant.color} className="h-full w-full object-cover" />
+                              <AsyncImage
+                                src={getImageUrl(variant.colorCode)}
+                                alt={variant.color}
+                                className="h-full w-full rounded-full"
+                                skeletonClassName="rounded-full"
+                              />
                             ) : (
                               <span className="block h-full w-full" style={{ backgroundColor: variant.colorCode || "#d9ced3" }} />
                             )}
@@ -374,10 +401,17 @@ export default function ProductPage() {
                 <button
                   type="button"
                   onClick={handleAddToCart}
+                  disabled={addingToCart}
                   className="flex h-[52px] items-center justify-center gap-2 rounded-full bg-[#c56f7f] px-5 text-[15px] font-semibold text-[#fff9fa]"
                 >
-                  <ShoppingBag size={18} />
-                  Add to Bag
+                  {addingToCart ? (
+                    <ButtonLoaderLabel label="Adding..." />
+                  ) : (
+                    <>
+                      <ShoppingBag size={18} />
+                      Add to Bag
+                    </>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -445,7 +479,12 @@ export default function ProductPage() {
                     {media.type === "video" ? (
                       <video src={media.src} controls autoPlay className="h-[520px] w-full rounded-b-[28px] object-cover" />
                     ) : (
-                      <img src={media.src} alt={`${product.name} ${index + 1}`} className="h-[520px] w-full rounded-b-[28px] object-cover" />
+                      <AsyncImage
+                        src={media.src}
+                        alt={`${product.name} ${index + 1}`}
+                        className="h-[520px] w-full rounded-b-[28px]"
+                        skeletonClassName="rounded-b-[28px]"
+                      />
                     )}
                     {index === mobileActiveIndex && product.rating > 0 ? (
                       <div className="absolute bottom-4 right-4 flex items-center gap-1 rounded-full bg-[rgba(255,255,255,0.94)] px-3 py-1.5 text-[13px] font-semibold text-[#2f7d63] shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
@@ -516,7 +555,12 @@ export default function ProductPage() {
                             className={`relative h-16 w-16 min-w-16 overflow-hidden rounded-2xl border-2 ${selectedVariant?.color === variant.color ? "border-[#c56f7f]" : "border-[#f0d9df]"
                               }`}
                           >
-                            <img src={previewImage} alt={variant.color} className="h-full w-full object-cover" />
+                            <AsyncImage
+                              src={previewImage}
+                              alt={variant.color}
+                              className="h-full w-full rounded-2xl"
+                              skeletonClassName="rounded-2xl"
+                            />
                           </button>
                         );
                       })}
@@ -562,10 +606,17 @@ export default function ProductPage() {
                   <button
                     type="button"
                     onClick={handleAddToCart}
+                    disabled={addingToCart}
                     className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#ff4f86] text-[15px] font-semibold text-white shadow-[0_10px_20px_rgba(255,79,134,0.18)]"
                   >
-                    <ShoppingBag size={18} />
-                    Add to Bag
+                    {addingToCart ? (
+                      <ButtonLoaderLabel label="Adding..." />
+                    ) : (
+                      <>
+                        <ShoppingBag size={18} />
+                        Add to Bag
+                      </>
+                    )}
                   </button>
                 </div>
 

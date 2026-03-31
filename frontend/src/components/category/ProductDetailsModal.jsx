@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { X, ShoppingCart, Zap, ChevronsDown, } from "lucide-react";
 import { getImageUrl } from "./helpers";
+import { toast } from "sonner";
 
 export function ProductDetailsModal({ product, onClose }) {
     const { addToCart } = useCart();
@@ -17,7 +18,10 @@ export function ProductDetailsModal({ product, onClose }) {
     );
 
     const handleCartAdd = () => {
-        if (!size) return alert("Select size");
+        if (!size) {
+            toast.error("Select size");
+            return;
+        }
 
         const selectedSize =
             variant?.sizes?.find((s) => s.size === size);
@@ -32,7 +36,7 @@ export function ProductDetailsModal({ product, onClose }) {
             quantity: 1,
         });
 
-        alert("Added to cart");
+        toast.success("Added to cart");
     };
 
     const handleBuyNow = () => {
