@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Search, ShoppingBag } from "lucide-react";
 
 const navItems = [
   { label: "LINGERIE", href: "/lingerie" },
