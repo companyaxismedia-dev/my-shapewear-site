@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const toOtpDigits = (value = "") => value.replace(/\D/g, "").slice(0, 6);
 
 /* ================= REUSABLE INPUT ================= */
 export function AuthInput({
@@ -82,26 +83,36 @@ export function AuthDivider() {
 
 /* ================= GOOGLE LOGIN BUTTON ================= */
 export function GoogleLoginButton({ onSuccess }) {
+  const { startAuthTransition, stopAuthTransition } = useAuth();
+
   return (
-    <div className="w-full overflow-hidden rounded-[18px] border border-[#e6d4d9] bg-white shadow-[0_8px_20px_rgba(74,46,53,0.04)]">
-      <GoogleLogin
-        onSuccess={async (credentialResponse) => {
-          try {
-            const res = await axios.post(
-              `${API_BASE}/api/auth/google`,
-              { credential: credentialResponse.credential }
-            );
-            onSuccess(res);
-          } catch (error) {
-            toast.error(error.response?.data?.message || "Google login failed");
-          }
-        }}
-        onError={() => toast.error("Google Login Failed")}
-        width="100%"
-        size="large"
-        shape="rectangular"
-        theme="outline"
-      />
+    <div className="w-full rounded-[18px] border border-[#e6d4d9] bg-white shadow-[0_8px_20px_rgba(74,46,53,0.04)] p-[1px]">
+      <div className="w-full overflow-hidden rounded-[17px]">
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            startAuthTransition("Signing you in...");
+
+            try {
+              const res = await axios.post(
+                `${API_BASE}/api/auth/google`,
+                { credential: credentialResponse.credential }
+              );
+              onSuccess(res);
+            } catch (error) {
+              stopAuthTransition();
+              toast.error(error.response?.data?.message || "Google login failed");
+            }
+          }}
+          onError={() => {
+            stopAuthTransition();
+            toast.error("Google Login Failed");
+          }}
+          width="100%"
+          size="large"
+          shape="rectangular"
+          theme="outline"
+        />
+      </div>
     </div>
   );
 }
@@ -112,7 +123,7 @@ export default function LoginModal({
   onClose,
   openRegister,
 }) {
-  const { login } = useAuth();
+  const { login, startAuthTransition, stopAuthTransition } = useAuth();
 
   const [step, setStep] = useState(1);
   const [view, setView] = useState("password");
@@ -163,6 +174,8 @@ export default function LoginModal({
     e.preventDefault();
     setActiveAction("passwordLogin");
     setLoading(true);
+    startAuthTransition("Signing you in...");
+    let didCompleteAuth = false;
 
     try {
       const clean = identifier.trim();
@@ -177,11 +190,15 @@ export default function LoginModal({
       );
 
       handleAuthSuccess(res);
+      didCompleteAuth = true;
     } catch (err) {
+      stopAuthTransition();
       toast.error(err.response?.data?.message || "Login failed");
     } finally {
-      setLoading(false);
-      setActiveAction(null);
+      if (!didCompleteAuth) {
+        setLoading(false);
+        setActiveAction(null);
+      }
     }
   };
 
@@ -189,6 +206,7 @@ export default function LoginModal({
   const sendLoginOtp = async () => {
     setActiveAction("sendLoginOtp");
     setLoading(true);
+    startAuthTransition("Sending OTP...");
 
     try {
       const clean = identifier.trim();
@@ -208,6 +226,7 @@ export default function LoginModal({
     } finally {
       setLoading(false);
       setActiveAction(null);
+      stopAuthTransition();
     }
   };
 
@@ -215,6 +234,8 @@ export default function LoginModal({
   const verifyLoginOtp = async () => {
     setActiveAction("verifyLoginOtp");
     setLoading(true);
+    startAuthTransition("Signing you in...");
+    let didCompleteAuth = false;
 
     try {
       const clean = identifier.trim();
@@ -229,11 +250,15 @@ export default function LoginModal({
       );
 
       handleAuthSuccess(res);
+      didCompleteAuth = true;
     } catch (err) {
+      stopAuthTransition();
       toast.error(err.response?.data?.message || "Invalid OTP");
     } finally {
-      setLoading(false);
-      setActiveAction(null);
+      if (!didCompleteAuth) {
+        setLoading(false);
+        setActiveAction(null);
+      }
     }
   };
 
@@ -241,6 +266,7 @@ export default function LoginModal({
   const forgotPassword = async () => {
     setActiveAction("forgotPassword");
     setLoading(true);
+    startAuthTransition("Verifying your account...");
 
     try {
       const clean = identifier.trim();
@@ -260,6 +286,7 @@ export default function LoginModal({
     } finally {
       setLoading(false);
       setActiveAction(null);
+      stopAuthTransition();
     }
   };
 
@@ -267,6 +294,7 @@ export default function LoginModal({
   const verifyForgotOtp = async () => {
     setActiveAction("verifyForgotOtp");
     setLoading(true);
+    startAuthTransition("Verifying your account...");
 
     try {
       const clean = identifier.trim();
@@ -291,6 +319,7 @@ export default function LoginModal({
     } finally {
       setLoading(false);
       setActiveAction(null);
+      stopAuthTransition();
     }
   };
 
@@ -303,6 +332,8 @@ export default function LoginModal({
 
     setActiveAction("resetPassword");
     setLoading(true);
+    startAuthTransition("Updating your password...");
+    let didCompleteAuth = false;
 
     try {
       const resetToken =
@@ -319,11 +350,15 @@ export default function LoginModal({
       localStorage.removeItem("resetToken");
 
       handleAuthSuccess(res);
+      didCompleteAuth = true;
     } catch (err) {
+      stopAuthTransition();
       toast.error(err.response?.data?.message || "Reset failed");
     } finally {
-      setLoading(false);
-      setActiveAction(null);
+      if (!didCompleteAuth) {
+        setLoading(false);
+        setActiveAction(null);
+      }
     }
   };
 
@@ -456,7 +491,7 @@ export default function LoginModal({
               placeholder="Enter OTP"
               value={otp}
               inputMode="numeric"
-              onChange={(e) => setOtp(e.target.value)}
+              onChange={(e) => setOtp(toOtpDigits(e.target.value))}
             />
 
             <AuthButton
@@ -482,7 +517,7 @@ export default function LoginModal({
               placeholder="Enter OTP"
               value={otp}
               inputMode="numeric"
-              onChange={(e) => setOtp(e.target.value)}
+              onChange={(e) => setOtp(toOtpDigits(e.target.value))}
             />
 
             <AuthButton

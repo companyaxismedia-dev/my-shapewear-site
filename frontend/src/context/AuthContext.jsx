@@ -12,11 +12,13 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pendingAuthAction, setPendingAuthAction] = useState(null);
+  const [hasPersistedPendingAction, setHasPersistedPendingAction] = useState(false);
 
   useEffect(() => {
     const storedPendingAction = sessionStorage.getItem(AUTH_PENDING_KEY);
     if (storedPendingAction) {
       setPendingAuthAction(storedPendingAction);
+      setHasPersistedPendingAction(true);
     }
 
     const syncUserFromStorage = () => {
@@ -79,22 +81,40 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (!loading && pendingAuthAction) {
-      sessionStorage.removeItem(AUTH_PENDING_KEY);
+    if (!loading && hasPersistedPendingAction && pendingAuthAction) {
       const timeoutId = window.setTimeout(() => {
+        sessionStorage.removeItem(AUTH_PENDING_KEY);
         setPendingAuthAction(null);
-      }, 300);
+        setHasPersistedPendingAction(false);
+      }, 900);
 
       return () => {
         window.clearTimeout(timeoutId);
       };
     }
-  }, [loading, pendingAuthAction]);
+  }, [hasPersistedPendingAction, loading, pendingAuthAction]);
+
+  const startAuthTransition = (label, { persistOnReload = false } = {}) => {
+    setPendingAuthAction(label);
+
+    if (persistOnReload) {
+      sessionStorage.setItem(AUTH_PENDING_KEY, label);
+      setHasPersistedPendingAction(true);
+    }
+  };
+
+  const stopAuthTransition = ({ clearPersisted = true } = {}) => {
+    setPendingAuthAction(null);
+
+    if (clearPersisted) {
+      sessionStorage.removeItem(AUTH_PENDING_KEY);
+      setHasPersistedPendingAction(false);
+    }
+  };
 
   const reloadPageWithToast = (message, pendingLabel) => {
     sessionStorage.setItem(AUTH_TOAST_KEY, message);
-    sessionStorage.setItem(AUTH_PENDING_KEY, pendingLabel);
-    setPendingAuthAction(pendingLabel);
+    startAuthTransition(pendingLabel, { persistOnReload: true });
     window.location.reload();
   };
 
@@ -117,10 +137,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
-    window.dispatchEvent(new Event("auth-changed"));
-    setUser(null);
-    reloadPageWithToast("Logged out successfully", "Signing you out...");
+    try {
+      AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+      window.dispatchEvent(new Event("auth-changed"));
+      setUser(null);
+      reloadPageWithToast("Logged out successfully", "Signing you out...");
+    } catch (error) {
+      stopAuthTransition();
+      toast.error("Unable to log out right now");
+    }
   };
 
   return (
@@ -131,7 +156,8 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         pendingAuthAction,
-        setPendingAuthAction,
+        startAuthTransition,
+        stopAuthTransition,
       }}
     >
       {children}

@@ -72,13 +72,13 @@ export default function UserMenu({ openLogin, openRegister }) {
               </p>
             </div>
 
-            <div className="flex gap-2.5 p-3.5 sm:gap-3 sm:p-4">
+            <div className="flex gap-2 p-3 sm:gap-3 sm:p-4">
               <button
                 onClick={() => {
                   setDropdownOpen(false);
                   openRegister();
                 }}
-                className="flex-1 rounded-[16px] border border-[#c56f7f] py-3 font-semibold tracking-[0.04em] text-[#c0566d] transition hover:bg-[#fff2f6]"
+                className="flex-1 rounded-[14px] border border-[#c56f7f] px-3 py-2 text-[13px] font-semibold tracking-[0.04em] text-[#c0566d] transition hover:bg-[#fff2f6] sm:px-4 sm:py-2.5 sm:text-[14px]"
               >
                 SIGNUP
               </button>
@@ -87,7 +87,7 @@ export default function UserMenu({ openLogin, openRegister }) {
                   setDropdownOpen(false);
                   openLogin();
                 }}
-                className="flex-1 rounded-[16px] bg-[linear-gradient(135deg,#c56f7f_0%,#e48398_100%)] py-3 font-semibold tracking-[0.04em] text-white shadow-[0_14px_28px_rgba(197,111,127,0.22)] transition hover:brightness-[1.03]"
+                className="flex-1 rounded-[14px] bg-[linear-gradient(135deg,#c56f7f_0%,#e48398_100%)] px-3 py-2 text-[13px] font-semibold tracking-[0.04em] text-white shadow-[0_14px_28px_rgba(197,111,127,0.22)] transition hover:brightness-[1.03] sm:px-4 sm:py-2.5 sm:text-[14px]"
               >
                 LOGIN
               </button>

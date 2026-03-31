@@ -14,9 +14,10 @@ import { AuthStatusLoader } from "@/components/loaders/Loaders";
 import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const toOtpDigits = (value = "") => value.replace(/\D/g, "").slice(0, 6);
 
 export default function RegisterModal({ isOpen, onClose, openLogin }) {
-  const { login } = useAuth();
+  const { login, startAuthTransition, stopAuthTransition } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -79,11 +80,13 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     e.preventDefault();
     setLoading(true);
     setActiveAction("sendOtp");
+    startAuthTransition("Sending OTP...");
 
     if (!formData.email.trim() && !formData.phone.trim()) {
       toast.error("Email or phone number is required");
       setLoading(false);
       setActiveAction(null);
+      stopAuthTransition();
       return;
     }
 
@@ -100,6 +103,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     } finally {
       setLoading(false);
       setActiveAction(null);
+      stopAuthTransition();
     }
   };
 
@@ -107,6 +111,8 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     e.preventDefault();
     setLoading(true);
     setActiveAction("completeRegister");
+    startAuthTransition("Creating your account...");
+    let didCompleteAuth = false;
 
     try {
       const res = await axios.post(`${API_BASE}/api/auth/register`, {
@@ -118,13 +124,17 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
       });
 
       completeAuth(res);
+      didCompleteAuth = true;
     } catch (err) {
+      stopAuthTransition();
       toast.error(
         err.response?.data?.message || "Invalid OTP or registration failed"
       );
     } finally {
-      setLoading(false);
-      setActiveAction(null);
+      if (!didCompleteAuth) {
+        setLoading(false);
+        setActiveAction(null);
+      }
     }
   };
 
@@ -214,7 +224,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
               placeholder="Enter OTP"
               value={formData.otp}
               inputMode="numeric"
-              onChange={(e) => setField("otp", e.target.value)}
+              onChange={(e) => setField("otp", toOtpDigits(e.target.value))}
             />
 
             <AuthButton
