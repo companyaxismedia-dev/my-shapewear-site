@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
+import { toast } from "sonner";
 
 const WishlistContext = createContext();
 
@@ -51,7 +52,7 @@ export function WishlistProvider({ children }) {
 
   const toggleWishlist = async (product) => {
     if (!user || !user.token) {
-      alert("Please login first");
+      toast.error("Please login first");
       return;
     }
 

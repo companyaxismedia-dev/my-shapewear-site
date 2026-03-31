@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
 import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
+import { SkeletonBlock } from "@/components/loaders/Loaders";
 
 const FALLBACK_NAV_CATEGORIES = [
   { name: "Bras", href: "/bra", subCategories: [] },
@@ -82,6 +83,7 @@ function Logo({ width = "w-[150px]", height = "h-[40px]" }) {
 // Nav Actions Component (Search, User, Wishlist, Cart)
 function NavActions({ isSearchOpen, setIsSearchOpen, setLoginOpen, setRegisterOpen }) {
   const { cartItems } = useCart();
+  const { loading: authLoading } = useAuth();
   const cartCount = cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
 
   return (
@@ -90,11 +92,20 @@ function NavActions({ isSearchOpen, setIsSearchOpen, setLoginOpen, setRegisterOp
         <SearchSection onToggleMobileSearch={(val) => setIsSearchOpen(val)} />
       </div>
 
-      <UserMenu
-        openLogin={() => setLoginOpen(true)}
-        openRegister={() => setRegisterOpen(true)}
-      />
-      <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
+      {authLoading ? (
+        <div className="flex items-center gap-2">
+          <SkeletonBlock className="h-8 w-8 rounded-full" />
+          <SkeletonBlock className="h-8 w-8 rounded-full" />
+        </div>
+      ) : (
+        <>
+          <UserMenu
+            openLogin={() => setLoginOpen(true)}
+            openRegister={() => setRegisterOpen(true)}
+          />
+          <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
+        </>
+      )}
       <LinkNav href="/checkout/cart" className="relative p-1.5 transition-colors" style={{ color: "var(--color-body)" }}>
         <ShoppingCart size={22} className="hover:text-[var(--color-primary)] transition-colors" />
         {cartCount > 0 && (
@@ -273,30 +284,6 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
 
         {/* Drawer Links */}
         <div className="flex flex-col gap-1 px-3 py-3">
-          <LinkNav
-            href="/"
-            onClick={() => setMenuOpen(false)}
-            className="rounded-xl px-4 py-3 text-sm font-medium transition-colors"
-            style={{
-              color: pathname === "/" ? "var(--color-primary)" : "var(--color-heading)",
-              fontFamily: "var(--font-body)",
-              fontWeight: 600,
-              background: pathname === "/" ? "rgba(197, 111, 127, 0.08)" : "transparent",
-            }}
-          >
-            Home
-          </LinkNav>
-
-          <LinkNav
-            href="/blog"
-            className="imkaa-nav-link px-3 py-1.5 rounded-full transition"
-            style={{
-              color: pathname === "/blog" ? "var(--color-primary)" : "var(--color-body)",
-              fontWeight: pathname === "/blog" ? 600 : 500,
-            }}
-          >
-            Blog
-          </LinkNav>
 
           <div className="space-y-1">
             {renderCategoryTree(categories)}
@@ -329,7 +316,10 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
 
           {user && (
             <button
-              onClick={() => { logout(); setMenuOpen(false); }}
+              onClick={() => {
+                setMenuOpen(false);
+                logout();
+              }}
               className="rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2 text-left transition-colors"
               style={{ color: "var(--color-primary-hover)", fontFamily: "var(--font-body)" }}
             >
@@ -488,24 +478,6 @@ function HomeNavbar({ onLoginToggle, pathname }) {
               style={{ background: "var(--color-bg-alt)", borderBottomColor: "var(--color-border)" }}
             >
               <div className="container-imkaa flex items-center justify-center gap-2 py-2 xl:gap-4">
-                <LinkNav href="/" className="imkaa-nav-link px-3 py-1.5 rounded-full transition"
-                  style={{ color: "var(--color-primary)", fontWeight: 600 }}>
-                  Home
-                </LinkNav>
-
-                <LinkNav
-                  href="/blog"
-                  onClick={() => setMenuOpen(false)}
-                  className="rounded-xl px-4 py-3 text-sm font-medium transition-colors"
-                  style={{
-                    color: pathname === "/blog" ? "var(--color-primary)" : "var(--color-heading)",
-                    fontFamily: "var(--font-body)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Blog
-                </LinkNav>
-
                 {categories.map((category, categoryIndex) => {
                   const hasChildren = category.subCategories.length > 0;
                   const isHovered = hoveredCategorySlug === category.slug;
@@ -542,12 +514,19 @@ function HomeNavbar({ onLoginToggle, pathname }) {
                         >
                           <div className="h-3 w-full bg-transparent" />
                           <div
-                            className="shadow-2xl border-t flex animate-in fade-in slide-in-from-top-2"
-                            style={{ background: "var(--color-bg)", borderTopColor: "var(--color-border)" }}
+                            className="animate-in fade-in slide-in-from-top-2 border-t shadow-2xl"
+                            style={{
+                              background: "var(--color-bg)",
+                              borderTopColor: "var(--color-border)",
+                            }}
                           >
                             <div
-                              className="w-3/4 grid grid-cols-4 gap-8 p-10"
-                              style={{ background: "var(--color-bg)" }}
+                              className="mx-auto grid gap-8 px-10 pb-10 pt-6"
+                              style={{
+                                background: "var(--color-bg)",
+                                width: `min(${Math.max(category.subCategories.length, 2) * 300}px, 92vw)`,
+                                gridTemplateColumns: `repeat(${Math.max(category.subCategories.length, 1)}, minmax(0, 1fr))`,
+                              }}
                             >
                               {category.subCategories.map((childCategory, childIndex) => (
                                 <div
@@ -596,6 +575,12 @@ function HomeNavbar({ onLoginToggle, pathname }) {
                   style={{ background: "var(--color-primary)", color: "#FFF9FA", fontFamily: "var(--font-body)" }}>
                   Sale
                 </LinkNav>
+
+                <LinkNav href="/blog"
+                  className="px-4 py-1.5 rounded-full text-md font-semibold transition">
+                  Blogs
+                </LinkNav>
+
               </div>
             </nav>
           </div>
@@ -633,6 +618,11 @@ function HomeNavbar({ onLoginToggle, pathname }) {
                       {link.name}
                     </LinkNav>
                   ))}
+                                  <LinkNav href="/blog"
+                  className="px-4 py-1.5 rounded-full text-md font-semibold transition">
+                  Blogs
+                </LinkNav>
+
                 </nav>
 
                 <div
@@ -677,6 +667,7 @@ function HomeNavbar({ onLoginToggle, pathname }) {
 // SIMPLE NAVBAR (for non-home pages)
 function SimpleNavbar({ onLoginToggle, pathname }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hoveredCategorySlug, setHoveredCategorySlug] = useState(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -733,31 +724,105 @@ function SimpleNavbar({ onLoginToggle, pathname }) {
 
             {/* Center: Desktop Navigation */}
             <nav className="hidden lg:flex items-center justify-center flex-1 gap-4">
+              {categories.map((category, index) => {
+                const hasChildren = category.subCategories.length > 0;
+                const isHovered = hoveredCategorySlug === category.slug;
 
-              <LinkNav
-                href="/blog"
-                className="simple-nav-link px-3 py-2 rounded transition"
-                style={{
-                  color: pathname === "/blog" ? "var(--color-primary)" : undefined,
-                  fontWeight: pathname === "/blog" ? 600 : undefined,
-                }}
-              >
-                Blog
+                return (
+                  <div
+                    key={`${category._id || category.slug || category.name}-${index}`}
+                    className="relative"
+                    onMouseEnter={() => setHoveredCategorySlug(category.slug)}
+                    onMouseLeave={() => setHoveredCategorySlug(null)}
+                  >
+                    <LinkNav
+                      href={category.href}
+                      className="simple-nav-link px-3 py-2 rounded transition"
+                      style={{
+                        color: isPathActive(category.href) || isHovered ? "var(--color-primary)" : undefined,
+                        fontWeight: isPathActive(category.href) || isHovered ? 600 : undefined,
+                      }}
+                    >
+                      {category.name}
+                    </LinkNav>
+
+                    {hasChildren && isHovered ? (
+                      <div
+                        className="fixed left-0 w-full z-[110]"
+                        style={{ top: "56px" }}
+                        onMouseEnter={() => setHoveredCategorySlug(category.slug)}
+                        onMouseLeave={() => setHoveredCategorySlug(null)}
+                      >
+                        <div
+                          className="animate-in fade-in slide-in-from-top-2 border-t shadow-2xl"
+                          style={{
+                            background: "var(--color-bg)",
+                            borderTopColor: "var(--color-border)",
+                          }}
+                        >
+                          <div
+                            className="mx-auto grid gap-8 px-10 pb-10 pt-6"
+                            style={{
+                              background: "var(--color-bg)",
+                              width: `min(${Math.max(category.subCategories.length, 2) * 300}px, 92vw)`,
+                              gridTemplateColumns: `repeat(${Math.max(category.subCategories.length, 1)}, minmax(0, 1fr))`,
+                            }}
+                          >
+                            {category.subCategories.map((childCategory, childIndex) => (
+                              <div
+                                key={`${childCategory._id || childCategory.slug || childCategory.name}-${childIndex}`}
+                              >
+                                <h3
+                                  className="mb-4 border-b pb-2"
+                                  style={{
+                                    fontFamily: "var(--font-display)",
+                                    fontWeight: 600,
+                                    color: "var(--color-primary)",
+                                    fontSize: "14px",
+                                    borderBottomColor: "var(--color-border)",
+                                  }}
+                                >
+                                  <LinkNav href={childCategory.href}>{childCategory.name}</LinkNav>
+                                </h3>
+                                <ul className="flex flex-col gap-2.5">
+                                  {(childCategory.subCategories.length
+                                    ? childCategory.subCategories
+                                    : [childCategory]
+                                  ).map((item, itemIndex) => (
+                                    <li key={`${item._id || item.slug || item.name}-${itemIndex}`}>
+                                      <LinkNav
+                                        href={item.href}
+                                        className="block text-sm transition-all hover:translate-x-1"
+                                        style={{
+                                          color: "var(--color-body)",
+                                          fontWeight: 500,
+                                          fontSize: "13px",
+                                        }}
+                                      >
+                                        {item.name}
+                                      </LinkNav>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+
+                  </div>
+
+                );
+
+              })}
+              <LinkNav href="/blog"
+                className="px-4 py-1.5 rounded-full text-md font-semibold transition">
+                Blogs
               </LinkNav>
-              {categories.map((link, index) => (
-                <LinkNav
-                  key={`${link._id || link.slug || link.name}-${index}`}
-                  href={link.href}
-                  className="simple-nav-link px-3 py-2 rounded transition"
-                  style={{
-                    color: isPathActive(link.href) ? "var(--color-primary)" : undefined,
-                    fontWeight: isPathActive(link.href) ? 600 : undefined,
-                  }}
-                >
-                  {link.name}
-                </LinkNav>
-              ))}
+
             </nav>
+
 
             {/* Right: Actions (Search, User, Wishlist, Cart) */}
             <div className="flex items-center justify-end gap-2 lg:gap-3">

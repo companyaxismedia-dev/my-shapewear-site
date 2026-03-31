@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { OfferListSkeleton, SkeletonBlock } from "@/components/loaders/Loaders";
 
 export function BankOfferSection() {
   const [showMore, setShowMore] = useState(false);
@@ -33,7 +34,8 @@ export function BankOfferSection() {
   if (loading) {
     return (
       <div className="rounded-lg border bg-white p-4 sm:p-6">
-        <p className="text-sm text-gray-500">Loading offers...</p>
+        <SkeletonBlock className="mb-4 h-5 w-32 rounded-full" />
+        <OfferListSkeleton rows={2} />
       </div>
     );
   }

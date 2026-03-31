@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ShieldCheck, Plus } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { toast } from "sonner";
 
 const PAYMENT_MODES = [
   {
@@ -36,12 +37,12 @@ export default function PaymentOptions({
       const token = getToken();
 
       if (!token) {
-        alert("Login required");
+        toast.error("Login required");
         return;
       }
 
       if (!selectedAddressId) {
-        alert("Please select address");
+        toast.error("Please select address");
         return;
       }
 
@@ -62,7 +63,7 @@ export default function PaymentOptions({
       const data = await res.json();
 
       if (!data.success) {
-        alert(data.message || "Order failed");
+        toast.error(data.message || "Order failed");
         return;
       }
 
@@ -70,7 +71,7 @@ export default function PaymentOptions({
 
     } catch (err) {
       console.log("Order error:", err);
-      alert("Order failed");
+      toast.error("Order failed");
     } finally {
       setLoading(false);
     }

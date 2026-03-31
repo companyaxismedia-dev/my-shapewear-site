@@ -11,6 +11,7 @@ import TopFilters, { FILTER_OPTIONS, TOP_FILTERS } from "@/components/TopFilters
 import Footer from "@/components/Footer";
 import { ProductCard } from "@/components/category/ProductCard";
 import CategoryBreadcrumb from "@/components/category/CategoryBreadcrumb";
+import { ProductGridSkeleton, SkeletonBlock } from "@/components/loaders/Loaders";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -491,9 +492,12 @@ export default function SearchResults() {
             </div>
 
             {loading ? (
-              <div className="text-center py-20">
-                <div className="w-9 h-9 border-4 border-[#e8e8e8] border-t-[#ff3f6c] rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-[#94969f] text-sm">Loading products...</p>
+              <div className="space-y-5 py-4">
+                <div className="space-y-3">
+                  <SkeletonBlock className="h-4 w-64 rounded-full" />
+                  <SkeletonBlock className="h-4 w-40 rounded-full" />
+                </div>
+                <ProductGridSkeleton count={10} />
               </div>
             ) : products.length === 0 ? (
               <div className="text-center py-20">

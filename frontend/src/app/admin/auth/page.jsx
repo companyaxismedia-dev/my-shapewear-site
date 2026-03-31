@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -33,7 +34,10 @@ export default function AdminAuth() {
 
     const data = await res.json();
 
-    if (!res.ok) return alert(data.message);
+    if (!res.ok) {
+      toast.error(data.message);
+      return;
+    }
 
     localStorage.setItem("adminToken", data.token);
     localStorage.setItem("adminRole", data.role);
@@ -53,7 +57,10 @@ export default function AdminAuth() {
 
     const data = await res.json();
 
-    if (!res.ok) return alert(data.message);
+    if (!res.ok) {
+      toast.error(data.message);
+      return;
+    }
 
     sessionStorage.setItem("signupData", JSON.stringify(form));
 

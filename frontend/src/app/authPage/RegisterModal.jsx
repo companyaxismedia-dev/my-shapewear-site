@@ -1,12 +1,23 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
 import AuthModal from "./AuthModal";
 import { useAuth } from "@/context/AuthContext";
-import { GoogleLogin } from "@react-oauth/google";
+import {
+  AuthButton,
+  AuthDivider,
+  AuthInput,
+  GoogleLoginButton,
+} from "./LoginModal";
+import { AuthStatusLoader } from "@/components/loaders/Loaders";
+import { toast } from "sonner";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const toOtpDigits = (value = "") => value.replace(/\D/g, "").slice(0, 6);
 
 export default function RegisterModal({ isOpen, onClose, openLogin }) {
+  const { login, startAuthTransition, stopAuthTransition } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,17 +25,14 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
     password: "",
     otp: "",
   });
-
   const [step, setStep] = useState(1);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const { login } = useAuth();
+  const [activeAction, setActiveAction] = useState(null);
 
   const resetForm = () => {
     setStep(1);
-    setError("");
     setLoading(false);
+    setActiveAction(null);
     setFormData({
       name: "",
       email: "",
@@ -35,83 +43,76 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
   };
 
   useEffect(() => {
-    if (!isOpen) resetForm();
+    if (!isOpen) {
+      resetForm();
+    }
   }, [isOpen]);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-  /* ================= GOOGLE SUCCESS HANDLER ================= */
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      const res = await axios.post(
-        `${API_BASE}/api/auth/google`,
-        {
-          credential: credentialResponse.credential,
-        }
-      );
-
-      const token = res.data.token;
-
-      const userData = {
-        _id: res.data._id,
-        name: res.data.name,
-        email: res.data.email,
-        role: res.data.role,
-      };
-
-      localStorage.setItem("token", token);
-      localStorage.setItem(
-        "userInfo",
-        JSON.stringify({ user: userData, token })
-      );
-
-      login(userData, token);
-
-      onClose();
-      router.push("/");
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        "Google login failed"
-      );
-    }
+  const setField = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  /* ================= SEND OTP (EMAIL OR PHONE) ================= */
+  const completeAuth = (res) => {
+    const token = res.data.token;
+    const userData = {
+      _id: res.data._id || res.data.user?._id,
+      name: res.data.name || res.data.user?.name || formData.name.trim(),
+      email:
+        res.data.email ||
+        res.data.user?.email ||
+        formData.email.toLowerCase().trim(),
+      role: res.data.role || res.data.user?.role,
+      phone: res.data.phone || res.data.user?.phone || formData.phone.trim(),
+    };
+
+    login(userData, token, {
+      successMessage: "Account created successfully",
+      pendingLabel: "Creating your account...",
+    });
+    onClose();
+  };
+
+  const handleGoogleSuccess = async (res) => {
+    completeAuth(res);
+  };
+
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setActiveAction("sendOtp");
+    startAuthTransition("Sending OTP...");
 
-    if (!formData.email && !formData.phone) {
-      setError("Email or phone number required");
+    if (!formData.email.trim() && !formData.phone.trim()) {
+      toast.error("Email or phone number is required");
       setLoading(false);
+      setActiveAction(null);
+      stopAuthTransition();
       return;
     }
 
     try {
-      const payload = formData.email
+      const payload = formData.email.trim()
         ? { email: formData.email.toLowerCase().trim() }
         : { phone: formData.phone.trim() };
 
-      const res = await axios.post(`${API_BASE}/api/otp/send`, payload);
-
-      if (res.data) setStep(2);
+      await axios.post(`${API_BASE}/api/otp/send`, payload);
+      setStep(2);
+      toast.success("OTP sent successfully");
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        "Failed to send OTP. Check backend."
-      );
+      toast.error(err.response?.data?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
+      setActiveAction(null);
+      stopAuthTransition();
     }
   };
 
-  /* ================= REGISTER ================= */
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setActiveAction("completeRegister");
+    startAuthTransition("Creating your account...");
+    let didCompleteAuth = false;
 
     try {
       const res = await axios.post(`${API_BASE}/api/auth/register`, {
@@ -122,159 +123,134 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
         otp: formData.otp.trim(),
       });
 
-      if (res.data) {
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("userInfo", JSON.stringify(res.data));
-
-        login(
-          {
-            name: res.data.name || formData.name,
-            email: res.data.email || formData.email,
-          },
-          res.data.token
-        );
-
-        onClose();
-        router.push("/");
-      }
+      completeAuth(res);
+      didCompleteAuth = true;
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        "Invalid OTP or Registration failed"
+      stopAuthTransition();
+      toast.error(
+        err.response?.data?.message || "Invalid OTP or registration failed"
       );
     } finally {
-      setLoading(false);
+      if (!didCompleteAuth) {
+        setLoading(false);
+        setActiveAction(null);
+      }
     }
   };
 
   return (
     <AuthModal isOpen={isOpen} onClose={onClose}>
-      <h2 className="text-[28px] text-[#333] mb-2 font-extrabold">
-        Create Account
-      </h2>
+      {loading ? (
+        <AuthStatusLoader
+          className="mb-4"
+          title={activeAction === "sendOtp" ? "Sending OTP" : "Creating your account"}
+          description="Please wait while we securely process your request."
+        />
+      ) : null}
 
-      <p className="text-[14px] text-[#777] mb-[20px]">
-        Verified Signup for Glovia Glamour
-      </p>
-
-      {error && (
-        <div className="text-[#c62828] bg-[#ffebee] p-3 rounded-[8px] text-[13px] mb-5 border border-[#ffcdd2]">
-          {error}
-        </div>
-      )}
-
-      {step === 1 ? (
-        <form onSubmit={handleSendOTP}>
-          <input
-            type="text"
-            placeholder="Full Name"
-            className="w-full p-[8px] my-[7px] border rounded-[8px]"
-            value={formData.name}
-            onChange={(e) =>
-              setFormData({ ...formData, name: e.target.value })
-            }
-            required
-          />
-
-          <input
-            type="email"
-            placeholder="Email Address"
-            className="w-full p-[9px] my-[7px] border rounded-[8px]"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-            required
-          />
-
-          <input
-            type="text"
-            placeholder="Phone Number"
-            className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-            value={formData.phone}
-            onChange={(e) =>
-              setFormData({ ...formData, phone: e.target.value })
-            }
-            required
-          />
-
-          <input
-            type="password"
-            placeholder="Set Password"
-            className="w-full p-[9px] my-[8px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-            value={formData.password}
-            onChange={(e) =>
-              setFormData({ ...formData, password: e.target.value })
-            }
-            required
-          />
-
-          <div className="flex justify-between items-center mt-[10px] gap-3">
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-1/2 p-[9px] bg-[#E91E63] text-white rounded-[8px] font-bold cursor-pointer text-[14px] disabled:opacity-70"
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <span className="inline-flex rounded-full border border-[#ecdce0] bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#a0707d]">
+            Join Glovia
+          </span>
+          <div className="space-y-1">
+            <h2
+              className="text-[32px] leading-none text-[#4a2e35]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              {loading ? "SENDING CODE..." : "SIGN UP"}
-            </button>
+              Create Account
+            </h2>
+            <p className="text-sm text-[#876c74]">
+              Save your wishlist, track your orders, and enjoy a smoother checkout.
+            </p>
+          </div>
+        </div>
 
-            <div className="w-1/2 p-[1px] text-white rounded-[10px] font-bold cursor-pointer text-[14px] disabled:opacity-70">
-              <GoogleLogin
-              text="signup"
-                onSuccess={handleGoogleSuccess}
-                onError={() => {
-                  setError("Google Login Failed");
-                }}
-              />
+        {step === 1 ? (
+          <form onSubmit={handleSendOTP} className="space-y-4">
+            <AuthInput
+              placeholder="Full Name"
+              value={formData.name}
+              autoComplete="name"
+              onChange={(e) => setField("name", e.target.value)}
+            />
+
+            <AuthInput
+              type="email"
+              placeholder="Email Address"
+              value={formData.email}
+              autoComplete="email"
+              onChange={(e) => setField("email", e.target.value)}
+            />
+
+            <AuthInput
+              placeholder="Phone Number"
+              value={formData.phone}
+              inputMode="tel"
+              autoComplete="tel"
+              onChange={(e) => setField("phone", e.target.value)}
+            />
+
+            <AuthInput
+              type="password"
+              placeholder="Create Password"
+              value={formData.password}
+              autoComplete="new-password"
+              onChange={(e) => setField("password", e.target.value)}
+            />
+
+            <AuthButton
+              type="submit"
+              loading={loading && activeAction === "sendOtp"}
+              loadingLabel="Sending OTP..."
+            >
+              Send OTP
+            </AuthButton>
+
+            <AuthDivider />
+
+            <GoogleLoginButton onSuccess={handleGoogleSuccess} />
+          </form>
+        ) : (
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="rounded-2xl border border-[#f0e1e6] bg-[#fff7f9] px-4 py-3 text-sm text-[#7f666d]">
+              OTP sent to{" "}
+              <span className="font-semibold text-[#4a2e35]">
+                {formData.email || formData.phone}
+              </span>
             </div>
 
-          </div>
-        </form>
-      ) : (
-        <form onSubmit={handleRegister}>
-          <div className="text-[13px] bg-[#f0f7ff] p-3 rounded-[8px] mb-[15px]">
-            OTP sent to{" "}
-            <b>{formData.email || formData.phone}</b>
-          </div>
+            <AuthInput
+              placeholder="Enter OTP"
+              value={formData.otp}
+              inputMode="numeric"
+              onChange={(e) => setField("otp", toOtpDigits(e.target.value))}
+            />
 
-          <input
-            type="text"
-            placeholder="Enter 6-Digit OTP"
-            className="w-full p-[14px] my-[10px] border border-[#eee] rounded-[8px] text-[14px] bg-[#fcfcfc] focus:outline-none focus:ring-2 focus:ring-[#E91E63]"
-            value={formData.otp}
-            onChange={(e) =>
-              setFormData({ ...formData, otp: e.target.value })
-            }
-            required
-            maxLength={6}
-          />
+            <AuthButton
+              type="submit"
+              loading={loading && activeAction === "completeRegister"}
+              loadingLabel="Creating account..."
+            >
+              Complete Registration
+            </AuthButton>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full p-[15px] bg-[#E91E63] text-white border-none rounded-[8px] font-bold cursor-pointer mt-[15px] text-[15px] disabled:opacity-70"
-          >
-            {loading ? "VERIFYING..." : "COMPLETE REGISTRATION"}
-          </button>
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="text-sm font-medium text-[#b95b70] transition hover:text-[#9f4659]"
+            >
+              Edit details
+            </button>
+          </form>
+        )}
+      </div>
 
-          <p
-            onClick={() => {
-              setStep(1);
-              setError("");
-            }}
-            className="cursor-pointer text-[13px] mt-[20px] text-[#666] underline"
-          >
-            ← Edit details
-          </p>
-        </form>
-      )}
-
-      <p className="mt-[25px] text-[14px] text-[#888]">
+      <p className="mt-6 text-sm text-[#80666e]">
         Already have an account?{" "}
         <span
           onClick={openLogin}
-          className="text-[#E91E63] font-bold cursor-pointer"
+          className="cursor-pointer font-semibold text-[#c0566d] transition hover:text-[#a8455a]"
         >
           Login
         </span>

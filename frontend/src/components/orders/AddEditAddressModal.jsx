@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { X } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function AddEditAddressModal({
     showAddAddress,
@@ -91,7 +92,7 @@ export default function AddEditAddressModal({
         const token = user?.token
 
         if (!token) {
-            alert("Please login first")
+            toast.error("Please login first")
             return
         }
 
@@ -103,7 +104,7 @@ export default function AddEditAddressModal({
             !formData.state ||
             !/^[0-9]{6}$/.test(formData.pincode)
         ) {
-            alert("Please fill all required fields")
+            toast.error("Please fill all required fields")
             return
         }
 
@@ -182,7 +183,7 @@ export default function AddEditAddressModal({
         } catch (err) {
 
             console.error("Address save error", err.response?.data || err.message)
-            alert(err.response?.data?.message || "Failed to save address")
+            toast.error(err.response?.data?.message || "Failed to save address")
 
         } finally {
 

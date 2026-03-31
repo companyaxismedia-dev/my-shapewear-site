@@ -1,5 +1,6 @@
 import axios from "axios"
 import { API_BASE } from "@/lib/api"
+import { toast } from "sonner"
 
 export default function RefundModeSelect({
     orderId,
@@ -36,7 +37,7 @@ export default function RefundModeSelect({
         } catch (err) {
 
             console.log(err)
-            alert("Cancellation failed")
+            toast.error("Cancellation failed")
 
         }
 

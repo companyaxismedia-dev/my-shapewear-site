@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { API_BASE } from "@/lib/api";
+import { ButtonLoaderLabel, InlineSpinner } from "@/components/loaders/Loaders";
+import { toast } from "sonner";
 
 export default function AddressForm({
   editingAddress = null,
@@ -66,7 +68,7 @@ export default function AddressForm({
 
     const token = getToken();
     if (!token) {
-      alert("Login required");
+      toast.error("Login required");
       return;
     }
 
@@ -106,7 +108,7 @@ export default function AddressForm({
       const data = await res.json();
 
       if (!data.success) {
-        alert(data.message || "Address save failed");
+        toast.error(data.message || "Address save failed");
         return;
       }
 
@@ -119,7 +121,7 @@ export default function AddressForm({
       }, 150);
     } catch (err) {
       console.log(err);
-      alert("Something went wrong");
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -128,10 +130,10 @@ export default function AddressForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
       {/* BODY */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 max-h-[65vh]">
+      <div className="max-h-[65vh] flex-1 space-y-6 overflow-y-auto px-5 py-5">
         {/* CONTACT */}
         <div className="space-y-3">
-          <p className="text-[12px] font-bold uppercase text-[#535766]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.04em] text-[#6f6167]">
             Contact Details
           </p>
 
@@ -140,7 +142,7 @@ export default function AddressForm({
             placeholder="Name*"
             defaultValue={editingAddress?.fullName}
             required
-            className="w-full h-[44px] border px-3 text-sm rounded-sm"
+            className="h-[46px] w-full rounded-[4px] border border-[#ded4d8] bg-white px-3 text-sm text-[#2f2428] outline-none transition focus:border-[#b27b86]"
           />
 
           <input
@@ -148,13 +150,13 @@ export default function AddressForm({
             placeholder="Mobile No*"
             defaultValue={editingAddress?.phone}
             required
-            className="w-full h-[44px] border px-3 text-sm rounded-sm"
+            className="h-[46px] w-full rounded-[4px] border border-[#ded4d8] bg-white px-3 text-sm text-[#2f2428] outline-none transition focus:border-[#b27b86]"
           />
         </div>
 
         {/* ADDRESS */}
         <div className="space-y-3">
-          <p className="text-[12px] font-bold uppercase text-[#535766]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.04em] text-[#6f6167]">
             Address
           </p>
 
@@ -166,17 +168,18 @@ export default function AddressForm({
               required
               maxLength={6}
               onChange={(e) => handlePincodeChange(e.target.value)}
-              className="w-full h-[44px] border px-3 text-sm rounded-sm"
+              className="h-[46px] w-full rounded-[4px] border border-[#ded4d8] bg-white px-3 text-sm text-[#2f2428] outline-none transition focus:border-[#b27b86]"
             />
 
             {pinLoading && (
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="mt-1 inline-flex items-center gap-2 text-[11px] text-[#8d727b]">
+                <InlineSpinner className="h-3.5 w-3.5" />
                 Checking pincode...
               </p>
             )}
 
             {pincodeError && (
-              <p className="text-[11px] text-red-500 mt-1">{pincodeError}</p>
+              <p className="mt-1 text-[11px] text-[#c45c75]">{pincodeError}</p>
             )}
           </div>
 
@@ -185,21 +188,21 @@ export default function AddressForm({
             placeholder="House Number/Tower/Block*"
             defaultValue={editingAddress?.addressLine}
             required
-            className="w-full h-[44px] border px-3 text-sm rounded-sm"
+            className="h-[46px] w-full rounded-[4px] border border-[#ded4d8] bg-white px-3 text-sm text-[#2f2428] outline-none transition focus:border-[#b27b86]"
           />
 
           <input
             name="landmark"
             placeholder="Landmark (optional)"
             defaultValue={editingAddress?.landmark}
-            className="w-full h-[44px] border px-3 text-sm rounded-sm"
+            className="h-[46px] w-full rounded-[4px] border border-[#ded4d8] bg-white px-3 text-sm text-[#2f2428] outline-none transition focus:border-[#b27b86]"
           />
 
           <input
             name="altPhone"
             placeholder="Alternate Phone (optional)"
             defaultValue={editingAddress?.altPhone}
-            className="w-full h-[44px] border px-3 text-sm rounded-sm"
+            className="h-[46px] w-full rounded-[4px] border border-[#ded4d8] bg-white px-3 text-sm text-[#2f2428] outline-none transition focus:border-[#b27b86]"
           />
 
           <div className="flex gap-3">
@@ -207,28 +210,28 @@ export default function AddressForm({
               value={city}
               readOnly
               placeholder="City"
-              className="w-full h-[44px] border px-3 text-sm rounded-sm bg-gray-50"
+              className="h-[46px] w-full rounded-[4px] border border-[#e4dde0] bg-[#faf7f8] px-3 text-sm text-[#6f6167] outline-none"
             />
 
             <input
               value={state}
               readOnly
               placeholder="State"
-              className="w-full h-[44px] border px-3 text-sm rounded-sm bg-gray-50"
+              className="h-[46px] w-full rounded-[4px] border border-[#e4dde0] bg-[#faf7f8] px-3 text-sm text-[#6f6167] outline-none"
             />
           </div>
         </div>
 
         {/* TYPE */}
         <div className="space-y-3">
-          <p className="text-[12px] font-bold uppercase text-[#535766]">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.04em] text-[#6f6167]">
             Save Address As
           </p>
 
-          <div className="flex gap-6 text-sm">
+          <div className="flex flex-wrap gap-3 text-sm text-[#4a3c42]">
 
             {/* HOME */}
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-[#ddd4d8] px-3 py-2">
               <input
                 type="radio"
                 name="type"
@@ -242,7 +245,7 @@ export default function AddressForm({
             </label>
 
             {/* OFFICE */}
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-[#ddd4d8] px-3 py-2">
               <input
                 type="radio"
                 name="type"
@@ -255,7 +258,7 @@ export default function AddressForm({
             </label>
 
             {/* OTHER */}
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-[#ddd4d8] px-3 py-2">
               <input
                 type="radio"
                 name="type"
@@ -269,7 +272,7 @@ export default function AddressForm({
 
           </div>
 
-          <label className="text-sm flex items-center gap-2 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#4a3c42]">
             <input
               type="checkbox"
               name="isDefault"
@@ -281,11 +284,11 @@ export default function AddressForm({
       </div>
 
       {/* FOOTER */}
-      <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3">
+      <div className="sticky bottom-0 flex gap-3 border-t border-[#f0e4e8] bg-white p-4">
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 h-12 border rounded-sm text-sm font-bold uppercase"
+          className="h-12 flex-1 rounded-[4px] border border-[#d8cbd0] text-sm font-semibold uppercase tracking-[0.03em] text-[#4a3c42] transition hover:border-[#b27b86] hover:text-[#b27b86]"
         >
           Cancel
         </button>
@@ -294,11 +297,11 @@ export default function AddressForm({
           type="submit"
           disabled={loading}
           className={`flex-1 h-12 rounded-sm text-sm font-bold uppercase transition ${loading
-              ? "bg-[#ff9bb3] cursor-not-allowed"
-              : "bg-[#ff3f6c] hover:bg-[#ff527b] text-white"
+              ? "cursor-not-allowed bg-[#d8b9c1] text-white"
+              : "bg-[#b27b86] text-white hover:bg-[#9f6571]"
             }`}
         >
-          {loading ? "Saving..." : "Save"}
+          {loading ? <ButtonLoaderLabel label="Saving..." /> : "Save"}
         </button>
       </div>
     </form>

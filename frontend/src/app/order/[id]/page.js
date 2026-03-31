@@ -25,6 +25,7 @@ import AddEditAddressModal from "@/components/orders/AddEditAddressModal";
 import ChangePhoneNumberModal from "@/components/orders/ChangePhoneNumberModal";
 import ChangePaymentModal from "@/components/orders/cancel/ChangePaymentModal";
 import PriceDetails from "@/components/orders/PriceDetails";
+import { toast } from "sonner";
 
 const TRACK_STAGES = [
   "Order Placed",
@@ -288,7 +289,7 @@ export default function OrderDetail() {
 
   const handleCancelSelectedItem = async () => {
     if (!cancelReason) {
-      alert("Please select cancellation reason");
+      toast.error("Please select cancellation reason");
       return;
     }
 
@@ -301,7 +302,7 @@ export default function OrderDetail() {
       await refreshOrder();
       setSuccessMessage("Item cancelled successfully");
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to cancel item");
+      toast.error(err.response?.data?.message || "Failed to cancel item");
     } finally {
       setIsCancellingItem(false);
     }
@@ -666,7 +667,7 @@ export default function OrderDetail() {
             setShowChangePhone(false);
             sessionStorage.setItem("orderMessage", "Phone number updated");
           } catch (err) {
-            alert(err.response?.data?.message || "Phone update failed");
+            toast.error(err.response?.data?.message || "Phone update failed");
             return;
           }
 

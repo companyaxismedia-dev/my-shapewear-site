@@ -15,6 +15,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import SectionRenderer from "./SectionRenderer";
 import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
+import { toast } from "sonner";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -163,106 +164,13 @@ export default function AutoSliceSlider({
   }
 
   return (
-    <div className="flex flex-col gap-3 lg:gap-8  ">
+    <div className="flex flex-col gap-3 lg:gap-4">
       {visibleSections.map((section, index) => {
         const products = productsData[section.id]?.slice(0, section.count) || [];
         const enableLoop = products.length >= 5;
         const reverseDirection = index % 2 === 1;
-
-        // const shouldShowBannerAfter = (index + 1) % 2 === 0;  //logoc for the banner after every two sections
-        // const bannerIndex = Math.floor((index + 1) / 2) - 1;
-        // const bannerSection = shouldShowBannerAfter
-        //   ? bannerSections[bannerIndex]
-        //   : null;
-
         const beforeBanner = bannerSections[index];
         const afterBanner = bannerSections[index + visibleSections.length];
-
-        //return statement logic for the banner between two sections.
-        // return (
-        //   <Fragment key={section.id}>
-        //     <div className="w-full">
-        //       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-        //         <div>
-        //           <h3
-        //             className="heading-section"
-        //             style={{
-        //               textAlign: "left",
-        //               fontSize: "clamp(24px, 2.6vw, 34px)",
-        //             }}
-        //           >
-        //             {section.title}
-        //           </h3>
-        //         </div>
-
-        //         <a href={section.path} className="btn-secondary-imkaa w-fit">
-        //           View Products <ChevronRight size={16} />
-        //         </a>
-        //       </div>
-
-        //       <Swiper
-        //         modules={[Autoplay, Navigation]}
-        //         spaceBetween={15}
-        //         loop={enableLoop}
-        //         autoplay={
-        //           enableLoop
-        //             ? {
-        //                 delay: 4000,
-        //                 disableOnInteraction: false,
-        //                 reverseDirection,
-        //               }
-        //             : false
-        //         }
-        //         onInit={(swiper) => {
-        //           swiperRefs.current[section.id] = swiper;
-        //         }}
-        //         breakpoints={{
-        //           320: { slidesPerView: 2.1 },
-        //           480: { slidesPerView: 2.6 },
-        //           640: { slidesPerView: 3 },
-        //           1024: { slidesPerView: 4.2 },
-        //         }}
-        //         navigation={false}
-        //         className="homePageSwiper"
-        //       >
-        //         {products.map((product) => (
-        //           <SwiperSlide key={product._id} className="no-swiping">
-        //             <ProductCard
-        //               product={product}
-        //               isHovered={hoveredProductId[section.id] === product._id}
-        //               onProductHover={() =>
-        //                 handleProductHover(product._id, section.id)
-        //               }
-        //               onProductHoverEnd={() =>
-        //                 handleProductHoverEnd(section.id)
-        //               }
-        //               onOpenDetails={() => {
-        //                 setSelectedProduct(product);
-
-        //                 fetch(`${API_BASE}/api/products/${product._id}`)
-        //                   .then((res) => res.json())
-        //                   .then((data) => {
-        //                     if (data.success) {
-        //                       setSelectedProduct(data.product);
-        //                     }
-        //                   })
-        //                   .catch((err) =>
-        //                     console.error("Modal fetch error:", err)
-        //                   );
-        //               }}
-        //             />
-        //           </SwiperSlide>
-        //         ))}
-        //       </Swiper>
-        //     </div>
-
-        //     {bannerSection ? (
-        //       <div className="w-full">
-        //         <SectionRenderer section={bannerSection} compact />
-        //       </div>
-        //     ) : null}
-        //   </Fragment>
-        // );
 
         return (
           <Fragment key={section.id}>
@@ -276,7 +184,7 @@ export default function AutoSliceSlider({
 
             {/* 🟢 Slider */}
             <div className="w-full">
-              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 lg:mb-3 mb-3">
                 <div>
                   {/* <h3
                     className="heading-section"
@@ -472,7 +380,10 @@ function ProductCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            if (!user) return alert("Please login to use wishlist");
+            if (!user) {
+              toast.error("Please login to use wishlist");
+              return;
+            }
 
             isWishlisted
               ? removeFromWishlist(product._id)

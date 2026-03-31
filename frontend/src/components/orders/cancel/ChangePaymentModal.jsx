@@ -4,6 +4,7 @@ import { useState } from "react"
 import axios from "axios"
 import { X } from "lucide-react"
 import { API_BASE } from "@/lib/api"
+import { toast } from "sonner"
 
 export default function ChangePaymentModal({
   show,
@@ -41,13 +42,13 @@ export default function ChangePaymentModal({
 
       refreshOrder()
 
-      alert("Payment updated successfully")
+      toast.success("Payment updated successfully")
 
     } catch(err){
 
       setLoading(false)
 
-      alert(err.response?.data?.message || "Payment update failed")
+      toast.error(err.response?.data?.message || "Payment update failed")
 
     }
 

@@ -17,6 +17,9 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
+const PLATFORM_FEE = 30;
+const SHIPPING_CHARGE = 0;
+
 function serializeOrder(orderDoc) {
   const order =
     typeof orderDoc?.toObject === "function" ? orderDoc.toObject() : orderDoc;
@@ -138,8 +141,7 @@ exports.createOrder = async (req, res) => {
 
     /* ---------- OFFER LOGIC ---------- */
     let discountAmount = 0;
-    let fees = 16;
-    let finalAmount = totalAmount + fees;
+    let finalAmount = totalAmount + SHIPPING_CHARGE + PLATFORM_FEE;
     let appliedOfferCode = null;
     let offersEarned = [];
 
@@ -188,7 +190,7 @@ exports.createOrder = async (req, res) => {
       }
 
       finalAmount = Math.max(
-        totalAmount + fees - discountAmount,
+        totalAmount + SHIPPING_CHARGE + PLATFORM_FEE - discountAmount,
         0
       );
 
@@ -239,10 +241,10 @@ exports.createOrder = async (req, res) => {
         subtotal: totalMrp,
         productDiscount: totalMrp - totalAmount,
         couponDiscount: discountAmount,
-        shippingCharge: fees,
-        platformFee: 0,
+        shippingCharge: SHIPPING_CHARGE,
+        platformFee: PLATFORM_FEE,
         tax: 0,
-        totalAmount: totalAmount + fees - discountAmount,
+        totalAmount: finalAmount,
       },
       coupon: {
         code: appliedOfferCode || "",

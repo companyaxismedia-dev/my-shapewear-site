@@ -4,6 +4,7 @@
     import { useRouter } from "next/navigation";
     import { ChevronDown, Eye, EyeOff } from "lucide-react";
     import { API_BASE } from "@/lib/api";
+    import { toast } from "sonner";
 
     /* ================= RAZORPAY LOADER ================= */
     const loadRazorpay = () => {
@@ -76,7 +77,7 @@
         /* ================= RAZORPAY PAYMENT ================= */
         const handleRazorpayPayment = async (type) => {
             if (!cartTotal || cartTotal.sellingPrice <= 0) {
-                alert("Invalid order amount");
+                toast.error("Invalid order amount");
                 return;
             }
 
@@ -86,7 +87,7 @@
             const loaded = await loadRazorpay();
 
             if (!loaded) {
-                alert("Razorpay SDK failed to load");
+                toast.error("Razorpay SDK failed to load");
                 return;
             }
 
@@ -189,7 +190,7 @@
         const data = await res.json();
 
         if (!data?.order) {
-            alert("Order create failed");
+            toast.error("Order create failed");
             setIsProcessing(false);
             return;
         }

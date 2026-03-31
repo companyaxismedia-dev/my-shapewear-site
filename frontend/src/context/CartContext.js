@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "./AuthContext";
+import { toast } from "sonner";
 
 const CartContext = createContext();
 
@@ -13,14 +14,45 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState([]);
+  const [cartLoading, setCartLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [pendingItemIds, setPendingItemIds] = useState({});
+  const [cartSummary, setCartSummary] = useState({
+    total: 0,
+    subTotal: 0,
+    discount: 0,
+    shipping: 0,
+    platformFee: 30,
+    youPay: 30,
+  });
   const token = user?.token;
+
+  const buildSummary = (items = []) => {
+    const total = items.reduce((sum, item) => sum + (item.mrp || 0) * (item.quantity || 0), 0);
+    const subTotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 0), 0);
+    const discount = Math.max(total - subTotal, 0);
+    const shipping = 0;
+    const platformFee = 30;
+
+    return {
+      total,
+      subTotal,
+      discount,
+      shipping,
+      platformFee,
+      youPay: subTotal + shipping + platformFee,
+    };
+  };
 
   /* ================= LOAD GUEST ================= */
   const loadGuestCart = async () => {
+    setCartLoading(true);
     const guest = JSON.parse(localStorage.getItem("guestCart") || "[]");
 
     if (!guest.length) {
       setCartItems([]);
+      setCartSummary(buildSummary([]));
+      setCartLoading(false);
       return;
     }
 
@@ -79,6 +111,7 @@ export const CartProvider = ({ children }) => {
             deliveryDate: "5-7 Business Days",
             returnText: "3 days return available",
             availableSizes,
+            lineTotal: price * item.quantity,
           };
         } catch (error) {
           // Product was deleted or not found - filter it out
@@ -92,12 +125,16 @@ export const CartProvider = ({ children }) => {
     );
 
     // Filter out null items (deleted products)
-    setCartItems(formatted.filter(item => item !== null));
+    const filteredItems = formatted.filter((item) => item !== null);
+    setCartItems(filteredItems);
+    setCartSummary(buildSummary(filteredItems));
+    setCartLoading(false);
   };
 
   /* ================= LOAD CART ================= */
   useEffect(() => {
     const loadCart = async () => {
+      setCartLoading(true);
       if (user) {
         await mergeGuestCart();
         await fetchCart();
@@ -150,74 +187,21 @@ export const CartProvider = ({ children }) => {
 
   const fetchCart = async () => {
     try {
+      setCartLoading(true);
       const res = await axios.get(`${API_BASE}/api/cart`, {
         headers: { Authorization: `Bearer ${user?.token}` },
       });
 
-      const formatted = res.data.items
-        .map((item) => {
-          // Skip deleted products
-          if (!item.product) {
-            return null;
-          }
-
-          const product = item.product;
-
-          // find selected variant
-          const selectedVariant =
-            product.variants?.find((v) => v.color === item.color) ||
-            product.variants?.[0];
-
-          // find selected size
-          const selectedSizeObj =
-            selectedVariant?.sizes?.find((s) => s.size === item.size) ||
-            selectedVariant?.sizes?.[0];
-
-          const price = selectedSizeObj?.price || product.minPrice || 0;
-          const mrp = selectedSizeObj?.mrp || product.mrp || price;
-          const discount =
-            mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
-
-          const image =
-            product.thumbnail ||
-            selectedVariant?.images?.[0]?.url ||
-            "/fallback.jpg";
-
-          const availableSizes = [
-            ...new Set(
-              (product.variants || []).flatMap((variant) =>
-                (variant?.sizes || [])
-                  .filter((s) => s?.size)
-                  .map((s) => s.size),
-              ),
-            ),
-          ];
-
-          return {
-            id: item.id,
-            productId: product._id,
-            slug: product.slug,
-            name: product.name,
-            brand: product.brand || "Glovia",
-            price,
-            mrp,
-            discount,
-            image,
-            quantity: item.qty,
-            size: item.size,
-            color: item.color,
-            seller: "Glovia Glamour",
-            deliveryDate: "5-7 Business Days",
-            returnText: "3 days return available",
-            availableSizes,
-          };
-        })
-        .filter(item => item !== null); // Remove deleted products
+      const formatted = Array.isArray(res.data.items) ? res.data.items : [];
 
       setCartItems(formatted);
+      setCartSummary(res.data.summary || buildSummary(formatted));
     } catch (error) {
       console.error("Error fetching cart:", error);
       setCartItems([]);
+      setCartSummary(buildSummary([]));
+    } finally {
+      setCartLoading(false);
     }
   };
 
@@ -277,6 +261,8 @@ export const CartProvider = ({ children }) => {
 
   /* ================= UPDATE ================= */
   const updateQty = async (itemId, quantity) => {
+    setPendingItemIds((prev) => ({ ...prev, [itemId]: "quantity" }));
+    setSummaryLoading(true);
     if (user) {
       await axios.put(
         `${API_BASE}/api/cart/${itemId}`,
@@ -293,9 +279,17 @@ export const CartProvider = ({ children }) => {
         await loadGuestCart();
       }
     }
+    setPendingItemIds((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+    setSummaryLoading(false);
   };
 
   const updateSize = async (itemId, size) => {
+    setPendingItemIds((prev) => ({ ...prev, [itemId]: "size" }));
+    setSummaryLoading(true);
     if (user) {
       try {
         await axios.put(
@@ -306,7 +300,7 @@ export const CartProvider = ({ children }) => {
 
         await fetchCart();
       } catch (err) {
-        alert(err?.response?.data?.message || "Size update failed");
+        toast.error(err?.response?.data?.message || "Size update failed");
         console.log(err?.response?.data);
       }
     } else {
@@ -318,10 +312,18 @@ export const CartProvider = ({ children }) => {
         await loadGuestCart();
       }
     }
+    setPendingItemIds((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+    setSummaryLoading(false);
   };
 
   /* ================= REMOVE ================= */
   const removeItem = async (itemId) => {
+    setPendingItemIds((prev) => ({ ...prev, [itemId]: "remove" }));
+    setSummaryLoading(true);
     if (user) {
       await axios.delete(`${API_BASE}/api/cart/${itemId}`, {
         headers: { Authorization: `Bearer ${user?.token}` },
@@ -336,12 +338,22 @@ export const CartProvider = ({ children }) => {
         await loadGuestCart();
       }
     }
+    setPendingItemIds((prev) => {
+      const next = { ...prev };
+      delete next[itemId];
+      return next;
+    });
+    setSummaryLoading(false);
   };
 
   return (
     <CartContext.Provider
       value={{
         cartItems,
+        cartSummary,
+        cartLoading,
+        summaryLoading,
+        pendingItemIds,
         addToCart,
         updateQty,
         updateSize,

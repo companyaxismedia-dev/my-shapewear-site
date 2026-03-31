@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Star } from "lucide-react";
+import { ProductGridSkeleton } from "@/components/loaders/Loaders";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -46,7 +47,23 @@ export default function SimilarProducts({ currentProduct }) {
     return allProducts.filter((item) => item._id !== currentProduct._id).slice(0, 10);
   }, [currentProduct, allProducts]);
 
-  if (loading || !similarProducts.length) return null;
+  if (loading) {
+    return (
+      <section className="mx-auto w-full max-w-[1240px] px-4 pb-3 pt-7 md:px-0 md:pt-10">
+        <div className="mb-3 md:mb-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#c56f7f] md:text-[12px]">
+            You may also like
+          </p>
+          <h2 className="font-['Playfair_Display'] text-[20px] font-semibold text-[#4a2e35] md:text-[34px]">
+            Similar Products
+          </h2>
+        </div>
+        <ProductGridSkeleton count={5} className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5 md:gap-5" />
+      </section>
+    );
+  }
+
+  if (!similarProducts.length) return null;
 
   return (
     <section className="mx-auto w-full max-w-[1240px] px-4 pb-3 pt-7 md:px-0 md:pt-10">
