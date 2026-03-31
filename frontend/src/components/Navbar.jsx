@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import LinkNav from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import {ShoppingCart,User,Menu,HelpCircle,Package,X,ChevronDown,ChevronRight,ContactIcon,LogOut} from "lucide-react";
+import { ShoppingCart, User, Menu, HelpCircle, Package, X, ChevronDown, ChevronRight, ContactIcon, LogOut } from "lucide-react";
 import SearchSection from "./SearchSection";
 import LoginModal from "@/app/authPage/LoginModal";
 import RegisterModal from "@/app/authPage/RegisterModal";
@@ -49,7 +49,7 @@ const useNavbarCategories = () => {
           setCategories(normalized);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       active = false;
@@ -287,6 +287,17 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
             Home
           </LinkNav>
 
+          <LinkNav
+            href="/blog"
+            className="imkaa-nav-link px-3 py-1.5 rounded-full transition"
+            style={{
+              color: pathname === "/blog" ? "var(--color-primary)" : "var(--color-body)",
+              fontWeight: pathname === "/blog" ? 600 : 500,
+            }}
+          >
+            Blog
+          </LinkNav>
+
           <div className="space-y-1">
             {renderCategoryTree(categories)}
           </div>
@@ -433,9 +444,8 @@ function HomeNavbar({ onLoginToggle, pathname }) {
         </div>
 
         <div
-          className={`fixed inset-x-0 top-[56px] border-b border-[#f0e7ea] bg-[var(--color-bg)] px-3 py-3 md:top-[64px] md:px-4 lg:hidden ${
-            isSearchOpen ? "z-[130]" : "z-[99]"
-          }`}
+          className={`fixed inset-x-0 top-[56px] border-b border-[#f0e7ea] bg-[var(--color-bg)] px-3 py-3 md:top-[64px] md:px-4 lg:hidden ${isSearchOpen ? "z-[130]" : "z-[99]"
+            }`}
         >
           <SearchSection
             onToggleMobileSearch={(val) => setIsSearchOpen(val)}
@@ -449,11 +459,10 @@ function HomeNavbar({ onLoginToggle, pathname }) {
 
         <div className="hidden lg:block">
           <div
-            className={`origin-top transition-all duration-500 ease-out ${
-              isDesktopScrolled
-                ? "pointer-events-none -translate-y-8 scale-[0.98] opacity-0"
-                : "translate-y-0 scale-100 opacity-100"
-            }`}
+            className={`origin-top transition-all duration-500 ease-out ${isDesktopScrolled
+              ? "pointer-events-none -translate-y-8 scale-[0.98] opacity-0"
+              : "translate-y-0 scale-100 opacity-100"
+              }`}
           >
             <div style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}>
               <div className="container-imkaa">
@@ -482,6 +491,19 @@ function HomeNavbar({ onLoginToggle, pathname }) {
                 <LinkNav href="/" className="imkaa-nav-link px-3 py-1.5 rounded-full transition"
                   style={{ color: "var(--color-primary)", fontWeight: 600 }}>
                   Home
+                </LinkNav>
+
+                <LinkNav
+                  href="/blog"
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded-xl px-4 py-3 text-sm font-medium transition-colors"
+                  style={{
+                    color: pathname === "/blog" ? "var(--color-primary)" : "var(--color-heading)",
+                    fontFamily: "var(--font-body)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Blog
                 </LinkNav>
 
                 {categories.map((category, categoryIndex) => {
@@ -579,27 +601,24 @@ function HomeNavbar({ onLoginToggle, pathname }) {
           </div>
 
           <div
-            className={`fixed inset-x-0 top-0 z-[120] shadow-sm transition-all duration-500 ease-out ${
-              isDesktopScrolled
-                ? "translate-y-0 opacity-100"
-                : "pointer-events-none -translate-y-full opacity-0"
-            }`}
+            className={`fixed inset-x-0 top-0 z-[120] shadow-sm transition-all duration-500 ease-out ${isDesktopScrolled
+              ? "translate-y-0 opacity-100"
+              : "pointer-events-none -translate-y-full opacity-0"
+              }`}
             style={{ background: "var(--color-bg)", borderBottom: "1px solid var(--color-border)" }}
           >
             <div className="container-imkaa">
               <div className="flex min-h-[68px] items-center justify-between gap-2">
                 <div
-                  className={`flex items-center justify-start lg:flex-none transition-all duration-500 ease-out ${
-                    isDesktopScrolled ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"
-                  }`}
+                  className={`flex items-center justify-start lg:flex-none transition-all duration-500 ease-out ${isDesktopScrolled ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"
+                    }`}
                 >
                   <Logo width="w-[130px]" height="h-[40px]" />
                 </div>
 
                 <nav
-                  className={`flex items-center justify-center flex-1 gap-4 transition-all duration-500 ease-out ${
-                    isDesktopScrolled ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
-                  }`}
+                  className={`flex items-center justify-center flex-1 gap-4 transition-all duration-500 ease-out ${isDesktopScrolled ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+                    }`}
                 >
                   {categories.map((link, index) => (
                     <LinkNav
@@ -617,9 +636,8 @@ function HomeNavbar({ onLoginToggle, pathname }) {
                 </nav>
 
                 <div
-                  className={`flex items-center justify-end gap-3 transition-all duration-500 ease-out ${
-                    isDesktopScrolled ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"
-                  }`}
+                  className={`flex items-center justify-end gap-3 transition-all duration-500 ease-out ${isDesktopScrolled ? "translate-x-0 opacity-100" : "-translate-x-8 opacity-0"
+                    }`}
                 >
                   <NavActions
                     isSearchOpen={isSearchOpen}
@@ -634,8 +652,8 @@ function HomeNavbar({ onLoginToggle, pathname }) {
         </div>
       </header>
 
-      <MobileDrawer 
-        menuOpen={menuOpen} 
+      <MobileDrawer
+        menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}
         loginOpen={loginOpen}
         setLoginOpen={setLoginOpen}
@@ -696,7 +714,7 @@ function SimpleNavbar({ onLoginToggle, pathname }) {
       >
         <div className="container-imkaa">
           <div className="flex items-center justify-between min-h-[56px] md:min-h-[64px] lg:min-h-[68px] gap-2">
-            
+
             {/* Left: Hamburger & Logo */}
             <div className="flex items-center gap-2 lg:gap-0">
               <button
@@ -715,6 +733,17 @@ function SimpleNavbar({ onLoginToggle, pathname }) {
 
             {/* Center: Desktop Navigation */}
             <nav className="hidden lg:flex items-center justify-center flex-1 gap-4">
+
+              <LinkNav
+                href="/blog"
+                className="simple-nav-link px-3 py-2 rounded transition"
+                style={{
+                  color: pathname === "/blog" ? "var(--color-primary)" : undefined,
+                  fontWeight: pathname === "/blog" ? 600 : undefined,
+                }}
+              >
+                Blog
+              </LinkNav>
               {categories.map((link, index) => (
                 <LinkNav
                   key={`${link._id || link.slug || link.name}-${index}`}
@@ -745,8 +774,8 @@ function SimpleNavbar({ onLoginToggle, pathname }) {
         </div>
       </header>
 
-      <MobileDrawer 
-        menuOpen={menuOpen} 
+      <MobileDrawer
+        menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}
         loginOpen={loginOpen}
         setLoginOpen={setLoginOpen}
