@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import AuthModal from "./AuthModal";
@@ -84,34 +84,71 @@ export function AuthDivider() {
 /* ================= GOOGLE LOGIN BUTTON ================= */
 export function GoogleLoginButton({ onSuccess }) {
   const { startAuthTransition, stopAuthTransition } = useAuth();
+  const wrapperRef = useRef(null);
+  const [buttonWidth, setButtonWidth] = useState(0);
+
+  useEffect(() => {
+    const element = wrapperRef.current;
+
+    if (!element) return;
+
+    const updateWidth = () => {
+      setButtonWidth(Math.max(Math.floor(element.getBoundingClientRect().width), 0));
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateWidth);
+
+      return () => {
+        window.removeEventListener("resize", updateWidth);
+      };
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateWidth();
+    });
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
-    <div className="w-full rounded-[18px] border border-[#e6d4d9] bg-white shadow-[0_8px_20px_rgba(74,46,53,0.04)] p-[1px]">
+    <div
+      ref={wrapperRef}
+      className="w-full rounded-[18px] border border-[#e6d4d9] bg-white shadow-[0_8px_20px_rgba(74,46,53,0.04)] p-[1px]"
+    >
       <div className="w-full overflow-hidden rounded-[17px]">
-        <GoogleLogin
-          onSuccess={async (credentialResponse) => {
-            startAuthTransition("Signing you in...");
+        {buttonWidth > 0 ? (
+          <GoogleLogin
+            onSuccess={async (credentialResponse) => {
+              startAuthTransition("Signing you in...");
 
-            try {
-              const res = await axios.post(
-                `${API_BASE}/api/auth/google`,
-                { credential: credentialResponse.credential }
-              );
-              onSuccess(res);
-            } catch (error) {
+              try {
+                const res = await axios.post(
+                  `${API_BASE}/api/auth/google`,
+                  { credential: credentialResponse.credential }
+                );
+                onSuccess(res);
+              } catch (error) {
+                stopAuthTransition();
+                toast.error(error.response?.data?.message || "Google login failed");
+              }
+            }}
+            onError={() => {
               stopAuthTransition();
-              toast.error(error.response?.data?.message || "Google login failed");
-            }
-          }}
-          onError={() => {
-            stopAuthTransition();
-            toast.error("Google Login Failed");
-          }}
-          width="100%"
-          size="large"
-          shape="rectangular"
-          theme="outline"
-        />
+              toast.error("Google Login Failed");
+            }}
+            width={String(buttonWidth - 2)}
+            size="large"
+            shape="rectangular"
+            theme="outline"
+          />
+        ) : null}
       </div>
     </div>
   );
