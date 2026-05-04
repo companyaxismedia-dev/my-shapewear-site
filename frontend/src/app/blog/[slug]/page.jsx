@@ -2,11 +2,23 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import BlogCard from "@/components/blog/BlogCard";
 import { Search } from "lucide-react";
-import { apiRequest } from "@/lib/api";
+import { API_BASE, apiRequest } from "@/lib/api";
 
 async function getBlogDetails(slug) {
   try {
-    return await apiRequest(`/api/blog/${slug}`);
+    const res = await fetch(`${API_BASE}/api/blog/${slug}`, {
+      cache: "no-store",
+    });
+
+    if (res.status === 404) {
+      return null;
+    }
+
+    if (!res.ok) {
+      throw new Error(`Blog details request failed with status ${res.status}`);
+    }
+
+    return res.json();
   } catch (error) {
     console.error("BLOG DETAILS FETCH ERROR:", error);
     return null;
@@ -79,10 +91,6 @@ export default async function BlogDetailsPage({ params }) {
               <h1 className="font-[Playfair_Display] text-[30px] text-[#3b2228]">
                 Blog not found
               </h1>
-              <p className="mt-3 text-[#6c4e53]">
-                Jo blog tum open kar rahe ho woh available nahi hai.
-              </p>
-
               <Link
                 href="/blog"
                 className="mt-5 inline-flex rounded-full bg-[#c56f7f] px-5 py-3 text-white transition hover:bg-[#b45e6f]"

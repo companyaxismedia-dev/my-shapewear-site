@@ -10,6 +10,7 @@ import SizeChartModal from "@/components/product/SizeChartModal";
 import CalculateSizeModal from "@/components/product/CalculateSizeModal";
 import { useCart } from "@/context/CartContext";
 import {
+  ChevronLeft,
   ChevronRight,
   Heart,
   Ruler,
@@ -17,6 +18,7 @@ import {
   ShoppingBag,
   Star,
   Truck,
+  X,
 } from "lucide-react";
 import {
   AsyncImage,
@@ -36,6 +38,25 @@ const getImageUrl = (url) => {
 
 const formatCurrency = (value) => `\u20B9${Number(value || 0).toLocaleString("en-IN")}`;
 
+const normalizeRichText = (value) => {
+  if (!value) return "";
+  return String(value).replace(/\sdata-(start|end)="[^"]*"/g, "");
+};
+
+const DetailList = ({ items = [], labelKey, valueKey }) => (
+  <div className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+    {items.map((item, index) => (
+      <div
+        key={`${item[labelKey]}-${index}`}
+        className="border-b border-[#f1e4e8] py-3"
+      >
+        <p className="text-[12px] text-[#8c7480]">{item[labelKey]}</p>
+        <p className="mt-1 text-[14px] font-medium leading-5 text-[#4a2e35]">{item[valueKey]}</p>
+      </div>
+    ))}
+  </div>
+);
+
 export default function ProductPage() {
   const { slug } = useParams();
   const router = useRouter();
@@ -51,7 +72,10 @@ export default function ProductPage() {
   const [showCalcSize, setShowCalcSize] = useState(false);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
   const mobileCarouselRef = useRef(null);
+  const mobileAddToCartRef = useRef(null);
+  const [showStickyBuyBar, setShowStickyBuyBar] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -65,7 +89,7 @@ export default function ProductPage() {
           const nextProduct = data.product;
           const firstVariant = nextProduct.variants?.[0] || null;
           const firstSize = firstVariant?.sizes?.[0] || null;
-          const firstMedia = firstVariant?.images?.[0]?.url || firstVariant?.video || "";
+          const firstMedia = firstVariant?.video || firstVariant?.images?.[0]?.url || "";
 
           setProduct(nextProduct);
           setSelectedVariant(firstVariant);
@@ -85,13 +109,13 @@ export default function ProductPage() {
 
   const mediaItems = useMemo(
     () => [
+      ...(selectedVariant?.video
+        ? [{ type: "video", src: getImageUrl(selectedVariant.video) }]
+        : []),
       ...(selectedVariant?.images?.map((img) => ({
         type: "image",
         src: getImageUrl(img.url),
       })) || []),
-      ...(selectedVariant?.video
-        ? [{ type: "video", src: getImageUrl(selectedVariant.video) }]
-        : []),
     ],
     [selectedVariant]
   );
@@ -109,6 +133,22 @@ export default function ProductPage() {
     }
   }, [mediaItems, activeMedia]);
 
+  useEffect(() => {
+    const target = mobileAddToCartRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowStickyBuyBar(!entry.isIntersecting);
+      },
+      { threshold: 0.35 }
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [product, selectedVariant, selectedSize]);
+
   const handleMobileCarouselScroll = () => {
     if (!mobileCarouselRef.current || !mediaItems.length) return;
     const { scrollLeft, clientWidth } = mobileCarouselRef.current;
@@ -120,7 +160,7 @@ export default function ProductPage() {
   };
 
   const handleVariantChange = (variant) => {
-    const nextMedia = getImageUrl(variant.images?.[0]?.url || variant.video || "");
+    const nextMedia = getImageUrl(variant.video || variant.images?.[0]?.url || "");
     setSelectedVariant(variant);
     setSelectedSize(variant.sizes?.[0] || null);
     setActiveMedia(nextMedia);
@@ -152,6 +192,43 @@ export default function ProductPage() {
     }
   };
 
+  const openLightbox = (index) => {
+    if (!mediaItems[index]) return;
+    setLightboxIndex(index);
+    setActiveMedia(mediaItems[index].src);
+  };
+
+  const closeLightbox = () => setLightboxIndex(null);
+
+  const goToLightboxMedia = (direction) => {
+    setLightboxIndex((current) => {
+      if (current === null || !mediaItems.length) return current;
+      const nextIndex = (current + direction + mediaItems.length) % mediaItems.length;
+      setActiveMedia(mediaItems[nextIndex].src);
+      return nextIndex;
+    });
+  };
+
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") closeLightbox();
+      if (event.key === "ArrowLeft") goToLightboxMedia(-1);
+      if (event.key === "ArrowRight") goToLightboxMedia(1);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [lightboxIndex, mediaItems.length]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fff8f6]">
@@ -180,7 +257,6 @@ export default function ProductPage() {
   const mrp = selectedSize?.mrp || product.mrp || 0;
   const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
   const topReviews = product.reviews?.slice(0, 5) || [];
-  const activeIsVideo = activeMedia?.includes(".mp4") || activeMedia?.includes("video");
 
   const detailSections = [
     product.materialCare?.length
@@ -198,7 +274,12 @@ export default function ProductPage() {
     product.productDetails
       ? {
         title: "Product Details",
-        content: <p className="text-[14px] leading-6 text-[#5f4a52]">{product.productDetails}</p>,
+        content: (
+          <div
+            className="prose prose-p:my-0 prose-ul:my-0 prose-li:my-1 max-w-none text-[14px] leading-6 text-[#5f4a52] prose-strong:text-[#4a2e35]"
+            dangerouslySetInnerHTML={{ __html: normalizeRichText(product.productDetails) }}
+          />
+        ),
       }
       : null,
     product.features?.length
@@ -216,118 +297,93 @@ export default function ProductPage() {
     product.sizeAndFits?.length
       ? {
         title: "Size & Fit",
-        content: (
-          <div className="grid gap-2 text-[14px] text-[#5f4a52] sm:grid-cols-2">
-            {product.sizeAndFits.map((item, index) => (
-              <div key={`${item.label}-${index}`} className="rounded-2xl border border-[#f0d9df] bg-[#fff8f6] px-4 py-3">
-                <p className="text-[12px] text-[#9c828d]">{item.label}</p>
-                <p className="mt-1 font-semibold text-[#553842]">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        ),
+        content: <DetailList items={product.sizeAndFits} labelKey="label" valueKey="value" />,
       }
       : null,
     product.specifications?.length
       ? {
         title: "Specifications",
-        content: (
-          <div className="grid gap-2 text-[14px] text-[#5f4a52] sm:grid-cols-2">
-            {product.specifications.map((item, index) => (
-              <div key={`${item.key}-${index}`} className="rounded-2xl border border-[#f0d9df] bg-[#fff8f6] px-4 py-3">
-                <p className="text-[12px] text-[#9c828d]">{item.key}</p>
-                <p className="mt-1 font-semibold text-[#553842]">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        ),
+        content: <DetailList items={product.specifications} labelKey="key" valueKey="value" />,
       }
       : null,
   ].filter(Boolean);
+  const lightboxMedia = lightboxIndex !== null ? mediaItems[lightboxIndex] : null;
 
   return (
-    <div className="min-h-screen bg-[#fff8f6]">
+    <div className="min-h-screen bg-white">
       <div className="fixed left-0 right-0 top-0 z-[60] border-b border-pink-50 bg-white shadow-sm">
         <Navbar />
       </div>
 
-      <div className="px-0 pt-[72px] md:px-4 md:pt-24">
-        <div className="mx-auto max-w-[1240px]">
-          <div className="hidden md:grid md:grid-cols-[minmax(620px,0.95fr)_minmax(360px,0.85fr)] md:gap-9">
-            <section className="grid grid-cols-[88px_minmax(0,1fr)] items-start gap-4">
-              <div className="flex flex-col gap-3">
-                {mediaItems.map((media, index) => (
-                  <button
-                    key={`${media.type}-${index}`}
-                    type="button"
-                    onClick={() => setActiveMedia(media.src)}
-                    onMouseEnter={() => setActiveMedia(media.src)}
-                    onFocus={() => setActiveMedia(media.src)}
-                    className={`overflow-hidden rounded-2xl border bg-[#fff8f6] ${activeMedia === media.src
-                      ? "border-[#c56f7f] shadow-[0_0_0_2px_rgba(197,111,127,0.16)]"
-                      : "border-[#ead7dd]"
-                      }`}
-                  >
-                    {media.type === "video" ? (
-                      <video src={media.src} muted className="aspect-[4/5] h-full w-full object-cover" />
-                    ) : (
-                      <AsyncImage
-                        src={media.src}
-                        alt={`${product.name} ${index + 1}`}
-                        className="aspect-[4/5] h-full w-full rounded-2xl"
-                        skeletonClassName="rounded-2xl"
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              <div className="overflow-hidden rounded-[28px] bg-[#fff] shadow-[0_8px_28px_rgba(74,46,53,0.06)]">
-                {activeIsVideo ? (
-                  <video src={activeMedia} controls autoPlay className="min-h-[620px] w-full object-cover" />
-                ) : (
-                  <AsyncImage
-                    src={activeMedia}
-                    alt={product.name}
-                    className="min-h-[620px] w-full rounded-[28px]"
-                    skeletonClassName="rounded-[28px]"
-                  />
-                )}
-              </div>
+      <div className="px-0 pt-[72px] md:px-6 md:pt-24 2xl:px-8">
+        <div className="mx-auto max-w-[1880px]">
+          <div className="hidden lg:grid lg:grid-cols-[minmax(620px,1fr)_minmax(360px,520px)] lg:items-start lg:gap-8 xl:grid-cols-[minmax(760px,1fr)_minmax(420px,540px)]">
+            <section className={`grid gap-3 xl:gap-4 ${mediaItems.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+              {mediaItems.map((media, index) => (
+                <button
+                  key={`${media.type}-${index}`}
+                  type="button"
+                  onClick={() => openLightbox(index)}
+                  onMouseEnter={() => setActiveMedia(media.src)}
+                  onFocus={() => setActiveMedia(media.src)}
+                  className={`group overflow-hidden bg-[#fff3f5] text-left ${activeMedia === media.src ? "outline outline-2 outline-[#c56f7f]" : ""}`}
+                >
+                  {media.type === "video" ? (
+                    <video
+                      src={media.src}
+                      muted
+                      autoPlay
+                      loop
+                      playsInline
+                      className="aspect-[3/4] h-full w-full object-cover"
+                    />
+                  ) : (
+                    <AsyncImage
+                      src={media.src}
+                      alt={`${product.name} ${index + 1}`}
+                      className="aspect-[3/4] h-full w-full transition duration-300 group-hover:scale-[1.02]"
+                      skeletonClassName=""
+                    />
+                  )}
+                </button>
+              ))}
             </section>
 
-            <section className="space-y-6 rounded-[28px] border border-[#ead7dd] bg-white p-7 shadow-[0_8px_28px_rgba(74,46,53,0.06)]">
-              <div className="space-y-2">
+            <section className="space-y-5 bg-white px-2 pb-8 xl:px-4">
+              <div className="space-y-2 border-b border-[#f1e4e8] pb-4">
                 {product.brand ? (
-                  <p className="text-[13px] font-bold uppercase tracking-[0.12em] text-[#c56f7f]">{product.brand}</p>
+                  <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-[#c56f7f]">{product.brand}</p>
                 ) : null}
-                <h1 className="font-['Playfair_Display'] text-[clamp(28px,3vw,38px)] font-semibold leading-[1.12] text-[#4a2e35]">
+                <h1 className="font-['Inter'] text-[22px] font-semibold leading-[1.25] text-[#282c3f] xl:text-[24px]">
                   {product.name}
                 </h1>
                 {product.description ? (
-                  <p className="text-[15px] leading-6 text-[#6f5560]">{product.description}</p>
+                  <p className="max-w-[52ch] text-[14px] leading-6 text-[#6f5560]">{product.description}</p>
                 ) : null}
                 {product.rating > 0 ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[#ead7dd] bg-[#fff8f6] px-3 py-2 text-[13px] font-semibold text-[#2f7d63]">
-                    <Star size={14} className="fill-current" />
+                  <div className="inline-flex items-center gap-2 border border-[#dfe1e8] px-3 py-1.5 text-[13px] font-semibold text-[#2f7d63]">
                     <span>{product.rating}</span>
+                    <Star size={13} className="fill-current" />
                     <span className="text-[#b7a1a9]">|</span>
-                    <span>{product.numReviews || 0} Ratings</span>
+                    <span className="text-[#6f5560]">{product.numReviews || 0} Ratings</span>
                   </div>
                 ) : null}
               </div>
 
-              <div className="border-t border-[#f1e4e8] pt-5">
-                <div className="flex flex-wrap items-baseline gap-3">
-                  <span className="text-[34px] font-bold text-[#9e4c60]">{formatCurrency(price)}</span>
-                  {mrp ? <span className="text-[16px] text-[#ad98a1] line-through">{formatCurrency(mrp)}</span> : null}
-                  {discount > 0 ? <span className="text-[15px] font-bold text-[#d66d52]">({discount}% OFF)</span> : null}
+              <div className="border-b border-[#f1e4e8] pb-5">
+                <div className="flex flex-wrap items-baseline gap-2.5">
+                  <span className="text-[24px] font-bold text-[#282c3f]">{formatCurrency(price)}</span>
+                  {mrp ? <span className="text-[15px] text-[#8c7480] line-through">{formatCurrency(mrp)}</span> : null}
+                  {discount > 0 ? <span className="text-[14px] font-bold text-[#c56f7f]">({discount}% OFF)</span> : null}
                 </div>
+                <p className="mt-1 text-[12px] font-medium text-[#2f7d63]">Inclusive of all taxes</p>
               </div>
 
               {product.variants?.length ? (
-                <div className="space-y-4">
-                  <p className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#4a2e35]">Available Colors</p>
+                <div className="space-y-3">
+                  <p className="text-[14px] font-bold uppercase tracking-[0.04em] text-[#282c3f]">
+                    Colour <span className="font-medium normal-case tracking-normal text-[#6f5560]">{selectedVariant?.color || ""}</span>
+                  </p>
                   <div className="flex flex-wrap gap-3">
                     {product.variants.map((variant, index) => {
                       const previewImage = getImageUrl(variant.images?.[0]?.url);
@@ -345,8 +401,8 @@ export default function ProductPage() {
                           <button
                             type="button"
                             onClick={() => handleVariantChange(variant)}
-                            className={`h-11 w-11 overflow-hidden rounded-full border-2 ${selectedVariant?.color === variant.color
-                              ? "border-[#c56f7f] shadow-[0_0_0_3px_rgba(197,111,127,0.15)]"
+                            className={`h-12 w-12 overflow-hidden rounded-full border-2 ${selectedVariant?.color === variant.color
+                              ? "border-[#c56f7f]"
                               : "border-[#dfccd2]"
                               }`}
                           >
@@ -369,13 +425,13 @@ export default function ProductPage() {
               ) : null}
 
               {selectedVariant?.sizes?.length ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-[14px] font-bold uppercase tracking-[0.08em] text-[#4a2e35]">Select Size</p>
-                    <div className="flex items-center gap-2 text-[13px] font-semibold uppercase text-[#c56f7f]">
+                    <p className="text-[14px] font-bold uppercase tracking-[0.04em] text-[#282c3f]">Select Size</p>
+                    <div className="flex items-center gap-2 text-[12px] font-semibold uppercase text-[#c56f7f]">
                       <button type="button" onClick={() => setShowSizeChart(true)}>Size Chart</button>
                       <span className="text-[#c5a7b1]">|</span>
-                      <button type="button" onClick={() => setShowCalcSize(true)}>Calculate Your Size</button>
+                      <button type="button" onClick={() => setShowCalcSize(true)}>Calculate Size</button>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
@@ -385,9 +441,9 @@ export default function ProductPage() {
                         type="button"
                         disabled={sizeItem.stock === 0}
                         onClick={() => setSelectedSize(sizeItem)}
-                        className={`h-12 w-12 rounded-full border text-sm font-semibold ${selectedSize?.size === sizeItem.size
+                        className={`h-11 min-w-11 rounded-full border px-3 text-sm font-semibold ${selectedSize?.size === sizeItem.size
                           ? "border-[#c56f7f] bg-[#c56f7f] text-white"
-                          : "border-[#dfccd2] bg-white text-[#4a2e35]"
+                          : "border-[#dfccd2] bg-white text-[#282c3f]"
                           } ${sizeItem.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
                       >
                         {sizeItem.size}
@@ -397,93 +453,117 @@ export default function ProductPage() {
                 </div>
               ) : null}
 
-              <div className="grid grid-cols-[minmax(0,1fr)_180px] gap-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_170px] gap-3 border-b border-[#f1e4e8] pb-5">
                 <button
                   type="button"
                   onClick={handleAddToCart}
                   disabled={addingToCart}
-                  className="flex h-[52px] items-center justify-center gap-2 rounded-full bg-[#c56f7f] px-5 text-[15px] font-semibold text-[#fff9fa]"
+                  className="flex h-[50px] items-center justify-center gap-2 bg-[#c56f7f] px-5 text-[14px] font-bold uppercase tracking-[0.03em] text-[#fff9fa]"
                 >
                   {addingToCart ? (
                     <ButtonLoaderLabel label="Adding..." />
                   ) : (
                     <>
-                      <ShoppingBag size={18} />
+                      <ShoppingBag size={17} />
                       Add to Bag
                     </>
                   )}
                 </button>
                 <button
                   type="button"
-                  className="flex h-[52px] items-center justify-center gap-2 rounded-full border border-[#e8b7c2] bg-[#fff4f6] px-5 text-[15px] font-semibold text-[#a35668]"
+                  className="flex h-[50px] items-center justify-center gap-2 border border-[#d9dce4] bg-white px-5 text-[14px] font-bold uppercase tracking-[0.03em] text-[#282c3f]"
                 >
-                  <Heart size={18} />
+                  <Heart size={17} />
                   Wishlist
                 </button>
               </div>
 
-              <div className="space-y-3 border-y border-[#f1e4e8] py-5">
-                <div className="flex items-center gap-3 text-[14px] text-[#6f5560]"><Truck size={16} /> Delivery options available</div>
-                <div className="flex items-center gap-3 text-[14px] text-[#6f5560]"><ShieldCheck size={16} /> 100% original products</div>
-                <div className="flex items-center gap-3 text-[14px] text-[#6f5560]"><Ruler size={16} /> Easy size guidance for better fit</div>
+              <div className="space-y-3 border-b border-[#f1e4e8] pb-5">
+                <h2 className="text-[15px] font-bold uppercase tracking-[0.04em] text-[#282c3f]">Delivery Options</h2>
+                <div className="flex max-w-[310px] items-center justify-between border border-[#d9dce4] px-3 py-2.5 text-[13px] text-[#8c7480]">
+                  <span>Enter pincode</span>
+                  <button type="button" className="font-bold text-[#c56f7f]">Check</button>
+                </div>
+                <div className="space-y-2 pt-1 text-[14px] leading-5 text-[#282c3f]">
+                  <div className="flex items-center gap-3"><Truck size={16} /> Delivery options available</div>
+                  <div className="flex items-center gap-3"><ShieldCheck size={16} /> 100% original products</div>
+                  <div className="flex items-center gap-3"><Ruler size={16} /> Easy size guidance for better fit</div>
+                </div>
               </div>
+
+              {detailSections.length ? (
+                <div className="space-y-5">
+                  {detailSections.map((section, index) => (
+                    <section key={`${section.title}-${index}`} className={`${index > 0 ? "border-t border-[#f1e4e8] pt-5" : ""}`}>
+                      <h3 className="font-['Inter'] text-[16px] font-bold uppercase tracking-[0.04em] text-[#282c3f]">{section.title}</h3>
+                      <div className="mt-3">{section.content}</div>
+                    </section>
+                  ))}
+                </div>
+              ) : null}
+
+              {topReviews.length ? (
+                <section className={`${detailSections.length ? "border-t border-[#f1e4e8] pt-5" : ""}`}>
+                  <h3 className="font-['Inter'] text-[16px] font-bold uppercase tracking-[0.04em] text-[#282c3f]">Customer Reviews</h3>
+                  <div className="mt-4 space-y-4">
+                    {topReviews.map((review, index) => (
+                      <div key={`${review.comment}-${index}`} className="border-b border-[#f1e4e8] pb-4">
+                        <div className="mb-2 inline-flex items-center gap-1 bg-[#2f9f8f] px-1.5 py-0.5 text-[12px] font-bold text-white">
+                          <span>{review.rating}</span>
+                          <Star size={11} className="fill-current" />
+                        </div>
+                        <p className="text-[14px] leading-6 text-[#282c3f]">{review.comment}</p>
+                        {review.userName ? (
+                          <p className="mt-2 text-[12px] text-[#8c7480]">{review.userName}</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/product/${slug}/reviews`)}
+                    className="mt-4 inline-flex items-center gap-1 text-[14px] font-bold text-[#c56f7f]"
+                  >
+                    View All Reviews <ChevronRight size={16} />
+                  </button>
+                </section>
+              ) : null}
             </section>
           </div>
 
-          <div className="mt-5 hidden gap-4 md:grid md:grid-cols-2">
-            {detailSections.map((section, index) => (
-              <section
-                key={`${section.title}-${index}`}
-                className={`rounded-[22px] border border-[#ead7dd] bg-white p-5 shadow-[0_4px_18px_rgba(74,46,53,0.04)] ${section.title === "Specifications" || section.title === "Customer Reviews" ? "" : ""
-                  }`}
-              >
-                <h3 className="font-['Inter'] text-[22px] font-bold text-[#4a2e35]">{section.title}</h3>
-                <div className="mt-3">{section.content}</div>
-              </section>
-            ))}
-
-            {topReviews.length ? (
-              <section className="rounded-[22px] border border-[#ead7dd] bg-white p-5 shadow-[0_4px_18px_rgba(74,46,53,0.04)] md:col-span-2">
-                <h3 className="font-['Inter'] text-[22px] font-bold text-[#4a2e35]">Customer Reviews</h3>
-                <div className="mt-3 space-y-3">
-                  {topReviews.map((review, index) => (
-                    <div key={`${review.comment}-${index}`} className="rounded-2xl border border-[#f0d9df] bg-[#fffdfd] px-4 py-3">
-                      <div className="mb-2 inline-flex items-center gap-2 text-[13px] font-bold text-[#2f7d63]">
-                        <Star size={13} className="fill-current" />
-                        <span>{review.rating}</span>
-                      </div>
-                      <p className="text-[14px] leading-6 text-[#5f4a52]">{review.comment}</p>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => router.push(`/product/${slug}/reviews`)}
-                  className="mt-4 inline-flex items-center gap-1 text-[14px] font-bold text-[#c56f7f]"
-                >
-                  View All Reviews <ChevronRight size={16} />
-                </button>
-              </section>
-            ) : null}
-          </div>
-
-          <div className="block md:hidden">
-            <section className="bg-white">
+          <div className="block lg:hidden">
+            <section className="bg-white pb-2">
               <div
                 ref={mobileCarouselRef}
                 onScroll={handleMobileCarouselScroll}
-                className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth"
+                className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth bg-white"
               >
                 {mediaItems.map((media, index) => (
-                  <div key={`${media.type}-${index}`} className="relative min-w-full snap-center">
+                  <div
+                    key={`${media.type}-${index}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openLightbox(index)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") openLightbox(index);
+                    }}
+                    className="relative min-w-full snap-center"
+                  >
                     {media.type === "video" ? (
-                      <video src={media.src} controls autoPlay className="h-[520px] w-full rounded-b-[28px] object-cover" />
+                      <video
+                        src={media.src}
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                        className="h-[420px] w-full object-cover sm:h-[560px]"
+                      />
                     ) : (
                       <AsyncImage
                         src={media.src}
                         alt={`${product.name} ${index + 1}`}
-                        className="h-[520px] w-full rounded-b-[28px]"
-                        skeletonClassName="rounded-b-[28px]"
+                        className="h-[420px] w-full sm:h-[560px]"
+                        skeletonClassName=""
                       />
                     )}
                     {index === mobileActiveIndex && product.rating > 0 ? (
@@ -499,7 +579,7 @@ export default function ProductPage() {
               </div>
 
               {mediaItems.length > 1 ? (
-                <div className="flex justify-center gap-1.5 py-3">
+                <div className="flex justify-center gap-1.5 bg-white py-3">
                   {mediaItems.map((_, index) => (
                     <button
                       key={index}
@@ -518,29 +598,54 @@ export default function ProductPage() {
                 </div>
               ) : null}
 
-              <div className="px-4 pb-2">
-                <div className="rounded-[22px] bg-white py-2">
-                  {product.brand ? (
-                    <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.1em] text-[#c56f7f]">{product.brand}</p>
-                  ) : null}
-                  <h1 className="font-['Inter'] text-[24px] font-semibold leading-[1.2] text-[#2f2428]">
-                    {product.name}
-                  </h1>
-                  {product.description ? (
-                    <p className="mt-1 text-[14px] leading-5 text-[#5f4a52]">{product.description}</p>
-                  ) : null}
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-[14px] text-[#7f6a72]">MRP</span>
-                    <span className="text-[22px] font-bold text-[#9e4c60]">{formatCurrency(price)}</span>
-                    {mrp > price ? <span className="text-[13px] text-[#ad98a1] line-through">{formatCurrency(mrp)}</span> : null}
-                    {discount > 0 ? <span className="text-[13px] font-semibold text-[#d66d52]">({discount}% OFF)</span> : null}
+              <div className="px-4 pb-2 pt-2 sm:px-5">
+                <div className="border-b border-[#f1e4e8] pb-5 pt-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      {product.brand ? (
+                        <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.08em] text-[#c56f7f]">{product.brand}</p>
+                      ) : null}
+                      <h1 className="font-['Inter'] text-[22px] font-semibold leading-[1.2] text-[#2f2428] sm:text-[26px]">
+                        {product.name}
+                      </h1>
+                      {product.description ? (
+                        <p className="mt-1 line-clamp-2 text-[13px] leading-5 text-[#665159] sm:text-[14px]">{product.description}</p>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#f0d9df] bg-white text-[#7a5d66]"
+                    >
+                      <Heart size={18} />
+                    </button>
                   </div>
+
+                  <div className="mt-3 flex flex-wrap items-end gap-x-2 gap-y-1">
+                    <span className="text-[13px] text-[#7f6a72]">MRP</span>
+                    <span className="text-[28px] font-bold leading-none text-[#2f2428]">{formatCurrency(price)}</span>
+                    {mrp > price ? <span className="text-[15px] text-[#ad98a1] line-through">{formatCurrency(mrp)}</span> : null}
+                    {discount > 0 ? <span className="rounded-md bg-[#fff1f5] px-2 py-1 text-[12px] font-bold text-[#c56f7f]">{discount}% OFF</span> : null}
+                  </div>
+
+                  {discount > 0 ? (
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-[18px] bg-[#fff5f8] px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[13px] font-semibold text-[#2f2428]">Deal price</p>
+                          <p className="mt-1 text-[20px] font-bold text-[#2f2428]">{formatCurrency(price)}</p>
+                        </div>
+                        <div className="rounded-full bg-[#c56f7f] px-3 py-1 text-[12px] font-bold text-white">
+                          Save {formatCurrency(mrp - price)}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {product.variants?.length ? (
-                  <div className="mt-3 rounded-[22px] border border-[#f0d9df] bg-white p-4">
+                  <div className="border-b border-[#f1e4e8] py-5">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-[13px] font-semibold text-[#3e2f35]">
+                      <p className="text-[16px] font-semibold text-[#2f2428]">
                         Colour <span className="font-normal text-[#7f6a72]">{selectedVariant?.color || ""}</span>
                       </p>
                     </div>
@@ -552,14 +657,14 @@ export default function ProductPage() {
                             key={`${variant.color}-${index}`}
                             type="button"
                             onClick={() => handleVariantChange(variant)}
-                            className={`relative h-16 w-16 min-w-16 overflow-hidden rounded-2xl border-2 ${selectedVariant?.color === variant.color ? "border-[#c56f7f]" : "border-[#f0d9df]"
+                            className={`relative h-20 w-16 min-w-16 overflow-hidden rounded-[18px] border-2 bg-[#fff8fa] ${selectedVariant?.color === variant.color ? "border-[#d96b88] shadow-[0_0_0_2px_rgba(217,107,136,0.14)]" : "border-[#f0d9df]"
                               }`}
                           >
                             <AsyncImage
                               src={previewImage}
                               alt={variant.color}
-                              className="h-full w-full rounded-2xl"
-                              skeletonClassName="rounded-2xl"
+                              className="h-full w-full rounded-[16px]"
+                              skeletonClassName="rounded-[16px]"
                             />
                           </button>
                         );
@@ -569,9 +674,9 @@ export default function ProductPage() {
                 ) : null}
 
                 {selectedVariant?.sizes?.length ? (
-                  <div className="mt-3 rounded-[22px] border border-[#f0d9df] bg-white p-4">
+                  <div className="border-b border-[#f1e4e8] py-5">
                     <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-[15px] font-semibold text-[#2f2428]">Select Size</p>
+                      <p className="text-[16px] font-semibold text-[#2f2428]">Select Size</p>
                       <button type="button" onClick={() => setShowSizeChart(true)} className="text-[13px] font-semibold text-[#c56f7f]">
                         Size Chart
                       </button>
@@ -583,7 +688,7 @@ export default function ProductPage() {
                           type="button"
                           disabled={sizeItem.stock === 0}
                           onClick={() => setSelectedSize(sizeItem)}
-                          className={`flex h-14 min-w-14 items-center justify-center rounded-2xl border text-[18px] font-semibold ${selectedSize?.size === sizeItem.size
+                          className={`flex h-14 min-w-[64px] items-center justify-center rounded-[18px] border px-4 text-[18px] font-semibold ${selectedSize?.size === sizeItem.size
                             ? "border-[#c56f7f] bg-[#c56f7f] text-white"
                             : "border-[#ead7dd] bg-white text-[#3a2c31]"
                             } ${sizeItem.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
@@ -595,19 +700,12 @@ export default function ProductPage() {
                   </div>
                 ) : null}
 
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    className="flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#ead7dd] bg-white text-[15px] font-semibold text-[#4a2e35]"
-                  >
-                    <Heart size={18} />
-                    Wishlist
-                  </button>
+                <div ref={mobileAddToCartRef} className="py-5">
                   <button
                     type="button"
                     onClick={handleAddToCart}
                     disabled={addingToCart}
-                    className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#ff4f86] text-[15px] font-semibold text-white shadow-[0_10px_20px_rgba(255,79,134,0.18)]"
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#c56f7f] text-[16px] font-semibold text-white shadow-[0_12px_24px_rgba(197,111,127,0.2)]"
                   >
                     {addingToCart ? (
                       <ButtonLoaderLabel label="Adding..." />
@@ -620,7 +718,7 @@ export default function ProductPage() {
                   </button>
                 </div>
 
-                <div className="mt-4 rounded-[22px] border border-[#ead7dd] bg-white p-4">
+                <div className="border-t border-[#f1e4e8] py-5">
                   <h2 className="text-[17px] font-semibold text-[#2f2428]">Check Delivery</h2>
                   <div className="mt-3 rounded-2xl border border-[#ead7dd] px-4 py-3 text-[14px] font-semibold text-[#d95b7d]">
                     Enter PIN Code
@@ -642,7 +740,7 @@ export default function ProductPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-[22px] border border-[#ead7dd] bg-white p-4">
+                <div className="border-t border-[#f1e4e8] py-5">
                   {detailSections.map((section, index) => (
                     <div key={`${section.title}-${index}`} className={`${index > 0 ? "mt-5 border-t border-[#f2e3e8] pt-5" : ""}`}>
                       <h3 className="text-[16px] font-semibold text-[#2f2428]">{section.title}</h3>
@@ -679,6 +777,108 @@ export default function ProductPage() {
           </div>
 
           <SimilarProducts currentProduct={product} />
+        </div>
+      </div>
+
+      {lightboxMedia ? (
+        <div className="fixed inset-0 z-[90] bg-[#263b2b] lg:bg-white">
+          <button
+            type="button"
+            onClick={closeLightbox}
+            aria-label="Close media viewer"
+            className="absolute left-3 top-3 z-[93] flex h-11 w-11 items-center justify-center text-[#282c3f] lg:left-5 lg:top-5"
+          >
+            <X size={30} strokeWidth={1.8} />
+          </button>
+
+          <div className="flex h-full w-full items-center justify-center px-0 py-6 lg:px-16 lg:py-12">
+            <div className="relative flex h-[min(88vh,900px)] w-full max-w-[min(100vw,560px)] items-center justify-center bg-white lg:h-full lg:max-w-none">
+              {lightboxMedia.type === "video" ? (
+                <video
+                  key={lightboxMedia.src}
+                  src={lightboxMedia.src}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="max-h-[82vh] max-w-[94vw] object-contain lg:max-h-[88vh] lg:max-w-[82vw]"
+                />
+              ) : (
+                <img
+                  key={lightboxMedia.src}
+                  src={lightboxMedia.src}
+                  alt={`${product.name} full view ${lightboxIndex + 1}`}
+                  className="max-h-[82vh] max-w-[94vw] object-contain lg:max-h-[88vh] lg:max-w-[82vw]"
+                />
+              )}
+            </div>
+          </div>
+
+          {mediaItems.length > 1 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => goToLightboxMedia(-1)}
+                aria-label="Previous media"
+                className="absolute left-4 top-1/2 z-[92] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#282c3f] shadow-[0_4px_16px_rgba(0,0,0,0.12)] lg:left-6 lg:h-20 lg:w-11 lg:rounded-md"
+              >
+                <ChevronLeft size={28} strokeWidth={2.3} />
+              </button>
+              <button
+                type="button"
+                onClick={() => goToLightboxMedia(1)}
+                aria-label="Next media"
+                className="absolute right-4 top-1/2 z-[92] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white text-[#282c3f] shadow-[0_4px_16px_rgba(0,0,0,0.12)] lg:right-6 lg:h-20 lg:w-11 lg:rounded-md"
+              >
+                <ChevronRight size={28} strokeWidth={2.3} />
+              </button>
+
+              <div className="absolute bottom-5 left-1/2 z-[92] flex -translate-x-1/2 items-center gap-2 lg:bottom-7">
+                {mediaItems.map((media, index) => (
+                  <button
+                    key={`${media.type}-dot-${index}`}
+                    type="button"
+                    onClick={() => {
+                      setLightboxIndex(index);
+                      setActiveMedia(media.src);
+                    }}
+                    aria-label={`Open media ${index + 1}`}
+                    className={`h-2 rounded-full transition-all ${index === lightboxIndex ? "w-4 bg-[#8c8c8c]" : "w-2 bg-[#d7d7d7]"}`}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 border-t border-[#f0d9df] bg-[rgba(255,255,255,0.96)] px-3 py-3 shadow-[0_-10px_26px_rgba(74,46,53,0.08)] backdrop-blur transition-transform duration-200 lg:hidden ${
+          showStickyBuyBar ? "translate-y-0" : "translate-y-full"
+        }`}
+      >
+        <div className="mx-auto flex max-w-[1240px] items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9a8089]">Price</p>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-[20px] font-bold leading-none text-[#2f2428]">{formatCurrency(price)}</span>
+              {mrp > price ? <span className="text-[12px] text-[#ad98a1] line-through">{formatCurrency(mrp)}</span> : null}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={addingToCart}
+            className="flex h-12 min-w-[176px] items-center justify-center gap-2 rounded-[16px] bg-[#c56f7f] px-5 text-[15px] font-semibold text-white shadow-[0_12px_24px_rgba(197,111,127,0.2)] sm:min-w-[220px]"
+          >
+            {addingToCart ? (
+              <ButtonLoaderLabel label="Adding..." />
+            ) : (
+              <>
+                <ShoppingBag size={18} />
+                Add to Bag
+              </>
+            )}
+          </button>
         </div>
       </div>
 

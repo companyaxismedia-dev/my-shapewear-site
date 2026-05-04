@@ -13,6 +13,9 @@ router.post("/", protect, cartController.addItemToCart);
 router.put("/:itemId", protect, cartController.updateQty);
 router.put("/size/:itemId", protect, cartController.updateSize);
 
+// APPLY / REMOVE COUPON
+router.post("/coupon", protect, cartController.applyCoupon);
+router.delete("/coupon", protect, cartController.removeCoupon);
 
 // REMOVE SINGLE ITEM
 router.delete("/:itemId", protect, cartController.deleteItemFromCart);

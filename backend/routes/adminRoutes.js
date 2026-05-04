@@ -7,6 +7,7 @@ const memUpload = multer({ storage: multer.memoryStorage() });
 
 const adminController = require("../controllers/adminController");
 const categoryController = require("../controllers/categoryController");
+const blogController = require("../controllers/blogController");
 
 //routes for the count in the admin dashboard cards
 router.get("/stats/counts", protect, admin, adminController.getCounts);
@@ -37,6 +38,17 @@ router.post("/categories", protect, admin, categoryController.createCategory);
 router.post("/categories/delete-many", protect, admin, categoryController.deleteManyCategories);
 router.put("/categories/:id", protect, admin, categoryController.updateCategory);
 router.delete("/categories/:id", protect, admin, categoryController.deleteCategory);
+
+// blog management routes
+router.get("/blogs/meta", protect, admin, blogController.getAdminBlogMeta);
+router.get("/blog-sections", protect, admin, blogController.getAdminBlogSections);
+router.get("/blogs", protect, admin, blogController.getAdminBlogs);
+router.post("/blog-sections", protect, admin, blogController.createAdminBlogSection);
+router.post("/blogs", protect, admin, blogController.createAdminBlog);
+router.post("/blogs/delete-many", protect, admin, blogController.deleteManyAdminBlogs);
+router.put("/blog-sections/:id", protect, admin, blogController.updateAdminBlogSection);
+router.put("/blogs/:id", protect, admin, blogController.updateAdminBlog);
+router.delete("/blogs/:id", protect, admin, blogController.deleteAdminBlog);
 
 // GENERIC :id ROUTES - MUST BE LAST
 router.put("/products/:id/publish", protect, admin, adminController.publishDraft);

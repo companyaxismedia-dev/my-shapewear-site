@@ -881,10 +881,17 @@ main::-webkit-scrollbar-thumb:hover {
 
 .category-page-main {
   padding: 14px;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .category-page-shell {
   padding-top: 72px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 .category-page-navbar {
@@ -999,20 +1006,27 @@ main::-webkit-scrollbar-thumb:hover {
 .category-page-layout {
   display: flex;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin: 0;
   align-items: flex-start;
   position: relative;
+  overflow-x: clip;
 }
 
 .category-page-content {
   flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 .category-filter-aside {
   align-self: flex-start;
   flex: 0 0 clamp(212px, 18vw, 260px);
   width: clamp(212px, 18vw, 260px);
+  min-width: 0;
+  max-width: 100%;
   background: #fff;
   border-right: 1px solid #f0e7ea;
   overflow: visible;
@@ -1040,6 +1054,18 @@ main::-webkit-scrollbar-thumb:hover {
   display: none;
 }
 
+.category-mobile-overlay,
+.category-mobile-sheet,
+.category-mobile-filter-drawer,
+.category-mobile-filter-body,
+.category-mobile-filter-tabs,
+.category-mobile-filter-content,
+.category-mobile-option-row,
+.category-mobile-filter-tab,
+.category-mobile-filter-actions button {
+  box-sizing: border-box;
+}
+
 @media (min-width: 640px) {
   .category-page-main {
     padding: 16px;
@@ -1059,6 +1085,7 @@ main::-webkit-scrollbar-thumb:hover {
 
   .category-page-layout {
     flex-direction: column;
+    overflow-x: clip;
   }
 
   .category-page-header-shell {
@@ -1070,6 +1097,7 @@ main::-webkit-scrollbar-thumb:hover {
 
   .category-page-main {
     padding: 14px 12px 84px;
+    overflow-x: clip;
   }
 
   .category-page-grid {
@@ -1131,6 +1159,11 @@ main::-webkit-scrollbar-thumb:hover {
     z-index: 85;
     display: block;
     background: rgba(24, 29, 45, 0.28);
+    width: 100vw;
+    max-width: 100vw;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-y;
   }
 
   .category-mobile-sheet {
@@ -1203,6 +1236,9 @@ main::-webkit-scrollbar-thumb:hover {
     display: flex;
     flex-direction: column;
     background: #fff;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .category-mobile-filter-header {
@@ -1235,12 +1271,18 @@ main::-webkit-scrollbar-thumb:hover {
     grid-template-columns: 110px minmax(0, 1fr);
     min-height: 0;
     flex: 1;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .category-mobile-filter-tabs {
     overflow-y: auto;
+    overflow-x: hidden;
     background: #f5f5f6;
     border-right: 1px solid #ececec;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .category-mobile-filter-tab {
@@ -1263,12 +1305,17 @@ main::-webkit-scrollbar-thumb:hover {
 
   .category-mobile-filter-content {
     overflow-y: auto;
+    overflow-x: hidden;
     background: #fff;
     padding: 8px 0;
+    min-width: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   .category-mobile-option-row {
     width: 100%;
+    max-width: 100%;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1278,6 +1325,7 @@ main::-webkit-scrollbar-thumb:hover {
     color: #282c3f;
     font-size: 14px;
     text-align: left;
+    overflow: hidden;
   }
 
   .category-mobile-option-row.is-active {
@@ -1295,6 +1343,9 @@ main::-webkit-scrollbar-thumb:hover {
 
   .category-mobile-option-label {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .category-mobile-option-trailing {
@@ -1358,8 +1409,8 @@ main::-webkit-scrollbar-thumb:hover {
   .category-mobile-price-track,
   .category-mobile-price-track-active {
     position: absolute;
-    left: 12px;
-    right: 12px;
+    left: 0;
+    right: 0;
     top: 22px;
     height: 4px;
     border-radius: 9999px;
@@ -1375,9 +1426,9 @@ main::-webkit-scrollbar-thumb:hover {
 
   .category-mobile-price-slider input {
     position: absolute;
-    left: 12px;
+    left: 0;
     top: 12px;
-    width: calc(100% - 24px);
+    width: 100%;
     background: transparent;
     -webkit-appearance: none;
     appearance: none;

@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useAccount } from "@/hooks/useAccount";
 import { Home, ShoppingBag, Ticket, User, Wallet, Banknote, MapPin, Bell } from "lucide-react";
-import styles from "../../app/globals.css";
 
 const overviewItems = [
   {
@@ -66,6 +66,10 @@ const overviewItems = [
 
 export default function Overview() {
   const router = useRouter();
+  const { user, loading } = useAccount();
+
+  const displayName = user?.name?.trim() || "Your profile";
+  const displayEmail = user?.email?.trim() || "Email not available";
 
   return (
     <div className="overview-container" style={{ padding: "32px 0" }}>
@@ -75,8 +79,19 @@ export default function Overview() {
           alt="Profile"
           style={{ width: 80, height: 80, borderRadius: "50%", marginBottom: 16 }}
         />
-        <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 8 }}>user@gmail.com</div>
-        <button className="btn-secondary-imkaa" style={{ marginBottom: 16 }}>EDIT PROFILE</button>
+        <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 4 }}>
+          {loading ? "Loading..." : displayName}
+        </div>
+        <div style={{ color: "var(--color-body)", fontSize: 14, marginBottom: 16 }}>
+          {loading ? "Fetching your profile" : displayEmail}
+        </div>
+        <button
+          className="btn-secondary-imkaa"
+          style={{ marginBottom: 16 }}
+          onClick={() => router.push("/account/personal-info")}
+        >
+          EDIT PROFILE
+        </button>
       </div>
       <div
         className="overview-grid"

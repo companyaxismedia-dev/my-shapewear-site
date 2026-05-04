@@ -21,26 +21,65 @@ export const CartProvider = ({ children }) => {
     total: 0,
     subTotal: 0,
     discount: 0,
+    productDiscount: 0,
+    couponDiscount: 0,
     shipping: 0,
     platformFee: 30,
     youPay: 30,
+    appliedCoupon: null,
   });
   const token = user?.token;
 
-  const buildSummary = (items = []) => {
+  const readGuestCoupon = () => {
+    try {
+      return JSON.parse(localStorage.getItem("guestCoupon") || "null");
+    } catch {
+      return null;
+    }
+  };
+
+  const writeGuestCoupon = (coupon) => {
+    if (coupon?.code) {
+      localStorage.setItem("guestCoupon", JSON.stringify(coupon));
+    } else {
+      localStorage.removeItem("guestCoupon");
+    }
+  };
+
+  const calculateCouponDiscount = (subTotal, coupon) => {
+    if (!coupon?.code) return 0;
+    if (subTotal < (coupon.minOrderValue || 0)) return 0;
+
+    if (coupon.discountType === "flat") {
+      return Math.min(coupon.discountValue || 0, subTotal);
+    }
+
+    let discount = (subTotal * (coupon.discountValue || 0)) / 100;
+    if (coupon.maxDiscount) {
+      discount = Math.min(discount, coupon.maxDiscount);
+    }
+
+    return Math.min(discount, subTotal);
+  };
+
+  const buildSummary = (items = [], appliedCoupon = null) => {
     const total = items.reduce((sum, item) => sum + (item.mrp || 0) * (item.quantity || 0), 0);
     const subTotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 0), 0);
-    const discount = Math.max(total - subTotal, 0);
+    const productDiscount = Math.max(total - subTotal, 0);
+    const couponDiscount = calculateCouponDiscount(subTotal, appliedCoupon);
     const shipping = 0;
     const platformFee = 30;
 
     return {
       total,
       subTotal,
-      discount,
+      discount: productDiscount,
+      productDiscount,
+      couponDiscount,
       shipping,
       platformFee,
-      youPay: subTotal + shipping + platformFee,
+      youPay: Math.max(subTotal + shipping + platformFee - couponDiscount, 0),
+      appliedCoupon: couponDiscount > 0 ? appliedCoupon : null,
     };
   };
 
@@ -51,6 +90,7 @@ export const CartProvider = ({ children }) => {
 
     if (!guest.length) {
       setCartItems([]);
+      writeGuestCoupon(null);
       setCartSummary(buildSummary([]));
       setCartLoading(false);
       return;
@@ -126,8 +166,13 @@ export const CartProvider = ({ children }) => {
 
     // Filter out null items (deleted products)
     const filteredItems = formatted.filter((item) => item !== null);
+    const guestCoupon = readGuestCoupon();
+    const nextSummary = buildSummary(filteredItems, guestCoupon);
+    if (guestCoupon?.code && !nextSummary.appliedCoupon) {
+      writeGuestCoupon(null);
+    }
     setCartItems(filteredItems);
-    setCartSummary(buildSummary(filteredItems));
+    setCartSummary(nextSummary);
     setCartLoading(false);
   };
 
@@ -138,6 +183,15 @@ export const CartProvider = ({ children }) => {
       if (user) {
         await mergeGuestCart();
         await fetchCart();
+        const guestCoupon = readGuestCoupon();
+        if (guestCoupon?.code) {
+          try {
+            await applyCoupon(guestCoupon.code, { silent: true });
+          } catch {
+            writeGuestCoupon(null);
+          }
+          writeGuestCoupon(null);
+        }
       } else {
         await loadGuestCart();
       }
@@ -202,6 +256,81 @@ export const CartProvider = ({ children }) => {
       setCartSummary(buildSummary([]));
     } finally {
       setCartLoading(false);
+    }
+  };
+
+  const applyCoupon = async (code, options = {}) => {
+    const normalizedCode = String(code || "").trim().toUpperCase();
+
+    if (!normalizedCode) {
+      throw new Error("Please enter a coupon code");
+    }
+
+    if (user) {
+      const res = await axios.post(
+        `${API_BASE}/api/cart/coupon`,
+        { code: normalizedCode },
+        { headers: { Authorization: `Bearer ${user?.token}` } },
+      );
+
+      if (res.data?.summary) {
+        setCartSummary(res.data.summary);
+      }
+
+      await fetchCart();
+      if (!options.silent) {
+        toast.success(res.data?.message || "Coupon applied");
+      }
+      return res.data;
+    }
+
+    const currentSummary = buildSummary(cartItems);
+    const res = await axios.post(`${API_BASE}/api/offers/validate`, {
+      code: normalizedCode,
+      cartTotal: currentSummary.subTotal,
+    });
+
+    const offer = res.data?.offer;
+    const coupon = offer
+      ? {
+          code: offer.code,
+          title: offer.title || "",
+          discountType: offer.discountType || "",
+          discountValue: offer.discountValue || 0,
+          maxDiscount: offer.maxDiscount ?? null,
+          minOrderValue: offer.minOrderValue || 0,
+        }
+      : null;
+
+    writeGuestCoupon(coupon);
+    setCartSummary(buildSummary(cartItems, coupon));
+    if (!options.silent) {
+      toast.success("Coupon applied");
+    }
+    return res.data;
+  };
+
+  const removeCoupon = async (options = {}) => {
+    if (user) {
+      const res = await axios.delete(`${API_BASE}/api/cart/coupon`, {
+        headers: { Authorization: `Bearer ${user?.token}` },
+      });
+
+      if (res.data?.summary) {
+        setCartSummary(res.data.summary);
+      }
+
+      await fetchCart();
+      if (!options.silent) {
+        toast.success(res.data?.message || "Coupon removed");
+      }
+      return;
+    }
+
+    writeGuestCoupon(null);
+    setCartSummary(buildSummary(cartItems));
+    if (!options.silent) {
+      toast.success("Coupon removed");
     }
   };
 
@@ -358,6 +487,9 @@ export const CartProvider = ({ children }) => {
         updateQty,
         updateSize,
         removeItem,
+        applyCoupon,
+        removeCoupon,
+        fetchCart,
       }}
     >
       {children}

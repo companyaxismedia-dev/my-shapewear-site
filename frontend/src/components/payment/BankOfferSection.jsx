@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, TicketPercent } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 import { OfferListSkeleton, SkeletonBlock } from "@/components/loaders/Loaders";
 
-export function BankOfferSection() {
+export function BankOfferSection({ compact = false }) {
   const [showMore, setShowMore] = useState(false);
   const [offer, setOffer] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* ================= FETCH OFFER FROM BACKEND ================= */
   useEffect(() => {
     const fetchOffer = async () => {
       try {
@@ -30,80 +29,64 @@ export function BankOfferSection() {
     fetchOffer();
   }, []);
 
-  /* ================= LOADING ================= */
   if (loading) {
     return (
-      <div className="rounded-lg border bg-white p-4 sm:p-6">
+      <div className="rounded-[4px] border border-[#ece5e8] bg-white p-4 sm:p-6 shadow-[0_6px_18px_rgba(45,28,35,0.05)]">
         <SkeletonBlock className="mb-4 h-5 w-32 rounded-full" />
         <OfferListSkeleton rows={2} />
       </div>
     );
   }
 
-  /* ================= NO OFFER ================= */
   if (!offer) return null;
 
+  const details = [
+    `Minimum order Rs. ${offer.minOrderValue || 0}`,
+    `Discount ${offer.discountValue || 0}%`,
+    `Code ${offer.code || "N/A"}`,
+  ];
+
   return (
-    <div className="rounded-lg border border-[#eaeaec] bg-white p-4 sm:p-6">
-
-      <div className="flex items-start gap-3 sm:gap-4">
-
-        {/* ICON */}
-        <div className="mt-1 flex-shrink-0">
-          <svg
-            className="h-6 w-6 text-[#535766]"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="12" cy="12" r="1" />
-            <circle cx="12" cy="6" r="1" />
-            <circle cx="12" cy="18" r="1" />
-            <circle cx="6" cy="12" r="1" />
-            <circle cx="18" cy="12" r="1" />
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-          </svg>
+    <div
+      className={`rounded-[4px] border border-[#ece5e8] bg-white shadow-[0_6px_18px_rgba(45,28,35,0.05)] ${
+        compact ? "p-4" : "p-5 sm:p-6"
+      }`}
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff1f4] text-[#b27b86]">
+          <TicketPercent className="h-5 w-5" />
         </div>
 
-        {/* CONTENT */}
-        <div className="flex-1">
-
-          <h3 className="mb-2 text-[16px] font-bold text-[#282c3f]">
-            Bank Offer
-          </h3>
-
-          <p className="mb-3 text-[13px] text-[#535766] leading-5">
+        <div className="min-w-0 flex-1">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.05em] text-[#8a7a80]">
+            Active Offer
+          </p>
+          <h3 className="mt-1 text-[18px] font-semibold text-[#2f2428]">Bank offer</h3>
+          <p className="mt-2 text-[13px] leading-6 text-[#5f4b52]">
             {offer.title || offer.description}
           </p>
 
           <button
-            onClick={() => setShowMore(!showMore)}
-            className="flex items-center gap-1 text-[13px] font-semibold text-[#ff3f6c]"
+            type="button"
+            onClick={() => setShowMore((prev) => !prev)}
+            className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-[#b27b86]"
           >
-            {showMore ? "Show Less" : "Show More"}
-
-            <ChevronDown
-              className={`h-4 w-4 transition-transform duration-300 ${
-                showMore ? "rotate-180" : ""
-              }`}
-            />
+            {showMore ? "Show less" : "Show more"}
+            <ChevronDown className={`h-4 w-4 transition-transform ${showMore ? "rotate-180" : ""}`} />
           </button>
 
-          {showMore && (
-            <div className="mt-4 border-t border-[#eaeaec] pt-4 text-[13px] text-[#535766]">
-
-              <p className="mb-2 font-semibold text-[#282c3f]">
-                Offer Details:
-              </p>
-
-              <ul className="list-disc list-inside space-y-1">
-                <li>Minimum order ₹{offer.minOrderValue}</li>
-                <li>Discount: {offer.discountValue}%</li>
-                <li>Code: {offer.code}</li>
+          {showMore ? (
+            <div className="mt-4 border-t border-[#f0e6e8] pt-4">
+              <ul className="space-y-2 text-[13px] leading-5 text-[#5f4b52]">
+                {details.map((detail) => (
+                  <li key={detail} className="flex items-start gap-2">
+                    <span className="mt-[6px] h-1.5 w-1.5 rounded-full bg-[#b27b86]" />
+                    <span>{detail}</span>
+                  </li>
+                ))}
               </ul>
-
             </div>
-          )}
-
+          ) : null}
         </div>
       </div>
     </div>

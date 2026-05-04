@@ -26,6 +26,40 @@ const cartSchema = new mongoose.Schema(
         color: String,
       },
     ],
+
+    coupon: {
+      code: {
+        type: String,
+        default: "",
+        trim: true,
+        uppercase: true,
+      },
+      title: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      discountType: {
+        type: String,
+        enum: ["percentage", "flat", ""],
+        default: "",
+      },
+      discountValue: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      maxDiscount: {
+        type: Number,
+        default: null,
+        min: 0,
+      },
+      minOrderValue: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+    },
   },
   { timestamps: true }
 );

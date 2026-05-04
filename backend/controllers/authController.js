@@ -449,11 +449,57 @@ exports.updateProfile = async (req, res) => {
       });
     }
 
-    const { name, email, phone } = req.body;
+    const { name, email, phone, gender, birthday } = req.body;
+    const normalizedEmail =
+      email !== undefined ? email.toLowerCase().trim() : undefined;
+    const normalizedPhone =
+      phone !== undefined ? phone.trim() : undefined;
+
+    if (
+      normalizedEmail !== undefined &&
+      normalizedEmail &&
+      normalizedEmail !== user.email
+    ) {
+      const existingEmailUser = await User.findOne({
+        email: normalizedEmail,
+        _id: { $ne: user._id },
+      });
+
+      if (existingEmailUser) {
+        return res.status(400).json({
+          message: "Email already in use",
+        });
+      }
+    }
+
+    if (
+      normalizedPhone !== undefined &&
+      normalizedPhone &&
+      normalizedPhone !== user.phone
+    ) {
+      const existingPhoneUser = await User.findOne({
+        phone: normalizedPhone,
+        _id: { $ne: user._id },
+      });
+
+      if (existingPhoneUser) {
+        return res.status(400).json({
+          message: "Phone already in use",
+        });
+      }
+    }
+
+    if (normalizedEmail !== undefined && !normalizedEmail) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
 
     if (name !== undefined) user.name = name;
-    if (email !== undefined) user.email = email.toLowerCase().trim();
-    if (phone !== undefined) user.phone = phone;
+    if (normalizedEmail !== undefined) user.email = normalizedEmail;
+    if (normalizedPhone !== undefined) user.phone = normalizedPhone || undefined;
+    if (gender !== undefined) user.gender = gender;
+    if (birthday !== undefined) user.birthday = birthday;
 
     const updatedUser = await user.save();
 
@@ -462,6 +508,8 @@ exports.updateProfile = async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       phone: updatedUser.phone,
+      gender: updatedUser.gender,
+      birthday: updatedUser.birthday,
       role: updatedUser.role,
     });
   } catch (error) {
