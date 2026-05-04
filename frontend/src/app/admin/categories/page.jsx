@@ -546,7 +546,7 @@ export default function CategoriesPage() {
           ) : tree.length === 0 ? (
             <p className="text-sm text-muted-foreground">No categories found yet.</p>
           ) : !previewOpen ? (
-            <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center">
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-4 text-center">
               <p className="text-sm font-medium text-foreground">Hierarchy preview is collapsed</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Click Expand to view the full parent-child tree.

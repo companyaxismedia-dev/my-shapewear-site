@@ -193,8 +193,8 @@ export default function FilterBar({
       ? parseInt(filters.maxPrice, 10)
       : priceCeiling;
   const priceSpan = Math.max(priceCeiling - priceFloor, 1);
-  const sliderHandleSize = 18;
-  const sliderEdgeInset = sliderHandleSize / 2;
+  const minSliderPercent = ((priceMin - priceFloor) / priceSpan) * 100;
+  const maxSliderPercent = ((priceMax - priceFloor) / priceSpan) * 100;
   const formatPriceRangeLabel = () => {
     const minLabel = `₹${priceMin}`;
     const maxLabel = priceMax >= priceCeiling ? `₹${priceCeiling.toLocaleString()}+` : `₹${priceMax}`;
@@ -512,8 +512,8 @@ export default function FilterBar({
               style={{
                 position: "absolute",
                 top: 11,
-                left: sliderEdgeInset,
-                right: sliderEdgeInset,
+                left: 0,
+                right: 0,
                 height: 3,
                 backgroundColor: "#f1d8df",
                 borderRadius: 9999,
@@ -523,8 +523,8 @@ export default function FilterBar({
               style={{
                 position: "absolute",
                 top: 11,
-                left: `calc(${sliderEdgeInset}px + ${((priceMin - priceFloor) / priceSpan) * 100}% - ${(sliderEdgeInset * ((priceMin - priceFloor) / priceSpan))}px)`,
-                right: `calc(${sliderEdgeInset}px + ${((100 - ((priceMax - priceFloor) / priceSpan) * 100))}% - ${(sliderEdgeInset * (1 - ((priceMax - priceFloor) / priceSpan)))}px)`,
+                left: `${minSliderPercent}%`,
+                right: `${100 - maxSliderPercent}%`,
                 height: 3,
                 backgroundColor: "#ff3f6c",
                 borderRadius: 9999,
@@ -535,18 +535,23 @@ export default function FilterBar({
               type="range"
               min={priceFloor}
               max={priceCeiling}
-              step={50}
+              step={1}
               value={priceMin}
+              onInput={(e) => {
+                const val = Math.min(parseInt(e.target.value, 10), priceMax - 1);
+                setPage(1);
+                setFilters((p) => ({ ...p, minPrice: String(val) }));
+              }}
               onChange={(e) => {
-                const val = Math.min(parseInt(e.target.value), priceMax - 100);
+                const val = Math.min(parseInt(e.target.value, 10), priceMax - 1);
                 setPage(1);
                 setFilters((p) => ({ ...p, minPrice: String(val) }));
               }}
               style={{
                 position: "absolute",
                 top: 6,
-                left: sliderEdgeInset,
-                width: `calc(100% - ${sliderEdgeInset * 2}px)`,
+                left: 0,
+                width: "100%",
                 height: 12,
                 background: "transparent",
                 pointerEvents: "none",
@@ -559,18 +564,23 @@ export default function FilterBar({
               type="range"
               min={priceFloor}
               max={priceCeiling}
-              step={50}
+              step={1}
               value={priceMax}
+              onInput={(e) => {
+                const val = Math.max(parseInt(e.target.value, 10), priceMin + 1);
+                setPage(1);
+                setFilters((p) => ({ ...p, maxPrice: String(val) }));
+              }}
               onChange={(e) => {
-                const val = Math.max(parseInt(e.target.value), priceMin + 100);
+                const val = Math.max(parseInt(e.target.value, 10), priceMin + 1);
                 setPage(1);
                 setFilters((p) => ({ ...p, maxPrice: String(val) }));
               }}
               style={{
                 position: "absolute",
                 top: 6,
-                left: sliderEdgeInset,
-                width: `calc(100% - ${sliderEdgeInset * 2}px)`,
+                left: 0,
+                width: "100%",
                 height: 12,
                 background: "transparent",
                 pointerEvents: "none",

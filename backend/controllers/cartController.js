@@ -1,8 +1,10 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Offer = require("../models/Offer");
 
 const PLATFORM_FEE = 30;
+const SHIPPING_FEE = 0;
 
 function getCartItemPricing(product, selectedSize, qty, fallbackSize, fallbackColor) {
   const selectedVariant =
@@ -46,6 +48,70 @@ function getCartItemPricing(product, selectedSize, qty, fallbackSize, fallbackCo
   };
 }
 
+function calculateCouponDiscount(subTotal, coupon) {
+  if (!coupon?.code) {
+    return 0;
+  }
+
+  if (subTotal < (coupon.minOrderValue || 0)) {
+    return 0;
+  }
+
+  if (coupon.discountType === "flat") {
+    return Math.min(coupon.discountValue || 0, subTotal);
+  }
+
+  let discount = (subTotal * (coupon.discountValue || 0)) / 100;
+
+  if (coupon.maxDiscount) {
+    discount = Math.min(discount, coupon.maxDiscount);
+  }
+
+  return Math.min(discount, subTotal);
+}
+
+function buildCartSummary(formattedItems, coupon = null) {
+  const total = formattedItems.reduce((sum, item) => sum + item.mrp * item.quantity, 0);
+  const subTotal = formattedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const productDiscount = Math.max(total - subTotal, 0);
+  const couponDiscount = calculateCouponDiscount(subTotal, coupon);
+  const shipping = SHIPPING_FEE;
+  const platformFee = PLATFORM_FEE;
+  const youPay = Math.max(subTotal + shipping + platformFee - couponDiscount, 0);
+
+  return {
+    total,
+    subTotal,
+    discount: productDiscount,
+    productDiscount,
+    couponDiscount,
+    shipping,
+    platformFee,
+    youPay,
+    appliedCoupon: coupon?.code
+      ? {
+          code: coupon.code,
+          title: coupon.title || "",
+          discountType: coupon.discountType || "",
+          discountValue: coupon.discountValue || 0,
+          maxDiscount: coupon.maxDiscount ?? null,
+          minOrderValue: coupon.minOrderValue || 0,
+        }
+      : null,
+  };
+}
+
+function clearCartCoupon(cart) {
+  cart.coupon = {
+    code: "",
+    title: "",
+    discountType: "",
+    discountValue: 0,
+    maxDiscount: null,
+    minOrderValue: 0,
+  };
+}
+
 /* ================= GET CART ================= */
 exports.getCart = async (req, res) => {
   try {
@@ -60,9 +126,12 @@ exports.getCart = async (req, res) => {
           total: 0,
           subTotal: 0,
           discount: 0,
+          productDiscount: 0,
+          couponDiscount: 0,
           shipping: 0,
           platformFee: PLATFORM_FEE,
           youPay: PLATFORM_FEE,
+          appliedCoupon: null,
         },
       });
     }
@@ -99,24 +168,32 @@ exports.getCart = async (req, res) => {
         };
       });
 
-    const total = formattedItems.reduce((sum, item) => sum + item.mrp * item.quantity, 0);
-    const subTotal = formattedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const discount = Math.max(total - subTotal, 0);
-    const shipping = 0;
-    const platformFee = PLATFORM_FEE;
-    const youPay = subTotal + shipping + platformFee;
+    let appliedCoupon = null;
+
+    if (cart.coupon?.code) {
+      const offer = await Offer.findOne({ code: cart.coupon.code });
+
+      if (!offer || !offer.isValidOffer()) {
+        clearCartCoupon(cart);
+        await cart.save();
+      } else {
+        cart.coupon = {
+          code: offer.code,
+          title: offer.title,
+          discountType: offer.discountType,
+          discountValue: offer.discountValue,
+          maxDiscount: offer.maxDiscount,
+          minOrderValue: offer.minOrderValue,
+        };
+        appliedCoupon = cart.coupon;
+        await cart.save();
+      }
+    }
 
     res.status(200).json({
       success: true,
       items: formattedItems,
-      summary: {
-        total,
-        subTotal,
-        discount,
-        shipping,
-        platformFee,
-        youPay,
-      },
+      summary: buildCartSummary(formattedItems, appliedCoupon),
     });
   } catch (error) {
     res.status(500).json({ message: "Cart fetch failed" });
@@ -288,5 +365,178 @@ exports.deleteItemFromCart = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: "Remove failed" });
+  }
+};
+
+/* ================= APPLY COUPON ================= */
+exports.applyCoupon = async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({
+        success: false,
+        message: "Coupon code required",
+      });
+    }
+
+    const cart = await Cart.findOne({ user: req.user._id })
+      .populate("items.product", "name brand mrp minPrice thumbnail slug variants");
+
+    if (!cart || !cart.items.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Cart is empty",
+      });
+    }
+
+    const offer = await Offer.findOne({ code: code.toUpperCase().trim() });
+
+    if (!offer) {
+      return res.status(404).json({
+        success: false,
+        message: "Invalid coupon",
+      });
+    }
+
+    if (!offer.isValidOffer()) {
+      return res.status(400).json({
+        success: false,
+        message: "Offer expired or inactive",
+      });
+    }
+
+    const formattedItems = cart.items
+      .filter((item) => item.product)
+      .map((item) => {
+        const pricing = getCartItemPricing(item.product, item.size, item.qty, item.size, item.color);
+
+        return {
+          id: item._id,
+          productId: pricing.productId,
+          slug: pricing.slug,
+          name: pricing.name,
+          brand: pricing.brand,
+          price: pricing.price,
+          mrp: pricing.mrp,
+          discount: pricing.discount,
+          image: pricing.image,
+          quantity: item.qty,
+          size: item.size,
+          color: item.color,
+          seller: pricing.seller,
+          deliveryDate: pricing.deliveryDate,
+          returnText: pricing.returnText,
+          availableSizes: pricing.availableSizes,
+          lineTotal: pricing.lineTotal,
+        };
+      });
+
+    const summary = buildCartSummary(formattedItems, {
+      code: offer.code,
+      title: offer.title,
+      discountType: offer.discountType,
+      discountValue: offer.discountValue,
+      maxDiscount: offer.maxDiscount,
+      minOrderValue: offer.minOrderValue,
+    });
+
+    if (summary.subTotal < offer.minOrderValue) {
+      return res.status(400).json({
+        success: false,
+        message: `Minimum order Rs. ${offer.minOrderValue} required`,
+      });
+    }
+
+    cart.coupon = {
+      code: offer.code,
+      title: offer.title,
+      discountType: offer.discountType,
+      discountValue: offer.discountValue,
+      maxDiscount: offer.maxDiscount,
+      minOrderValue: offer.minOrderValue,
+    };
+
+    await cart.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Coupon applied successfully",
+      summary,
+      appliedCoupon: summary.appliedCoupon,
+    });
+  } catch (error) {
+    console.error("APPLY COUPON ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Coupon apply failed",
+    });
+  }
+};
+
+/* ================= REMOVE COUPON ================= */
+exports.removeCoupon = async (req, res) => {
+  try {
+    const cart = await Cart.findOne({ user: req.user._id })
+      .populate("items.product", "name brand mrp minPrice thumbnail slug variants");
+
+    if (!cart) {
+      return res.status(200).json({
+        success: true,
+        message: "Coupon removed",
+        summary: {
+          total: 0,
+          subTotal: 0,
+          discount: 0,
+          productDiscount: 0,
+          couponDiscount: 0,
+          shipping: 0,
+          platformFee: PLATFORM_FEE,
+          youPay: PLATFORM_FEE,
+          appliedCoupon: null,
+        },
+      });
+    }
+
+    clearCartCoupon(cart);
+    await cart.save();
+
+    const formattedItems = cart.items
+      .filter((item) => item.product)
+      .map((item) => {
+        const pricing = getCartItemPricing(item.product, item.size, item.qty, item.size, item.color);
+
+        return {
+          id: item._id,
+          productId: pricing.productId,
+          slug: pricing.slug,
+          name: pricing.name,
+          brand: pricing.brand,
+          price: pricing.price,
+          mrp: pricing.mrp,
+          discount: pricing.discount,
+          image: pricing.image,
+          quantity: item.qty,
+          size: item.size,
+          color: item.color,
+          seller: pricing.seller,
+          deliveryDate: pricing.deliveryDate,
+          returnText: pricing.returnText,
+          availableSizes: pricing.availableSizes,
+          lineTotal: pricing.lineTotal,
+        };
+      });
+
+    return res.status(200).json({
+      success: true,
+      message: "Coupon removed",
+      summary: buildCartSummary(formattedItems, null),
+    });
+  } catch (error) {
+    console.error("REMOVE COUPON ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Coupon remove failed",
+    });
   }
 };

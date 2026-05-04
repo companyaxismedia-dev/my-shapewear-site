@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, Store, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle, Blinds,
+  Home, Store, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle, Blinds, BookOpen, ListOrdered,
   Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2, UserCircle2
 } from "lucide-react";
 
@@ -47,6 +47,16 @@ const navItems = [
     title: "Categories",
     href: "/admin/categories",
     icon: Blinds,
+  },
+  {
+    title: "Blogs",
+    href: "/admin/blogs",
+    icon: BookOpen,
+  },
+  {
+    title: "Blog Sections",
+    href: "/admin/blog-sections",
+    icon: ListOrdered,
   },
   {
     title: "Customers",
@@ -415,19 +425,19 @@ export function AdminLayout({ children }) {
 
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="flex min-h-screen overflow-x-hidden bg-background">
       <AdminSidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       <div
         className={cn(
-          "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
+          "flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden transition-all duration-300 ease-in-out",
           sidebarCollapsed ? "lg:ml-16" : "ml-0 lg:ml-64"
         )}
       >
         <header className="sticky top-0 z-10 min-h-16 bg-card border-b border-border px-3 py-3 backdrop-blur-md sm:px-4">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-2 rounded-lg hover:bg-muted text-muted-foreground"
@@ -455,8 +465,8 @@ export function AdminLayout({ children }) {
               )}
             </nav>
 
-            <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
-            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-sm w-48 lg:w-64">
+            <div className="ml-auto flex min-w-0 w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
+            <div className="hidden min-w-0 md:flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-sm w-48 lg:w-64">
               <Search className="w-4 h-4" />
               <input
                 type="text"
@@ -477,7 +487,7 @@ export function AdminLayout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1 p-3 sm:p-4 lg:p-6">{children}</main>
+        <main className="flex-1 min-w-0 overflow-x-hidden p-3 sm:p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );

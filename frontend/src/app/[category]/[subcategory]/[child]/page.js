@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
 import CategoryPage from "@/components/category/CategoryPage";
 import { fetchCategoryTree, findCategoryBySegments } from "@/lib/categories";
+import { notFound } from "next/navigation";
 
 export default async function Page({ params }) {
   const { category, subcategory, child } = await params;

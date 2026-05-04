@@ -11,6 +11,42 @@ export function AccountProvider({ children }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const syncStoredUser = useCallback((updatedUser) => {
+    if (typeof window === "undefined") return;
+
+    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+    if (!storedUser?.token) return;
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        ...storedUser,
+        ...updatedUser,
+        token: storedUser.token,
+      })
+    );
+
+    window.dispatchEvent(new Event("auth-changed"));
+  }, []);
+
+  const fetchUserProfile = useCallback(async (token) => {
+    const res = await fetch(`${API_BASE}/api/users/profile`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch profile");
+    }
+
+    const profile = await res.json();
+    setUser(profile);
+    syncStoredUser(profile);
+    return profile;
+  }, [syncStoredUser]);
+
   /* ================= FETCH ACCOUNT DATA ================= */
   useEffect(() => {
     const fetchData = async () => {
@@ -27,7 +63,7 @@ export function AccountProvider({ children }) {
         };
 
         /* ===== USER ===== */
-        setUser(storedUser);
+        await fetchUserProfile(storedUser.token);
 
         /* ===== ADDRESS ===== */
         const addrRes = await fetch(
@@ -61,12 +97,16 @@ export function AccountProvider({ children }) {
     };
 
     fetchData();
-  }, []);
+  }, [fetchUserProfile]);
 
   /* ================= USER UPDATE ================= */
   const updateUserProfile = useCallback((updatedData) => {
-    setUser((prev) => ({ ...prev, ...updatedData }));
-  }, []);
+    setUser((prev) => {
+      const nextUser = { ...prev, ...updatedData };
+      syncStoredUser(nextUser);
+      return nextUser;
+    });
+  }, [syncStoredUser]);
 
   /* ================= ADDRESS ACTIONS ================= */
 
@@ -140,6 +180,7 @@ export function AccountProvider({ children }) {
     loading,
 
     updateUserProfile,
+    fetchUserProfile,
 
     addAddress,
     deleteAddress,

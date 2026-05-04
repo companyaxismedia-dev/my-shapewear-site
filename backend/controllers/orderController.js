@@ -144,49 +144,51 @@ exports.createOrder = async (req, res) => {
     let finalAmount = totalAmount + SHIPPING_CHARGE + PLATFORM_FEE;
     let appliedOfferCode = null;
     let offersEarned = [];
+    let appliedOffer = null;
+    const requestedOfferCode = (offerCode || cart?.coupon?.code || "").toUpperCase().trim();
 
-    if (offerCode) {
-      const offer = await Offer.findOne({
-        code: offerCode.toUpperCase(),
+    if (requestedOfferCode) {
+      appliedOffer = await Offer.findOne({
+        code: requestedOfferCode,
       });
 
-      if (!offer) {
+      if (!appliedOffer) {
         return res.status(400).json({
           success: false,
           message: "Invalid offer code",
         });
       }
 
-      if (!offer.isValidOffer()) {
+      if (!appliedOffer.isValidOffer()) {
         return res.status(400).json({
           success: false,
           message: "Offer expired or inactive",
         });
       }
 
-      if (totalAmount < offer.minOrderValue) {
+      if (totalAmount < appliedOffer.minOrderValue) {
         return res.status(400).json({
           success: false,
-          message: `Minimum order ₹${offer.minOrderValue} required`,
+          message: `Minimum order ₹${appliedOffer.minOrderValue} required`,
         });
       }
 
       // percentage discount
-      if (offer.discountType === "percentage") {
+      if (appliedOffer.discountType === "percentage") {
         discountAmount =
-          (totalAmount * offer.discountValue) / 100;
+          (totalAmount * appliedOffer.discountValue) / 100;
 
         if (
-          offer.maxDiscount &&
-          discountAmount > offer.maxDiscount
+          appliedOffer.maxDiscount &&
+          discountAmount > appliedOffer.maxDiscount
         ) {
-          discountAmount = offer.maxDiscount;
+          discountAmount = appliedOffer.maxDiscount;
         }
       }
 
       // flat discount
-      if (offer.discountType === "flat") {
-        discountAmount = offer.discountValue;
+      if (appliedOffer.discountType === "flat") {
+        discountAmount = appliedOffer.discountValue;
       }
 
       finalAmount = Math.max(
@@ -194,7 +196,7 @@ exports.createOrder = async (req, res) => {
         0
       );
 
-      appliedOfferCode = offer.code;
+      appliedOfferCode = appliedOffer.code;
 
 
       if (appliedOfferCode) {
@@ -204,8 +206,8 @@ exports.createOrder = async (req, res) => {
       }
 
       // increase usage count
-      offer.usedCount += 1;
-      await offer.save();
+      appliedOffer.usedCount += 1;
+      await appliedOffer.save();
     }
 
     let savedOrder = null;
@@ -248,9 +250,9 @@ exports.createOrder = async (req, res) => {
       },
       coupon: {
         code: appliedOfferCode || "",
-        title: "",
-        discountType: offerCode ? (offer.discountType || "") : "",
-        discountValue: offerCode ? (offer.discountValue || 0) : 0,
+        title: appliedOffer?.title || "",
+        discountType: appliedOffer?.discountType || "",
+        discountValue: appliedOffer?.discountValue || 0,
         discountAmount: discountAmount,
       },
       offersEarned: offersEarned,

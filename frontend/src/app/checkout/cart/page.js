@@ -37,6 +37,8 @@ export default function CartPage() {
     updateQty,
     removeItem,
     updateSize,
+    applyCoupon,
+    removeCoupon,
     cartLoading,
     summaryLoading,
     pendingItemIds,
@@ -53,6 +55,7 @@ export default function CartPage() {
   const [offers, setOffers] = useState([]);
   const [offersLoading, setOffersLoading] = useState(true);
   const [showAllOffers, setShowAllOffers] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   useEffect(() => {
     if (!showMoveModal) {
@@ -89,6 +92,14 @@ export default function CartPage() {
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (cartSummary?.appliedCoupon?.code) {
+      setCouponCode(cartSummary.appliedCoupon.code);
+    } else {
+      setCouponCode("");
+    }
+  }, [cartSummary?.appliedCoupon?.code]);
 
   const getSizeOptions = (item) => {
     const base = Array.isArray(item.availableSizes) ? item.availableSizes.filter(Boolean) : [];
@@ -132,13 +143,44 @@ export default function CartPage() {
     setSelectedProduct(null);
   };
 
-  const handleCouponCheck = () => {
-    if (!couponCode.trim()) {
+  const handleCouponCheck = async (code = couponCode) => {
+    if (!code.trim()) {
       setCouponError("Please enter a coupon code");
       return;
     }
 
-    setCouponError("Invalid coupon");
+    try {
+      setCouponLoading(true);
+      setCouponError("");
+      await applyCoupon(code);
+      setCouponCode(code.trim().toUpperCase());
+      setShowCouponModal(false);
+    } catch (error) {
+      setCouponError(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Coupon could not be applied",
+      );
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleCouponRemove = async () => {
+    try {
+      setCouponLoading(true);
+      setCouponError("");
+      await removeCoupon();
+      setCouponCode("");
+    } catch (error) {
+      setCouponError(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Coupon could not be removed",
+      );
+    } finally {
+      setCouponLoading(false);
+    }
   };
 
   const visibleOffers = showAllOffers ? offers : offers.slice(0, 1);
@@ -419,16 +461,31 @@ export default function CartPage() {
                 >
                   Coupon Discount
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCouponError("");
-                    setShowCouponModal(true);
-                  }}
-                  className="font-medium text-[#b27b86]"
-                >
-                  Apply Coupon
-                </button>
+                {cartSummary?.couponDiscount > 0 ? (
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-[#14a44d]">
+                      -{formatPrice(cartSummary?.couponDiscount)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCouponRemove}
+                      className="font-medium text-[#b27b86]"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCouponError("");
+                      setShowCouponModal(true);
+                    }}
+                    className="font-medium text-[#b27b86]"
+                  >
+                    Apply Coupon
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center justify-between">
@@ -726,16 +783,31 @@ export default function CartPage() {
 
                   <div className="flex items-center justify-between text-[13px]">
                     <span className="text-[#3f3036]">Coupon Discount</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCouponError("");
-                        setShowCouponModal(true);
-                      }}
-                      className="font-medium text-[#b27b86] transition hover:text-[#9f6571]"
-                    >
-                      Apply Coupon
-                    </button>
+                    {cartSummary?.couponDiscount > 0 ? (
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-[#2f9a52]">
+                          -{formatPrice(cartSummary?.couponDiscount)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCouponRemove}
+                          className="font-medium text-[#b27b86] transition hover:text-[#9f6571]"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCouponError("");
+                          setShowCouponModal(true);
+                        }}
+                        className="font-medium text-[#b27b86] transition hover:text-[#9f6571]"
+                      >
+                        Apply Coupon
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between text-[13px]">
@@ -837,7 +909,7 @@ export default function CartPage() {
       )}
 
       {showCouponModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 lg:px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <div
             className="absolute inset-0 bg-black/45"
             onClick={() => {
@@ -846,8 +918,8 @@ export default function CartPage() {
             }}
           />
 
-          <div className="relative h-full w-full overflow-hidden bg-white shadow-[0_24px_60px_rgba(0,0,0,0.18)] lg:h-auto lg:max-w-[620px] lg:rounded-[8px]">
-            <div className="flex items-center justify-between border-b border-[#eee3e6] px-4 py-5 lg:px-6">
+          <div className="relative flex w-full max-w-[620px] flex-col overflow-hidden rounded-[12px] border border-[#ece5e8] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.18)] max-h-[min(86vh,760px)] sm:rounded-[14px]">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#eee3e6] bg-white px-4 py-4 sm:px-5 lg:px-6">
               <h2 className="text-[16px] font-semibold uppercase tracking-[0.03em] text-[#2f2428]">
                 Apply Coupon
               </h2>
@@ -863,7 +935,7 @@ export default function CartPage() {
               </button>
             </div>
 
-            <div className="border-b border-[#eee3e6] px-4 py-6 lg:px-6 lg:py-8">
+            <div className="border-b border-[#eee3e6] px-4 py-5 sm:px-5 sm:py-6 lg:px-6">
               <div className="flex flex-col gap-3 sm:flex-row">
                 <input
                   type="text"
@@ -879,23 +951,45 @@ export default function CartPage() {
                 />
                 <button
                   type="button"
-                  onClick={handleCouponCheck}
+                  onClick={() => handleCouponCheck()}
+                  disabled={couponLoading}
                   className="h-14 min-w-[120px] rounded-[4px] border border-[#d8c2c8] px-5 text-[14px] font-semibold uppercase tracking-[0.03em] text-[#b27b86]"
                 >
-                  Check
+                  {couponLoading ? "Checking..." : "Check"}
                 </button>
               </div>
 
               {couponError ? (
                 <p className="mt-3 text-[13px] font-medium text-[#b27b86]">{couponError}</p>
               ) : null}
+
+              {cartSummary?.appliedCoupon?.code ? (
+                <div className="mt-4 flex items-center justify-between rounded-[4px] border border-[#ddefe8] bg-[#f7fcfa] px-4 py-3">
+                  <div>
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.03em] text-[#2f9a52]">
+                      Applied
+                    </p>
+                    <p className="mt-1 text-[14px] font-semibold text-[#2f2428]">
+                      {cartSummary.appliedCoupon.code}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCouponRemove}
+                    disabled={couponLoading}
+                    className="text-[13px] font-semibold text-[#b27b86]"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : null}
             </div>
 
-            <div className="min-h-[calc(100vh-224px)] overflow-y-auto bg-[#fbfbfb] px-4 py-6 text-[15px] text-[#4d4450] lg:min-h-[360px] lg:px-6 lg:py-8">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-[#fbfbfb] px-4 py-5 text-[15px] text-[#4d4450] sm:px-5 sm:py-6 lg:px-6">
               {offers.length > 0 ? (
                 <div className="space-y-4">
                   <div className="rounded-[4px] border border-[#f3d9e3] bg-white px-4 py-4">
-                    <div className="flex items-start gap-3">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                       <div className="mt-1 h-4 w-4 rounded-[2px] bg-[#ff3f78]" />
                       <div className="min-w-0 flex-1">
                         <div className="inline-block border border-dashed border-[#f3b7ca] px-3 py-2 text-[14px] font-semibold uppercase tracking-[0.03em] text-[#b27b86]">
@@ -907,7 +1001,18 @@ export default function CartPage() {
                         <p className="mt-1 text-[13px] leading-5 text-[#62555b]">
                           {offers[0]?.description || "Offer available on your current bag."}
                         </p>
+                        <p className="mt-2 text-[12px] text-[#6f6167]">
+                          Minimum purchase: {formatPrice(offers[0]?.minOrderValue || 0)}
+                        </p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCouponCheck(offers[0]?.code || "")}
+                        disabled={couponLoading || !offers[0]?.code}
+                        className="w-full rounded-[4px] border border-[#d8c2c8] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.03em] text-[#b27b86] sm:w-auto"
+                      >
+                        Apply
+                      </button>
                     </div>
                   </div>
 
@@ -931,6 +1036,17 @@ export default function CartPage() {
                             <p className="mt-1 text-[13px] leading-5 text-[#6b5f64]">
                               {offer.description || "Offer available on applicable items."}
                             </p>
+                            <p className="mt-2 text-[12px] text-[#6f6167]">
+                              Minimum purchase: {formatPrice(offer.minOrderValue || 0)}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleCouponCheck(offer.code || "")}
+                              disabled={couponLoading || !offer.code}
+                              className="mt-3 w-full rounded-[4px] border border-[#d8c2c8] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.03em] text-[#b27b86] sm:w-auto"
+                            >
+                              Apply
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -942,7 +1058,7 @@ export default function CartPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-4 border-t border-[#eee3e6] bg-white px-4 py-4 lg:px-6">
+            <div className="sticky bottom-0 z-10 flex flex-col gap-4 border-t border-[#eee3e6] bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
               <div>
                 <p className="text-[13px] text-[#6f6167]">Maximum savings:</p>
                 <p className="text-[18px] font-semibold text-[#2f2428]">
@@ -952,10 +1068,11 @@ export default function CartPage() {
 
               <button
                 type="button"
-                onClick={handleCouponCheck}
-                className="h-12 min-w-[180px] rounded-[2px] bg-[#ff3f78] px-8 text-[15px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#e8346d] lg:rounded-[4px]"
+                onClick={() => handleCouponCheck()}
+                disabled={couponLoading}
+                className="h-12 w-full rounded-[2px] bg-[#ff3f78] px-8 text-[15px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#e8346d] sm:min-w-[180px] sm:w-auto lg:rounded-[4px]"
               >
-                Apply
+                {couponLoading ? "Applying..." : "Apply"}
               </button>
             </div>
           </div>

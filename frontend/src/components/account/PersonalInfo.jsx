@@ -2,36 +2,36 @@
 
 
 import { useAccount } from "@/hooks/useAccount";
-import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import { API_BASE } from "@/lib/api";
 
 export default function PersonalInfo() {
 
-  const { updateUserProfile } = useAccount();
-  const { user } = useAuth();
+  const { user, updateUserProfile, fetchUserProfile } = useAccount();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
 
 
-  // Fetch latest profile from backend
   useEffect(() => {
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
       const stored = JSON.parse(localStorage.getItem("user"));
       if (!stored?.token) return;
-      const res = await fetch(`${API_BASE}/api/users/profile`, {
-        headers: {
-          Authorization: `Bearer ${stored.token}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
+      try {
+        const data = await fetchUserProfile(stored.token);
         setFormData(data);
+      } catch (error) {
+        console.error("Profile fetch failed:", error);
       }
     };
-    fetchProfile();
+    loadProfile();
+  }, [fetchUserProfile]);
+
+  useEffect(() => {
+    if (user) {
+      setFormData(user);
+    }
   }, [user]);
 
 
@@ -66,10 +66,6 @@ export default function PersonalInfo() {
       if (!res.ok) throw new Error("Failed to update profile");
       const updated = await res.json();
       updateUserProfile(updated);
-      localStorage.setItem("user", JSON.stringify({
-        ...stored,
-        ...updated
-      }));
       setFormData(updated);
       setIsEditing(false);
     } catch (err) {

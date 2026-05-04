@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import FilterBar from "@/components/FilterBar";
 import TopFilters, { FILTER_OPTIONS, TOP_FILTERS } from "@/components/TopFilters";
@@ -9,7 +10,6 @@ import {
     ChevronDown, Clock3, Flame, SlidersHorizontal, Star
 } from "lucide-react";
 import { ProductCard } from "./ProductCard";
-import { ProductDetailsModal } from "./ProductDetailsModal";
 import CategoryBreadcrumb from "./CategoryBreadcrumb";
 import { API_BASE } from "@/lib/api";
 import {
@@ -56,7 +56,7 @@ const toTopFilterKey = (categoryName) => {
 };
 
 export default function CategoryPage({ categoryPath = [] }) {
-    const [selectedProduct, setSelectedProduct] = useState(null);
+    const router = useRouter();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [categoryLoading, setCategoryLoading] = useState(true);
@@ -134,6 +134,7 @@ export default function CategoryPage({ categoryPath = [] }) {
     useEffect(() => {
         const fetchProducts = async () => {
             setLoading(true);
+
             try {
                 const cleanFilters = Object.fromEntries(
                     Object.entries(filters).filter(([_, v]) => v !== "")
@@ -164,8 +165,6 @@ export default function CategoryPage({ categoryPath = [] }) {
                     { cache: "no-store" }
                 );
                 const data = await res.json();
-                // console.log(data)
-
 
                 if (data.success) {
                     setProducts(data.products);
@@ -252,7 +251,7 @@ export default function CategoryPage({ categoryPath = [] }) {
                     {/* RIGHT CONTENT */}
                     <div className="category-page-content">
                         {/* TOP BAR */}
-                        <div className="hidden md:flex items-start justify-between border-b border-[#e8e8e8] px-4 min-h-[48px] gap-2">
+                        <div className="hidden md:flex md:flex-wrap items-start justify-between border-b border-[#e8e8e8] px-4 min-h-[48px] gap-2">
                             <TopFilters
                                 filters={filters}
                                 setFilters={setFilters}
@@ -260,7 +259,7 @@ export default function CategoryPage({ categoryPath = [] }) {
                             />
 
                             {/* SORT DROPDOWN */}
-                            <div className="relative shrink-0 pt-2" data-sort-dropdown>
+                            <div className="relative shrink-0 pt-2 md:ml-auto" data-sort-dropdown>
                                 <button
                                     onClick={() => setSortOpen(!sortOpen)}
                                     className="flex items-center justify-between border border-[#e8e8e8] px-3.5 py-2 text-[13px] w-[240px] bg-white cursor-pointer text-[#282c3f]"
@@ -321,34 +320,9 @@ export default function CategoryPage({ categoryPath = [] }) {
                                         <ProductCard
                                             key={item._id}
                                             item={item}
-                                            onOpenDetails={async () => {
-                                                try {
-                                                    const res = await fetch(
-                                                        `${API_BASE}/api/products/${item._id}`
-                                                    );
-
-                                                    // Handle 404 - product was deleted
-                                                    if (res.status === 404) {
-                                                        console.warn(`Product ${item._id} was deleted`);
-                                                        // Remove from list
-                                                        setProducts(prev => prev.filter(p => p._id !== item._id));
-                                                        return;
-                                                    }
-
-                                                    const data = await res.json();
-
-                                                    if (data.success) {
-                                                        console.log(item)
-                                                        setSelectedProduct(data.product);
-                                                    } else if (res.status === 404 || !data.success) {
-                                                        // Product not found or deleted
-                                                        setProducts(prev => prev.filter(p => p._id !== item._id));
-                                                    }
-                                                } catch (err) {
-                                                    console.error("Modal fetch error:", err);
-                                                    // Remove product from list if fetch fails
-                                                    setProducts(prev => prev.filter(p => p._id !== item._id));
-                                                }
+                                            onOpenDetails={() => {
+                                                if (!item.slug) return;
+                                                window.open(`/product/${item.slug}`, "_blank");
                                             }}
                                         />))}
                                 </div>
@@ -386,12 +360,6 @@ export default function CategoryPage({ categoryPath = [] }) {
                     </div>
                 </div>
 
-                {selectedProduct && (
-                    <ProductDetailsModal
-                        product={selectedProduct}
-                        onClose={() => setSelectedProduct(null)}
-                    />
-                )}
                 {isMobile && (
                     <>
                         <div className="category-mobile-toolbar">
@@ -639,10 +607,14 @@ function MobileFilterDrawer({
                             type="range"
                             min={rangeMin}
                             max={rangeMax}
-                            step={50}
+                            step={1}
                             value={currentMin}
+                            onInput={(e) => {
+                                const value = Math.min(Number(e.target.value), currentMax - 1);
+                                setFilters((prev) => ({ ...prev, minPrice: String(value) }));
+                            }}
                             onChange={(e) => {
-                                const value = Math.min(Number(e.target.value), currentMax - 50);
+                                const value = Math.min(Number(e.target.value), currentMax - 1);
                                 setFilters((prev) => ({ ...prev, minPrice: String(value) }));
                             }}
                         />
@@ -650,10 +622,14 @@ function MobileFilterDrawer({
                             type="range"
                             min={rangeMin}
                             max={rangeMax}
-                            step={50}
+                            step={1}
                             value={currentMax}
+                            onInput={(e) => {
+                                const value = Math.max(Number(e.target.value), currentMin + 1);
+                                setFilters((prev) => ({ ...prev, maxPrice: String(value) }));
+                            }}
                             onChange={(e) => {
-                                const value = Math.max(Number(e.target.value), currentMin + 50);
+                                const value = Math.max(Number(e.target.value), currentMin + 1);
                                 setFilters((prev) => ({ ...prev, maxPrice: String(value) }));
                             }}
                         />

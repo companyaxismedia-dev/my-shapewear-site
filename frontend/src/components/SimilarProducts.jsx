@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Star } from "lucide-react";
 import { ProductGridSkeleton } from "@/components/loaders/Loaders";
 
@@ -17,7 +16,6 @@ const getImageUrl = (url) => {
 const formatCurrency = (value) => `\u20B9${Number(value || 0).toLocaleString("en-IN")}`;
 
 export default function SimilarProducts({ currentProduct }) {
-  const router = useRouter();
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +47,7 @@ export default function SimilarProducts({ currentProduct }) {
 
   if (loading) {
     return (
-      <section className="mx-auto w-full max-w-[1240px] px-4 pb-3 pt-7 md:px-0 md:pt-10">
+      <section className="mx-auto w-full max-w-[1240px] px-3 pb-6 pt-7 md:px-4 lg:px-0 md:pt-10">
         <div className="mb-3 md:mb-5">
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#c56f7f] md:text-[12px]">
             You may also like
@@ -58,7 +56,7 @@ export default function SimilarProducts({ currentProduct }) {
             Similar Products
           </h2>
         </div>
-        <ProductGridSkeleton count={5} className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5 md:gap-5" />
+        <ProductGridSkeleton count={5} className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-5" />
       </section>
     );
   }
@@ -66,7 +64,7 @@ export default function SimilarProducts({ currentProduct }) {
   if (!similarProducts.length) return null;
 
   return (
-    <section className="mx-auto w-full max-w-[1240px] px-4 pb-3 pt-7 md:px-0 md:pt-10">
+    <section className="mx-auto w-full max-w-[1240px] px-3 pb-6 pt-7 md:px-4 lg:px-0 md:pt-10">
       <div className="mb-3 md:mb-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[#c56f7f] md:text-[12px]">
           You may also like
@@ -76,7 +74,7 @@ export default function SimilarProducts({ currentProduct }) {
         </h2>
       </div>
 
-      <div className="grid grid-flow-col auto-cols-[72%] gap-3 overflow-x-auto pb-1 md:grid-flow-row md:auto-cols-auto md:grid-cols-4 lg:grid-cols-5 md:gap-5 md:overflow-visible">
+      <div className="flex gap-3 overflow-x-auto pb-1 lg:grid lg:grid-flow-row lg:auto-cols-auto lg:grid-cols-4 xl:grid-cols-5 lg:gap-5 lg:overflow-visible">
         {similarProducts.map((item) => {
           const firstVariant = item.variants?.[0];
           const firstSize = firstVariant?.sizes?.[0];
@@ -91,10 +89,13 @@ export default function SimilarProducts({ currentProduct }) {
             <button
               key={item._id}
               type="button"
-              onClick={() => router.push(`/product/${item.slug}`)}
-              className="overflow-hidden rounded-[18px] border border-[#ead7dd] bg-white text-left shadow-[0_2px_10px_rgba(74,46,53,0.04)]"
+              onClick={() => {
+                if (!item.slug) return;
+                window.open(`/product/${item.slug}`, "_blank");
+              }}
+              className="min-w-[47%] overflow-hidden rounded-[22px] border border-[#ead7dd] bg-white text-left shadow-[0_2px_10px_rgba(74,46,53,0.04)] sm:min-w-[31%] lg:min-w-0"
             >
-              <div className="relative aspect-square overflow-hidden bg-[#fff8f6]">
+              <div className="relative aspect-[0.82] overflow-hidden bg-[#fff8f6]">
                 {item.rating > 0 ? (
                   <div className="absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-[rgba(255,255,255,0.94)] px-2 py-1 text-[11px] font-semibold text-[#2f7d63] shadow-[0_6px_18px_rgba(74,46,53,0.10)]">
                     <span>{item.rating}</span>
@@ -105,7 +106,7 @@ export default function SimilarProducts({ currentProduct }) {
               </div>
 
               <div className="space-y-1 px-3 py-3">
-                <h3 className="line-clamp-1 text-[13px] font-semibold leading-[1.2] text-[#5b3c46]">
+                <h3 className="line-clamp-1 text-[12px] font-semibold uppercase leading-[1.2] tracking-[0.02em] text-[#5b3c46] sm:text-[13px]">
                   {item.brand || item.name}
                 </h3>
                 <p className="line-clamp-2 text-[12px] leading-[1.35] text-[#7d6670]">{item.name}</p>

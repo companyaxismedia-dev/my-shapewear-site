@@ -132,6 +132,7 @@ app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
+app.use("/api/blog", require("./routes/blogRoutes"));
 
 const { bannerRouter, adminRouter, pagesRouter } = require("./routes/bannerRoutes");
 app.use("/api/banner", bannerRouter);

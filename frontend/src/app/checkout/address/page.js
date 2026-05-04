@@ -175,32 +175,7 @@ export default function CheckoutAddressPage() {
 
     try {
       setPlacingOrder(true);
-      const token = getToken();
-
-      const response = await fetch(`${API_BASE}/api/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          addressId: selectedAddressId,
-          paymentType: "COD",
-          offerCode: "",
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data?.orderId) {
-        toast.error(data?.message || "Order creation failed");
-        return;
-      }
-
-      router.push(`/checkout/payment?order=${data.orderId}&address=${selectedAddressId}`);
-    } catch (error) {
-      console.error("Create order error:", error);
-      toast.error("Order create error");
+      router.push(`/checkout/payment?address=${selectedAddressId}`);
     } finally {
       setPlacingOrder(false);
     }
@@ -399,6 +374,18 @@ export default function CheckoutAddressPage() {
                 <span className="text-[#3f3036]">Discount on MRP</span>
                 <span className="font-medium text-[#14a44d]">-{formatPrice(cartSummary?.discount)}</span>
               </div>
+
+              {cartSummary?.couponDiscount > 0 ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-[#3f3036]">
+                    Coupon Discount
+                    {cartSummary?.appliedCoupon?.code ? ` (${cartSummary.appliedCoupon.code})` : ""}
+                  </span>
+                  <span className="font-medium text-[#2f9a52]">
+                    -{formatPrice(cartSummary?.couponDiscount)}
+                  </span>
+                </div>
+              ) : null}
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -606,10 +593,17 @@ export default function CheckoutAddressPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[13px]">
-                      <span className="text-[#3f3036]">Coupon Discount</span>
-                      <span className="font-medium text-[#b27b86]">Apply Coupon</span>
-                    </div>
+                    {cartSummary?.couponDiscount > 0 ? (
+                      <div className="flex items-center justify-between text-[13px]">
+                        <span className="text-[#3f3036]">
+                          Coupon Discount
+                          {cartSummary?.appliedCoupon?.code ? ` (${cartSummary.appliedCoupon.code})` : ""}
+                        </span>
+                        <span className="font-medium text-[#2f9a52]">
+                          -{formatPrice(cartSummary?.couponDiscount)}
+                        </span>
+                      </div>
+                    ) : null}
 
                     <div className="flex items-center justify-between text-[13px]">
                       <span className="text-[#3f3036]">Shipping</span>
