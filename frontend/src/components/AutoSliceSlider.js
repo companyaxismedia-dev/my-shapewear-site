@@ -14,14 +14,13 @@ import { ProductDetailsModal } from "./category/ProductDetailsModal";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import SectionRenderer from "./SectionRenderer";
+import { API_BASE } from "@/lib/api";
 import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
 import { toast } from "sonner";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function AutoSliceSlider({
   bannerSections = [],

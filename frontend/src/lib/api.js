@@ -1,10 +1,12 @@
+const FALLBACK_API_BASE = "https://my-shapewear-site.onrender.com";
+
 const PUBLIC_API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://my-shapewear-site.onrender.com";
+  process.env.NEXT_PUBLIC_API_URL || FALLBACK_API_BASE;
 
 const SERVER_API_BASE =
   process.env.API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:5000";
+  FALLBACK_API_BASE;
 
 export const API_BASE =
   typeof window === "undefined" ? SERVER_API_BASE : PUBLIC_API_BASE;

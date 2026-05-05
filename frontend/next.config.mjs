@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+const API_BASE =
+  process.env.API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://my-shapewear-site.onrender.com";
+
 const nextConfig = {
     poweredByHeader: false,
     // Allow opening dev server from LAN/mobile
@@ -14,7 +19,7 @@ const nextConfig = {
       return [
         {
           source: '/api/:path*',
-          destination: 'http://localhost:5000/api/:path*', // Change port if backend is different
+          destination: `${API_BASE}/api/:path*`,
         },
       ];
     },
