@@ -8,6 +8,7 @@ router.get("/", protect, cartController.getCart);
 
 // ADD ITEM
 router.post("/", protect, cartController.addItemToCart);
+router.post("/merge", protect, cartController.mergeItemsToCart);
 
 // UPDATE QUANTITY
 router.put("/:itemId", protect, cartController.updateQty);

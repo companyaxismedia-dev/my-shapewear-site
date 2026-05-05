@@ -75,10 +75,12 @@ app.use("/api", limiter);
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  next();
-});
+if (process.env.NODE_ENV !== "production") {
+  app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    next();
+  });
+}
 
 /* ======================================================
    DATABASE CONNECTION (Production Safe)
@@ -99,12 +101,18 @@ connectDB();
 
 app.use(
   "/image",
-  express.static(path.join(__dirname, "../frontend/public/image"))
+  express.static(path.join(__dirname, "../frontend/public/image"), {
+    maxAge: "30d",
+    immutable: true,
+  })
 );
 
 app.use(
   "/uploads",
-  express.static(path.join(__dirname, "uploads"))
+  express.static(path.join(__dirname, "uploads"), {
+    maxAge: "30d",
+    immutable: true,
+  })
 );
 
 app.get("/", (req, res) => {
@@ -133,6 +141,7 @@ app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
 app.use("/api/reviews", require("./routes/reviewRoutes"));
 app.use("/api/blog", require("./routes/blogRoutes"));
+app.use("/api/storefront", require("./routes/storefrontRoutes"));
 
 const { bannerRouter, adminRouter, pagesRouter } = require("./routes/bannerRoutes");
 app.use("/api/banner", bannerRouter);

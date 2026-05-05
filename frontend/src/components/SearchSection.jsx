@@ -52,7 +52,7 @@ const SearchSection = ({
 
   const router = useRouter();
 
-  const fetchResults = useCallback(async (searchTerm) => {
+  const fetchResults = useCallback(async (searchTerm, signal) => {
     if (!searchTerm.trim()) {
       setResults([]);
       return;
@@ -62,7 +62,8 @@ const SearchSection = ({
 
     try {
       const response = await fetch(
-        `${API_BASE}/api/products?keyword=${encodeURIComponent(searchTerm)}&limit=6`
+        `${API_BASE}/api/products?keyword=${encodeURIComponent(searchTerm)}&limit=6`,
+        { signal },
       );
 
       const data = await response.json();
@@ -73,6 +74,7 @@ const SearchSection = ({
         setResults([]);
       }
     } catch (error) {
+      if (error?.name === "AbortError") return;
       console.error("Search fetch error:", error);
     } finally {
       setIsLoading(false);
@@ -84,11 +86,15 @@ const SearchSection = ({
   }, []);
 
   useEffect(() => {
+    const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      if (query) fetchResults(query);
+      if (query) fetchResults(query, controller.signal);
     }, 300);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [query, fetchResults]);
 
   const handleSearchSubmit = (e) => {
@@ -225,6 +231,7 @@ const SearchSection = ({
           <button
             type="submit"
             className="absolute right-0 top-0 h-full px-4 text-gray-400 transition-colors hover:text-pink-600"
+            aria-label="Search products"
           >
             <Search size={18} />
           </button>
@@ -241,14 +248,17 @@ const SearchSection = ({
             className={`flex w-full items-center gap-3 rounded-full border border-[#eadfe3] bg-white px-4 text-left text-sm text-[#9d8b91] shadow-sm ${
               mobileFixed ? "py-3" : "py-2.5"
             }`}
+            aria-label="Open product search"
           >
             <Search size={18} className="text-[#9d8b91]" />
             <span>{mobilePlaceholder}</span>
           </button>
         ) : (
           <button
+            type="button"
             onClick={() => handleToggleMobile(true)}
             className="rounded-full p-2 text-gray-700 hover:bg-gray-100"
+            aria-label="Open product search"
           >
             <Search size={24} />
           </button>
@@ -259,7 +269,11 @@ const SearchSection = ({
         ? createPortal(
         <div className="fixed inset-0 z-[999] flex flex-col bg-white md:hidden">
           <div className="flex items-center gap-3 border-b border-[#f0e7ea] px-4 py-3">
-            <button onClick={() => handleToggleMobile(false)} type="button">
+            <button
+              onClick={() => handleToggleMobile(false)}
+              type="button"
+              aria-label="Close search"
+            >
               <ArrowLeft size={22} className="text-[#4a2e35]" />
             </button>
 

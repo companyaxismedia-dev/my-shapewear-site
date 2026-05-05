@@ -1,4 +1,5 @@
 const Offer = require("../models/Offer");
+const { cached } = require("../utils/cache");
 
 function normalizeCriterion(value) {
   return String(value || "").trim().toLowerCase();
@@ -111,14 +112,17 @@ exports.validateOffer = async (req, res) => {
 ====================================================== */
 exports.getOffers = async (req, res) => {
   try {
-    const now = new Date();
+    const offers = await cached("offers:active", 60000, async () => {
+      const now = new Date();
 
-    const offers = await Offer.find({
-      isActive: true,
-      startDate: { $lte: now },
-      endDate: { $gte: now },
-    }).sort({ createdAt: -1 });
+      return Offer.find({
+        isActive: true,
+        startDate: { $lte: now },
+        endDate: { $gte: now },
+      }).sort({ createdAt: -1 }).lean();
+    });
 
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     return res.json({
       success: true,
       offers,
@@ -138,14 +142,17 @@ exports.getOffers = async (req, res) => {
 ====================================================== */
 exports.getActiveOffer = async (req, res) => {
   try {
-    const now = new Date();
+    const offer = await cached("offers:featured", 60000, async () => {
+      const now = new Date();
 
-    const offer = await Offer.findOne({
-      isActive: true,
-      startDate: { $lte: now },
-      endDate: { $gte: now },
-    }).sort({ createdAt: -1 });
+      return Offer.findOne({
+        isActive: true,
+        startDate: { $lte: now },
+        endDate: { $gte: now },
+      }).sort({ createdAt: -1 }).lean();
+    });
 
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
     return res.json({
       success: true,
       offer,

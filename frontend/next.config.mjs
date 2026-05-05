@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    poweredByHeader: false,
     // Allow opening dev server from LAN/mobile
     allowedDevOrigins: [
       "http://localhost:3000",
@@ -18,6 +19,7 @@ const nextConfig = {
       ];
     },
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "http",
@@ -36,6 +38,11 @@ const nextConfig = {
         hostname: "my-shapewear-site.onrender.com",
         pathname: "/image/**",
       },
+      {
+        protocol: "https",
+        hostname: "my-shapewear-site.onrender.com",
+        pathname: "/uploads/**",
+      },
 
       // ADD THIS
       {
@@ -48,7 +55,31 @@ const nextConfig = {
 
   // Cache headers configuration
   async headers() {
+    const securityHeaders = [
+      {
+        key: "Referrer-Policy",
+        value: "strict-origin-when-cross-origin",
+      },
+      {
+        key: "X-Content-Type-Options",
+        value: "nosniff",
+      },
+      {
+        key: "Cross-Origin-Opener-Policy",
+        value: "same-origin-allow-popups",
+      },
+      {
+        key: "Content-Security-Policy",
+        value:
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:5000 http://127.0.0.1:5000 https://my-shapewear-site.onrender.com https://images.unsplash.com; font-src 'self' data:; connect-src 'self' http://localhost:5000 http://127.0.0.1:5000 https://my-shapewear-site.onrender.com https://accounts.google.com https://checkout.razorpay.com; frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';",
+      },
+    ];
+
     return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
       // Admin pages - Cache with ISR for 60 seconds
       {
         source: "/admin/:path*",

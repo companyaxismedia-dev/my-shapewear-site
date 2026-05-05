@@ -18,23 +18,20 @@ const resolveImage = (url) => {
 
 export default function Hero({ slides }) {
   const [banners, setBanners] = useState([]);
-  const [useProvidedSlides, setUseProvidedSlides] = useState(Boolean(slides));
+  const useProvidedSlides = Array.isArray(slides);
 
   useEffect(() => {
     // If slides were explicitly provided (even if empty), use them
     if (useProvidedSlides) {
-      console.log("✅ Using provided slides:", slides);
       setBanners(slides || []);
       return;
     }
 
     // Otherwise fetch from API
-    console.log("📡 Fetching from banner API");
     fetch(`${API_BASE}/api/banner`)
       .then((res) => res.json())
       .then((data) => {
         const activebanners = Array.isArray(data) ? data.filter((b) => b.active) : [];
-        console.log("📡 Banners from API:", activebanners);
         setBanners(activebanners);
       })
       .catch((err) => {
@@ -73,6 +70,7 @@ export default function Hero({ slides }) {
                           className="w-full h-auto block select-none"
                           style={{ objectFit: "cover" }}
                           loading={index === 0 ? "eager" : "lazy"}
+                          fetchPriority={index === 0 ? "high" : "auto"}
                         />
                       </picture>
                     </a>
@@ -87,6 +85,7 @@ export default function Hero({ slides }) {
                         className="w-full h-auto block select-none"
                         style={{ objectFit: "cover" }}
                         loading={index === 0 ? "eager" : "lazy"}
+                        fetchPriority={index === 0 ? "high" : "auto"}
                       />
                     </picture>
                   )}
@@ -141,11 +140,12 @@ export default function Hero({ slides }) {
 
           /* Keep full image visibility on Mobile */
           .hero-swiper img {
-    aspect-ratio: auto !important; /* Remove the forced 2/3 ratio */
-    object-fit: cover !important;  /* Changed from contain to cover */
-    width: 100% !important;
-    height: auto !important;
-    display: block !important;          }
+            aspect-ratio: auto !important;
+            object-fit: cover !important;
+            width: 100% !important;
+            height: auto !important;
+            display: block !important;
+          }
         }
       `}</style>
     </section>

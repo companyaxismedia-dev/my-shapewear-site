@@ -121,6 +121,7 @@ offerSchema.pre("save", function () {
 offerSchema.index({ code: 1 });
 offerSchema.index({ isActive: 1 });
 offerSchema.index({ endDate: 1 });
+offerSchema.index({ isActive: 1, startDate: 1, endDate: 1 });
 
 /* ======================================================
    🧠 CHECK IF OFFER VALID

@@ -67,7 +67,6 @@ export default function HomeHero() {
                   src="/hero-image/home-122.jpeg"
                   alt="Premium shapewear collection"
                   fill
-                  priority
                   sizes="(max-width: 1024px) 100vw, (max-width: 1536px) 50vw, 50vw"
                   className="object-cover"
                 />

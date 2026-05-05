@@ -132,6 +132,7 @@ export default function CategoryPage({ categoryPath = [] }) {
     }, []);
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchProducts = async () => {
             setLoading(true);
 
@@ -162,7 +163,7 @@ export default function CategoryPage({ categoryPath = [] }) {
                 }).toString();
 
                 const res = await fetch(`${API_BASE}/api/products?${query}`,
-                    { cache: "no-store" }
+                    { cache: "no-store", signal: controller.signal }
                 );
                 const data = await res.json();
 
@@ -171,6 +172,7 @@ export default function CategoryPage({ categoryPath = [] }) {
                     setTotalItems(data.total || data.products.length);
                 }
             } catch (error) {
+                if (error?.name === "AbortError") return;
                 console.error(`Error fetching ${rootCategory?.slug || "category"}:`, error);
             } finally {
                 setLoading(false);
@@ -178,6 +180,8 @@ export default function CategoryPage({ categoryPath = [] }) {
         };
 
         fetchProducts();
+
+        return () => controller.abort();
     }, [filters, page, sort, rootCategory?.slug, baseSubCategory]);
 
     useEffect(() => {

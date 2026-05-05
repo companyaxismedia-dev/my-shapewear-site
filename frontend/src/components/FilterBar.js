@@ -75,6 +75,7 @@ export default function FilterBar({
 
   useEffect(() => {
     if (!category) return;
+    const controller = new AbortController();
     setMetaLoaded(false);
 
     const params = new URLSearchParams();
@@ -94,7 +95,9 @@ export default function FilterBar({
       params.set("maxPrice", filters.maxPrice);
     }
 
-    fetch(`${API_BASE}/api/products/filters-meta?${params.toString()}`)
+    fetch(`${API_BASE}/api/products/filters-meta?${params.toString()}`, {
+      signal: controller.signal,
+    })
       .then((res) => res.json())
       .then((data) => {
         if (!data.success) return;
@@ -129,8 +132,11 @@ export default function FilterBar({
         setMetaLoaded(true);
       })
       .catch(() => {
+        if (controller.signal.aborted) return;
         setMetaLoaded(true);
       });
+
+    return () => controller.abort();
   }, [
     category,
     baseSubCategory,

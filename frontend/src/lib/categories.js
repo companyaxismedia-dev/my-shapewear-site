@@ -1,5 +1,10 @@
 import { API_BASE } from "@/lib/api";
 
+let categoryTreeCache = null;
+let categoryTreePromise = null;
+let categoryTreeFetchedAt = 0;
+const CATEGORY_TREE_TTL = 5 * 60 * 1000;
+
 export const flattenCategoryTree = (nodes = [], depth = 0, parentPath = []) =>
   nodes.flatMap((node) => {
     const pathSegments = [...parentPath, node.slug];
@@ -60,12 +65,29 @@ export const filterNavbarCategories = (nodes = []) =>
     }));
 
 export const fetchCategoryTree = async () => {
-  const res = await fetch(`${API_BASE}/api/categories`, { cache: "no-store" });
-  const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data.message || "Failed to load categories");
+  if (categoryTreeCache && Date.now() - categoryTreeFetchedAt < CATEGORY_TREE_TTL) {
+    return categoryTreeCache;
   }
 
-  return data.tree || [];
+  if (categoryTreePromise) {
+    return categoryTreePromise;
+  }
+
+  categoryTreePromise = fetch(`${API_BASE}/api/categories`, { cache: "force-cache" })
+    .then(async (res) => {
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to load categories");
+      }
+
+      categoryTreeCache = data.tree || [];
+      categoryTreeFetchedAt = Date.now();
+      return categoryTreeCache;
+    })
+    .finally(() => {
+      categoryTreePromise = null;
+    });
+
+  return categoryTreePromise;
 };
