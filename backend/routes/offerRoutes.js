@@ -4,25 +4,16 @@ const router = express.Router();
 const {
   validateOffer,
   getOffers,
-  createOffer,
+  getActiveOffer,
 } = require("../controllers/offerController");
 
-/* ======================================================
-   🎁 GET ALL ACTIVE OFFERS
-   Frontend → MyCoupons page
-====================================================== */
+// Public storefront/account coupon list.
 router.get("/", getOffers);
 
-/* ======================================================
-   ➕ CREATE NEW OFFER
-   Admin / Postman
-====================================================== */
-router.post("/", createOffer);
+// Featured active offer used by checkout payment offer widget.
+router.get("/active", getActiveOffer);
 
-/* ======================================================
-   🎯 VALIDATE COUPON
-   Checkout page
-====================================================== */
+// Coupon validation used by cart and checkout.
 router.post("/validate", validateOffer);
 
 module.exports = router;

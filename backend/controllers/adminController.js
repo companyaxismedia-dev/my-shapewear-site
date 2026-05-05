@@ -1114,6 +1114,35 @@ exports.getOffers = async (req, res) => {
   }
 };
 
+exports.updateOffer = async (req, res) => {
+  try {
+    const update = { ...req.body };
+
+    if (update.code) {
+      update.code = String(update.code).toUpperCase().trim();
+    }
+
+    const offer = await Offer.findByIdAndUpdate(req.params.id, update, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!offer) {
+      return res.status(404).json({
+        success: false,
+        message: "Offer not found",
+      });
+    }
+
+    res.json({ success: true, offer });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 exports.deleteOffer = async (req, res) => {
   try {
     await Offer.findByIdAndDelete(req.params.id);

@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, Store, Settings2, BarChart3, Layers, Tag, Settings, HelpCircle, Blinds, BookOpen, ListOrdered,
-  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2, UserCircle2
+  Home, Store, Settings2, BarChart3, Layers, Settings, HelpCircle, Blinds, BookOpen, ListOrdered,
+  Search, ChevronDown, ChevronRight, Menu, X, User, ChevronUp, User2, UserCircle2, TicketPercent
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -79,9 +79,9 @@ const navItems = [
     icon: BarChart3,
   },
   {
-    title: "Promotions",
-    href: "/admin/promotions",
-    icon: Tag,
+    title: "Offers",
+    href: "/admin/offers",
+    icon: TicketPercent,
   },
   {
     title: "Settings",

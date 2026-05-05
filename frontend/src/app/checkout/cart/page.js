@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -29,6 +29,14 @@ import {
 } from "@/components/loaders/Loaders";
 
 const formatPrice = (value) => `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
+
+const getComparableId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value._id || value.id || "";
+};
+
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
 export default function CartPage() {
   const {
@@ -110,7 +118,8 @@ export default function CartPage() {
   };
 
   const handleMoveSingleToWishlist = async (item) => {
-    const product = item || selectedProduct;
+    const cartItem = item?.currentTarget ? null : item;
+    const product = cartItem || selectedProduct;
     if (!product) return;
 
     if (!user) {
@@ -119,7 +128,15 @@ export default function CartPage() {
     }
 
     const productId =
-      typeof product.productId === "object" ? product.productId._id : product.productId;
+      typeof product.productId === "object"
+        ? product.productId._id || product.productId.id
+        : product.productId;
+
+    if (!productId) {
+      setShowMoveModal(false);
+      setSelectedProduct(null);
+      return;
+    }
 
     await toggleWishlist({
       _id: productId,
@@ -183,8 +200,124 @@ export default function CartPage() {
     }
   };
 
-  const visibleOffers = showAllOffers ? offers : offers.slice(0, 1);
+  const getOfferEligibility = useCallback((offer) => {
+    const subTotal = Number(cartSummary?.subTotal || 0);
+    const minOrderValue = Number(offer?.minOrderValue || 0);
+    const amountNeeded = Math.max(minOrderValue - subTotal, 0);
+    const productTargets = Array.isArray(offer?.applicableProducts)
+      ? offer.applicableProducts.map(getComparableId).filter(Boolean)
+      : [];
+    const categoryTargets = Array.isArray(offer?.applicableCategories)
+      ? offer.applicableCategories.map(normalizeText).filter(Boolean)
+      : [];
+
+    const productMatched =
+      productTargets.length === 0 ||
+      cartItems.some((item) => productTargets.includes(getComparableId(item.productId)));
+
+    const categoryMatched =
+      categoryTargets.length === 0 ||
+      cartItems.some((item) =>
+        [item.category, item.subCategory, item.childCategory]
+          .map(normalizeText)
+          .some((value) => value && categoryTargets.includes(value)),
+      );
+
+    const priceLocked = amountNeeded > 0;
+    const criteriaLocked = !productMatched || !categoryMatched;
+
+    return {
+      eligible: !priceLocked && !criteriaLocked,
+      priceLocked,
+      criteriaLocked,
+      amountNeeded,
+      message: priceLocked
+        ? `Add ${formatPrice(amountNeeded)} more to apply this coupon.`
+        : criteriaLocked
+          ? "You are not eligible for this coupon."
+          : "Offer available on your current bag.",
+    };
+  }, [cartItems, cartSummary?.subTotal]);
+
+  const sortedOffers = useMemo(() => {
+    return offers
+      .map((offer, index) => ({
+        offer,
+        index,
+        eligibility: getOfferEligibility(offer),
+      }))
+      .sort((a, b) => {
+        if (a.eligibility.eligible !== b.eligibility.eligible) {
+          return a.eligibility.eligible ? -1 : 1;
+        }
+        if (a.eligibility.priceLocked !== b.eligibility.priceLocked) {
+          return a.eligibility.priceLocked ? -1 : 1;
+        }
+        if (a.eligibility.priceLocked && b.eligibility.priceLocked) {
+          return a.eligibility.amountNeeded - b.eligibility.amountNeeded;
+        }
+        return a.index - b.index;
+      });
+  }, [offers, getOfferEligibility]);
+
+  const eligibleOffers = sortedOffers.filter(({ eligibility }) => eligibility.eligible);
+  const lockedOffers = sortedOffers.filter(({ eligibility }) => !eligibility.eligible);
+  const visibleOffers = showAllOffers ? sortedOffers : sortedOffers.slice(0, 1);
+  const bestEligibleOffer = eligibleOffers[0]?.offer || null;
   const selectedCount = cartItems.length;
+
+    const renderCouponCard = ({ offer, eligibility }) => (
+    <div
+      key={offer._id || offer.code || offer.title}
+      className={`rounded-[4px] border bg-white px-4 py-4 ${
+        eligibility.eligible ? "border-[#f3d9e3]" : "border-[#ece5e8]"
+      }`}
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="min-w-0 flex-1">
+          <div
+            className={`inline-block border border-dashed px-3 py-2 text-[13px] font-semibold uppercase tracking-[0.03em] ${
+              eligibility.eligible
+                ? "border-[#f3b7ca] text-[#b27b86]"
+                : "border-[#d9d1d5] text-[#7b6d73]"
+            }`}
+          >
+            {offer.code || offer.title || "Offer"}
+          </div>
+          <p className="mt-3 text-[14px] font-semibold text-[#2f2428]">
+            {offer.title || "Extra Savings"}
+          </p>
+          <p className="mt-1 text-[13px] leading-5 text-[#6b5f64]">
+            {offer.description || "Offer available on applicable items."}
+          </p>
+          <p
+            className={`mt-2 text-[12px] font-medium ${
+              eligibility.eligible ? "text-[#2f9a52]" : "text-[#9a6b75]"
+            }`}
+          >
+            {eligibility.message}
+          </p>
+          {eligibility.eligible && Number(offer.minOrderValue || 0) > 0 ? (
+            <p className="mt-1 text-[12px] text-[#6f6167]">
+              Minimum purchase: {formatPrice(offer.minOrderValue)}
+            </p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => handleCouponCheck(offer.code || "")}
+          disabled={couponLoading || !offer.code || !eligibility.eligible}
+          className={`w-full rounded-[4px] border px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.03em] sm:w-auto ${
+            eligibility.eligible
+              ? "border-[#d8c2c8] text-[#b27b86]"
+              : "cursor-not-allowed border-[#e1d9dd] text-[#b8adb2]"
+          }`}
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+  );
 
   if (!cartLoading && cartItems.length === 0) {
     return (
@@ -250,7 +383,7 @@ export default function CartPage() {
               ) : visibleOffers.length > 0 ? (
                 <>
                   <div className="space-y-2 text-[13px] text-[#5f4b52]">
-                    {visibleOffers.map((offer) => (
+                    {visibleOffers.map(({ offer, eligibility }) => (
                       <div
                         key={`mobile-offer-${offer._id || offer.code || offer.title}`}
                         className="flex gap-2"
@@ -263,6 +396,13 @@ export default function CartPage() {
                           {offer.description ? (
                             <p className="mt-0.5 text-[#6e5d64]">{offer.description}</p>
                           ) : null}
+                          <p
+                            className={`mt-1 text-[12px] ${
+                              eligibility.eligible ? "text-[#2f9a52]" : "text-[#9a6b75]"
+                            }`}
+                          >
+                            {eligibility.message}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -553,7 +693,7 @@ export default function CartPage() {
                       {offersLoading ? (
                         <OfferListSkeleton rows={2} />
                       ) : visibleOffers.length > 0 ? (
-                        visibleOffers.map((offer) => (
+                        visibleOffers.map(({ offer, eligibility }) => (
                           <div key={offer._id || offer.code || offer.title} className="flex gap-2">
                             <span className="font-medium text-[#c28d45]">•</span>
                             <div>
@@ -563,6 +703,13 @@ export default function CartPage() {
                               {offer.description ? (
                                 <p className="mt-0.5 text-[#6e5d64]">{offer.description}</p>
                               ) : null}
+                              <p
+                                className={`mt-1 text-[12px] ${
+                                  eligibility.eligible ? "text-[#2f9a52]" : "text-[#9a6b75]"
+                                }`}
+                              >
+                                {eligibility.message}
+                              </p>
                             </div>
                           </div>
                         ))
@@ -571,7 +718,7 @@ export default function CartPage() {
                       )}
                     </div>
 
-                    {!offersLoading && offers.length > 2 ? (
+                    {!offersLoading && sortedOffers.length > 2 ? (
                       <button
                         type="button"
                         onClick={() => setShowAllOffers((prev) => !prev)}
@@ -898,7 +1045,7 @@ export default function CartPage() {
               </button>
 
               <button
-                onClick={handleMoveSingleToWishlist}
+                onClick={() => handleMoveSingleToWishlist()}
                 className="flex-1 py-3 text-[#b27b86]"
               >
                 Move to Wishlist
@@ -986,69 +1133,37 @@ export default function CartPage() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto bg-[#fbfbfb] px-4 py-5 text-[15px] text-[#4d4450] sm:px-5 sm:py-6 lg:px-6">
-              {offers.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="rounded-[4px] border border-[#f3d9e3] bg-white px-4 py-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                      <div className="mt-1 h-4 w-4 rounded-[2px] bg-[#ff3f78]" />
-                      <div className="min-w-0 flex-1">
-                        <div className="inline-block border border-dashed border-[#f3b7ca] px-3 py-2 text-[14px] font-semibold uppercase tracking-[0.03em] text-[#b27b86]">
-                          {offers[0]?.code || "SAVE NOW"}
-                        </div>
-                        <p className="mt-3 text-[15px] font-semibold text-[#2f2428]">
-                          {offers[0]?.title || "Save More"}
-                        </p>
-                        <p className="mt-1 text-[13px] leading-5 text-[#62555b]">
-                          {offers[0]?.description || "Offer available on your current bag."}
-                        </p>
-                        <p className="mt-2 text-[12px] text-[#6f6167]">
-                          Minimum purchase: {formatPrice(offers[0]?.minOrderValue || 0)}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleCouponCheck(offers[0]?.code || "")}
-                        disabled={couponLoading || !offers[0]?.code}
-                        className="w-full rounded-[4px] border border-[#d8c2c8] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.03em] text-[#b27b86] sm:w-auto"
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  </div>
-
-                  {offers.length > 1 ? (
+              {offersLoading ? (
+                <OfferListSkeleton rows={3} />
+              ) : sortedOffers.length > 0 ? (
+                <div className="space-y-5">
+                  {eligibleOffers.length > 0 ? (
                     <div>
                       <p className="mb-3 text-[13px] font-semibold uppercase text-[#6c5f65]">
-                        Unlock More Coupons
+                        Coupons You Can Use
                       </p>
                       <div className="space-y-3">
-                        {offers.slice(1).map((offer) => (
-                          <div
-                            key={offer._id || offer.code || offer.title}
-                            className="rounded-[4px] border border-[#ece5e8] bg-white px-4 py-4"
-                          >
-                            <div className="inline-block border border-dashed border-[#d9d1d5] px-3 py-2 text-[13px] font-semibold uppercase tracking-[0.03em] text-[#7b6d73]">
-                              {offer.code || offer.title || "Offer"}
-                            </div>
-                            <p className="mt-3 text-[14px] font-semibold text-[#2f2428]">
-                              {offer.title || "Extra Savings"}
-                            </p>
-                            <p className="mt-1 text-[13px] leading-5 text-[#6b5f64]">
-                              {offer.description || "Offer available on applicable items."}
-                            </p>
-                            <p className="mt-2 text-[12px] text-[#6f6167]">
-                              Minimum purchase: {formatPrice(offer.minOrderValue || 0)}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => handleCouponCheck(offer.code || "")}
-                              disabled={couponLoading || !offer.code}
-                              className="mt-3 w-full rounded-[4px] border border-[#d8c2c8] px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.03em] text-[#b27b86] sm:w-auto"
-                            >
-                              Apply
-                            </button>
-                          </div>
-                        ))}
+                        {eligibleOffers.map((offerMeta) => renderCouponCard(offerMeta))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-[4px] border border-[#f0dfe4] bg-white px-4 py-4">
+                      <p className="text-[14px] font-semibold text-[#2f2428]">
+                        No coupon is eligible for this bag yet.
+                      </p>
+                      <p className="mt-1 text-[13px] text-[#6b5f64]">
+                        Check the locked coupons below to see what can be unlocked.
+                      </p>
+                    </div>
+                  )}
+
+                  {lockedOffers.length > 0 ? (
+                    <div>
+                      <p className="mb-3 text-[13px] font-semibold uppercase text-[#6c5f65]">
+                        Other Coupons
+                      </p>
+                      <div className="space-y-3">
+                        {lockedOffers.map((offerMeta) => renderCouponCard(offerMeta))}
                       </div>
                     </div>
                   ) : null}
@@ -1058,11 +1173,15 @@ export default function CartPage() {
               )}
             </div>
 
-            <div className="sticky bottom-0 z-10 flex flex-col gap-4 border-t border-[#eee3e6] bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
+            <div className="flex shrink-0 flex-col gap-4 border-t border-[#eee3e6] bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
               <div>
-                <p className="text-[13px] text-[#6f6167]">Maximum savings:</p>
+                <p className="text-[13px] text-[#6f6167]">Best eligible savings:</p>
                 <p className="text-[18px] font-semibold text-[#2f2428]">
-                  {offers[0]?.discountValue ? `Rs. ${offers[0].discountValue}` : "Rs. 0"}
+                  {bestEligibleOffer?.discountValue
+                    ? bestEligibleOffer.discountType === "percentage"
+                      ? `${bestEligibleOffer.discountValue}%`
+                      : formatPrice(bestEligibleOffer.discountValue)
+                    : "Rs. 0"}
                 </p>
               </div>
 

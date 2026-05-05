@@ -76,6 +76,7 @@ router.delete("/users/:id", protect, admin, adminController.deleteUser);
 router.patch("/users/:id/status", protect, admin, adminController.toggleUserStatus);
 router.post("/offers", protect, admin, adminController.createOffer);
 router.get("/offers", protect, admin, adminController.getOffers);
+router.put("/offers/:id", protect, admin, adminController.updateOffer);
 router.delete("/offers/:id", protect, admin, adminController.deleteOffer);
 
 

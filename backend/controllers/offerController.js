@@ -1,11 +1,44 @@
 const Offer = require("../models/Offer");
 
+function normalizeCriterion(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getIdString(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return String(value._id || value.id || value);
+}
+
+function offerMatchesCartCriteria(offer, cartItems = []) {
+  const productTargets = Array.isArray(offer.applicableProducts)
+    ? offer.applicableProducts.map(getIdString).filter(Boolean)
+    : [];
+  const categoryTargets = Array.isArray(offer.applicableCategories)
+    ? offer.applicableCategories.map(normalizeCriterion).filter(Boolean)
+    : [];
+
+  const productMatched =
+    productTargets.length === 0 ||
+    cartItems.some((item) => productTargets.includes(getIdString(item.productId)));
+
+  const categoryMatched =
+    categoryTargets.length === 0 ||
+    cartItems.some((item) =>
+      [item.category, item.subCategory, item.childCategory]
+        .map(normalizeCriterion)
+        .some((value) => value && categoryTargets.includes(value))
+    );
+
+  return productMatched && categoryMatched;
+}
+
 /* ======================================================
    🎯 VALIDATE COUPON
 ====================================================== */
 exports.validateOffer = async (req, res) => {
   try {
-    const { code, cartTotal = 0 } = req.body;
+    const { code, cartTotal = 0, cartItems = [] } = req.body;
 
     if (!code) {
       return res.status(400).json({
@@ -36,6 +69,13 @@ exports.validateOffer = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Minimum order ₹${offer.minOrderValue}`,
+      });
+    }
+
+    if (!offerMatchesCartCriteria(offer, cartItems)) {
+      return res.status(400).json({
+        success: false,
+        message: "You are not eligible for this coupon",
       });
     }
 
@@ -89,6 +129,33 @@ exports.getOffers = async (req, res) => {
     res.status(500).json({
       success: false,
       offers: [],
+    });
+  }
+};
+
+/* ======================================================
+   GET FEATURED ACTIVE OFFER (FRONTEND)
+====================================================== */
+exports.getActiveOffer = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const offer = await Offer.findOne({
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    }).sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      offer,
+    });
+
+  } catch (err) {
+    console.error("Get Active Offer Error:", err);
+    res.status(500).json({
+      success: false,
+      offer: null,
     });
   }
 };
