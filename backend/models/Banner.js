@@ -86,6 +86,10 @@ const pageSchema = new mongoose.Schema({
   }],
 }, { timestamps: true });
 
+pageSchema.index({ slug: 1 });
+sectionSchema.index({ page: 1, active: 1, order: 1 });
+sectionBlockSchema.index({ section: 1, order: 1 });
+
 const Page = mongoose.model('Page', pageSchema);
 const Section = mongoose.model('Section', sectionSchema);
 const SectionBlock = mongoose.model('SectionBlock', sectionBlockSchema);

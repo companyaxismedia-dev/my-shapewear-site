@@ -38,6 +38,7 @@ const normalizeUrl = (req, url) => {
 // Get hero slides (banners) across all sections (optional filter by section)
 exports.getBanners = async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     const page = await Page.findOne({ slug: 'home' }).populate({
       path: 'sections',
       populate: {
@@ -543,6 +544,7 @@ await SectionBlock.findByIdAndDelete(id);
 // Get page by slug (frontend rendering)
 exports.getPageBySlug = async (req, res) => {
   try {
+    res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
     const { slug } = req.params;
     const now = new Date();
 

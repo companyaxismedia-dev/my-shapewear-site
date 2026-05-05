@@ -106,7 +106,12 @@ function NavActions({ isSearchOpen, setIsSearchOpen, setLoginOpen, setRegisterOp
           <WishlistButton onLoginOpen={() => setLoginOpen(true)} />
         </>
       )}
-      <LinkNav href="/checkout/cart" className="relative p-1.5 transition-colors" style={{ color: "var(--color-body)" }}>
+      <LinkNav
+        href="/checkout/cart"
+        className="relative p-1.5 transition-colors"
+        style={{ color: "var(--color-body)" }}
+        aria-label="Open shopping cart"
+      >
         <ShoppingCart size={22} className="hover:text-[var(--color-primary)] transition-colors" />
         {cartCount > 0 && (
           <span
@@ -117,7 +122,11 @@ function NavActions({ isSearchOpen, setIsSearchOpen, setLoginOpen, setRegisterOp
           </span>
         )}
       </LinkNav>
-      <LinkNav href="/help" className="hidden sm:flex p-1 hover:text-[var(--color-primary)] transition">
+      <LinkNav
+        href="/help"
+        className="hidden sm:flex p-1 hover:text-[var(--color-primary)] transition"
+        aria-label="Open help center"
+      >
         <HelpCircle size={22} />
       </LinkNav>
     </div>
@@ -275,11 +284,14 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
               </div>
             )}
           </div>
-          <X
-            size={22}
-            className="cursor-pointer opacity-80 hover:opacity-100"
+          <button
+            type="button"
+            className="opacity-80 hover:opacity-100"
             onClick={() => setMenuOpen(false)}
-          />
+            aria-label="Close navigation menu"
+          >
+            <X size={22} />
+          </button>
         </div>
 
         {/* Drawer Links */}
@@ -336,16 +348,20 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
 function NavModals({ loginOpen, setLoginOpen, registerOpen, setRegisterOpen }) {
   return (
     <>
-      <LoginModal
-        isOpen={loginOpen}
-        onClose={() => setLoginOpen(false)}
-        openRegister={() => { setLoginOpen(false); setRegisterOpen(true); }}
-      />
-      <RegisterModal
-        isOpen={registerOpen}
-        onClose={() => setRegisterOpen(false)}
-        openLogin={() => { setLoginOpen(true); setRegisterOpen(false); }}
-      />
+      {loginOpen ? (
+        <LoginModal
+          isOpen={loginOpen}
+          onClose={() => setLoginOpen(false)}
+          openRegister={() => { setLoginOpen(false); setRegisterOpen(true); }}
+        />
+      ) : null}
+      {registerOpen ? (
+        <RegisterModal
+          isOpen={registerOpen}
+          onClose={() => setRegisterOpen(false)}
+          openLogin={() => { setLoginOpen(true); setRegisterOpen(false); }}
+        />
+      ) : null}
     </>
   );
 }
@@ -409,9 +425,11 @@ function HomeNavbar({ onLoginToggle, pathname }) {
             <div className="flex items-center justify-between min-h-[56px] gap-2 md:min-h-[64px]">
               <div className="flex min-w-0 items-center gap-2">
                 <button
+                  type="button"
                   className="p-2 rounded-md transition"
                   style={{ color: "var(--color-body)", background: "transparent" }}
                   onClick={() => setMenuOpen(true)}
+                  aria-label="Open navigation menu"
                 >
                   <Menu size={24} />
                 </button>
@@ -709,9 +727,11 @@ function SimpleNavbar({ onLoginToggle, pathname }) {
             {/* Left: Hamburger & Logo */}
             <div className="flex items-center gap-2 lg:gap-0">
               <button
+                type="button"
                 className="lg:hidden p-2 rounded-md transition"
                 style={{ color: "var(--color-body)" }}
                 onClick={() => setMenuOpen(true)}
+                aria-label="Open navigation menu"
               >
                 <Menu size={24} />
               </button>

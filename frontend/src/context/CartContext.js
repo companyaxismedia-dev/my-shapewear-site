@@ -83,6 +83,16 @@ export const CartProvider = ({ children }) => {
     };
   };
 
+  const applyCartPayload = (data) => {
+    if (Array.isArray(data?.items)) {
+      setCartItems(data.items);
+    }
+
+    if (data?.summary) {
+      setCartSummary(data.summary);
+    }
+  };
+
   /* ================= LOAD GUEST ================= */
   const loadGuestCart = async () => {
     setCartLoading(true);
@@ -96,15 +106,17 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
-    const formatted = await Promise.all(
-      guest.map(async (item, index) => {
-        try {
-          const res = await axios.get(
-            `${API_BASE}/api/products/${item.productId}`,
-          );
+    try {
+      const ids = [...new Set(guest.map((item) => item.productId).filter(Boolean))];
+      const res = await axios.post(`${API_BASE}/api/products/batch`, { ids });
+      const productsById = new Map(
+        (res.data?.products || []).map((product) => [String(product._id), product]),
+      );
 
-          const product = res.data.product || res.data;
-
+      const formatted = guest
+        .map((item, index) => {
+          const product = productsById.get(String(item.productId));
+          if (!product) return null;
           const selectedVariant =
             product.variants?.find((v) => v.color === item.color) ||
             product.variants?.[0];
@@ -155,27 +167,23 @@ export const CartProvider = ({ children }) => {
             availableSizes,
             lineTotal: price * item.quantity,
           };
-        } catch (error) {
-          // Product was deleted or not found - filter it out
-          if (error.response?.status === 404) {
-            return null; // Mark for filtering
-          }
-          console.error("Error loading product:", error);
-          return null; // Skip on any error
-        }
-      }),
-    );
+        })
+        .filter(Boolean);
 
-    // Filter out null items (deleted products)
-    const filteredItems = formatted.filter((item) => item !== null);
-    const guestCoupon = readGuestCoupon();
-    const nextSummary = buildSummary(filteredItems, guestCoupon);
-    if (guestCoupon?.code && !nextSummary.appliedCoupon) {
-      writeGuestCoupon(null);
+      const guestCoupon = readGuestCoupon();
+      const nextSummary = buildSummary(formatted, guestCoupon);
+      if (guestCoupon?.code && !nextSummary.appliedCoupon) {
+        writeGuestCoupon(null);
+      }
+      setCartItems(formatted);
+      setCartSummary(nextSummary);
+    } catch (error) {
+      console.error("Error loading guest cart:", error);
+      setCartItems([]);
+      setCartSummary(buildSummary([]));
+    } finally {
+      setCartLoading(false);
     }
-    setCartItems(filteredItems);
-    setCartSummary(nextSummary);
-    setCartLoading(false);
   };
 
   /* ================= LOAD CART ================= */
@@ -183,8 +191,10 @@ export const CartProvider = ({ children }) => {
     const loadCart = async () => {
       setCartLoading(true);
       if (user) {
-        await mergeGuestCart();
-        await fetchCart();
+        const merged = await mergeGuestCart();
+        if (!merged) {
+          await fetchCart();
+        }
         const guestCoupon = readGuestCoupon();
         if (guestCoupon?.code) {
           try {
@@ -275,11 +285,7 @@ export const CartProvider = ({ children }) => {
         { headers: { Authorization: `Bearer ${user?.token}` } },
       );
 
-      if (res.data?.summary) {
-        setCartSummary(res.data.summary);
-      }
-
-      await fetchCart();
+      applyCartPayload(res.data);
       if (!options.silent) {
         toast.success(res.data?.message || "Coupon applied");
       }
@@ -320,10 +326,8 @@ export const CartProvider = ({ children }) => {
       });
 
       if (res.data?.summary) {
-        setCartSummary(res.data.summary);
+        applyCartPayload(res.data);
       }
-
-      await fetchCart();
       if (!options.silent) {
         toast.success(res.data?.message || "Coupon removed");
       }
@@ -341,22 +345,18 @@ export const CartProvider = ({ children }) => {
   const mergeGuestCart = async () => {
     const guest = JSON.parse(localStorage.getItem("guestCart") || "[]");
 
-    if (!guest.length) return;
+    if (!guest.length) return false;
 
-    for (const item of guest) {
-      await axios.post(
-        `${API_BASE}/api/cart`,
-        {
-          productId: item.productId,
-          qty: item.quantity,
-          size: item.size,
-          color: item.color,
-        },
-        { headers: { Authorization: `Bearer ${user?.token}` } },
-      );
-    }
+    const res = await axios.post(
+      `${API_BASE}/api/cart/merge`,
+      { items: guest },
+      { headers: { Authorization: `Bearer ${user?.token}` } },
+    );
+
+    applyCartPayload(res.data);
 
     localStorage.removeItem("guestCart");
+    return true;
   };
 
   /* ================= ADD ================= */
@@ -367,12 +367,12 @@ export const CartProvider = ({ children }) => {
     color = "default",
   }) => {
     if (user) {
-      await axios.post(
+      const res = await axios.post(
         `${API_BASE}/api/cart`,
         { productId, qty: quantity, size, color },
         { headers: { Authorization: `Bearer ${user?.token}` } },
       );
-      await fetchCart();
+      applyCartPayload(res.data);
     } else {
       const guest = JSON.parse(localStorage.getItem("guestCart") || "[]");
       const existingIndex = guest.findIndex(
@@ -396,12 +396,12 @@ export const CartProvider = ({ children }) => {
     setPendingItemIds((prev) => ({ ...prev, [itemId]: "quantity" }));
     setSummaryLoading(true);
     if (user) {
-      await axios.put(
+      const res = await axios.put(
         `${API_BASE}/api/cart/${itemId}`,
         { quantity },
         { headers: { Authorization: `Bearer ${user?.token}` } },
       );
-      await fetchCart();
+      applyCartPayload(res.data);
     } else {
       const guest = JSON.parse(localStorage.getItem("guestCart") || "[]");
       const index = parseInt(String(itemId).replace("guest-", ""));
@@ -424,13 +424,12 @@ export const CartProvider = ({ children }) => {
     setSummaryLoading(true);
     if (user) {
       try {
-        await axios.put(
+        const res = await axios.put(
           `${API_BASE}/api/cart/size/${itemId}`,
           { size },
           { headers: { Authorization: `Bearer ${user?.token}` } },
         );
-
-        await fetchCart();
+        applyCartPayload(res.data);
       } catch (err) {
         toast.error(err?.response?.data?.message || "Size update failed");
         console.log(err?.response?.data);
@@ -457,10 +456,10 @@ export const CartProvider = ({ children }) => {
     setPendingItemIds((prev) => ({ ...prev, [itemId]: "remove" }));
     setSummaryLoading(true);
     if (user) {
-      await axios.delete(`${API_BASE}/api/cart/${itemId}`, {
+      const res = await axios.delete(`${API_BASE}/api/cart/${itemId}`, {
         headers: { Authorization: `Bearer ${user?.token}` },
       });
-      await fetchCart();
+      applyCartPayload(res.data);
     } else {
       const guest = JSON.parse(localStorage.getItem("guestCart") || "[]");
       const index = parseInt(String(itemId).replace("guest-", ""));

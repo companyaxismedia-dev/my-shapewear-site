@@ -1,6 +1,5 @@
 import "./globals.css";
 import { Suspense } from "react";
-import Script from "next/script";
 import { AuthTransitionOverlay, ToasterProvider } from "@/components/Providers";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -21,12 +20,7 @@ export default function RootLayout({ children }) {
       <head>
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
-        />
-        <Script
-          id="razorpay-checkout-js"
-          src="https://checkout.razorpay.com/v1/checkout.js"
-          strategy="beforeInteractive"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
       </head>
       <body className="antialiased touch-manipulation" suppressHydrationWarning>

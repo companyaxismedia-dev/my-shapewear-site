@@ -265,6 +265,7 @@ exports.getPublicCategories = async (req, res) => {
       subCategoryCount: Array.isArray(category.subCategories) ? category.subCategories.length : 0,
     }));
 
+    res.set("Cache-Control", "public, max-age=300, stale-while-revalidate=900");
     res.status(200).json({
       success: true,
       categories: categoriesWithCounts,

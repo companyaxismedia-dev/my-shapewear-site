@@ -10,7 +10,8 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
-  getSimilarProducts
+  getSimilarProducts,
+  getProductsBatch
 } = require("../controllers/productController");
 
 const { protect, admin } = require("../middleware/authMiddleware");
@@ -22,6 +23,7 @@ const { protect, admin } = require("../middleware/authMiddleware");
 /* 🔹 GET ALL PRODUCTS (Filter + Search + Pagination) */
 router.get("/", getProducts);
 router.get("/filters-meta", getProductFilterMeta);
+router.post("/batch", getProductsBatch);
 
 /* 🔹 GET FEATURED PRODUCTS */
 router.get("/featured", async (req, res) => {

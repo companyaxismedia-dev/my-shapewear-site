@@ -103,6 +103,92 @@ function buildCartSummary(formattedItems, coupon = null) {
   };
 }
 
+function formatCartItems(cart) {
+  return (cart?.items || [])
+    .filter((item) => item.product)
+    .map((item) => {
+      const pricing = getCartItemPricing(
+        item.product,
+        item.size,
+        item.qty,
+        item.size,
+        item.color
+      );
+
+      return {
+        id: item._id,
+        productId: pricing.productId,
+        slug: pricing.slug,
+        name: pricing.name,
+        brand: pricing.brand,
+        category: pricing.category,
+        subCategory: pricing.subCategory,
+        price: pricing.price,
+        mrp: pricing.mrp,
+        discount: pricing.discount,
+        image: pricing.image,
+        quantity: item.qty,
+        size: item.size,
+        color: item.color,
+        seller: pricing.seller,
+        deliveryDate: pricing.deliveryDate,
+        returnText: pricing.returnText,
+        availableSizes: pricing.availableSizes,
+        lineTotal: pricing.lineTotal,
+      };
+    });
+}
+
+async function buildCartPayload(cart) {
+  if (!cart) {
+    return {
+      success: true,
+      items: [],
+      summary: {
+        total: 0,
+        subTotal: 0,
+        discount: 0,
+        productDiscount: 0,
+        couponDiscount: 0,
+        shipping: 0,
+        platformFee: PLATFORM_FEE,
+        youPay: PLATFORM_FEE,
+        appliedCoupon: null,
+      },
+    };
+  }
+
+  await cart.populate("items.product", "name brand category subCategory mrp minPrice thumbnail slug variants");
+  const formattedItems = formatCartItems(cart);
+  let appliedCoupon = null;
+
+  if (cart.coupon?.code) {
+    const offer = await Offer.findOne({ code: cart.coupon.code });
+
+    if (!offer || !offer.isValidOffer() || !offerMatchesCartCriteria(offer, formattedItems)) {
+      clearCartCoupon(cart);
+      await cart.save();
+    } else {
+      cart.coupon = {
+        code: offer.code,
+        title: offer.title,
+        discountType: offer.discountType,
+        discountValue: offer.discountValue,
+        maxDiscount: offer.maxDiscount,
+        minOrderValue: offer.minOrderValue,
+      };
+      appliedCoupon = cart.coupon;
+      await cart.save();
+    }
+  }
+
+  return {
+    success: true,
+    items: formattedItems,
+    summary: buildCartSummary(formattedItems, appliedCoupon),
+  };
+}
+
 function clearCartCoupon(cart) {
   cart.coupon = {
     code: "",
@@ -284,7 +370,7 @@ exports.addItemToCart = async (req, res) => {
       console.error("Failed to update lastActivity:", e.message);
     }
 
-    res.status(200).json({ success: true });
+    res.status(200).json(await buildCartPayload(cart));
 
   } catch (error) {
     res.status(500).json({ message: "Add failed" });
@@ -299,6 +385,10 @@ exports.updateQty = async (req, res) => {
 
     const cart = await Cart.findOne({ user: req.user._id });
 
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
     const item = cart.items.id(itemId);
     if (!item) {
       return res.status(404).json({ message: "Item not found" });
@@ -308,7 +398,7 @@ exports.updateQty = async (req, res) => {
 
     await cart.save();
 
-    res.status(200).json({ success: true });
+    res.status(200).json(await buildCartPayload(cart));
 
   } catch (error) {
     res.status(500).json({ message: "Update failed" });
@@ -318,10 +408,6 @@ exports.updateQty = async (req, res) => {
 /* ================= UPDATE SIZE ================= */
 exports.updateSize = async (req, res) => {
   try {
-    console.log("PARAMS:", req.params);
-    console.log("BODY:", req.body);
-    console.log("USER:", req.user);
-
     const { itemId } = req.params;
     const { size } = req.body;
 
@@ -378,7 +464,7 @@ exports.updateSize = async (req, res) => {
 
     await cart.save();
 
-    res.status(200).json({ success: true });
+    res.status(200).json(await buildCartPayload(cart));
 
   } catch (error) {
     res.status(500).json({ message: "Size update failed" });
@@ -392,16 +478,77 @@ exports.deleteItemFromCart = async (req, res) => {
 
     const cart = await Cart.findOne({ user: req.user._id });
 
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
     cart.items = cart.items.filter(
       (item) => item._id.toString() !== itemId
     );
 
     await cart.save();
 
-    res.status(200).json({ success: true });
+    res.status(200).json(await buildCartPayload(cart));
 
   } catch (error) {
     res.status(500).json({ message: "Remove failed" });
+  }
+};
+
+/* ================= MERGE ITEMS ================= */
+exports.mergeItemsToCart = async (req, res) => {
+  try {
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+
+    if (!items.length) {
+      const existingCart = await Cart.findOne({ user: req.user._id });
+      return res.status(200).json(await buildCartPayload(existingCart));
+    }
+
+    let cart = await Cart.findOne({ user: req.user._id });
+    if (!cart) {
+      cart = new Cart({ user: req.user._id, items: [] });
+    }
+
+    const productIds = [...new Set(items.map((item) => item.productId).filter(Boolean).map(String))];
+    const validProducts = await Product.find({
+      _id: { $in: productIds },
+      isActive: true,
+      status: "published",
+    }).select("_id").lean();
+    const validIds = new Set(validProducts.map((product) => String(product._id)));
+
+    items.forEach((item) => {
+      if (!validIds.has(String(item.productId))) return;
+
+      const qty = Math.max(Number(item.quantity || item.qty || 1), 1);
+      const size = item.size || "";
+      const color = item.color || "default";
+      const existingItem = cart.items.find(
+        (cartItem) =>
+          cartItem.product.toString() === String(item.productId) &&
+          cartItem.size === size &&
+          cartItem.color === color
+      );
+
+      if (existingItem) {
+        existingItem.qty += qty;
+      } else {
+        cart.items.push({
+          product: item.productId,
+          qty,
+          size,
+          color,
+        });
+      }
+    });
+
+    await cart.save();
+    await User.updateOne({ _id: req.user._id }, { $set: { lastActivity: new Date() } });
+
+    res.status(200).json(await buildCartPayload(cart));
+  } catch (error) {
+    res.status(500).json({ message: "Cart merge failed" });
   }
 };
 
@@ -505,11 +652,11 @@ exports.applyCoupon = async (req, res) => {
 
     await cart.save();
 
+    const payload = await buildCartPayload(cart);
     return res.status(200).json({
-      success: true,
+      ...payload,
       message: "Coupon applied successfully",
-      summary,
-      appliedCoupon: summary.appliedCoupon,
+      appliedCoupon: payload.summary.appliedCoupon,
     });
   } catch (error) {
     console.error("APPLY COUPON ERROR:", error);
@@ -578,6 +725,7 @@ exports.removeCoupon = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Coupon removed",
+      items: formattedItems,
       summary: buildCartSummary(formattedItems, null),
     });
   } catch (error) {

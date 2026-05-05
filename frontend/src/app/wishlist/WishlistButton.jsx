@@ -11,8 +11,10 @@ export default function WishlistButton({ onLoginOpen }) {
   if (!user) {
     return (
       <button
+        type="button"
         onClick={onLoginOpen}
         className="relative p-1 hover:text-[#C56F7F] transition cursor-pointer"
+        aria-label="Open login to use wishlist"
       >
         <Heart size={22} />
       </button>
@@ -20,7 +22,7 @@ export default function WishlistButton({ onLoginOpen }) {
   }
 
   return (
-    <Link href="/wishlist" className="relative p-1">
+    <Link href="/wishlist" className="relative p-1" aria-label="Open wishlist">
       <Heart size={22} className="hover:text-[#C56F7F] transition" />
       {wishlistCount > 0 && (
         <span className="absolute top-0 right-0 bg-[#C56F7F] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold animate-pulse">

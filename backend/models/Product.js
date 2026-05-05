@@ -222,6 +222,11 @@ productSchema.index({ minPrice: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ "variants.color": 1 });
 productSchema.index({ isActive: 1, category: 1, minPrice: 1 });
+productSchema.index({ isActive: 1, status: 1, category: 1, subCategory: 1, minPrice: 1 });
+productSchema.index({ isActive: 1, status: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, status: 1, isFeatured: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, status: 1, isBestSeller: 1, rating: -1 });
+productSchema.index({ isActive: 1, status: 1, isNewArrival: 1, createdAt: -1 });
 
 /* ======================================================
    AUTO SLUG

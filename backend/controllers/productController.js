@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const { cached } = require("../utils/cache");
 
 const parseCsv = (value) =>
   String(value || "")
@@ -20,9 +21,8 @@ const buildProductFilter = (query = {}) => {
     }
   }
 
-  if (query.keyword) {
-    const regex = new RegExp(query.keyword, "i");
-    filter.$or = [{ name: regex }, { brand: regex }, { "variants.color": regex }];
+    if (query.keyword) {
+    filter.$text = { $search: query.keyword };
   }
 
   if (query.minPrice || query.maxPrice) {
@@ -93,7 +93,7 @@ const buildProductFilter = (query = {}) => {
 exports.getProducts = async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
-    const limit = Math.max(Number(req.query.limit) || 12, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 12, 1), 48);
     const filter = buildProductFilter(req.query);
 
     /* ================= SORTING ================= */
@@ -120,27 +120,21 @@ exports.getProducts = async (req, res) => {
         break;
     }
 
-    const total = await Product.countDocuments(filter);
+    const productQuery = Product.find(filter)
+        .select(
+          "name slug thumbnail category subCategory variants.color variants.images.url variants.sizes.size variants.sizes.stock minPrice mrp discount rating numReviews shortDescription"
+        )
+        .sort(sortOption)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
 
-    const products = await Product.find(filter)
-      .select("name slug thumbnail variants minPrice mrp discount rating numReviews shortDescription")
-//       .select({
-//   name: 1,
-//   slug: 1,
-//   thumbnail: 1,
-//   minPrice: 1,
-//   mrp: 1,
-//   discount: 1,
-//   rating: 1,
-//   numReviews: 1,
-//   shortDescription: 1,
-//   "variants.images.url": 1,
-// })
-      .sort(sortOption)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean();
+    const [total, products] = await Promise.all([
+      Product.countDocuments(filter),
+      productQuery,
+    ]);
 
+      res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
       res.json({
         success: true,
         products,
@@ -160,6 +154,8 @@ exports.getProducts = async (req, res) => {
 
 exports.getProductFilterMeta = async (req, res) => {
   try {
+    const cacheKey = `products:filters-meta:${JSON.stringify(req.query || {})}`;
+    const payload = await cached(cacheKey, 60000, async () => {
     const query = { ...req.query };
     const categoryFilter = buildProductFilter(query);
 
@@ -181,71 +177,70 @@ exports.getProductFilterMeta = async (req, res) => {
       maxPrice: "",
     });
 
-    const [subcategories, colors, sizes, priceRange] = await Promise.all([
-      Product.aggregate([
-        { $match: subCategoryFilter },
-        { $match: { subCategory: { $exists: true, $ne: "" } } },
-        { $group: { _id: "$subCategory", count: { $sum: 1 } } },
-        { $sort: { count: -1, _id: 1 } },
-      ]),
-      Product.aggregate([
-        { $match: colorFilter },
-        { $unwind: "$variants" },
-        { $match: { "variants.color": { $exists: true, $ne: "" } } },
-        {
-          $group: {
-            _id: {
-              productId: "$_id",
-              color: "$variants.color",
-              colorCode: "$variants.colorCode",
+    const [subcategories, colors, sizes, priceRange, totalMatchingProducts] = await Promise.all([
+        Product.aggregate([
+          { $match: subCategoryFilter },
+          { $match: { subCategory: { $exists: true, $ne: "" } } },
+          { $group: { _id: "$subCategory", count: { $sum: 1 } } },
+          { $sort: { count: -1, _id: 1 } },
+        ]),
+        Product.aggregate([
+          { $match: colorFilter },
+          { $unwind: "$variants" },
+          { $match: { "variants.color": { $exists: true, $ne: "" } } },
+          {
+            $group: {
+              _id: {
+                productId: "$_id",
+                color: "$variants.color",
+                colorCode: "$variants.colorCode",
+              },
             },
           },
-        },
-        {
-          $group: {
-            _id: "$_id.color",
-            colorCode: { $first: "$_id.colorCode" },
-            count: { $sum: 1 },
-          },
-        },
-        { $sort: { count: -1, _id: 1 } },
-      ]),
-      Product.aggregate([
-        { $match: sizeFilter },
-        { $unwind: "$variants" },
-        { $unwind: "$variants.sizes" },
-        { $match: { "variants.sizes.size": { $exists: true, $ne: "" } } },
-        {
-          $group: {
-            _id: {
-              productId: "$_id",
-              size: "$variants.sizes.size",
+          {
+            $group: {
+              _id: "$_id.color",
+              colorCode: { $first: "$_id.colorCode" },
+              count: { $sum: 1 },
             },
           },
-        },
-        {
-          $group: {
-            _id: "$_id.size",
-            count: { $sum: 1 },
+          { $sort: { count: -1, _id: 1 } },
+        ]),
+        Product.aggregate([
+          { $match: sizeFilter },
+          { $unwind: "$variants" },
+          { $unwind: "$variants.sizes" },
+          { $match: { "variants.sizes.size": { $exists: true, $ne: "" } } },
+          {
+            $group: {
+              _id: {
+                productId: "$_id",
+                size: "$variants.sizes.size",
+              },
+            },
           },
-        },
-        { $sort: { _id: 1 } },
-      ]),
-      Product.aggregate([
-        { $match: priceFilter },
-        {
-          $group: {
-            _id: null,
-            min: { $min: "$minPrice" },
-            max: { $max: "$minPrice" },
+          {
+            $group: {
+              _id: "$_id.size",
+              count: { $sum: 1 },
+            },
           },
-        },
-      ]),
-    ]);
+          { $sort: { _id: 1 } },
+        ]),
+        Product.aggregate([
+          { $match: priceFilter },
+          {
+            $group: {
+              _id: null,
+              min: { $min: "$minPrice" },
+              max: { $max: "$minPrice" },
+            },
+          },
+        ]),
+        Product.countDocuments(categoryFilter),
+      ]);
 
-    const totalMatchingProducts = await Product.countDocuments(categoryFilter);
-
-    res.json({
+      return {
       success: true,
       totalMatchingProducts,
       subcategories: subcategories.map((item) => ({
@@ -265,7 +260,11 @@ exports.getProductFilterMeta = async (req, res) => {
         min: priceRange[0]?.min ?? 0,
         max: priceRange[0]?.max ?? 0,
       },
+      };
     });
+
+    res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    res.json(payload);
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -300,6 +299,33 @@ exports.getProductFilterMeta = async (req, res) => {
       });
     }
   };
+
+exports.getProductsBatch = async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids)
+      ? [...new Set(req.body.ids.filter(Boolean).map(String))]
+      : [];
+
+    if (!ids.length) {
+      return res.json({ success: true, products: [] });
+    }
+
+    const products = await Product.find({
+      _id: { $in: ids },
+      isActive: true,
+      status: "published",
+    })
+      .select("name slug brand category subCategory thumbnail variants minPrice mrp discount rating numReviews shortDescription")
+      .lean();
+
+    res.json({ success: true, products });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid product ids",
+    });
+  }
+};
 
   /* ======================================================
     GET PRODUCT BY SLUG
