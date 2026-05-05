@@ -140,6 +140,8 @@ export const CartProvider = ({ children }) => {
             slug: product.slug,
             name: product.name,
             brand: product.brand || "Glovia",
+            category: product.category || "",
+            subCategory: product.subCategory || "",
             price,
             mrp,
             discount,
@@ -288,6 +290,7 @@ export const CartProvider = ({ children }) => {
     const res = await axios.post(`${API_BASE}/api/offers/validate`, {
       code: normalizedCode,
       cartTotal: currentSummary.subTotal,
+      cartItems,
     });
 
     const offer = res.data?.offer;

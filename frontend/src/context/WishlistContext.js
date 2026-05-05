@@ -56,10 +56,20 @@ export function WishlistProvider({ children }) {
       return;
     }
 
+    const productId =
+      typeof product?.productId === "object"
+        ? product.productId._id || product.productId.id
+        : product?._id || product?.id || product?.productId;
+
+    if (!productId) {
+      toast.error("Product could not be added to wishlist");
+      return;
+    }
+
     try {
       await axios.post(
         `${API_BASE}/api/wishlist/toggle`,
-        { productId: product._id },
+        { productId },
         {
           headers: {
             Authorization: `Bearer ${user.token}`,
@@ -68,12 +78,12 @@ export function WishlistProvider({ children }) {
       );
 
       setWishlist((prev) => {
-        const exists = prev.find((p) => p._id === product._id);
+        const exists = prev.find((p) => p._id === productId);
 
         if (exists) {
-          return prev.filter((p) => p._id !== product._id);
+          return prev.filter((p) => p._id !== productId);
         }
-        return [...prev, product];
+        return [...prev, { ...product, _id: productId }];
       });
     } catch (err) {
       console.error("Toggle wishlist error:", err?.response?.data || err);

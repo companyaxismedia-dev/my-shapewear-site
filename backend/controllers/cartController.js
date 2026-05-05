@@ -36,6 +36,8 @@ function getCartItemPricing(product, selectedSize, qty, fallbackSize, fallbackCo
     slug: product.slug,
     name: product.name,
     brand: product.brand || "Glovia",
+    category: product.category || "",
+    subCategory: product.subCategory || "",
     price,
     mrp,
     discount,
@@ -112,11 +114,44 @@ function clearCartCoupon(cart) {
   };
 }
 
+function normalizeCriterion(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getIdString(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return String(value._id || value.id || value);
+}
+
+function offerMatchesCartCriteria(offer, items) {
+  const productTargets = Array.isArray(offer.applicableProducts)
+    ? offer.applicableProducts.map(getIdString).filter(Boolean)
+    : [];
+  const categoryTargets = Array.isArray(offer.applicableCategories)
+    ? offer.applicableCategories.map(normalizeCriterion).filter(Boolean)
+    : [];
+
+  const productMatched =
+    productTargets.length === 0 ||
+    items.some((item) => productTargets.includes(getIdString(item.productId)));
+
+  const categoryMatched =
+    categoryTargets.length === 0 ||
+    items.some((item) =>
+      [item.category, item.subCategory, item.childCategory]
+        .map(normalizeCriterion)
+        .some((value) => value && categoryTargets.includes(value))
+    );
+
+  return productMatched && categoryMatched;
+}
+
 /* ================= GET CART ================= */
 exports.getCart = async (req, res) => {
   try {
     let cart = await Cart.findOne({ user: req.user._id })
-      .populate("items.product", "name brand mrp minPrice thumbnail slug variants");
+      .populate("items.product", "name brand category subCategory mrp minPrice thumbnail slug variants");
 
     if (!cart) {
       return res.status(200).json({
@@ -153,6 +188,8 @@ exports.getCart = async (req, res) => {
           slug: pricing.slug,
           name: pricing.name,
           brand: pricing.brand,
+          category: pricing.category,
+          subCategory: pricing.subCategory,
           price: pricing.price,
           mrp: pricing.mrp,
           discount: pricing.discount,
@@ -173,7 +210,7 @@ exports.getCart = async (req, res) => {
     if (cart.coupon?.code) {
       const offer = await Offer.findOne({ code: cart.coupon.code });
 
-      if (!offer || !offer.isValidOffer()) {
+      if (!offer || !offer.isValidOffer() || !offerMatchesCartCriteria(offer, formattedItems)) {
         clearCartCoupon(cart);
         await cart.save();
       } else {
@@ -381,7 +418,7 @@ exports.applyCoupon = async (req, res) => {
     }
 
     const cart = await Cart.findOne({ user: req.user._id })
-      .populate("items.product", "name brand mrp minPrice thumbnail slug variants");
+      .populate("items.product", "name brand category subCategory mrp minPrice thumbnail slug variants");
 
     if (!cart || !cart.items.length) {
       return res.status(400).json({
@@ -417,6 +454,8 @@ exports.applyCoupon = async (req, res) => {
           slug: pricing.slug,
           name: pricing.name,
           brand: pricing.brand,
+          category: pricing.category,
+          subCategory: pricing.subCategory,
           price: pricing.price,
           mrp: pricing.mrp,
           discount: pricing.discount,
@@ -445,6 +484,13 @@ exports.applyCoupon = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Minimum order Rs. ${offer.minOrderValue} required`,
+      });
+    }
+
+    if (!offerMatchesCartCriteria(offer, formattedItems)) {
+      return res.status(400).json({
+        success: false,
+        message: "You are not eligible for this coupon",
       });
     }
 
@@ -478,7 +524,7 @@ exports.applyCoupon = async (req, res) => {
 exports.removeCoupon = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id })
-      .populate("items.product", "name brand mrp minPrice thumbnail slug variants");
+      .populate("items.product", "name brand category subCategory mrp minPrice thumbnail slug variants");
 
     if (!cart) {
       return res.status(200).json({
@@ -512,6 +558,8 @@ exports.removeCoupon = async (req, res) => {
           slug: pricing.slug,
           name: pricing.name,
           brand: pricing.brand,
+          category: pricing.category,
+          subCategory: pricing.subCategory,
           price: pricing.price,
           mrp: pricing.mrp,
           discount: pricing.discount,
