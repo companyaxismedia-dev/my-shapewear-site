@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import LinkNav from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
-import { ShoppingCart, User, Menu, HelpCircle, Package, X, ChevronDown, ChevronRight, ContactIcon, LogOut } from "lucide-react";
+import { ShoppingCart, User, Menu, HelpCircle, Package, X, ChevronDown, ChevronRight, ContactIcon, LogOut, Newspaper } from "lucide-react";
 import SearchSection from "./SearchSection";
 import LoginModal from "@/app/authPage/LoginModal";
 import RegisterModal from "@/app/authPage/RegisterModal";
@@ -300,6 +300,15 @@ function MobileDrawer({ menuOpen, setMenuOpen, loginOpen, setLoginOpen, register
           <div className="space-y-1">
             {renderCategoryTree(categories)}
           </div>
+
+          <LinkNav
+            href="/blog"
+            onClick={() => setMenuOpen(false)}
+            className="rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2 transition-colors"
+            style={{ color: "var(--color-heading)", fontFamily: "var(--font-body)" }}
+          >
+            <Newspaper size={16} style={{ color: "var(--color-primary)" }} /> Blogs
+          </LinkNav>
 
           <LinkNav
             href="/track"
