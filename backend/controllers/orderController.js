@@ -4,6 +4,7 @@ const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const User = require("../models/User");
 const Offer = require("../models/Offer");
+const Transaction = require("../models/Transaction");
 const {
   applyBulkItemStatus,
   buildOrderStatusHistory,
@@ -17,7 +18,7 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const PLATFORM_FEE = 30;
+const PLATFORM_FEE =0;
 const SHIPPING_CHARGE = 0;
 
 function serializeOrder(orderDoc) {
@@ -40,7 +41,7 @@ function serializeOrder(orderDoc) {
 ===================================================== */
 exports.createOrder = async (req, res) => {
   try {
-    const { paymentId, paymentType, addressId, offerCode } = req.body;
+    const { paymentType, addressId, offerCode } = req.body;
     /* ---------- PAYMENT TYPE VALIDATION ---------- */
     const allowedPayments = ["COD", "UPI", "CARD"];
 
@@ -71,7 +72,7 @@ exports.createOrder = async (req, res) => {
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Cart empty hai",
+        message: "Cart is empty",
       });
     }
 
@@ -276,7 +277,10 @@ exports.createOrder = async (req, res) => {
       payment: {
         method: finalPaymentType,
         status: "Pending",
-        paymentId: paymentId || "N/A",
+        paymentId: "",
+        provider: finalPaymentType === "COD" ? "cod" : "razorpay",
+        razorpayOrderId: "",
+        latestTransactionId: null,
         paidAt: null,
         paymentChanged: false,
         paymentChangedAt: null,
@@ -287,32 +291,46 @@ exports.createOrder = async (req, res) => {
 
     savedOrder = await order.save();
 
-    /* ---------- STOCK REDUCE (FIXED VERSION) ---------- */
-    /* ---------- STOCK REDUCE (FIXED VERSION) ---------- */
-    for (const item of cart.items) {
-      const product = item.product;
+    if (finalPaymentType === "COD") {
+      const codTransaction = await Transaction.create({
+        orderId: savedOrder._id,
+        userId: req.user._id,
+        provider: "cod",
+        method: "COD",
+        amount: finalAmount,
+        currency: "INR",
+        status: "pending_collection",
+      });
 
-      if (!product) continue;
-
-      for (const variant of product.variants) {
-        for (const size of variant.sizes) {
-          if (size.size === item.size) {
-            size.stock = Math.max(0, size.stock - item.qty);
-          }
-        }
-      }
-
-      // ⭐ FIX: agar createdBy missing ho to set kar do
-      if (!product.createdBy) {
-        product.createdBy = req.user._id;
-      }
-
-      await product.save();
+      savedOrder.payment.latestTransactionId = codTransaction._id;
+      await savedOrder.save();
     }
 
-    /* ---------- CLEAR CART ---------- */
-    await Cart.deleteOne({ user: req.user._id });
+    if (finalPaymentType === "COD") {
+      /* ---------- STOCK REDUCE FOR CONFIRMED COD ORDER ---------- */
+      for (const item of cart.items) {
+        const product = item.product;
 
+        if (!product) continue;
+
+        for (const variant of product.variants) {
+          for (const size of variant.sizes) {
+            if (size.size === item.size) {
+              size.stock = Math.max(0, size.stock - item.qty);
+            }
+          }
+        }
+
+        if (!product.createdBy) {
+          product.createdBy = req.user._id;
+        }
+
+        await product.save();
+      }
+
+      /* ---------- CLEAR CART ONLY AFTER CONFIRMED COD ORDER ---------- */
+      await Cart.deleteOne({ user: req.user._id });
+    }
     // update user's last activity (placed order)
     try {
       user.lastActivity = new Date();
@@ -770,7 +788,7 @@ exports.updatePayment = async (req, res) => {
 
   try {
 
-    const { paymentMethod, paymentStatus, paymentId } = req.body;
+    const { paymentMethod } = req.body;
 
     const order = await Order.findOne({
       _id: req.params.id,
@@ -837,18 +855,21 @@ exports.updatePayment = async (req, res) => {
       });
     }
 
-    /* ===== UPDATE PAYMENT ===== */
+    const nextPaymentMethod = String(paymentMethod || "").toUpperCase();
 
+    if (!["UPI", "CARD"].includes(nextPaymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only UPI or CARD can be selected for online payment",
+      });
+    }
 
-    if (paymentMethod) {
-      order.payment.method = paymentMethod;
-    }
-    if (paymentStatus) {
-      order.payment.status = paymentStatus;
-    }
-    if (paymentId) {
-      order.payment.paymentId = paymentId;
-    }
+    /* ===== PREPARE PAYMENT CHANGE ONLY ===== */
+    order.payment.method = nextPaymentMethod;
+    order.payment.status = "Pending";
+    order.payment.provider = "razorpay";
+    order.payment.paymentId = "";
+    order.payment.paidAt = null;
     order.payment.paymentChanged = true;
     order.payment.paymentChangedAt = new Date();
 

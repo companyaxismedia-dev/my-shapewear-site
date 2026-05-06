@@ -360,7 +360,7 @@ const OrderSchema = new mongoose.Schema(
       },
       platformFee: {
         type: Number,
-        default: 30,
+        default: 0,
         min: 0,
       },
       tax: {
@@ -499,6 +499,23 @@ const OrderSchema = new mongoose.Schema(
         type: String,
         default: "",
         trim: true,
+      },
+      provider: {
+        type: String,
+        enum: ["cod", "razorpay", ""],
+        default: "",
+        trim: true,
+      },
+      razorpayOrderId: {
+        type: String,
+        default: "",
+        trim: true,
+        index: true,
+      },
+      latestTransactionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Transaction",
+        default: null,
       },
       paidAt: {
         type: Date,

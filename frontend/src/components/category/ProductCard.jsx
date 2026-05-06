@@ -7,6 +7,7 @@ import { Heart, Star } from "lucide-react";
 import { getImageUrl } from "./helpers";
 import Image from "next/image";
 import { toast } from "sonner";
+import { FALLBACK_PRODUCT_IMAGE, getPrimaryProductImage } from "@/lib/images";
 
 export function ProductCard({ item, onOpenDetails }) {
     const { wishlist, toggleWishlist, removeFromWishlist } = useWishlist();
@@ -17,7 +18,7 @@ export function ProductCard({ item, onOpenDetails }) {
     const isWishlisted = wishlist.some((p) => p._id === item._id);
     const cardRef = useRef(null);
 
-    const image = getImageUrl(item.variants?.[0]?.images?.[0]?.url);
+    const image = getImageUrl(item.variants?.[0]?.images?.[0]?.url || item.thumbnail);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -29,14 +30,22 @@ export function ProductCard({ item, onOpenDetails }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleSizeSelect = (size) => {
+    const sizeOptions = item.variants?.[0]?.sizes || [];
+    const hasInStockSize = sizeOptions.some((s) => Number(s?.stock || 0) > 0);
+
+    const handleSizeSelect = (sizeOption) => {
+        if (Number(sizeOption?.stock || 0) <= 0) {
+            toast.error("This size is out of stock");
+            return;
+        }
+
         const variant = item.variants?.[0];
         addToCart({
             productId: item._id,
             name: item.name,
             price: variant?.price || item.minPrice,
             image,
-            size,
+            size: sizeOption.size,
             quantity: 1,
         });
         setShowSizes(false);
@@ -44,7 +53,7 @@ export function ProductCard({ item, onOpenDetails }) {
         setTimeout(() => setShowSuccess(false), 1500);
     };
 
-    const imageSrc = getImageUrl(item.thumbnail);
+    const imageSrc = getPrimaryProductImage(item);
     const usePlainImg = imageSrc.includes("localhost") || imageSrc.includes("uploads");
 
     return (
@@ -60,6 +69,9 @@ export function ProductCard({ item, onOpenDetails }) {
                     <img
                         src={imageSrc}
                         alt={item.name}
+                        onError={(event) => {
+                            event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                        }}
                         onClick={onOpenDetails}
                         loading="lazy"
                         className={`h-full w-full cursor-pointer object-cover object-top transition-transform duration-500 ${showSizes ? "scale-105 blur-sm" : "group-hover:scale-105"}`}
@@ -71,6 +83,9 @@ export function ProductCard({ item, onOpenDetails }) {
                         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 25vw, 20vw"
                         alt={item.name}
                         loading="lazy"
+                        onError={(event) => {
+                            event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                        }}
                         onClick={onOpenDetails}
                         className={`cursor-pointer object-cover object-top transition-transform duration-500 ${showSizes ? "scale-105 blur-sm" : "group-hover:scale-105"}`}
                     />
@@ -115,22 +130,32 @@ export function ProductCard({ item, onOpenDetails }) {
                                 SELECT SIZE
                             </p>
                             <div className="flex flex-wrap justify-center gap-2">
-                                {item.variants?.[0]?.sizes?.map((s, i) => (
-                                    <button
-                                        key={i}
-                                        disabled={s.stock === 0}
-                                        onClick={() => handleSizeSelect(s.size)}
-                                        className={`px-3 py-1.5 text-[12px] font-semibold transition-colors ${s.stock === 0 ? "cursor-not-allowed" : ""}`}
-                                        style={{
-                                            borderRadius: 9999,
-                                            border: `1px solid ${s.stock === 0 ? "var(--color-border)" : "var(--color-accent)"}`,
-                                            color: s.stock === 0 ? "var(--color-muted)" : "var(--color-primary)",
-                                            background: s.stock === 0 ? "rgba(252,239,234,0.4)" : "#FFF4F6",
-                                        }}
-                                    >
-                                        {s.size}
-                                    </button>
-                                ))}
+                                {sizeOptions.map((s, i) => {
+                                    const isOutOfStock = Number(s?.stock || 0) <= 0;
+
+                                    return (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            disabled={isOutOfStock}
+                                            onClick={() => handleSizeSelect(s)}
+                                            className={`relative overflow-hidden px-3 py-1.5 text-[12px] font-semibold transition-colors ${
+                                                isOutOfStock ? "cursor-not-allowed opacity-50" : ""
+                                            }`}
+                                            style={{
+                                                borderRadius: 9999,
+                                                border: `1px solid ${isOutOfStock ? "var(--color-border)" : "var(--color-accent)"}`,
+                                                color: isOutOfStock ? "var(--color-muted)" : "var(--color-primary)",
+                                                background: isOutOfStock ? "rgba(252,239,234,0.4)" : "#FFF4F6",
+                                            }}
+                                        >
+                                            {s.size}
+                                            {isOutOfStock ? (
+                                                <span className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[140%] -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-current opacity-70" />
+                                            ) : null}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
@@ -175,10 +200,15 @@ export function ProductCard({ item, onOpenDetails }) {
                 </div>
 
                 <button
-                    onClick={() => setShowSizes(true)}
-                    className="mt-auto flex h-[34px] w-full items-center justify-center rounded-[8px] bg-[#c56f7f] px-[14px] text-[12px] font-semibold tracking-[0.01em] text-[#fff9fa] transition-colors duration-200 hover:bg-[#b45e6f]"
+                    type="button"
+                    onClick={() => {
+                        if (!hasInStockSize) return;
+                        setShowSizes(true);
+                    }}
+                    disabled={!hasInStockSize}
+                    className="mt-auto flex h-[34px] w-full items-center justify-center rounded-[8px] bg-[#c56f7f] px-[14px] text-[12px] font-semibold tracking-[0.01em] text-[#fff9fa] transition-colors duration-200 hover:bg-[#b45e6f] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                    Add to Bag
+                    {hasInStockSize ? "Add to Bag" : "Out of Stock"}
                 </button>
             </div>
         </div>

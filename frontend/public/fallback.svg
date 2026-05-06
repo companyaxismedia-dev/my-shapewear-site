@@ -1,0 +1,9 @@
+<svg width="640" height="800" viewBox="0 0 640 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="800" fill="#FCEFEA"/>
+  <rect x="48" y="48" width="544" height="704" rx="28" fill="#FFF9FA" stroke="#EAD7DD" stroke-width="2"/>
+  <circle cx="320" cy="318" r="78" fill="#F4DCE3"/>
+  <path d="M278 330C278 306.804 296.804 288 320 288C343.196 288 362 306.804 362 330V378H278V330Z" fill="#C56F7F"/>
+  <path d="M290 288C290 271.431 303.431 258 320 258C336.569 258 350 271.431 350 288" stroke="#C56F7F" stroke-width="18" stroke-linecap="round"/>
+  <text x="320" y="468" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700" fill="#4A2E35">Glovia Glamour</text>
+  <text x="320" y="514" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#8C7480">Product image unavailable</text>
+</svg>

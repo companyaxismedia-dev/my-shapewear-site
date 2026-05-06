@@ -2,15 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { CreditCard, ShieldCheck, Smartphone } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
-
-const UPI_APPS = ["Google Pay", "PhonePe", "Paytm"];
-const BANKS = ["Axis Bank", "HDFC Bank", "ICICI Bank", "Kotak", "SBI"];
-const WALLETS = ["Paytm", "Amazon Pay", "PhonePe Wallet"];
-const EMI_OPTIONS = ["3 Months", "6 Months", "9 Months", "12 Months"];
 
 const loadRazorpay = () =>
   new Promise((resolve) => {
@@ -39,18 +34,6 @@ export function PaymentDetailsPanel({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState("");
   const [paymentFailed, setPaymentFailed] = useState(false);
-  const [upiMode, setUpiMode] = useState("scan");
-  const [upiIdSelected, setUpiIdSelected] = useState(false);
-  const [upiId, setUpiId] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardName, setCardName] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
-  const [cardError, setCardError] = useState("");
-  const [showCvv, setShowCvv] = useState(false);
-  const [selectedEmi, setSelectedEmi] = useState("");
-  const [selectedBank, setSelectedBank] = useState("");
-  const [selectedWallet, setSelectedWallet] = useState("");
 
   const router = useRouter();
 
@@ -61,7 +44,7 @@ export function PaymentDetailsPanel({
 
   const getAddressId = () => selectedAddressId || localStorage.getItem("selectedAddressId");
 
-  const ensureOrder = async () => {
+  const ensureOrder = async (paymentType) => {
     if (orderId) return orderId;
 
     const token = getToken();
@@ -76,6 +59,7 @@ export function PaymentDetailsPanel({
       body: JSON.stringify({
         addressId,
         offerCode: appliedCouponCode || "",
+        paymentType,
       }),
     });
 
@@ -90,81 +74,123 @@ export function PaymentDetailsPanel({
     return newOrderId;
   };
 
-  const updateOrderPayment = async (currentOrderId, paymentMethod, paymentStatus) => {
-    await fetch(`${API_BASE}/api/orders/update-payment/${currentOrderId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getToken()}`,
-      },
-      body: JSON.stringify({
-        paymentMethod,
-        paymentStatus,
-      }),
-    });
-  };
-
-  const handleRazorpayPayment = async (type) => {
-    if (!cartTotal || Number(cartTotal.sellingPrice) <= 0) {
-      toast.error("Invalid order amount");
-      return;
-    }
-
+  const markPaymentFailed = async (currentOrderId, reason = "Payment cancelled by customer") => {
     try {
-      setPaymentFailed(false);
-      const currentOrderId = await ensureOrder();
-      const loaded = await loadRazorpay();
-
-      if (!loaded) {
-        toast.error("Razorpay SDK failed to load");
-        return;
-      }
-
-      const orderRes = await fetch(`${API_BASE}/api/payment/create-order`, {
+      await fetch(`${API_BASE}/api/payment/razorpay/fail`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify({
-          amount: cartTotal.sellingPrice,
+          orderId: currentOrderId,
+          reason,
+        }),
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const goToPaymentFailure = async (currentOrderId, reason = "cancelled") => {
+    await markPaymentFailed(currentOrderId, reason);
+    router.push(`/payment-failed?order=${currentOrderId}&reason=${encodeURIComponent(reason)}`);
+  };
+
+  const handleRazorpayPayment = async () => {
+    if (!cartTotal || Number(cartTotal.finalAmount || cartTotal.sellingPrice) <= 0) {
+      toast.error("Invalid order amount");
+      return;
+    }
+
+    let currentOrderId = null;
+
+    try {
+      setPaymentFailed(false);
+      setProcessingMessage("Opening secure Razorpay checkout");
+      setIsProcessing(true);
+
+      currentOrderId = await ensureOrder("UPI");
+      const loaded = await loadRazorpay();
+
+      if (!loaded) {
+        throw new Error("Razorpay SDK failed to load");
+      }
+
+      const orderRes = await fetch(`${API_BASE}/api/payment/razorpay/order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({
+          orderId: currentOrderId,
+          paymentMethod: "UPI",
         }),
       });
 
       const orderData = await orderRes.json();
       if (!orderData.success) {
-        setPaymentFailed(true);
-        return;
+        throw new Error(orderData.message || "Unable to start payment");
       }
 
+      const prefill = orderData.prefill || {};
+
+      setIsProcessing(false);
+
       const razor = new window.Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: orderData.order.amount,
+        key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.razorpayOrder.amount,
         currency: "INR",
-        name: "IMKAA",
-        description: `${type} Payment`,
-        order_id: orderData.order.id,
+        name: "Glovia Glamour",
+        description: "Secure Online Payment",
+        order_id: orderData.razorpayOrder.id,
+        prefill,
+        readonly: {
+          name: Boolean(prefill.name),
+          email: Boolean(prefill.email),
+          contact: Boolean(prefill.contact),
+        },
+        hidden: {
+          email: Boolean(prefill.email),
+          contact: Boolean(prefill.contact),
+        },
         handler: async (response) => {
-          setProcessingMessage(`Processing ${type} payment`);
-          setIsProcessing(true);
+          try {
+            setProcessingMessage("Verifying payment");
+            setIsProcessing(true);
 
-          const verifyRes = await fetch(`${API_BASE}/api/payment/verify`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(response),
-          });
+            const verifyRes = await fetch(`${API_BASE}/api/payment/razorpay/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getToken()}`,
+              },
+              body: JSON.stringify({
+                orderId: currentOrderId,
+                ...response,
+              }),
+            });
 
-          const verifyData = await verifyRes.json();
-          if (!verifyData.success) {
+            const verifyData = await verifyRes.json();
+            if (!verifyData.success) {
+              throw new Error(verifyData.message || "Payment verification failed");
+            }
+
+            await fetchCart();
+            setIsProcessing(false);
+            router.push(`/order-success/${currentOrderId}`);
+          } catch (error) {
             setIsProcessing(false);
             setPaymentFailed(true);
-            return;
+            await goToPaymentFailure(currentOrderId, error.message || "verification_failed");
           }
-
-          await updateOrderPayment(currentOrderId, type, "Paid");
-          await fetchCart();
-          setIsProcessing(false);
-          router.push(`/order-success/${currentOrderId}`);
+        },
+        modal: {
+          ondismiss: async () => {
+            setPaymentFailed(true);
+            await goToPaymentFailure(currentOrderId, "cancelled");
+          },
         },
         theme: {
           color: "#b27b86",
@@ -174,20 +200,23 @@ export function PaymentDetailsPanel({
       razor.open();
     } catch (error) {
       console.log(error);
-      setPaymentFailed(true);
       setIsProcessing(false);
+      setPaymentFailed(true);
       toast.error(error.message || "Payment failed");
+
+      if (currentOrderId) {
+        await goToPaymentFailure(currentOrderId, error.message || "failed");
+      }
     }
   };
 
-  const handlePaymentProcess = async (type) => {
+  const handleCodOrder = async () => {
     try {
       setPaymentFailed(false);
-      setProcessingMessage(`Processing ${type} payment`);
+      setProcessingMessage("Placing COD order");
       setIsProcessing(true);
 
-      const currentOrderId = await ensureOrder();
-      await updateOrderPayment(currentOrderId, type, type === "COD" ? "Pending" : "Paid");
+      const currentOrderId = await ensureOrder("COD");
 
       await fetchCart();
       setIsProcessing(false);
@@ -196,57 +225,24 @@ export function PaymentDetailsPanel({
       console.log(error);
       setIsProcessing(false);
       setPaymentFailed(true);
-      toast.error(error.message || "Payment failed");
+      toast.error(error.message || "Order failed");
     }
-  };
-
-  const validateCard = () => {
-    if (!cardNumber || cardNumber.replace(/\s/g, "").length < 13) {
-      setCardError("Enter a valid card number");
-      return false;
-    }
-    if (!cardName) {
-      setCardError("Enter the name on card");
-      return false;
-    }
-    if (!cardExpiry || cardExpiry.length < 5) {
-      setCardError("Enter a valid expiry date");
-      return false;
-    }
-    if (!cardCvv || cardCvv.length < 3) {
-      setCardError("Enter a valid CVV");
-      return false;
-    }
-    setCardError("");
-    return true;
-  };
-
-  const formatCardNumber = (value) => {
-    const digits = value.replace(/\s+/g, "").replace(/[^0-9]/g, "");
-    const parts = digits.match(/.{1,4}/g);
-    return parts ? parts.join(" ") : "";
   };
 
   const panelClass = compact
     ? "rounded-[4px] border border-[#ece5e8] bg-white p-4"
     : "rounded-[4px] border border-[#ece5e8] bg-white p-5 shadow-[0_6px_18px_rgba(45,28,35,0.05)] sm:p-6";
 
-  const fieldClass =
-    "h-12 w-full rounded-[4px] border border-[#d8cdd2] bg-white px-4 text-[14px] text-[#2f2428] outline-none transition focus:border-[#b27b86]";
-
-  const optionCard = (selected) =>
-    `w-full rounded-[4px] border px-4 py-3 text-left transition ${
-      selected ? "border-[#b27b86] bg-[#fffafb]" : "border-[#ece5e8] bg-white hover:border-[#d9c7cd]"
-    }`;
-
   if (isProcessing) {
     return (
-      <div className={`${panelClass} flex min-h-[420px] flex-col items-center justify-center text-center`}>
+      <div className={`${panelClass} flex min-h-[360px] flex-col items-center justify-center text-center sm:min-h-[420px]`}>
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#fff1f4] text-[#b27b86]">
           <ShieldCheck className="h-8 w-8" />
         </div>
-        <h2 className="mt-5 text-[24px] font-semibold text-[#2f2428]">{processingMessage}</h2>
-        <p className="mt-2 text-[14px] text-[#6f6167]">Please wait while we secure your order.</p>
+        <h2 className="mt-5 text-[22px] font-semibold text-[#2f2428] sm:text-[24px]">{processingMessage}</h2>
+        <p className="mt-2 max-w-[280px] text-[14px] leading-6 text-[#6f6167]">
+          Please wait while we secure your order.
+        </p>
       </div>
     );
   }
@@ -258,23 +254,20 @@ export function PaymentDetailsPanel({
           {selectedMethod === "cod" ? "Cash on delivery" : "Online payment"}
         </p>
         <h2 className="mt-1 text-[22px] font-semibold text-[#2f2428]">
-          {getPanelTitle(selectedMethod)}
+          {selectedMethod === "cod" ? "Pay on delivery" : "Pay securely with Razorpay"}
         </h2>
         <p className="mt-2 text-[13px] leading-5 text-[#6f6167]">
-          {getPanelDescription(selectedMethod)}
+          {selectedMethod === "cod"
+            ? "Finish your order now and pay when the package reaches you."
+            : "Razorpay will show available UPI, card, wallet, and net banking options inside the secure popup."}
         </p>
       </div>
 
       {paymentFailed ? (
         <div className="mb-5 rounded-[4px] border border-[#f2d3d8] bg-[#fff7f8] p-3">
-          <p className="text-[13px] font-medium text-[#a14e5f]">Payment failed. Please try again.</p>
-          <button
-            type="button"
-            onClick={() => setPaymentFailed(false)}
-            className="mt-2 text-[13px] font-semibold text-[#b27b86]"
-          >
-            Retry payment
-          </button>
+          <p className="text-[13px] font-medium text-[#a14e5f]">
+            Payment failed or was cancelled. You can try again from the failure page.
+          </p>
         </div>
       ) : null}
 
@@ -283,236 +276,60 @@ export function PaymentDetailsPanel({
           <div className="rounded-[4px] border border-[#ece5e8] bg-[#fffafb] p-4">
             <p className="text-[14px] font-semibold text-[#2f2428]">Cash on Delivery</p>
             <p className="mt-1 text-[13px] leading-5 text-[#6f6167]">
-              A handling fee of Rs. 10 applies to COD orders. Pay online to skip this fee.
+              Pay when your package arrives. Online payment may be faster and easier to confirm.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => handlePaymentProcess("COD")}
+            onClick={handleCodOrder}
             className="flex h-12 w-full items-center justify-center rounded-[4px] bg-[#b27b86] text-[14px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#9f6571]"
           >
-            Place Order
+            Place COD Order
           </button>
         </div>
-      ) : null}
-
-      {selectedMethod === "upi" ? (
+      ) : (
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setUpiMode("scan");
-                setUpiIdSelected(false);
-              }}
-              className={optionCard(upiMode === "scan")}
-            >
-              <p className="text-[14px] font-semibold text-[#2f2428]">Scan QR</p>
-              <p className="mt-1 text-[12px] text-[#6f6167]">Use any UPI app</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setUpiMode("id")}
-              className={optionCard(upiMode === "id")}
-            >
-              <p className="text-[14px] font-semibold text-[#2f2428]">Enter UPI ID</p>
-              <p className="mt-1 text-[12px] text-[#6f6167]">Pay with your VPA</p>
-            </button>
-          </div>
-
-          {upiMode === "scan" ? (
-            <div className="space-y-4">
-              <button
-                type="button"
-                onClick={() => setUpiIdSelected(true)}
-                className={optionCard(upiIdSelected)}
-              >
-                <p className="text-[14px] font-semibold text-[#2f2428]">Scan & Pay</p>
-                <p className="mt-1 text-[12px] text-[#6f6167]">Confirm before opening your UPI app.</p>
-              </button>
-
-              {upiIdSelected ? (
-                <>
-                  <div className="rounded-[4px] border border-dashed border-[#d9c7cd] bg-[#fffafb] p-6 text-center">
-                    <img
-                      src="/cleaned_qr.png"
-                      alt="UPI QR"
-                      className="mx-auto h-44 w-44 object-contain"
-                    />
-                    <p className="mt-3 text-[13px] text-[#5f4b52]">Scan this code with your preferred UPI app.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRazorpayPayment("UPI")}
-                    className="flex h-12 w-full items-center justify-center rounded-[4px] bg-[#b27b86] text-[14px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#9f6571]"
-                  >
-                    Pay Now
-                  </button>
-                </>
-              ) : null}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {UPI_APPS.map((app) => (
-                  <div key={app} className="rounded-[4px] border border-[#ece5e8] bg-white px-3 py-3 text-center text-[13px] font-medium text-[#4a3c42]">
-                    {app}
-                  </div>
-                ))}
+          <div className="rounded-[12px] border border-[#ead8de] bg-[#fffafb] px-4 py-4 shadow-[0_10px_24px_rgba(74,46,53,0.05)]">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#b27b86] shadow-sm">
+                <ShieldCheck className="h-5 w-5" />
               </div>
-              <input
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                placeholder="example@upi"
-                className={fieldClass}
-              />
-              <button
-                type="button"
-                onClick={() => handleRazorpayPayment("UPI")}
-                className="flex h-12 w-full items-center justify-center rounded-[4px] bg-[#b27b86] text-[14px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#9f6571]"
-              >
-                Pay Now
-              </button>
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      {selectedMethod === "card" ? (
-        <div className="space-y-4">
-          {cardError ? (
-            <div className="rounded-[4px] border border-[#f2d3d8] bg-[#fff7f8] p-3 text-[13px] font-medium text-[#a14e5f]">
-              {cardError}
-            </div>
-          ) : null}
-
-          <input
-            value={cardNumber}
-            onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-            placeholder="Card Number"
-            className={fieldClass}
-          />
-          <input
-            value={cardName}
-            onChange={(e) => setCardName(e.target.value)}
-            placeholder="Name on card"
-            className={fieldClass}
-          />
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input
-              value={cardExpiry}
-              onChange={(e) => setCardExpiry(e.target.value)}
-              placeholder="MM/YY"
-              className={fieldClass}
-            />
-            <div className="relative">
-              <input
-                type={showCvv ? "text" : "password"}
-                value={cardCvv}
-                onChange={(e) => setCardCvv(e.target.value)}
-                placeholder="CVV"
-                className={`${fieldClass} pr-11`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowCvv((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8d727b]"
-              >
-                {showCvv ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-semibold text-[#2f2428]">
+                  One secure Razorpay checkout
+                </p>
+                <p className="mt-1 text-[12px] leading-5 text-[#6f6167]">
+                  Choose your preferred method inside the popup.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#ead8de] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6f5961]">
+                    <Smartphone className="h-3.5 w-3.5 text-[#b27b86]" />
+                    UPI
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-[#ead8de] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6f5961]">
+                    <CreditCard className="h-3.5 w-3.5 text-[#b27b86]" />
+                    Cards
+                  </span>
+                  <span className="rounded-full border border-[#ead8de] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6f5961]">
+                    Wallets
+                  </span>
+                  <span className="rounded-full border border-[#ead8de] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6f5961]">
+                    Net Banking
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() => {
-              if (validateCard()) {
-                handleRazorpayPayment("CARD");
-              }
-            }}
+            onClick={handleRazorpayPayment}
             className="flex h-12 w-full items-center justify-center rounded-[4px] bg-[#b27b86] text-[14px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#9f6571]"
           >
-            Pay Now
+            Pay Securely With Razorpay
           </button>
         </div>
-      ) : null}
-
-      {selectedMethod === "wallet" ? (
-        <div className="space-y-3">
-          {WALLETS.map((wallet) => (
-            <button
-              key={wallet}
-              type="button"
-              onClick={() => setSelectedWallet(wallet)}
-              className={optionCard(selectedWallet === wallet)}
-            >
-              <p className="text-[14px] font-semibold text-[#2f2428]">{wallet}</p>
-            </button>
-          ))}
-
-          {selectedWallet ? (
-            <button
-              type="button"
-              onClick={() => handlePaymentProcess("WALLET")}
-              className="mt-2 flex h-12 w-full items-center justify-center rounded-[4px] bg-[#b27b86] text-[14px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#9f6571]"
-            >
-              Pay Now
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {selectedMethod === "emi" ? (
-        <div className="space-y-3">
-          {EMI_OPTIONS.map((emi) => (
-            <button
-              key={emi}
-              type="button"
-              onClick={() => setSelectedEmi(emi)}
-              className={optionCard(selectedEmi === emi)}
-            >
-              <p className="text-[14px] font-semibold text-[#2f2428]">{emi}</p>
-              <p className="mt-1 text-[12px] text-[#6f6167]">Flexible monthly installments</p>
-            </button>
-          ))}
-
-          {selectedEmi ? (
-            <button
-              type="button"
-              onClick={() => handlePaymentProcess("EMI")}
-              className="mt-2 flex h-12 w-full items-center justify-center rounded-[4px] bg-[#b27b86] text-[14px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#9f6571]"
-            >
-              Pay Now
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {selectedMethod === "netbank" ? (
-        <div className="space-y-3">
-          {BANKS.map((bank) => (
-            <button
-              key={bank}
-              type="button"
-              onClick={() => setSelectedBank(bank)}
-              className={optionCard(selectedBank === bank)}
-            >
-              <p className="text-[14px] font-semibold text-[#2f2428]">{bank}</p>
-            </button>
-          ))}
-
-          {selectedBank ? (
-            <button
-              type="button"
-              onClick={() => handlePaymentProcess("NETBANKING")}
-              className="mt-2 flex h-12 w-full items-center justify-center rounded-[4px] bg-[#b27b86] text-[14px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#9f6571]"
-            >
-              Pay Now
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      )}
 
       <div className="mt-6 border-t border-[#f0e6e8] pt-4">
         <div className="flex items-start gap-3 rounded-[4px] bg-[#fffafb] p-4">
@@ -520,49 +337,11 @@ export function PaymentDetailsPanel({
           <div>
             <p className="text-[13px] font-semibold text-[#2f2428]">100% secure checkout</p>
             <p className="mt-1 text-[12px] leading-5 text-[#6f6167]">
-              Your payment details are encrypted and never shared with merchants.
+              Your payment details are encrypted by Razorpay and never stored on our servers.
             </p>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-function getPanelTitle(selectedMethod) {
-  switch (selectedMethod) {
-    case "cod":
-      return "Pay on delivery";
-    case "upi":
-      return "UPI payment";
-    case "card":
-      return "Card payment";
-    case "wallet":
-      return "Wallet payment";
-    case "emi":
-      return "Choose an EMI plan";
-    case "netbank":
-      return "Net banking";
-    default:
-      return "Payment details";
-  }
-}
-
-function getPanelDescription(selectedMethod) {
-  switch (selectedMethod) {
-    case "cod":
-      return "Finish your order now and pay when the package reaches you.";
-    case "upi":
-      return "Use any UPI app to make a fast and secure payment.";
-    case "card":
-      return "We support all major domestic and international cards.";
-    case "wallet":
-      return "Select your preferred wallet and continue securely.";
-    case "emi":
-      return "Select an installment option that suits your budget.";
-    case "netbank":
-      return "Pay directly from your bank using a secure redirect.";
-    default:
-      return "Review your payment details and continue.";
-  }
 }

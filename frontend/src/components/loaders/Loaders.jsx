@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { FALLBACK_PRODUCT_IMAGE } from "@/lib/images";
 
 export function SkeletonBlock({ className = "", style = {} }) {
   return <div className={`skeleton rounded-[inherit] ${className}`.trim()} style={style} />;
@@ -322,23 +323,32 @@ export function AsyncImage({
   alt,
   className = "",
   skeletonClassName = "",
+  fallbackSrc = FALLBACK_PRODUCT_IMAGE,
   ...props
 }) {
   const [loaded, setLoaded] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(src || fallbackSrc);
 
   useEffect(() => {
     setLoaded(false);
-  }, [src]);
+    setCurrentSrc(src || fallbackSrc);
+  }, [src, fallbackSrc]);
 
   return (
     <div className={`relative overflow-hidden ${className}`.trim()}>
       {!loaded ? <SkeletonBlock className={`absolute inset-0 ${skeletonClassName}`.trim()} /> : null}
       <img
         {...props}
-        src={src}
+        src={currentSrc}
         alt={alt}
         onLoad={() => setLoaded(true)}
-        onError={() => setLoaded(true)}
+        onError={() => {
+          if (currentSrc !== fallbackSrc) {
+            setCurrentSrc(fallbackSrc);
+            return;
+          }
+          setLoaded(true);
+        }}
         className={`${className} ${props.className || ""} ${loaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300 object-cover`.trim()}
       />
     </div>

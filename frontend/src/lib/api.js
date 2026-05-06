@@ -1,11 +1,16 @@
 const FALLBACK_API_BASE = "https://my-shapewear-site.onrender.com";
 
+const normalizeBaseUrl = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/\/+$/, "");
+
 const PUBLIC_API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || FALLBACK_API_BASE;
+  normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL) || FALLBACK_API_BASE;
 
 const SERVER_API_BASE =
-  process.env.API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
+  normalizeBaseUrl(process.env.API_BASE_URL) ||
+  normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL) ||
   FALLBACK_API_BASE;
 
 export const API_BASE =

@@ -39,6 +39,8 @@ export default function FAQAccordion({
           {actionButton && (
             <Link
               href={actionButton.link}
+              target={actionButton.link === "/TermsAndConditions" ? "_blank" : undefined}
+              rel={actionButton.link === "/TermsAndConditions" ? "noopener noreferrer" : undefined}
               className="btn-secondary-imkaa w-fit"
             >
               {actionButton.text}

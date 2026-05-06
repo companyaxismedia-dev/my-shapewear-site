@@ -5,6 +5,7 @@ import { useCart } from "@/context/CartContext";
 import { X, ShoppingCart, Zap, ChevronsDown, } from "lucide-react";
 import { getImageUrl } from "./helpers";
 import { toast } from "sonner";
+import { FALLBACK_PRODUCT_IMAGE } from "@/lib/images";
 
 export function ProductDetailsModal({ product, onClose }) {
     const { addToCart } = useCart();
@@ -20,11 +21,16 @@ export function ProductDetailsModal({ product, onClose }) {
     const handleCartAdd = () => {
         if (!size) {
             toast.error("Select size");
-            return;
+            return false;
         }
 
         const selectedSize =
             variant?.sizes?.find((s) => s.size === size);
+
+        if (Number(selectedSize?.stock || 0) <= 0) {
+            toast.error("This size is out of stock");
+            return false;
+        }
 
         addToCart({
             productId: product._id,
@@ -37,11 +43,13 @@ export function ProductDetailsModal({ product, onClose }) {
         });
 
         toast.success("Added to cart");
+        return true;
     };
 
     const handleBuyNow = () => {
-        handleCartAdd();
-        router.push("/cart");
+        if (handleCartAdd()) {
+            router.push("/cart");
+        }
     };
 
     const handleShowMore = () => {
@@ -72,6 +80,9 @@ export function ProductDetailsModal({ product, onClose }) {
                 <div className="md:w-1/2" style={{ background: "var(--color-bg-alt)" }}>
                     <img
                         src={image}
+                        onError={(event) => {
+                            event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                        }}
                         className="w-full h-full object-cover"
                         alt={product.name}
                     />
@@ -146,23 +157,34 @@ export function ProductDetailsModal({ product, onClose }) {
                         </p>
                         <div className="flex gap-2 flex-wrap">
                             {/* {variant?.sizes?.map((s) => ( */}
-                            {(variant?.sizes || []).map((s) => (
-                                <button
-                                    key={s.size}
-                                    onClick={() => setSize(s.size)}
-                                    className="px-4 py-2 transition"
-                                    style={{
-                                        borderRadius: 9999,
-                                        border: `1px solid ${size === s.size ? "var(--color-primary)" : "var(--color-border)"}`,
-                                        background: size === s.size ? "var(--color-primary)" : "#FFF4F6",
-                                        color: size === s.size ? "#FFF9FA" : "var(--color-primary)",
-                                        fontWeight: 600,
-                                        fontSize: 13,
-                                    }}
-                                >
-                                    {s.size}
-                                </button>
-                            ))}
+                            {(variant?.sizes || []).map((s) => {
+                                const isOutOfStock = Number(s?.stock || 0) <= 0;
+
+                                return (
+                                    <button
+                                        key={s.size}
+                                        type="button"
+                                        disabled={isOutOfStock}
+                                        onClick={() => setSize(s.size)}
+                                        className={`relative overflow-hidden px-4 py-2 transition ${
+                                            isOutOfStock ? "cursor-not-allowed opacity-50" : ""
+                                        }`}
+                                        style={{
+                                            borderRadius: 9999,
+                                            border: `1px solid ${size === s.size ? "var(--color-primary)" : "var(--color-border)"}`,
+                                            background: size === s.size ? "var(--color-primary)" : "#FFF4F6",
+                                            color: size === s.size ? "#FFF9FA" : "var(--color-primary)",
+                                            fontWeight: 600,
+                                            fontSize: 13,
+                                        }}
+                                    >
+                                        {s.size}
+                                        {isOutOfStock ? (
+                                            <span className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[140%] -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-current opacity-70" />
+                                        ) : null}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 

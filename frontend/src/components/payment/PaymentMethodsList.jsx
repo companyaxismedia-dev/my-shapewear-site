@@ -4,8 +4,6 @@ import {
   Building2,
   CreditCard,
   Star,
-  Wallet,
-  Zap,
 } from "lucide-react";
 
 const PAYMENT_METHODS = [
@@ -17,34 +15,10 @@ const PAYMENT_METHODS = [
     recommended: true,
   },
   {
-    id: "upi",
-    name: "UPI",
-    description: "Google Pay, PhonePe, Paytm and more",
-    icon: Zap,
-  },
-  {
-    id: "card",
-    name: "Credit or debit card",
-    description: "Visa, Mastercard, RuPay and AMEX",
+    id: "online",
+    name: "Online payment",
+    description: "UPI, cards, wallets and net banking via Razorpay",
     icon: CreditCard,
-  },
-  {
-    id: "wallet",
-    name: "Wallets",
-    description: "Paytm, Amazon Pay and PhonePe wallet",
-    icon: Wallet,
-  },
-  {
-    id: "emi",
-    name: "EMI",
-    description: "Split your payment into easy installments",
-    icon: CreditCard,
-  },
-  {
-    id: "netbank",
-    name: "Net banking",
-    description: "Pay directly from your bank account",
-    icon: Building2,
   },
 ];
 

@@ -683,7 +683,7 @@ export default function CartPage() {
         <div className="mx-auto w-full max-w-[1140px] px-5 py-8 lg:px-7">
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_400px] xl:gap-9">
             <div className="space-y-6">
-              <div className="rounded-[4px] border border-[#ece5e8] bg-white px-6 py-5 shadow-[0_6px_18px_rgba(45,28,35,0.05)]">
+              {/* <div className="rounded-[4px] border border-[#ece5e8] bg-white px-6 py-5 shadow-[0_6px_18px_rgba(45,28,35,0.05)]">
                 <div className="flex items-start gap-3">
                   <Tag className="mt-0.5 h-4 w-4 text-[#c28d45]" />
                   <div>
@@ -734,7 +734,7 @@ export default function CartPage() {
                     ) : null}
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               <div className="flex items-center gap-4">
                 <h2 className="shrink-0 text-[16px] font-medium text-[#2f2428]">
@@ -987,6 +987,8 @@ export default function CartPage() {
                 By placing this order, you agree to our{" "}
                 <Link
                   href="/TermsAndConditions"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="font-semibold text-[#b27b86] transition hover:text-[#9f6571]"
                 >
                   Terms and Conditions

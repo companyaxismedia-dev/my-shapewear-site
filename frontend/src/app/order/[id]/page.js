@@ -276,8 +276,8 @@ export default function OrderDetail() {
   const now = new Date().getTime();
   const canChangePayment =
     now - orderTime <= 2 * 60 * 60 * 1000 &&
-    order.paymentType === "COD" &&
-    !order.paymentChanged &&
+    order.payment?.method === "COD" &&
+    !order.payment?.paymentChanged &&
     !["shipped", "out for delivery", "delivered", "cancelled"].includes(orderStatus);
   const canEditPhone = orderStatus === "order placed" || orderStatus === "processing";
   const isAddressEditable = order?.canEditAddress === true;
