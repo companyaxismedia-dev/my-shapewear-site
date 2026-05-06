@@ -1,8 +1,16 @@
 /** @type {import('next').NextConfig} */
+const normalizeBaseUrl = (value) =>
+  String(value || "")
+    .trim()
+    .replace(/\/+$/, "");
+
 const API_BASE =
-  process.env.API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
+  normalizeBaseUrl(process.env.API_BASE_URL) ||
+  normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL) ||
   "https://my-shapewear-site.onrender.com";
+
+const apiUrl = new URL(API_BASE);
+const API_ORIGIN = apiUrl.origin;
 
 const nextConfig = {
     poweredByHeader: false,
@@ -39,13 +47,13 @@ const nextConfig = {
         pathname: "/uploads/**",
       },
       {
-        protocol: "https",
-        hostname: "my-shapewear-site.onrender.com",
+        protocol: apiUrl.protocol.replace(":", ""),
+        hostname: apiUrl.hostname,
         pathname: "/image/**",
       },
       {
-        protocol: "https",
-        hostname: "my-shapewear-site.onrender.com",
+        protocol: apiUrl.protocol.replace(":", ""),
+        hostname: apiUrl.hostname,
         pathname: "/uploads/**",
       },
 
@@ -76,7 +84,7 @@ const nextConfig = {
       {
         key: "Content-Security-Policy",
         value:
-          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:5000 http://127.0.0.1:5000 https://my-shapewear-site.onrender.com https://images.unsplash.com; font-src 'self' data:; connect-src 'self' http://localhost:5000 http://127.0.0.1:5000 https://my-shapewear-site.onrender.com https://accounts.google.com https://checkout.razorpay.com; frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';",
+          `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:5000 http://127.0.0.1:5000 ${API_ORIGIN} https://images.unsplash.com https://rzp.io https://*.razorpay.com; font-src 'self' data:; connect-src 'self' http://localhost:5000 http://127.0.0.1:5000 ${API_ORIGIN} https://accounts.google.com https://checkout.razorpay.com; frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';`,
       },
     ];
 

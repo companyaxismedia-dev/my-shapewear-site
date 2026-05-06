@@ -5,30 +5,11 @@ import { ArrowLeft, ArrowUpLeft, Search, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { SearchSuggestionSkeleton } from "@/components/loaders/Loaders";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_BASE } from "@/lib/api";
+import { FALLBACK_PRODUCT_IMAGE, getPrimaryProductImage } from "@/lib/images";
 
 const resolveProductImage = (item) => {
-  const primaryVariantImage =
-    item?.variants?.[0]?.images?.find?.((img) => img?.isPrimary)?.url ||
-    item?.variants?.[0]?.images?.[0]?.url ||
-    item?.variants?.[0]?.images?.[0];
-
-  const imagePath = item?.thumbnail || item?.image || primaryVariantImage || "";
-
-  if (!imagePath || typeof imagePath !== "string") {
-    return "/placeholder.jpg";
-  }
-
-  if (
-    imagePath.startsWith("http") ||
-    imagePath.startsWith("blob:") ||
-    imagePath.startsWith("data:")
-  ) {
-    return imagePath;
-  }
-
-  return `${API_BASE}${imagePath}`;
+  return getPrimaryProductImage(item);
 };
 
 const SearchSection = ({
@@ -139,6 +120,9 @@ const SearchSection = ({
         >
           <img
             src={resolveProductImage(item)}
+            onError={(event) => {
+              event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+            }}
             className="h-12 w-10 rounded object-cover"
             alt={item.name}
           />

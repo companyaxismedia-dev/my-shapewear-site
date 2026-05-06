@@ -1,112 +1,182 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import axios from "axios"
-import { X } from "lucide-react"
-import { API_BASE } from "@/lib/api"
-import { toast } from "sonner"
+import { useState } from "react";
+import { X } from "lucide-react";
+import { API_BASE } from "@/lib/api";
+import { toast } from "sonner";
+
+const loadRazorpay = () =>
+  new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 
 export default function ChangePaymentModal({
   show,
   setShow,
   orderId,
-  refreshOrder
+  refreshOrder,
 }) {
+  const [loading, setLoading] = useState(false);
 
-  const [loading,setLoading] = useState(false)
+  const getToken = () => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return user?.token;
+  };
 
   const changePayment = async (method) => {
-
     try {
+      const token = getToken();
 
-      const user = JSON.parse(localStorage.getItem("user") || "{}")
-      const token = user?.token
+      if (!token) {
+        toast.error("Login required");
+        return;
+      }
 
-      setLoading(true)
+      setLoading(true);
 
-      await axios.put(
-        `${API_BASE}/api/orders/payment/${orderId}`,
-        {
-          paymentMethod: method,
-          paymentStatus: "Paid"
+      const loaded = await loadRazorpay();
+      if (!loaded) {
+        toast.error("Razorpay SDK failed to load");
+        setLoading(false);
+        return;
+      }
+
+      const orderRes = await fetch(`${API_BASE}/api/payment/razorpay/order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers:{
-            Authorization:`Bearer ${token}`
+        body: JSON.stringify({
+          orderId,
+          paymentMethod: method,
+        }),
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderData.success) {
+        throw new Error(orderData.message || "Unable to start payment");
+      }
+
+      const prefill = orderData.prefill || {};
+
+      const razor = new window.Razorpay({
+        key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.razorpayOrder.amount,
+        currency: "INR",
+        name: "Glovia Glamour",
+        description: `${method} Payment`,
+        order_id: orderData.razorpayOrder.id,
+        prefill,
+        readonly: {
+          name: Boolean(prefill.name),
+          email: Boolean(prefill.email),
+          contact: Boolean(prefill.contact),
+        },
+        hidden: {
+          email: Boolean(prefill.email),
+          contact: Boolean(prefill.contact),
+        },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch(`${API_BASE}/api/payment/razorpay/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                orderId,
+                ...response,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyData.success) {
+              throw new Error(verifyData.message || "Payment verification failed");
+            }
+
+            await refreshOrder?.();
+            setShow(false);
+            setLoading(false);
+            toast.success("Payment updated successfully");
+          } catch (error) {
+            setLoading(false);
+            toast.error(error.message || "Payment verification failed");
           }
-        }
-      )
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            toast.error("Payment was cancelled");
+          },
+        },
+        theme: {
+          color: "#b27b86",
+        },
+      });
 
-      setLoading(false)
-      setShow(false)
-
-      refreshOrder()
-
-      toast.success("Payment updated successfully")
-
-    } catch(err){
-
-      setLoading(false)
-
-      toast.error(err.response?.data?.message || "Payment update failed")
-
+      razor.open();
+    } catch (err) {
+      setLoading(false);
+      toast.error(err.message || "Payment update failed");
     }
+  };
 
-  }
-
-  if(!show) return null
+  if (!show) return null;
 
   return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-[420px] rounded-lg bg-white p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Change Payment Method</h2>
 
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-      <div className="bg-white w-[420px] rounded-lg p-6">
-
-        <div className="flex justify-between items-center mb-4">
-
-          <h2 className="text-lg font-semibold">
-            Change Payment Method
-          </h2>
-
-          <X
-            className="cursor-pointer"
-            onClick={()=>setShow(false)}
-          />
-
+          <button
+            type="button"
+            onClick={() => setShow(false)}
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <X />
+          </button>
         </div>
 
-        <p className="text-sm text-gray-500 mb-5">
-          Select a new payment method
+        <p className="mb-5 text-sm text-gray-500">
+          Select a secure online payment method. Payment is confirmed only after Razorpay verification.
         </p>
 
         <div className="space-y-3">
-
           <button
-            onClick={()=>changePayment("UPI")}
-            className="w-full border p-3 rounded hover:bg-gray-50"
+            type="button"
+            disabled={loading}
+            onClick={() => changePayment("UPI")}
+            className="w-full rounded border p-3 text-left hover:bg-gray-50 disabled:opacity-60"
           >
             Pay via UPI
           </button>
 
           <button
-            onClick={()=>changePayment("CARD")}
-            className="w-full border p-3 rounded hover:bg-gray-50"
+            type="button"
+            disabled={loading}
+            onClick={() => changePayment("CARD")}
+            className="w-full rounded border p-3 text-left hover:bg-gray-50 disabled:opacity-60"
           >
             Pay via Card
           </button>
-
         </div>
 
-        {loading && (
-          <p className="text-sm text-gray-500 mt-4">
-            Processing payment...
-          </p>
-        )}
-
+        {loading ? (
+          <p className="mt-4 text-sm text-gray-500">Opening secure Razorpay checkout...</p>
+        ) : null}
       </div>
-
     </div>
-
-  )
-
+  );
 }

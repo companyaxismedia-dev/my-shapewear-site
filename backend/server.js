@@ -7,6 +7,7 @@ const helmet = require("helmet");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const { default: connectDB } = require("./config/db");
+const { handleRazorpayWebhook } = require("./controllers/paymentController");
 
 // const cache  = new NodeCache();
 dotenv.config();
@@ -72,6 +73,13 @@ const limiter = rateLimit({
 });
 
 app.use("/api", limiter);
+
+app.post(
+  "/api/payment/razorpay/webhook",
+  express.raw({ type: "application/json" }),
+  handleRazorpayWebhook
+);
+
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true }));
 

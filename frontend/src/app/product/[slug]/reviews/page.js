@@ -4,8 +4,8 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import { Star, ThumbsUp, ThumbsDown } from "lucide-react";
-
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_BASE } from "@/lib/api";
+import { FALLBACK_PRODUCT_IMAGE, getPrimaryProductImage } from "@/lib/images";
 
 export default function ReviewPage() {
   const { slug } = useParams();
@@ -72,10 +72,7 @@ export default function ReviewPage() {
     reviews.forEach((r) => ratingBreakdown[r.rating]++);
   }
 
-  const imageUrl =
-    product.variants?.[0]?.images?.[0]
-      ? `${API_BASE}${product.variants[0].images[0]}`
-      : "/placeholder.jpg";
+  const imageUrl = getPrimaryProductImage(product);
 
   return (
     <div className="bg-white min-h-screen">
@@ -91,6 +88,9 @@ export default function ReviewPage() {
             <img
               src={imageUrl}
               alt={product.name}
+              onError={(event) => {
+                event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+              }}
               className="w-full rounded-md object-cover"
             />
 

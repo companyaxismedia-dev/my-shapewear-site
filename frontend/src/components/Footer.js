@@ -232,6 +232,8 @@ export default function Footer() {
                 <li key={l.label}>
                   <Link
                     href={l.link}
+                    target={l.link === "/TermsAndConditions" ? "_blank" : undefined}
+                    rel={l.link === "/TermsAndConditions" ? "noopener noreferrer" : undefined}
                     style={{ fontFamily: INTER, fontSize: '14px', color: '#A06C7B', display: 'block', lineHeight: 1.8, textDecoration: 'none', transition: 'color 0.15s' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = '#C56F7F'}
                     onMouseLeave={(e) => e.currentTarget.style.color = '#A06C7B'}
@@ -287,6 +289,8 @@ export default function Footer() {
               { label: "Returns", href: "/faq#returns" },
             ].map((l) => (
               <Link key={l.label} href={l.href}
+                target={l.href === "/TermsAndConditions" ? "_blank" : undefined}
+                rel={l.href === "/TermsAndConditions" ? "noopener noreferrer" : undefined}
                 style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = '#C56F7F'}
                 onMouseLeave={(e) => e.currentTarget.style.color = '#A06C7B'}>

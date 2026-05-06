@@ -324,7 +324,9 @@ function PaymentPageContent() {
               <div className="space-y-4">
                 <PaymentMethodsList
                   selectedMethod={selectedMethod}
-                  onMethodChange={setSelectedMethod}
+                  onMethodChange={(method) => {
+                    setSelectedMethod(method);
+                  }}
                   compact
                 />
 
@@ -356,7 +358,12 @@ function PaymentPageContent() {
 
             <div className="bg-white px-4 py-4 text-[12px] leading-5 text-[#6f6167]">
               By completing your payment, you agree to our{" "}
-              <Link href="/TermsAndConditions" className="font-semibold text-[#b27b86]">
+              <Link
+                href="/TermsAndConditions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[#b27b86]"
+              >
                 Terms and Conditions
               </Link>
               .
@@ -396,7 +403,9 @@ function PaymentPageContent() {
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
                   <PaymentMethodsList
                     selectedMethod={selectedMethod}
-                    onMethodChange={setSelectedMethod}
+                    onMethodChange={(method) => {
+                      setSelectedMethod(method);
+                    }}
                   />
 
                   <PaymentDetailsPanel
@@ -427,6 +436,8 @@ function PaymentPageContent() {
                     Your payment is encrypted and processed securely. By continuing, you agree to our{" "}
                     <Link
                       href="/TermsAndConditions"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="font-semibold text-[#b27b86] transition hover:text-[#9f6571]"
                     >
                       Terms and Conditions

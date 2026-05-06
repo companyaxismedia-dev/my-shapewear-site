@@ -3,7 +3,7 @@ const Product = require("../models/Product");
 const User = require("../models/User");
 const Offer = require("../models/Offer");
 
-const PLATFORM_FEE = 30;
+const PLATFORM_FEE = 0;
 const SHIPPING_FEE = 0;
 
 function getCartItemPricing(product, selectedSize, qty, fallbackSize, fallbackColor) {

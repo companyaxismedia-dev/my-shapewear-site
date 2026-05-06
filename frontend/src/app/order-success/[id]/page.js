@@ -88,7 +88,7 @@ export default function OrderSuccessPage() {
             <CheckoutStepper currentStep="confirmation" />
             <div className="mx-auto w-full max-w-[1140px] px-5 py-8 lg:px-7">
               <div className="rounded-[4px] border border-[#ece5e8] bg-white p-8 shadow-[0_6px_18px_rgba(45,28,35,0.05)]">
-                <p className="text-[14px] text-[#6f6167]">Loading your order confirmation...</p>
+                <p className="text-[14px] text-[#6f6167]">Confirming your order...</p>
               </div>
             </div>
             <Footer />

@@ -26,17 +26,16 @@ import {
   ProductPageSkeleton,
 } from "@/components/loaders/Loaders";
 import { toast } from "sonner";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { API_BASE } from "@/lib/api";
+import { FALLBACK_PRODUCT_IMAGE, resolveImageUrl } from "@/lib/images";
 
 const getImageUrl = (url) => {
-  if (!url) return "/placeholder.jpg";
-  if (url.startsWith("data:")) return url;
-  if (url.startsWith("http")) return url;
-  return API_BASE + url;
+  return resolveImageUrl(url);
 };
 
 const formatCurrency = (value) => `\u20B9${Number(value || 0).toLocaleString("en-IN")}`;
+const isSizeInStock = (sizeItem) => Number(sizeItem?.stock || 0) > 0;
+const getFirstInStockSize = (sizes = []) => sizes.find(isSizeInStock) || null;
 
 const normalizeRichText = (value) => {
   if (!value) return "";
@@ -88,8 +87,8 @@ export default function ProductPage() {
         if (data.success) {
           const nextProduct = data.product;
           const firstVariant = nextProduct.variants?.[0] || null;
-          const firstSize = firstVariant?.sizes?.[0] || null;
-          const firstMedia = firstVariant?.video || firstVariant?.images?.[0]?.url || "";
+          const firstSize = getFirstInStockSize(firstVariant?.sizes || []);
+          const firstMedia = firstVariant?.video || firstVariant?.images?.[0]?.url || firstVariant?.images?.[0] || "";
 
           setProduct(nextProduct);
           setSelectedVariant(firstVariant);
@@ -114,7 +113,7 @@ export default function ProductPage() {
         : []),
       ...(selectedVariant?.images?.map((img) => ({
         type: "image",
-        src: getImageUrl(img.url),
+        src: getImageUrl(img?.url || img),
       })) || []),
     ],
     [selectedVariant]
@@ -160,9 +159,9 @@ export default function ProductPage() {
   };
 
   const handleVariantChange = (variant) => {
-    const nextMedia = getImageUrl(variant.video || variant.images?.[0]?.url || "");
+    const nextMedia = getImageUrl(variant.video || variant.images?.[0]?.url || variant.images?.[0] || "");
     setSelectedVariant(variant);
-    setSelectedSize(variant.sizes?.[0] || null);
+    setSelectedSize(getFirstInStockSize(variant.sizes || []));
     setActiveMedia(nextMedia);
     setMobileActiveIndex(0);
     if (mobileCarouselRef.current) {
@@ -173,6 +172,11 @@ export default function ProductPage() {
   const handleAddToCart = async () => {
     if (!selectedSize) {
       toast.error("Select size");
+      return;
+    }
+
+    if (!isSizeInStock(selectedSize)) {
+      toast.error("This size is out of stock");
       return;
     }
 
@@ -257,6 +261,7 @@ export default function ProductPage() {
   const mrp = selectedSize?.mrp || product.mrp || 0;
   const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
   const topReviews = product.reviews?.slice(0, 5) || [];
+  const selectedSizeOutOfStock = selectedSize ? !isSizeInStock(selectedSize) : true;
 
   const detailSections = [
     product.materialCare?.length
@@ -318,7 +323,7 @@ export default function ProductPage() {
       <div className="px-0 pt-[72px] md:px-6 md:pt-24 2xl:px-8">
         <div className="mx-auto max-w-[1880px]">
           <div className="hidden lg:grid lg:grid-cols-[minmax(620px,1fr)_minmax(360px,520px)] lg:items-start lg:gap-8 xl:grid-cols-[minmax(760px,1fr)_minmax(420px,540px)]">
-            <section className={`grid gap-3 xl:gap-4 ${mediaItems.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+            <section className="grid grid-cols-2 gap-3 xl:gap-4">
               {mediaItems.map((media, index) => (
                 <button
                   key={`${media.type}-${index}`}
@@ -386,7 +391,7 @@ export default function ProductPage() {
                   </p>
                   <div className="flex flex-wrap gap-3">
                     {product.variants.map((variant, index) => {
-                      const previewImage = getImageUrl(variant.images?.[0]?.url);
+                      const previewImage = getImageUrl(variant.images?.[0]?.url || variant.images?.[0]);
                       const isImageSwatch =
                         variant.colorCode?.startsWith("http") || variant.colorCode?.startsWith("data:");
 
@@ -435,20 +440,27 @@ export default function ProductPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    {selectedVariant.sizes.map((sizeItem, index) => (
-                      <button
-                        key={`${sizeItem.size}-${index}`}
-                        type="button"
-                        disabled={sizeItem.stock === 0}
-                        onClick={() => setSelectedSize(sizeItem)}
-                        className={`h-11 min-w-11 rounded-full border px-3 text-sm font-semibold ${selectedSize?.size === sizeItem.size
-                          ? "border-[#c56f7f] bg-[#c56f7f] text-white"
-                          : "border-[#dfccd2] bg-white text-[#282c3f]"
-                          } ${sizeItem.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
-                      >
-                        {sizeItem.size}
-                      </button>
-                    ))}
+                    {selectedVariant.sizes.map((sizeItem, index) => {
+                      const isOutOfStock = !isSizeInStock(sizeItem);
+
+                      return (
+                        <button
+                          key={`${sizeItem.size}-${index}`}
+                          type="button"
+                          disabled={isOutOfStock}
+                          onClick={() => setSelectedSize(sizeItem)}
+                          className={`relative h-11 min-w-11 overflow-hidden rounded-full border px-3 text-sm font-semibold ${selectedSize?.size === sizeItem.size
+                            ? "border-[#c56f7f] bg-[#c56f7f] text-white"
+                            : "border-[#dfccd2] bg-white text-[#282c3f]"
+                            } ${isOutOfStock ? "cursor-not-allowed opacity-45" : ""}`}
+                        >
+                          {sizeItem.size}
+                          {isOutOfStock ? (
+                            <span className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[140%] -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-current opacity-70" />
+                          ) : null}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}
@@ -457,15 +469,15 @@ export default function ProductPage() {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={addingToCart}
-                  className="flex h-[50px] items-center justify-center gap-2 bg-[#c56f7f] px-5 text-[14px] font-bold uppercase tracking-[0.03em] text-[#fff9fa]"
+                  disabled={addingToCart || selectedSizeOutOfStock}
+                  className="flex h-[50px] items-center justify-center gap-2 bg-[#c56f7f] px-5 text-[14px] font-bold uppercase tracking-[0.03em] text-[#fff9fa] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {addingToCart ? (
                     <ButtonLoaderLabel label="Adding..." />
                   ) : (
                     <>
                       <ShoppingBag size={17} />
-                      Add to Bag
+                      {selectedSizeOutOfStock ? "Out of Stock" : "Add to Bag"}
                     </>
                   )}
                 </button>
@@ -651,7 +663,7 @@ export default function ProductPage() {
                     </div>
                     <div className="flex gap-3 overflow-x-auto pb-1">
                       {product.variants.map((variant, index) => {
-                        const previewImage = getImageUrl(variant.images?.[0]?.url);
+                        const previewImage = getImageUrl(variant.images?.[0]?.url || variant.images?.[0]);
                         return (
                           <button
                             key={`${variant.color}-${index}`}
@@ -682,20 +694,27 @@ export default function ProductPage() {
                       </button>
                     </div>
                     <div className="flex gap-3 overflow-x-auto pb-1">
-                      {selectedVariant.sizes.map((sizeItem, index) => (
-                        <button
-                          key={`${sizeItem.size}-${index}`}
-                          type="button"
-                          disabled={sizeItem.stock === 0}
-                          onClick={() => setSelectedSize(sizeItem)}
-                          className={`flex h-14 min-w-[64px] items-center justify-center rounded-[18px] border px-4 text-[18px] font-semibold ${selectedSize?.size === sizeItem.size
-                            ? "border-[#c56f7f] bg-[#c56f7f] text-white"
-                            : "border-[#ead7dd] bg-white text-[#3a2c31]"
-                            } ${sizeItem.stock === 0 ? "cursor-not-allowed opacity-40" : ""}`}
-                        >
-                          {sizeItem.size}
-                        </button>
-                      ))}
+                      {selectedVariant.sizes.map((sizeItem, index) => {
+                        const isOutOfStock = !isSizeInStock(sizeItem);
+
+                        return (
+                          <button
+                            key={`${sizeItem.size}-${index}`}
+                            type="button"
+                            disabled={isOutOfStock}
+                            onClick={() => setSelectedSize(sizeItem)}
+                            className={`relative flex h-14 min-w-[64px] items-center justify-center overflow-hidden rounded-[18px] border px-4 text-[18px] font-semibold ${selectedSize?.size === sizeItem.size
+                              ? "border-[#c56f7f] bg-[#c56f7f] text-white"
+                              : "border-[#ead7dd] bg-white text-[#3a2c31]"
+                              } ${isOutOfStock ? "cursor-not-allowed opacity-45" : ""}`}
+                          >
+                            {sizeItem.size}
+                            {isOutOfStock ? (
+                              <span className="pointer-events-none absolute left-1/2 top-1/2 h-px w-[140%] -translate-x-1/2 -translate-y-1/2 -rotate-45 bg-current opacity-70" />
+                            ) : null}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null}
@@ -704,15 +723,15 @@ export default function ProductPage() {
                   <button
                     type="button"
                     onClick={handleAddToCart}
-                    disabled={addingToCart}
-                    className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#c56f7f] text-[16px] font-semibold text-white shadow-[0_12px_24px_rgba(197,111,127,0.2)]"
+                    disabled={addingToCart || selectedSizeOutOfStock}
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#c56f7f] text-[16px] font-semibold text-white shadow-[0_12px_24px_rgba(197,111,127,0.2)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {addingToCart ? (
                       <ButtonLoaderLabel label="Adding..." />
                     ) : (
                       <>
                         <ShoppingBag size={18} />
-                        Add to Bag
+                        {selectedSizeOutOfStock ? "Out of Stock" : "Add to Bag"}
                       </>
                     )}
                   </button>
@@ -806,6 +825,9 @@ export default function ProductPage() {
                 <img
                   key={lightboxMedia.src}
                   src={lightboxMedia.src}
+                  onError={(event) => {
+                    event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                  }}
                   alt={`${product.name} full view ${lightboxIndex + 1}`}
                   className="max-h-[82vh] max-w-[94vw] object-contain lg:max-h-[88vh] lg:max-w-[82vw]"
                 />
@@ -867,15 +889,15 @@ export default function ProductPage() {
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={addingToCart}
-            className="flex h-12 min-w-[176px] items-center justify-center gap-2 rounded-[16px] bg-[#c56f7f] px-5 text-[15px] font-semibold text-white shadow-[0_12px_24px_rgba(197,111,127,0.2)] sm:min-w-[220px]"
+            disabled={addingToCart || selectedSizeOutOfStock}
+            className="flex h-12 min-w-[176px] items-center justify-center gap-2 rounded-[16px] bg-[#c56f7f] px-5 text-[15px] font-semibold text-white shadow-[0_12px_24px_rgba(197,111,127,0.2)] disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-[220px]"
           >
             {addingToCart ? (
               <ButtonLoaderLabel label="Adding..." />
             ) : (
               <>
                 <ShoppingBag size={18} />
-                Add to Bag
+                {selectedSizeOutOfStock ? "Out of Stock" : "Add to Bag"}
               </>
             )}
           </button>

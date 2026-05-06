@@ -665,6 +665,8 @@ export default function CheckoutAddressPage() {
                   By continuing, you confirm this address for delivery and agree to our{" "}
                   <Link
                     href="/TermsAndConditions"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="font-semibold text-[#b27b86] transition hover:text-[#9f6571]"
                   >
                     Terms and Conditions

@@ -3,15 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Star } from "lucide-react";
 import { ProductGridSkeleton } from "@/components/loaders/Loaders";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-const getImageUrl = (url) => {
-  if (!url) return "/placeholder.jpg";
-  if (url.startsWith("data:image")) return url;
-  if (url.startsWith("http")) return url;
-  return API_BASE + url;
-};
+import { API_BASE } from "@/lib/api";
+import { FALLBACK_PRODUCT_IMAGE, resolveImageUrl } from "@/lib/images";
 
 const formatCurrency = (value) => `\u20B9${Number(value || 0).toLocaleString("en-IN")}`;
 
@@ -79,8 +72,8 @@ export default function SimilarProducts({ currentProduct }) {
           const firstVariant = item.variants?.[0];
           const firstSize = firstVariant?.sizes?.[0];
           const image = firstVariant?.images?.[0]?.url
-            ? getImageUrl(firstVariant.images[0].url)
-            : "/placeholder.jpg";
+            ? resolveImageUrl(firstVariant.images[0].url)
+            : FALLBACK_PRODUCT_IMAGE;
           const price = firstSize?.price || item.minPrice || 0;
           const mrp = firstSize?.mrp || item.mrp || 0;
           const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
@@ -102,7 +95,14 @@ export default function SimilarProducts({ currentProduct }) {
                     <Star size={11} className="fill-current" />
                   </div>
                 ) : null}
-                <img src={image} alt={item.name} className="h-full w-full object-cover" />
+                <img
+                  src={image}
+                  alt={item.name}
+                  onError={(event) => {
+                    event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                  }}
+                  className="h-full w-full object-cover"
+                />
               </div>
 
               <div className="space-y-1 px-3 py-3">
