@@ -3,21 +3,8 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { getRazorpayMethodConfig, loadRazorpay } from "@/lib/razorpayCheckout";
 import { toast } from "sonner";
-
-const loadRazorpay = () =>
-  new Promise((resolve) => {
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
 
 export default function ChangePaymentModal({
   show,
@@ -68,14 +55,17 @@ export default function ChangePaymentModal({
       }
 
       const prefill = orderData.prefill || {};
+      const methodConfig = getRazorpayMethodConfig(method);
 
       const razor = new window.Razorpay({
         key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.razorpayOrder.amount,
         currency: "INR",
         name: "Glovia Glamour",
-        description: `${method} Payment`,
+        description: methodConfig.description,
         order_id: orderData.razorpayOrder.id,
+        method: methodConfig.method,
+        config: methodConfig.config,
         prefill,
         readonly: {
           name: Boolean(prefill.name),

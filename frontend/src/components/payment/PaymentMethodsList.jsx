@@ -3,6 +3,7 @@
 import {
   Building2,
   CreditCard,
+  Smartphone,
   Star,
 } from "lucide-react";
 
@@ -15,9 +16,15 @@ const PAYMENT_METHODS = [
     recommended: true,
   },
   {
-    id: "online",
-    name: "Online payment",
-    description: "UPI, cards, wallets and net banking via Razorpay",
+    id: "upi",
+    name: "UPI",
+    description: "Pay using installed UPI apps via Razorpay Intent",
+    icon: Smartphone,
+  },
+  {
+    id: "card",
+    name: "Card payment",
+    description: "Pay securely by credit or debit card",
     icon: CreditCard,
   },
 ];
