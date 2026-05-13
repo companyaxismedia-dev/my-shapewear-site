@@ -4,22 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, ShieldCheck, Smartphone } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { getRazorpayMethodConfig, loadRazorpay } from "@/lib/razorpayCheckout";
 import { useCart } from "@/context/CartContext";
 import { toast } from "sonner";
-
-const loadRazorpay = () =>
-  new Promise((resolve) => {
-    if (window.Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
 
 export function PaymentDetailsPanel({
   selectedMethod,
@@ -97,6 +84,8 @@ export function PaymentDetailsPanel({
     router.push(`/payment-failed?order=${currentOrderId}&reason=${encodeURIComponent(reason)}`);
   };
 
+  const selectedOnlineMethod = selectedMethod === "card" ? "CARD" : "UPI";
+
   const handleRazorpayPayment = async () => {
     if (!cartTotal || Number(cartTotal.finalAmount || cartTotal.sellingPrice) <= 0) {
       toast.error("Invalid order amount");
@@ -107,10 +96,12 @@ export function PaymentDetailsPanel({
 
     try {
       setPaymentFailed(false);
-      setProcessingMessage("Opening secure Razorpay checkout");
+      setProcessingMessage(
+        selectedOnlineMethod === "UPI" ? "Opening UPI payment" : "Opening card payment"
+      );
       setIsProcessing(true);
 
-      currentOrderId = await ensureOrder("UPI");
+      currentOrderId = await ensureOrder(selectedOnlineMethod);
       const loaded = await loadRazorpay();
 
       if (!loaded) {
@@ -125,7 +116,7 @@ export function PaymentDetailsPanel({
         },
         body: JSON.stringify({
           orderId: currentOrderId,
-          paymentMethod: "UPI",
+          paymentMethod: selectedOnlineMethod,
         }),
       });
 
@@ -135,6 +126,7 @@ export function PaymentDetailsPanel({
       }
 
       const prefill = orderData.prefill || {};
+      const methodConfig = getRazorpayMethodConfig(selectedOnlineMethod);
 
       setIsProcessing(false);
 
@@ -143,8 +135,10 @@ export function PaymentDetailsPanel({
         amount: orderData.razorpayOrder.amount,
         currency: "INR",
         name: "Glovia Glamour",
-        description: "Secure Online Payment",
+        description: methodConfig.description,
         order_id: orderData.razorpayOrder.id,
+        method: methodConfig.method,
+        config: methodConfig.config,
         prefill,
         readonly: {
           name: Boolean(prefill.name),
@@ -254,12 +248,18 @@ export function PaymentDetailsPanel({
           {selectedMethod === "cod" ? "Cash on delivery" : "Online payment"}
         </p>
         <h2 className="mt-1 text-[22px] font-semibold text-[#2f2428]">
-          {selectedMethod === "cod" ? "Pay on delivery" : "Pay securely with Razorpay"}
+          {selectedMethod === "cod"
+            ? "Pay on delivery"
+            : selectedOnlineMethod === "UPI"
+              ? "Pay with UPI app"
+              : "Pay by card"}
         </h2>
         <p className="mt-2 text-[13px] leading-5 text-[#6f6167]">
           {selectedMethod === "cod"
             ? "Finish your order now and pay when the package reaches you."
-            : "Razorpay will show available UPI, card, wallet, and net banking options inside the secure popup."}
+            : selectedOnlineMethod === "UPI"
+              ? "Razorpay will open the UPI Intent flow so you can choose a supported UPI app and complete payment."
+              : "Razorpay will ask for card details inside its secure checkout."}
         </p>
       </div>
 
@@ -292,29 +292,29 @@ export function PaymentDetailsPanel({
           <div className="rounded-[12px] border border-[#ead8de] bg-[#fffafb] px-4 py-4 shadow-[0_10px_24px_rgba(74,46,53,0.05)]">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#b27b86] shadow-sm">
-                <ShieldCheck className="h-5 w-5" />
+                {selectedOnlineMethod === "UPI" ? (
+                  <Smartphone className="h-5 w-5" />
+                ) : (
+                  <CreditCard className="h-5 w-5" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-semibold text-[#2f2428]">
-                  One secure Razorpay checkout
+                  {selectedOnlineMethod === "UPI" ? "UPI Intent checkout" : "Secure card checkout"}
                 </p>
                 <p className="mt-1 text-[12px] leading-5 text-[#6f6167]">
-                  Choose your preferred method inside the popup.
+                  {selectedOnlineMethod === "UPI"
+                    ? "Select a UPI app inside Razorpay to open it with payment details."
+                    : "Enter your card details inside Razorpay's encrypted checkout."}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1 rounded-full border border-[#ead8de] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6f5961]">
-                    <Smartphone className="h-3.5 w-3.5 text-[#b27b86]" />
-                    UPI
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-[#ead8de] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6f5961]">
-                    <CreditCard className="h-3.5 w-3.5 text-[#b27b86]" />
-                    Cards
-                  </span>
-                  <span className="rounded-full border border-[#ead8de] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6f5961]">
-                    Wallets
-                  </span>
-                  <span className="rounded-full border border-[#ead8de] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#6f5961]">
-                    Net Banking
+                    {selectedOnlineMethod === "UPI" ? (
+                      <Smartphone className="h-3.5 w-3.5 text-[#b27b86]" />
+                    ) : (
+                      <CreditCard className="h-3.5 w-3.5 text-[#b27b86]" />
+                    )}
+                    {selectedOnlineMethod === "UPI" ? "UPI only" : "Cards only"}
                   </span>
                 </div>
               </div>
@@ -326,7 +326,7 @@ export function PaymentDetailsPanel({
             onClick={handleRazorpayPayment}
             className="flex h-12 w-full items-center justify-center rounded-[4px] bg-[#b27b86] text-[14px] font-semibold uppercase tracking-[0.03em] text-white transition hover:bg-[#9f6571]"
           >
-            Pay Securely With Razorpay
+            {selectedOnlineMethod === "UPI" ? "Pay With UPI" : "Pay With Card"}
           </button>
         </div>
       )}
