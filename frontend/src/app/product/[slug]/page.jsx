@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SimilarProducts from "@/components/SimilarProducts";
 import ColorTooltip from "@/components/product/ColorTooltip";
+import DeliveryPincodeChecker from "@/components/product/DeliveryPincodeChecker";
 import SizeChartModal from "@/components/product/SizeChartModal";
 import CalculateSizeModal from "@/components/product/CalculateSizeModal";
 import { useCart } from "@/context/CartContext";
@@ -13,11 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
-  Ruler,
-  ShieldCheck,
   ShoppingBag,
   Star,
-  Truck,
   X,
 } from "lucide-react";
 import {
@@ -490,18 +488,7 @@ export default function ProductPage() {
                 </button>
               </div>
 
-              <div className="space-y-3 border-b border-[#f1e4e8] pb-5">
-                <h2 className="text-[15px] font-bold uppercase tracking-[0.04em] text-[#282c3f]">Delivery Options</h2>
-                <div className="flex max-w-[310px] items-center justify-between border border-[#d9dce4] px-3 py-2.5 text-[13px] text-[#8c7480]">
-                  <span>Enter pincode</span>
-                  <button type="button" className="font-bold text-[#c56f7f]">Check</button>
-                </div>
-                <div className="space-y-2 pt-1 text-[14px] leading-5 text-[#282c3f]">
-                  <div className="flex items-center gap-3"><Truck size={16} /> Delivery options available</div>
-                  <div className="flex items-center gap-3"><ShieldCheck size={16} /> 100% original products</div>
-                  <div className="flex items-center gap-3"><Ruler size={16} /> Easy size guidance for better fit</div>
-                </div>
-              </div>
+              <DeliveryPincodeChecker productId={product._id} />
 
               {detailSections.length ? (
                 <div className="space-y-5">
@@ -738,25 +725,7 @@ export default function ProductPage() {
                 </div>
 
                 <div className="border-t border-[#f1e4e8] py-5">
-                  <h2 className="text-[17px] font-semibold text-[#2f2428]">Check Delivery</h2>
-                  <div className="mt-3 rounded-2xl border border-[#ead7dd] px-4 py-3 text-[14px] font-semibold text-[#d95b7d]">
-                    Enter PIN Code
-                  </div>
-
-                  <div className="mt-4 space-y-4 text-[14px] leading-5 text-[#4e3b42]">
-                    <div className="flex items-start gap-3">
-                      <Truck size={18} className="mt-0.5 shrink-0" />
-                      <p><span className="font-semibold text-[#2f2428]">Express delivery</span> might be available</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <ShieldCheck size={18} className="mt-0.5 shrink-0" />
-                      <p><span className="font-semibold text-[#2f2428]">Pay on delivery</span> might be available</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <Ruler size={18} className="mt-0.5 shrink-0" />
-                      <p><span className="font-semibold text-[#2f2428]">Easy return support</span> for sizing and product issues</p>
-                    </div>
-                  </div>
+                  <DeliveryPincodeChecker productId={product._id} title="Check Delivery" compact />
                 </div>
 
                 <div className="border-t border-[#f1e4e8] py-5">

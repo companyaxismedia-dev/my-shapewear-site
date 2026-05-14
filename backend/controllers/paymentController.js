@@ -592,15 +592,17 @@ exports.handleRazorpayWebhook = async (req, res) => {
 
     const payload = JSON.parse(body.toString("utf8"));
     const event = payload.event;
+    const eventId = String(req.headers["x-razorpay-event-id"] || "");
     const payment = payload.payload?.payment?.entity;
+    const notesOrderId = payment?.notes?.app_order_id;
 
-    if (!payment?.order_id) {
+    if (!payment?.id || (!payment.order_id && !notesOrderId)) {
       return res.status(200).json({ success: true });
     }
 
     const transactionQuery = payment.order_id
       ? { razorpayOrderId: payment.order_id }
-      : { orderId: payment.notes?.app_order_id };
+      : { orderId: notesOrderId };
 
     const transaction = await Transaction.findOne(transactionQuery).sort({ createdAt: -1 });
 
@@ -608,9 +610,17 @@ exports.handleRazorpayWebhook = async (req, res) => {
       return res.status(200).json({ success: true });
     }
 
+    if (
+      eventId &&
+      transaction.webhookEvents.some((webhookEvent) => webhookEvent.eventId === eventId)
+    ) {
+      return res.status(200).json({ success: true, duplicate: true });
+    }
+
     const order = await Order.findById(transaction.orderId);
-    transaction.webhookEvents.push({ event, receivedAt: new Date() });
+    transaction.webhookEvents.push({ eventId, event, receivedAt: new Date() });
     transaction.rawResponse = payment;
+    transaction.razorpayPaymentId = payment.id || transaction.razorpayPaymentId;
 
     if (event === "payment.captured" && order) {
       await markOrderPaid(order, transaction, payment);
@@ -618,7 +628,6 @@ exports.handleRazorpayWebhook = async (req, res) => {
       transaction.status = "failed";
       transaction.failureReason =
         payment.error_description || payment.error_reason || "Payment failed";
-      transaction.razorpayPaymentId = payment.id || transaction.razorpayPaymentId;
       await transaction.save();
 
       if (order && order.payment?.status !== "Paid") {

@@ -102,6 +102,11 @@ const TransactionSchema = new mongoose.Schema(
     },
     webhookEvents: [
       {
+        eventId: {
+          type: String,
+          default: "",
+          trim: true,
+        },
         event: {
           type: String,
           default: "",
@@ -121,6 +126,7 @@ TransactionSchema.index({ orderId: 1, createdAt: -1 });
 TransactionSchema.index({ userId: 1, createdAt: -1 });
 TransactionSchema.index({ razorpayOrderId: 1, razorpayPaymentId: 1 });
 TransactionSchema.index({ razorpayQrCodeId: 1, createdAt: -1 });
+TransactionSchema.index({ "webhookEvents.eventId": 1 });
 
 module.exports =
   mongoose.models.Transaction ||

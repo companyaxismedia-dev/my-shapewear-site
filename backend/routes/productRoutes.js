@@ -11,7 +11,8 @@ const {
   updateProduct,
   deleteProduct,
   getSimilarProducts,
-  getProductsBatch
+  getProductsBatch,
+  checkProductDelivery
 } = require("../controllers/productController");
 
 const { protect, admin } = require("../middleware/authMiddleware");
@@ -196,6 +197,7 @@ router.get("/slug/:slug", getProductBySlug);
 router.get("/similar/:id", getSimilarProducts);
 
 /* 🔹 GET SINGLE PRODUCT BY ID */
+router.get("/:id/delivery", checkProductDelivery);
 router.get("/:id", getProductById);
 
 /* ======================================================
