@@ -9,6 +9,7 @@ import { useCart } from "@/context/CartContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AddressForm from "@/components/checkout/AddressForm";
+import DeliveryEstimateList from "@/components/checkout/DeliveryEstimateList";
 import CheckoutStepper from "../components/CheckoutStepper";
 import {
   AddressCardSkeleton,
@@ -340,22 +341,15 @@ export default function CheckoutAddressPage() {
                 </button>
               ) : null}
             </div>
-            <div className="mt-3 space-y-3">
-              {visibleDeliveryItems.map((item) => (
-                <div key={`mobile-delivery-${item.id}`} className="flex items-center gap-3">
-                  <img
-                    src={`${API_BASE}${item.image}`}
-                    alt={item.name}
-                    className="h-12 w-10 rounded-[3px] object-cover"
-                  />
-                  <p className="text-[14px] text-[#4f4349]">
-                    Estimated delivery by{" "}
-                    <span className="font-semibold text-[#2f2428]">
-                      {item.deliveryDate || "5-7 Business Days"}
-                    </span>
-                  </p>
-                </div>
-              ))}
+            <div className="mt-3">
+              <DeliveryEstimateList
+                cartItems={cartItems}
+                visibleItems={visibleDeliveryItems}
+                pincode={selectedAddress?.pincode}
+                itemClassName="flex items-center gap-3"
+                imageClassName="h-12 w-10 rounded-[3px] object-cover"
+                textClassName="text-[14px] text-[#4f4349]"
+              />
             </div>
           </div>
 
@@ -632,23 +626,11 @@ export default function CheckoutAddressPage() {
 
                 <div className="rounded-[4px] border border-[#ece5e8] bg-white p-5 shadow-[0_6px_18px_rgba(45,28,35,0.05)]">
                   <h3 className="mb-4 text-[14px] font-semibold text-[#2f2428]">Delivery Estimates</h3>
-                  <div className="space-y-3">
-                    {visibleDeliveryItems.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3">
-                        <img
-                          src={`${API_BASE}${item.image}`}
-                          alt={item.name}
-                          className="h-14 w-11 rounded-[4px] object-cover"
-                        />
-                        <p className="text-[13px] leading-5 text-[#5f4b52]">
-                          Estimated delivery by{" "}
-                          <span className="font-semibold text-[#2f2428]">
-                            {item.deliveryDate || "5-7 Business Days"}
-                          </span>
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                  <DeliveryEstimateList
+                    cartItems={cartItems}
+                    visibleItems={visibleDeliveryItems}
+                    pincode={selectedAddress?.pincode}
+                  />
 
                   {cartItems.length > 2 ? (
                     <button

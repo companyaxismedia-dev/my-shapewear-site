@@ -19,6 +19,12 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LoginModal from "../../authPage/LoginModal";
 import { API_BASE } from "@/lib/api";
+import {
+  DELIVERY_PINCODE_STORAGE_KEY,
+  formatDeliveryDate,
+  getProductId,
+  useDeliveryEstimates,
+} from "@/hooks/useDeliveryEstimates";
 import CheckoutStepper from "../components/CheckoutStepper";
 import EmptyCart from "../components/EmptyCart";
 import {
@@ -64,6 +70,47 @@ export default function CartPage() {
   const [offersLoading, setOffersLoading] = useState(true);
   const [showAllOffers, setShowAllOffers] = useState(false);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [deliveryPincode, setDeliveryPincode] = useState("");
+  const { estimates: deliveryEstimates, loading: deliveryLoading } =
+    useDeliveryEstimates(cartItems, deliveryPincode);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DELIVERY_PINCODE_STORAGE_KEY) || "";
+      if (/^[1-9][0-9]{5}$/.test(saved)) {
+        setDeliveryPincode(saved);
+      }
+    } catch {}
+  }, []);
+
+  const handleDeliveryPincodeChange = (value) => {
+    const cleanValue = String(value || "").replace(/\D/g, "").slice(0, 6);
+    setDeliveryPincode(cleanValue);
+    try {
+      if (/^[1-9][0-9]{5}$/.test(cleanValue)) {
+        localStorage.setItem(DELIVERY_PINCODE_STORAGE_KEY, cleanValue);
+      }
+    } catch {}
+  };
+
+  const getDeliveryText = (item) => {
+    const productId = getProductId(item);
+    const estimate = deliveryEstimates[productId];
+
+    if (/^[1-9][0-9]{5}$/.test(deliveryPincode) && deliveryLoading && !estimate) {
+      return "Checking delivery date...";
+    }
+
+    if (estimate?.serviceable === false) {
+      return `Not deliverable to ${deliveryPincode}`;
+    }
+
+    if (estimate?.expectedDeliveryDate) {
+      return `Delivery by ${formatDeliveryDate(estimate.expectedDeliveryDate)}`;
+    }
+
+    return `Delivery by ${item.deliveryDate || "5-7 Business Days"}`;
+  };
 
   useEffect(() => {
     if (!showMoveModal) {
@@ -362,11 +409,18 @@ export default function CartPage() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between border-t border-[#f0e6e8] px-4 py-3 text-[13px] font-medium">
+          <div className="flex items-center justify-between gap-3 border-t border-[#f0e6e8] px-4 py-3 text-[13px] font-medium">
             <span className="text-[#3f3036]">Check delivery time &amp; services</span>
-            <button type="button" className="text-[#ff3f78]">
-              Enter Pin Code
-            </button>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={deliveryPincode}
+              onChange={(event) => handleDeliveryPincodeChange(event.target.value)}
+              placeholder="Enter PIN"
+              className="h-9 w-[112px] rounded-[3px] border border-[#e0cfd5] px-3 text-right text-[13px] font-semibold text-[#2f2428] outline-none placeholder:text-[#b27b86]"
+              aria-label="Delivery pincode"
+            />
           </div>
         </div>
 
@@ -532,6 +586,11 @@ export default function CartPage() {
                     </div>
 
                     <div className="mt-2 flex items-center gap-2 text-[12px] text-[#5f4b52]">
+                      <Check className="h-4 w-4 text-[#6d5f65]" />
+                      <span>{getDeliveryText(item)}</span>
+                    </div>
+
+                    <div className="mt-1 flex items-center gap-2 text-[12px] text-[#5f4b52]">
                       <Check className="h-4 w-4 text-[#6d5f65]" />
                       <span>{item.returnText || "14 days return available"}</span>
                     </div>
@@ -743,6 +802,20 @@ export default function CartPage() {
                 <div className="h-px flex-1 bg-[#eadfe3]" />
               </div>
 
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[4px] border border-[#ece5e8] bg-white px-4 py-3 text-[13px] shadow-[0_6px_18px_rgba(45,28,35,0.04)]">
+                <span className="font-medium text-[#3f3036]">Check delivery date for your bag</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={deliveryPincode}
+                  onChange={(event) => handleDeliveryPincodeChange(event.target.value)}
+                  placeholder="Enter pincode"
+                  className="h-10 w-[160px] rounded-[3px] border border-[#d8cdd2] px-3 text-[13px] font-semibold text-[#2f2428] outline-none placeholder:text-[#9a8089]"
+                  aria-label="Delivery pincode"
+                />
+              </div>
+
               <div className="space-y-4">
                 {cartLoading ? (
                   <CartItemsSkeleton count={3} />
@@ -847,7 +920,7 @@ export default function CartPage() {
                           <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-[#5f4b52]">
                             <div className="flex items-center gap-2">
                               <Check className="h-4 w-4 text-[#b27b86]" />
-                              <span>Delivery by {item.deliveryDate || "5-7 Business Days"}</span>
+                              <span>{getDeliveryText(item)}</span>
                             </div>
                             <span className="text-[#bfaeb5]">•</span>
                             <span>{item.returnText || "Easy Returns"}</span>

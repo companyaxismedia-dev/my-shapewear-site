@@ -1,5 +1,6 @@
 const Product = require("../models/Product");
 const { cached } = require("../utils/cache");
+const { buildDeliveryEstimate } = require("../utils/deliveryEstimator");
 
 const parseCsv = (value) =>
   String(value || "")
@@ -330,7 +331,7 @@ exports.getProductsBatch = async (req, res) => {
   /* ======================================================
     GET PRODUCT BY SLUG
   ====================================================== */
-  exports.getProductBySlug = async (req, res) => {
+exports.getProductBySlug = async (req, res) => {
     try {
       const product = await Product.findOne({
         slug: req.params.slug,
@@ -357,6 +358,73 @@ exports.getProductsBatch = async (req, res) => {
       });
     }
   };
+
+exports.checkProductDelivery = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pincode = String(req.query.pincode || req.body?.pincode || "").trim();
+
+    if (!/^[1-9][0-9]{5}$/.test(pincode)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid 6 digit Indian pincode",
+      });
+    }
+
+    const product = await Product.findOne({
+      _id: id,
+      isActive: true,
+      status: "published",
+    })
+      .select("category serviceablePincodes")
+      .lean();
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found",
+      });
+    }
+
+    let location = null;
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
+      const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (response.ok) {
+        const payload = await response.json();
+        const postOffice = payload?.[0]?.PostOffice?.[0];
+        if (payload?.[0]?.Status === "Success" && postOffice) {
+          location = {
+            area: postOffice.Name,
+            city: postOffice.Block || postOffice.District,
+            district: postOffice.District,
+            state: postOffice.State,
+          };
+        }
+      }
+    } catch (error) {
+      console.warn("Pincode lookup failed:", error.message);
+    }
+
+    const estimate = buildDeliveryEstimate({ product, pincode, location });
+
+    res.set("Cache-Control", "public, max-age=1800, stale-while-revalidate=86400");
+    res.json({
+      success: true,
+      ...estimate,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
   /* ======================================================
     CREATE PRODUCT (ADMIN)
