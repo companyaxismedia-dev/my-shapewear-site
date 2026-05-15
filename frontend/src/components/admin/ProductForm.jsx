@@ -27,6 +27,7 @@ const ALL_SIZES = [
 ];
 
 const uid = () => Math.random().toString(36).slice(2);
+const INDIAN_PINCODE_REGEX = /^[1-9][0-9]{5}$/;
 
 const makeVariant = () => ({
   id: uid(),
@@ -52,7 +53,71 @@ const makeOffer = () => ({
   isActive: true,
 });
 
-const makePincode = () => ({ id: uid(), pincode: "", codAvailable: true, estimatedDays: "3" });
+const makePincode = () => ({ id: uid(), pincode: "", estimatedDays: "3" });
+
+const toBoolean = (value, fallback = true) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "y"].includes(normalized)) return true;
+    if (["false", "0", "no", "n"].includes(normalized)) return false;
+  }
+  return fallback;
+};
+
+const normalizePincodeRows = (rows = []) => {
+  const list = Array.isArray(rows) ? rows : [];
+
+  return list
+    .map((entry) => {
+      const source = entry && typeof entry === "object" ? entry : {};
+      const rawPincode = source.pincode ?? source.pinCode ?? source.pin ?? entry ?? "";
+      const estimatedDays = source.estimatedDays ?? source.deliveryDays ?? source.days ?? "3";
+
+      return {
+        id: source.id || uid(),
+        pincode: String(rawPincode).replace(/\D/g, "").slice(0, 6),
+        codAvailable: toBoolean(source.codAvailable ?? source.cod ?? source.cashOnDelivery, true),
+        estimatedDays: String(estimatedDays || "3"),
+      };
+    })
+    .filter((entry) => entry.pincode || entry.estimatedDays || entry.codAvailable === false);
+};
+
+const buildServiceablePincodes = (rows = []) => {
+  const normalized = normalizePincodeRows(rows).filter((entry) => entry.pincode);
+  const seen = new Set();
+  const errors = [];
+  const serviceablePincodes = [];
+
+  normalized.forEach((entry) => {
+    const estimatedDays = Number.parseInt(entry.estimatedDays, 10);
+
+    if (!INDIAN_PINCODE_REGEX.test(entry.pincode)) {
+      errors.push(`${entry.pincode || "Blank"} is not a valid 6 digit Indian pincode`);
+      return;
+    }
+
+    if (!Number.isFinite(estimatedDays) || estimatedDays < 1 || estimatedDays > 30) {
+      errors.push(`Estimated days for ${entry.pincode} must be between 1 and 30`);
+      return;
+    }
+
+    if (seen.has(entry.pincode)) {
+      errors.push(`${entry.pincode} is added more than once`);
+      return;
+    }
+
+    seen.add(entry.pincode);
+    serviceablePincodes.push({
+      pincode: entry.pincode,
+      codAvailable: entry.codAvailable !== false,
+      estimatedDays,
+    });
+  });
+
+  return { serviceablePincodes, errors };
+};
 
 const inp =
   "w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all";
@@ -149,9 +214,21 @@ export const productSchema = yup.object().shape({
   pincodes: yup.array().of(
     yup.object().shape({
       id: yup.string(),
-      pincode: yup.string(),
+      pincode: yup
+        .string()
+        .trim()
+        .matches(INDIAN_PINCODE_REGEX, {
+          message: "Enter a valid 6 digit Indian pincode",
+          excludeEmptyString: true,
+        }),
       codAvailable: yup.boolean(),
-      estimatedDays: yup.string(),
+      estimatedDays: yup
+        .string()
+        .test("estimated-days-range", "Days must be between 1 and 30", (value) => {
+          if (value === undefined || value === null || value === "") return true;
+          const days = Number.parseInt(value, 10);
+          return Number.isFinite(days) && days >= 1 && days <= 30;
+        }),
     })
   ),
   isFeatured: yup.boolean(),
@@ -613,14 +690,11 @@ export const ProductForm = forwardRef(function ProductForm({
             isActive: o.isActive !== false,
           }))
           : [],
-        pincodes: initialData.serviceablePincodes?.length
-          ? initialData.serviceablePincodes.map(p => ({
-            id: uid(),
-            pincode: p.pincode || "",
-            codAvailable: p.codAvailable !== false,
-            estimatedDays: p.estimatedDays?.toString() || "3",
-          }))
-          : [],
+        pincodes: normalizePincodeRows(
+          initialData.serviceablePincodes?.length
+            ? initialData.serviceablePincodes
+            : initialData.pincodes
+        ),
         isFeatured: initialData.isFeatured || false,
         isBestSeller: initialData.isBestSeller || false,
         isNewArrival: initialData.isNewArrival || false,
@@ -961,6 +1035,15 @@ export const ProductForm = forwardRef(function ProductForm({
 
       // Build the API payload
       console.log("Building payload with formData:", formData);
+      const { serviceablePincodes, errors: pincodeErrors } = buildServiceablePincodes(formData.pincodes);
+
+      if (pincodeErrors.length) {
+        toast.error(pincodeErrors[0]);
+        if (isDraft) setIsDraftSubmitting(false);
+        else setIsPublishSubmitting(false);
+        return;
+      }
+
       const payload = {
         name: formData.name,
         brand: formData.brand,
@@ -1009,11 +1092,7 @@ export const ProductForm = forwardRef(function ProductForm({
           };
         }),
         offers: formData.offers?.filter(o => o.title && o.code) || [],
-        pincodes: formData.pincodes?.map(p => ({
-          pincode: p.pincode,
-          codAvailable: p.codAvailable || false,
-          estimatedDays: parseInt(p.estimatedDays) || 3,
-        })) || [],
+        serviceablePincodes,
         isFeatured: formData.isFeatured || false,
         isBestSeller: formData.isBestSeller || false,
         isNewArrival: formData.isNewArrival || false,
@@ -1779,21 +1858,31 @@ export const ProductForm = forwardRef(function ProductForm({
             <div className="space-y-2">
               {watchedPincodes.map((pc, i) => (
                 <div key={pc.id} className="flex items-center gap-2">
-                  <input
-                    className={cn(inp, "max-w-[130px]")}
-                    placeholder="400001"
-                    value={pc.pincode}
-                    onChange={e => {
-                      const currentPincodes = getValues("pincodes");
-                      const updatedPincodes = currentPincodes.map((x, j) =>
-                        j === i ? { ...x, pincode: e.target.value } : x
-                      );
-                      setValue("pincodes", updatedPincodes);
-                    }}
-                  />
+                  <div className="space-y-1">
+                    <input
+                      className={cn(inp, "max-w-[130px]", errors.pincodes?.[i]?.pincode && "border-red-500 bg-red-50 focus:ring-red-500")}
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="400001"
+                      value={pc.pincode}
+                      onChange={e => {
+                        const currentPincodes = getValues("pincodes");
+                        const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                        const updatedPincodes = currentPincodes.map((x, j) =>
+                          j === i ? { ...x, pincode: value } : x
+                        );
+                        setValue("pincodes", updatedPincodes, { shouldValidate: true, shouldDirty: true });
+                      }}
+                    />
+                    {errors.pincodes?.[i]?.pincode && (
+                      <p className="text-[11px] text-red-600">{errors.pincodes[i].pincode.message}</p>
+                    )}
+                  </div>
                   <input
                     type="number"
-                    className={cn(inp, "max-w-[80px]")}
+                    min="1"
+                    max="30"
+                    className={cn(inp, "max-w-[80px]", errors.pincodes?.[i]?.estimatedDays && "border-red-500 bg-red-50 focus:ring-red-500")}
                     placeholder="3"
                     value={pc.estimatedDays}
                     onChange={e => {
@@ -1801,25 +1890,10 @@ export const ProductForm = forwardRef(function ProductForm({
                       const updatedPincodes = currentPincodes.map((x, j) =>
                         j === i ? { ...x, estimatedDays: e.target.value } : x
                       );
-                      setValue("pincodes", updatedPincodes);
+                      setValue("pincodes", updatedPincodes, { shouldValidate: true, shouldDirty: true });
                     }}
                   />
                   <span className="text-xs text-muted-foreground whitespace-nowrap">days</span>
-                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={pc.codAvailable}
-                      className="accent-primary"
-                      onChange={e => {
-                        const currentPincodes = getValues("pincodes");
-                        const updatedPincodes = currentPincodes.map((x, j) =>
-                          j === i ? { ...x, codAvailable: e.target.checked } : x
-                        );
-                        setValue("pincodes", updatedPincodes);
-                      }}
-                    />
-                    COD
-                  </label>
                   <button
                     type="button"
                     onClick={() => {

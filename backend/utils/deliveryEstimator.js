@@ -116,7 +116,10 @@ const normalizeServiceablePincodes = (pincodes = []) =>
     }))
     .filter((entry) => /^[1-9][0-9]{5}$/.test(entry.pincode));
 
-const getProductServiceability = (product, pincode) => {
+const getStateForPincode = (pincode) =>
+  PIN_PREFIX_STATE[getPincodePrefix(pincode)] || "";
+
+const getProductServiceability = (product, pincode, location = {}) => {
   const rules = normalizeServiceablePincodes(product?.serviceablePincodes || []);
 
   if (!rules.length) {
@@ -129,19 +132,35 @@ const getProductServiceability = (product, pincode) => {
   }
 
   const exactRule = rules.find((rule) => rule.pincode === pincode);
-  if (!exactRule) {
+  if (exactRule) {
     return {
-      available: false,
-      codAvailable: false,
-      productEstimatedDays: null,
+      available: true,
+      codAvailable: exactRule.codAvailable !== false,
+      productEstimatedDays: Number(exactRule.estimatedDays) || null,
       source: "product-pincode-rules",
     };
   }
 
+  const requestState = String(location.state || getStateForPincode(pincode)).trim();
+  if (requestState) {
+    const stateRule = rules.find(
+      (rule) => getStateForPincode(rule.pincode) === requestState
+    );
+
+    if (stateRule) {
+      return {
+        available: true,
+        codAvailable: stateRule.codAvailable !== false,
+        productEstimatedDays: Number(stateRule.estimatedDays) || null,
+        source: "product-state-rule",
+      };
+    }
+  }
+
   return {
-    available: true,
-    codAvailable: exactRule.codAvailable !== false,
-    productEstimatedDays: Number(exactRule.estimatedDays) || null,
+    available: false,
+    codAvailable: false,
+    productEstimatedDays: null,
     source: "product-pincode-rules",
   };
 };

@@ -14,6 +14,25 @@ export default function ImportModal({ open, onClose }) {
 
   const uid = () => Math.random().toString(36).slice(2);
   const inputRef = useRef();
+  const normalizePincodeRows = (rows = []) => {
+    const list = Array.isArray(rows) ? rows : [];
+
+    return list
+      .map((entry) => {
+        const source = entry && typeof entry === "object" ? entry : {};
+        const rawPincode = source.pincode ?? source.pinCode ?? source.pin ?? entry ?? "";
+        const estimatedDays = source.estimatedDays ?? source.deliveryDays ?? source.days ?? "3";
+        const codValue = source.codAvailable ?? source.cod ?? source.cashOnDelivery;
+
+        return {
+          id: source.id || uid(),
+          pincode: String(rawPincode).replace(/\D/g, "").slice(0, 6),
+          codAvailable: codValue === undefined ? true : !(codValue === false || codValue === "false" || codValue === "0"),
+          estimatedDays: String(estimatedDays || "3"),
+        };
+      })
+      .filter((entry) => entry.pincode);
+  };
 
   if (!open) return null;
 
@@ -78,7 +97,18 @@ export default function ImportModal({ open, onClose }) {
       try { copy.variants = JSON.parse(copy.variants); } catch { copy.variants = [] }
     }
     if (typeof copy.pincodes === 'string') {
-      try { copy.pincodes = JSON.parse(copy.pincodes); } catch { copy.pincodes = []; }
+      try {
+        copy.pincodes = JSON.parse(copy.pincodes);
+      } catch {
+        copy.pincodes = copy.pincodes.split(/[;,]/).map(p => p.trim()).filter(Boolean);
+      }
+    }
+    if (typeof copy.serviceablePincodes === 'string') {
+      try {
+        copy.serviceablePincodes = JSON.parse(copy.serviceablePincodes);
+      } catch {
+        copy.serviceablePincodes = copy.serviceablePincodes.split(/[;,]/).map(p => p.trim()).filter(Boolean);
+      }
     }
 
     // Normalize variants: filter out blob URLs from images
@@ -95,14 +125,12 @@ export default function ImportModal({ open, onClose }) {
       copy.thumbnail = "";
     }
 
-    // Normalize pincodes into objects expected by ProductForm / productSchema
-    if (Array.isArray(copy.pincodes)) {
-      try {
-        copy.pincodes = copy.pincodes.map(p => ({ id: uid(), pincode: String(p), codAvailable: true, estimatedDays: '3' }));
-      } catch (e) {
-        copy.pincodes = [];
-      }
-    }
+    // Normalize delivery rules into objects expected by ProductForm / productSchema
+    copy.pincodes = normalizePincodeRows(
+      Array.isArray(copy.serviceablePincodes) && copy.serviceablePincodes.length
+        ? copy.serviceablePincodes
+        : copy.pincodes
+    );
     // Convert boolean-like strings
     ['isFeatured','isBestSeller','isNewArrival','isActive'].forEach(k => {
       if (copy[k] === 'true' || copy[k] === '1') copy[k] = true;

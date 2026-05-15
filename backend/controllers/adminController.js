@@ -28,6 +28,64 @@ function serializeOrder(orderDoc) {
   };
 }
 
+const INDIAN_PINCODE_REGEX = /^[1-9][0-9]{5}$/;
+
+const parseJsonField = (value, fallback = []) => {
+  if (typeof value === "string" && value.trim() !== "") {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  if (value && typeof value === "object") return value;
+  return fallback;
+};
+
+const toBoolean = (value, fallback = true) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "y"].includes(normalized)) return true;
+    if (["false", "0", "no", "n"].includes(normalized)) return false;
+  }
+  return fallback;
+};
+
+const normalizeServiceablePincodes = (value) => {
+  const parsed = parseJsonField(value, []);
+  const rows = Array.isArray(parsed) ? parsed : [];
+  const seen = new Set();
+
+  return rows.reduce((acc, entry) => {
+    const source = entry && typeof entry === "object" ? entry : {};
+    const rawPincode = source.pincode ?? source.pinCode ?? source.pin ?? entry ?? "";
+    const pincode = String(rawPincode).replace(/\D/g, "").slice(0, 6);
+    const estimatedDays = Number.parseInt(source.estimatedDays ?? source.deliveryDays ?? source.days ?? 3, 10);
+
+    if (!INDIAN_PINCODE_REGEX.test(pincode) || seen.has(pincode)) return acc;
+
+    seen.add(pincode);
+    acc.push({
+      pincode,
+      codAvailable: toBoolean(source.codAvailable ?? source.cod ?? source.cashOnDelivery, true),
+      estimatedDays: Number.isFinite(estimatedDays) && estimatedDays >= 1 && estimatedDays <= 30 ? estimatedDays : 3,
+    });
+
+    return acc;
+  }, []);
+};
+
+const normalizeProductDeliveryFields = (data) => {
+  const serviceablePincodes = normalizeServiceablePincodes(data.serviceablePincodes);
+  data.serviceablePincodes = serviceablePincodes.length
+    ? serviceablePincodes
+    : normalizeServiceablePincodes(data.pincodes);
+  delete data.pincodes;
+  return data;
+};
+
 
 // dynamic controller to fetch the counts in the amdin panel
 exports.getCounts = async (req, res) => {
@@ -167,6 +225,7 @@ exports.createProduct = async (req, res) => {
       "metaKeywords",
       "offers",
       "serviceablePincodes",
+      "pincodes",
     ];
 
     jsonFields.forEach((field) => {
@@ -183,6 +242,7 @@ exports.createProduct = async (req, res) => {
         data[field] = [];
       }
     });
+    normalizeProductDeliveryFields(data);
 
     // Filter out blob URLs from thumbnail
     if (data.thumbnail && data.thumbnail.startsWith('blob:')) {
@@ -410,6 +470,7 @@ exports.updateProduct = async (req, res) => {
       "metaKeywords",
       "offers",
       "serviceablePincodes",
+      "pincodes",
     ];
 
     jsonFields.forEach((field) => {
@@ -426,6 +487,7 @@ exports.updateProduct = async (req, res) => {
         data[field] = [];
       }
     });
+    normalizeProductDeliveryFields(data);
 
     //update the slugif the name chnaged
     if (data.name && data.name !== product.name) {
@@ -1670,7 +1732,7 @@ exports.submitImport = async (req, res) => {
         specifications: [],
         variants: [],
         offers: [],
-        pincodes: [],
+        serviceablePincodes: normalizeServiceablePincodes(d.serviceablePincodes ?? d.pincodes),
         isFeatured: !!d.isFeatured,
         isBestSeller: !!d.isBestSeller,
         isNewArrival: !!d.isNewArrival,
