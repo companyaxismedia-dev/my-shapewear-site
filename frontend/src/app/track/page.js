@@ -1,39 +1,75 @@
 "use client";
 import React, { useState } from "react";
-import { Search, Package, Truck, MapPin, Phone, ArrowLeft, CheckCircle2, Clock, ShieldCheck, CreditCard } from "lucide-react";
+import { Package, Truck, MapPin, Phone, ArrowLeft, CheckCircle2, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ButtonLoaderLabel, TrackResultSkeleton } from "@/components/loaders/Loaders";
+import { API_BASE } from "@/lib/api";
+
+const getPhoneTail = (value) => String(value || "").replace(/\D/g, "").slice(-10);
+
+const getTrackingId = (order) => order?.shipment?.trackingId || order?.trackingId || "";
+
+const getOrderItems = (order) => order?.products || order?.items || [];
+
+const getPaymentLabel = (order) => {
+  if (order?.payment?.status === "Paid") return "Paid Online";
+  if (order?.payment?.method === "COD") return "Cash on Delivery";
+  return order?.payment?.method || "Payment Pending";
+};
+
+const getAddress = (userInfo = {}) =>
+  [
+    userInfo.addressLine1,
+    userInfo.addressLine2,
+    userInfo.city,
+    userInfo.state,
+    userInfo.pincode,
+    userInfo.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+const hasReachedShipping = (order) => {
+  const status = String(order?.status || "").toLowerCase();
+  return Boolean(getTrackingId(order)) || ["shipped", "out for delivery", "delivered"].includes(status);
+};
 
 export default function TrackOrder() {
   const [phone, setPhone] = useState("");
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // Update this to your live domain
-  const API_BASE_URL = "https://www.bootybloom.online/api/orders";
+  const orderItems = getOrderItems(orderData);
+  const trackingId = getTrackingId(orderData);
 
   const handleTrack = async (e) => {
     e.preventDefault();
-    if (!phone) return;
+    const phoneTail = getPhoneTail(phone);
+
+    if (phoneTail.length !== 10) {
+      setError("Please enter a valid 10 digit registered mobile number.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setOrderData(null);
 
     try {
-      // Live server se phone number ke basis par order fetch karna
-      const res = await fetch(`${API_BASE_URL}/track?phone=${phone}`);
+      const res = await fetch(`${API_BASE}/api/orders/track?phone=${encodeURIComponent(phoneTail)}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
 
-      if (data.success && data.order) {
+      if (res.ok && data.success && data.order) {
         setOrderData(data.order);
       } else {
-        setError("Order nahi mila! Kripya registered mobile number check karein.");
+        setError(data.message || "Could not find any order with this phone number. Please check and try again.");
       }
     } catch (err) {
       console.error("Tracking error:", err);
-      setError("Server connection fail ho gaya. Kripya baad mein koshish karein.");
+      setError("Server connection failed. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -116,13 +152,13 @@ export default function TrackOrder() {
                       {orderData.status || "Order Received"}
                     </h2>
                     <div className="flex items-center gap-2 mt-2 text-xs uppercase" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
-                      <CreditCard size={14} /> {orderData.paymentType === "Online Paid" ? "Paid Online" : "COD / Pending"}
+                      <CreditCard size={14} /> {getPaymentLabel(orderData)}
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-muted-sm" style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em" }}>Order ID</p>
                     <p style={{ fontWeight: 700, color: "var(--color-primary)" }}>
-                      #{orderData._id?.slice(-8).toUpperCase() || "NEW"}
+                      {orderData.orderNumber || `#${orderData._id?.slice(-8).toUpperCase() || "NEW"}`}
                     </p>
                   </div>
                 </div>
@@ -140,10 +176,10 @@ export default function TrackOrder() {
                   {/* Shipped */}
                   <div className="flex flex-col items-center z-10">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-4 shadow-md ${orderData.trackingId || orderData.status === "Shipped" || orderData.status === "Delivered" ? 'text-white' : ''}`}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-4 shadow-md ${hasReachedShipping(orderData) ? 'text-white' : ''}`}
                       style={{
-                        background: orderData.trackingId || orderData.status === "Shipped" || orderData.status === "Delivered" ? "var(--color-primary)" : "var(--color-bg-alt)",
-                        color: orderData.trackingId || orderData.status === "Shipped" || orderData.status === "Delivered" ? "#FFF9FA" : "var(--color-muted)",
+                        background: hasReachedShipping(orderData) ? "var(--color-primary)" : "var(--color-bg-alt)",
+                        color: hasReachedShipping(orderData) ? "#FFF9FA" : "var(--color-muted)",
                         borderColor: "var(--color-card)",
                       }}
                     >
@@ -171,22 +207,23 @@ export default function TrackOrder() {
                   <div className="absolute top-5 left-0 w-full h-1 -z-0" style={{ background: "rgba(234,215,221,0.75)" }}>
                     <motion.div 
                       initial={{ width: 0 }}
-                      animate={{ width: orderData.status === "Delivered" ? "100%" : (orderData.trackingId || orderData.status === "Shipped") ? "50%" : "5%" }}
+                      animate={{ width: orderData.status === "Delivered" ? "100%" : hasReachedShipping(orderData) ? "50%" : "5%" }}
                       className="h-full"
                       style={{ background: "var(--color-primary)" }}
                     />
                   </div>
                 </div>
 
-                {orderData.trackingId && (
+                {trackingId && (
                   <div className="mt-8 p-4 rounded-2xl flex items-center justify-between border" style={{ background: "var(--color-bg-alt)", borderColor: "var(--color-border)" }}>
                     <div>
                       <span className="text-muted-sm" style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em" }}>Courier Tracking ID</span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-heading)", letterSpacing: "0.08em" }}>{orderData.trackingId}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-heading)", letterSpacing: "0.08em" }}>{trackingId}</span>
                     </div>
                     <a 
-                      href={`https://www.delhivery.com/track/package/${orderData.trackingId}`} 
+                      href={orderData.shipment?.trackingUrl || `https://www.delhivery.com/track/package/${trackingId}`} 
                       target="_blank" 
+                      rel="noreferrer"
                       className="btn-secondary-imkaa"
                     >
                       Track Live
@@ -202,7 +239,7 @@ export default function TrackOrder() {
                   <h3 className="text-xs font-black text-gray-400 uppercase mb-4 flex items-center gap-2">
                     <Package size={14} style={{ color: "var(--color-primary)" }} /> Items Ordered
                   </h3>
-                  {orderData.items?.map((item, i) => (
+                  {orderItems.map((item, i) => (
                     <div key={i} className="flex gap-4 mb-4 last:mb-0 pb-4 last:pb-0 border-b last:border-0 border-gray-50">
                       <div className="w-16 h-20 bg-gray-100 rounded-xl flex items-center justify-center">
                         <Package size={24} className="text-gray-300" />
@@ -221,12 +258,12 @@ export default function TrackOrder() {
                   <h3 className="text-xs font-black text-gray-400 uppercase mb-4 flex items-center gap-2">
                     <MapPin size={14} style={{ color: "var(--color-primary)" }} /> Shipping Details
                   </h3>
-                  <p className="title-product" style={{ fontSize: 14 }}>{orderData.customerData?.name || orderData.userInfo?.name}</p>
+                  <p className="title-product" style={{ fontSize: 14 }}>{orderData.userInfo?.name || "Customer"}</p>
                   <p className="text-xs text-gray-500 leading-relaxed mt-2 italic">
-                    {orderData.customerData?.address || orderData.userInfo?.address}
+                    {getAddress(orderData.userInfo) || "Shipping address not available"}
                   </p>
                   <div className="mt-4 pt-4 border-t flex items-center gap-2 text-xs" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
-                    <Phone size={14} /> {orderData.customerData?.phone || orderData.userInfo?.phone}
+                    <Phone size={14} /> {orderData.userInfo?.phone || phone}
                   </div>
                 </div>
               </div>

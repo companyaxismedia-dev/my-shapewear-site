@@ -10,8 +10,7 @@ const {
   buildOrderStatusHistory,
   getOrderDerivedStatus,
   orderMatchesStatus,
-} = require("../utils/orderStatus");
-
+} = require("../utils/orderStatus");const { buildDeliveryEstimate } = require("../utils/deliveryEstimator");
 const { Resend } = require("resend");
 
 const resend = process.env.RESEND_API_KEY
@@ -128,6 +127,50 @@ exports.createOrder = async (req, res) => {
         ],
       };
     });
+
+    /* ---------- DELIVERY VALIDATION ---------- */
+    if (!address.pincode) {
+      return res.status(400).json({
+        success: false,
+        message: "Delivery pincode missing from selected address",
+      });
+    }
+
+    const serviceabilityIssues = [];
+    const codUnavailableItems = [];
+
+    for (const item of cart.items) {
+      const product = item.product;
+      if (!product) continue;
+
+      const estimate = buildDeliveryEstimate({
+        product,
+        pincode: address.pincode,
+        location: { state: address.state || "" },
+      });
+
+      if (!estimate.serviceable) {
+        serviceabilityIssues.push(`${product.name} cannot be delivered to ${address.pincode}`);
+      }
+
+      if (finalPaymentType === "COD" && estimate.serviceable && estimate.codAvailable === false) {
+        codUnavailableItems.push(product.name);
+      }
+    }
+
+    if (serviceabilityIssues.length) {
+      return res.status(400).json({
+        success: false,
+        message: serviceabilityIssues[0],
+      });
+    }
+
+    if (codUnavailableItems.length) {
+      return res.status(400).json({
+        success: false,
+        message: `COD is not available for ${codUnavailableItems.length > 1 ? 'some items in your cart' : codUnavailableItems[0]} at this pincode. Please choose online payment.`,
+      });
+    }
 
     /* ---------- TOTAL ---------- */
 
@@ -474,6 +517,57 @@ exports.trackOrder = async (req, res) => {
       message: "Invalid Order ID"
     });
 
+  }
+};
+
+exports.trackOrderByPhone = async (req, res) => {
+  try {
+    const rawPhone = String(req.query.phone || "").trim();
+    const phoneDigits = rawPhone.replace(/\D/g, "");
+    const phoneTail = phoneDigits.slice(-10);
+
+    if (phoneTail.length !== 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid registered mobile number",
+      });
+    }
+
+    const phoneVariants = [phoneTail, `91${phoneTail}`, `+91${phoneTail}`];
+    const phoneRegex = new RegExp(`${phoneTail.split("").join("\\D*")}$`);
+
+    const orders = await Order.find({
+      $or: [
+        { "userInfo.phone": { $in: phoneVariants } },
+        { "userInfo.alternatePhone": { $in: phoneVariants } },
+        { "userInfo.phone": phoneRegex },
+        { "userInfo.alternatePhone": phoneRegex },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    if (!orders.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No orders found for this mobile number",
+      });
+    }
+
+    const serializedOrders = orders.map(serializeOrder);
+
+    return res.status(200).json({
+      success: true,
+      order: serializedOrders[0],
+      orders: serializedOrders,
+    });
+  } catch (error) {
+    console.error("TRACK ORDER BY PHONE ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Unable to track order",
+    });
   }
 };
 /* =====================================================

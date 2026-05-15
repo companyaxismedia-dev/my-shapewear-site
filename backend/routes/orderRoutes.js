@@ -6,6 +6,7 @@ const {
    getMyOrders,
    getAllOrders,
    trackOrder,
+   trackOrderByPhone,
    updateOrderStatus,
    getOrderById,
    cancelOrder,
@@ -19,6 +20,8 @@ const { protect, admin } = require("../middleware/authMiddleware");
 router.post("/", protect, createOrder);
 
 router.get("/my-orders", protect, getMyOrders);
+
+router.get("/track", trackOrderByPhone);
 
 router.get("/track/:id", protect, trackOrder);
 

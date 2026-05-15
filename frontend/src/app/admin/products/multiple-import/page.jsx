@@ -12,6 +12,40 @@ import SearchFilterComponent from "@/components/admin/common/SearchFilterCompone
 import ImportModal from "@/components/admin/ImportModal";
 const ProductForm = dynamic(() => import('@/components/admin/ProductForm').then(mod => mod.ProductForm), { ssr: false });
 
+const normalizePincodeRows = (rows = []) => {
+  const list = Array.isArray(rows) ? rows : [];
+
+  return list
+    .map((entry) => {
+      const source = entry && typeof entry === "object" ? entry : {};
+      const rawPincode = source.pincode ?? source.pinCode ?? source.pin ?? entry ?? "";
+      const estimatedDays = source.estimatedDays ?? source.deliveryDays ?? source.days ?? "3";
+      const codValue = source.codAvailable ?? source.cod ?? source.cashOnDelivery;
+
+      return {
+        pincode: String(rawPincode).replace(/\D/g, "").slice(0, 6),
+        codAvailable: codValue === undefined ? true : !(codValue === false || codValue === "false" || codValue === "0"),
+        estimatedDays: String(estimatedDays || "3"),
+      };
+    })
+    .filter((entry) => entry.pincode);
+};
+
+const withServiceablePincodes = (data) => {
+  const serviceablePincodes = normalizePincodeRows(
+    Array.isArray(data.serviceablePincodes) && data.serviceablePincodes.length
+      ? data.serviceablePincodes
+      : data.pincodes
+  ).map((entry) => ({
+    ...entry,
+    estimatedDays: Number.parseInt(entry.estimatedDays, 10) || 3,
+  }));
+
+  const payload = { ...data, serviceablePincodes };
+  delete payload.pincodes;
+  return payload;
+};
+
 export default function MultipleImportPage() {
   const router = useRouter();
   const [items, setItems] = useState([]);
@@ -76,7 +110,7 @@ export default function MultipleImportPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...item.data, status: 'published' }),
+        body: JSON.stringify({ ...withServiceablePincodes(item.data), status: 'published' }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || 'Create failed');
@@ -123,7 +157,7 @@ export default function MultipleImportPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ ...it.data, status: 'published' }),
+          body: JSON.stringify({ ...withServiceablePincodes(it.data), status: 'published' }),
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || 'Create failed');
@@ -207,15 +241,17 @@ export default function MultipleImportPage() {
     const transformImportRow = (row) => {
       const copy = { ...row };
 
-      // Normalize pincodes -> serviceablePincodes expected by ProductForm
-      if (Array.isArray(copy.pincodes)) {
-        copy.serviceablePincodes = copy.pincodes.map(p => ({ pincode: String(p), codAvailable: true, estimatedDays: '3' }));
+      // Normalize delivery rules into the shape ProductForm expects while editing
+      if (Array.isArray(copy.serviceablePincodes) && copy.serviceablePincodes.length) {
+        copy.serviceablePincodes = normalizePincodeRows(copy.serviceablePincodes);
+      } else if (Array.isArray(copy.pincodes)) {
+        copy.serviceablePincodes = normalizePincodeRows(copy.pincodes);
       } else if (typeof copy.pincodes === 'string') {
         try {
           const parsed = JSON.parse(copy.pincodes);
-          if (Array.isArray(parsed)) copy.serviceablePincodes = parsed.map(p => ({ pincode: String(p), codAvailable: true, estimatedDays: '3' }));
+          if (Array.isArray(parsed)) copy.serviceablePincodes = normalizePincodeRows(parsed);
         } catch (e) {
-          copy.serviceablePincodes = [];
+          copy.serviceablePincodes = normalizePincodeRows(copy.pincodes.split(/[;,]/).map(p => p.trim()).filter(Boolean));
         }
       }
 
@@ -271,9 +307,14 @@ export default function MultipleImportPage() {
     // Ensure thumbnail is preserved
     result.thumbnail = formData.thumbnail || "";
 
-    // Convert serviceablePincodes back to pincodes
+    // Preserve full delivery rules after editing imported rows
     if (Array.isArray(formData.pincodes)) {
-      result.pincodes = formData.pincodes.map(p => p.pincode);
+      result.serviceablePincodes = normalizePincodeRows(formData.pincodes).map(p => ({
+        pincode: p.pincode,
+        codAvailable: p.codAvailable !== false,
+        estimatedDays: Number.parseInt(p.estimatedDays, 10) || 3,
+      }));
+      result.pincodes = result.serviceablePincodes;
     }
 
     // Convert variants format back to import format
