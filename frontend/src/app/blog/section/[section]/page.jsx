@@ -84,8 +84,8 @@ export async function generateMetadata({ params }) {
   const sectionTitle = formatTitle(section);
 
   return {
-    title: `${sectionTitle} | Blog | Glovia Glamour`,
-    description: `Explore ${sectionTitle} articles from Glovia Glamour blog.`,
+    title: `${sectionTitle} | Blog | Imkaa`,
+    description: `Explore ${sectionTitle} articles from Imkaa blog.`,
   };
 }
 

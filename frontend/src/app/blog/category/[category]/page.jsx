@@ -20,10 +20,10 @@ function formatTitle(value) {
 
 export async function generateMetadata({ params }) {
   return {
-    title: `${formatTitle(params.category)} | Blog | Glovia Glamour`,
+    title: `${formatTitle(params.category)} | Blog | Imkaa`,
     description: `Explore ${formatTitle(
       params.category
-    )} blog posts from Glovia Glamour.`,
+    )} blog posts from Imkaa.`,
   };
 }
 

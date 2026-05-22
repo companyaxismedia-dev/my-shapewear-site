@@ -68,8 +68,8 @@ function Logo({ width = "w-[150px]", height = "h-[40px]" }) {
     <LinkNav href="/" className="flex items-center">
       <div className={`relative ${width} ${height} md:w-[180px] md:h-[50px] lg:w-[110px] lg:h-[55px]`}>
         <Image
-          src="/hero-image/glovialogo.png"
-          alt="Glovia Logo"
+          src="/hero-image/imkaalogo.png"
+          alt="Imkaa Logo"
           fill
           sizes="(max-width: 768px) 170px, (max-width: 1024px) 210px, 240px"
           priority

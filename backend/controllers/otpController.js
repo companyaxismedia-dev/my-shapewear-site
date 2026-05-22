@@ -60,10 +60,10 @@ exports.sendOTP = async (req, res) => {
       await resend.emails.send({
         from: process.env.OTP_FROM_EMAIL,
         to: [userEmail],
-        subject: "Your Glovia Glamour verification code",
+        subject: "Your Imkaa verification code",
         html: `
           <div style="font-family: Arial; padding:20px;">
-            <h2 style="color:#E91E63;">Glovia Glamour</h2>
+            <h2 style="color:#E91E63;">Imkaa</h2>
             <p>Your verification code is:</p>
             <h1 style="letter-spacing:4px;">${otp}</h1>
             <p style="font-size:12px;color:#555;">

@@ -151,7 +151,7 @@ export default function RegisterModal({ isOpen, onClose, openLogin }) {
       <div className="space-y-5">
         <div className="space-y-2">
           <span className="inline-flex rounded-full border border-[#ecdce0] bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#a0707d]">
-            Join Glovia
+            Join Imkaa
           </span>
           <div className="space-y-1">
             <h2

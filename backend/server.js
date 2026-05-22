@@ -20,8 +20,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "https://my-shapewear-site.vercel.app",
-  "https://www.gloviaglamour.com",
-  "https://gloviaglamour.com",
+  "https://www.imkaa.com"
 ];
 
 const corsOptions = {
@@ -126,7 +125,7 @@ app.use(
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Glovia Glamour Enterprise API Running",
+    message: "Imkaa Enterprise API Running",
   });
 });
 

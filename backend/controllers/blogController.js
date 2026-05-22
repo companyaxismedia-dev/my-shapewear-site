@@ -45,15 +45,15 @@ const DEFAULT_SECTION_CONFIG = [
     sort: { cardOrder: 1, publishedAt: -1 },
   },
   {
-    key: "glovia-buzz",
-    label: "Glovia Buzz",
+    key: "imkaa-buzz",
+    label: "Imkaa Buzz",
     sectionOrder: 6,
     limit: 8,
     sort: { cardOrder: 1, publishedAt: -1 },
   },
   {
-    key: "glovia-connect",
-    label: "Glovia Connect",
+    key: "imkaa-connect",
+    label: "Imkaa Connect",
     sectionOrder: 7,
     limit: 8,
     sort: { cardOrder: 1, publishedAt: -1 },
@@ -157,7 +157,7 @@ const buildBlogPayload = (input = {}) => {
   const gallery = parseStringArray(input.gallery).map(normalizeAssetPath);
   const categoryLabel = String(input.categoryLabel || formatTitleFromSlug(category)).trim();
   const sectionLabel = String(input.sectionLabel || formatTitleFromSlug(section)).trim();
-  const authorName = String(input.authorName || "Glovia Glamour").trim();
+  const authorName = String(input.authorName || "Imkaa").trim();
   const seoTitle = String(input.seoTitle || "").trim();
   const seoDescription = String(input.seoDescription || "").trim();
   const publishedAt = input.publishedAt ? new Date(input.publishedAt) : new Date();

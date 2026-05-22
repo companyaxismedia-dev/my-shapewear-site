@@ -66,11 +66,11 @@ export async function generateMetadata({ params }) {
   const blog = data?.blog;
 
   return {
-    title: blog?.seoTitle || blog?.title || "Blog Details | Glovia Glamour",
+    title: blog?.seoTitle || blog?.title || "Blog Details | Imkaa",
     description:
       blog?.seoDescription ||
       blog?.excerpt ||
-      "Read the latest blog article from Glovia Glamour.",
+      "Read the latest blog article from Imkaa.",
   };
 }
 
@@ -165,7 +165,7 @@ export default async function BlogDetailsPage({ params }) {
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[15px] text-[#7d6369]">
                 <span>{formatDate(blog.publishedAt)}</span>
                 <span>{blog.readTime || 4} min read</span>
-                <span>{blog.authorName || "Glovia Glamour"}</span>
+                <span>{blog.authorName || "Imkaa"}</span>
               </div>
 
               <div className="mt-5 overflow-hidden rounded-[6px] border border-[#ead9de] bg-white">
