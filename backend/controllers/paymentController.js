@@ -254,7 +254,7 @@ exports.createUpiQrCode = async (req, res) => {
     const closeBy = Math.floor(Date.now() / 1000) + 16 * 60;
     const qrCode = await razorpay.qrCode.create({
       type: "upi_qr",
-      name: `Glovia Glamour ${order.orderNumber || order._id}`,
+      name: `Imkaa ${order.orderNumber || order._id}`,
       usage: "single_use",
       fixed_amount: true,
       payment_amount: amountInPaise,

@@ -54,7 +54,7 @@ async function seedProducts() {
         const product = new Product({
           name: productName,
           category: categories[folder],
-          brand: "Glovia",
+          brand: "Imkaa",
           description: `${folder} premium product with high comfort.`,
           details: [
             "Soft breathable fabric",

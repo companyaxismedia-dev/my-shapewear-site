@@ -1199,14 +1199,14 @@ export const ProductForm = forwardRef(function ProductForm({
               <Field label="Product Name" required error={errors.name?.message} half>
                 <input
                   className={getInputClass(!!errors.name)}
-                  placeholder="e.g. Glovia Ultra Comfort Bra"
+                  placeholder="e.g. Imkaa Ultra Comfort Bra"
                   {...register("name")}
                 />
               </Field>
               <Field label="Brand Name" required error={errors.brand?.message} half>
                 <input
                   className={getInputClass(!!errors.brand)}
-                  placeholder="e.g. Glovia"
+                  placeholder="e.g. Imkaa"
                   {...register("brand")}
                 />
               </Field>
@@ -2017,7 +2017,7 @@ export const ProductForm = forwardRef(function ProductForm({
             <Field label="Meta Title">
               <input
                 className={inp}
-                placeholder="e.g. Buy Comfort Bra Online | Glovia"
+                placeholder="e.g. Buy Comfort Bra Online | Imkaa"
                 {...register("metaTitle")}
               />
               <p className="text-xs text-muted-foreground mt-1">{watch("metaTitle")?.length || 0}/60 chars</p>

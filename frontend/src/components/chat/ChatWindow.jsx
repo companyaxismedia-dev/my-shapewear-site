@@ -122,8 +122,8 @@ useEffect(() => {
           <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center">
 
             <Image
-              src="/hero-image/glovialogo.png"
-              alt="Glovia Glamour"
+              src="/hero-image/imkaalogo.png"
+              alt="Imkaa"
               width={26}
               height={26}
               className="object-contain"
@@ -136,7 +136,7 @@ useEffect(() => {
           <div className="flex flex-col leading-tight">
 
             <span className="text-lg font-semibold text-gray-800">
-              Glovia Support
+              Imkaa Support
             </span>
 
             <span className="text-xs text-green-600">

@@ -13,9 +13,9 @@ async function getBlogPageData() {
 }
 
 export const metadata = {
-  title: "Blog | Glovia Glamour",
+  title: "Blog | Imkaa",
   description:
-    "Explore lingerie tips, bra guides, shapewear ideas, buying guides and fashion stories from Glovia Glamour.",
+    "Explore lingerie tips, bra guides, shapewear ideas, buying guides and fashion stories from Imkaa.",
 };
 
 export default async function BlogPage() {

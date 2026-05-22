@@ -124,7 +124,7 @@ const blogSchema = new mongoose.Schema(
 
     authorName: {
       type: String,
-      default: "Glovia Glamour",
+      default: "Imkaa",
       trim: true,
     },
 

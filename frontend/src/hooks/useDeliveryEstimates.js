@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "@/lib/api";
 
-export const DELIVERY_PINCODE_STORAGE_KEY = "glovia_delivery_pincode";
+export const DELIVERY_PINCODE_STORAGE_KEY = "imkaa_delivery_pincode";
 
 export const getProductId = (item) => {
   const value = item?.productId || item?.product?._id || item?.product?.id || item?._id;

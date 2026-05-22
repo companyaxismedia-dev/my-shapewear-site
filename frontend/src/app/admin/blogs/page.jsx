@@ -39,7 +39,7 @@ const emptyForm = {
   sectionOrder: 0,
   cardOrder: 0,
   readTime: 4,
-  authorName: "Glovia Glamour",
+  authorName: "Imkaa",
   seoTitle: "",
   seoDescription: "",
   publishedAt: "",
@@ -195,7 +195,7 @@ function BlogFormModal({
                       className={inputClass}
                       value={form.authorName}
                       onChange={(e) => setFormField("authorName", e.target.value)}
-                      placeholder="Glovia Glamour"
+                      placeholder="Imkaa"
                     />
                   </div>
 
@@ -874,7 +874,7 @@ export default function AdminBlogsPage() {
       sectionOrder: blog.sectionOrder ?? 0,
       cardOrder: blog.cardOrder ?? 0,
       readTime: blog.readTime ?? 4,
-      authorName: blog.authorName || "Glovia Glamour",
+      authorName: blog.authorName || "Imkaa",
       seoTitle: blog.seoTitle || "",
       seoDescription: blog.seoDescription || "",
       publishedAt: toLocalDateTimeInput(blog.publishedAt),

@@ -61,7 +61,7 @@ export default function ChangePaymentModal({
         key: orderData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.razorpayOrder.amount,
         currency: "INR",
-        name: "Glovia Glamour",
+        name: "Imkaa",
         description: methodConfig.description,
         order_id: orderData.razorpayOrder.id,
         method: methodConfig.method,
