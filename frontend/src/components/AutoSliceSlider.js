@@ -8,9 +8,8 @@ import React, {
   useMemo,
 } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Navigation, Pagination } from "swiper/modules";
+import { Autoplay, FreeMode, Navigation, Pagination } from "swiper/modules";
 import { ChevronRight, Heart, Star } from "lucide-react";
-import { ProductDetailsModal } from "./category/ProductDetailsModal";
 import { useWishlist } from "@/context/WishlistContext";
 import { useAuth } from "@/context/AuthContext";
 import SectionRenderer from "./SectionRenderer";
@@ -26,12 +25,13 @@ export default function AutoSliceSlider({
   bannerSections = [],
   onUsedBannerIdsChange,
 }) {
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [productsData, setProductsData] = useState({});
   const [loading, setLoading] = useState(true);
   const [hoveredProductId, setHoveredProductId] = useState({});
   const [homeSections, setHomeSections] = useState([]);
   const swiperRefs = useRef({});
+  const pausedTranslates = useRef({});
+  const resumeTimers = useRef({});
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -126,10 +126,6 @@ export default function AutoSliceSlider({
       ...prev,
       [sectionId]: productId,
     }));
-
-    if (swiperRefs.current[sectionId]?.autoplay) {
-      swiperRefs.current[sectionId].autoplay.stop();
-    }
   };
 
   const handleProductHoverEnd = (sectionId) => {
@@ -137,10 +133,60 @@ export default function AutoSliceSlider({
       ...prev,
       [sectionId]: null,
     }));
+  };
 
-    if (swiperRefs.current[sectionId]?.autoplay) {
-      swiperRefs.current[sectionId].autoplay.start();
+  const keepSwiperMotionSmooth = (swiper) => {
+    if (swiper?.wrapperEl) {
+      swiper.wrapperEl.style.transitionTimingFunction = "linear";
     }
+  };
+
+  const stopSectionAutoplay = (sectionId) => {
+    const swiper = swiperRefs.current[sectionId];
+
+    if (!swiper) return;
+
+    const currentTranslate = swiper.getTranslate();
+    pausedTranslates.current[sectionId] = currentTranslate;
+    clearTimeout(resumeTimers.current[sectionId]);
+    swiper.setTranslate(currentTranslate);
+    swiper.setTransition(0);
+    swiper.animating = false;
+    swiper.autoplay?.stop();
+  };
+
+  const startSectionAutoplay = (sectionId, reverseDirection = false) => {
+    const swiper = swiperRefs.current[sectionId];
+
+    if (!swiper) return;
+
+    const pausedTranslate = pausedTranslates.current[sectionId];
+
+    if (typeof pausedTranslate === "number") {
+      swiper.setTransition(0);
+      swiper.setTranslate(pausedTranslate);
+    }
+
+    keepSwiperMotionSmooth(swiper);
+
+    window.requestAnimationFrame(() => {
+      keepSwiperMotionSmooth(swiper);
+      const speed = swiper.params.speed || 6500;
+
+      if (swiper.params.loop) {
+        reverseDirection
+          ? swiper.slidePrev(speed, true)
+          : swiper.slideNext(speed, true);
+      }
+
+      clearTimeout(resumeTimers.current[sectionId]);
+      resumeTimers.current[sectionId] = setTimeout(() => {
+        swiper.autoplay?.start();
+        delete resumeTimers.current[sectionId];
+      }, speed);
+
+      delete pausedTranslates.current[sectionId];
+    });
   };
 
   if (loading) {
@@ -148,8 +194,8 @@ export default function AutoSliceSlider({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="product-card-imkaa">
-            <div className="skeleton" style={{ aspectRatio: "3 / 4" }} />
-            <div style={{ padding: 14 }}>
+            <div className="skeleton" style={{ aspectRatio: "6 / 7" }} />
+            <div style={{ padding: 10 }}>
               <div
                 className="skeleton"
                 style={{ height: 14, width: "70%", marginBottom: 10 }}
@@ -201,57 +247,68 @@ export default function AutoSliceSlider({
                 </a>
               </div>
 
-              <Swiper
-                modules={[Autoplay, Navigation]}
-                spaceBetween={15}
-                loop={enableLoop}
-                autoplay={
-                  enableLoop
-                    ? {
-                      delay: 4000,
-                      disableOnInteraction: false,
-                      reverseDirection,
-                    }
-                    : false
-                }
-                onInit={(swiper) => {
-                  swiperRefs.current[section.id] = swiper;
+              <div
+                onPointerEnter={(event) => {
+                  if (event.pointerType === "mouse") {
+                    stopSectionAutoplay(section.id);
+                  }
                 }}
-                breakpoints={{
-                  320: { slidesPerView: 2.1 },
-                  480: { slidesPerView: 2.6 },
-                  640: { slidesPerView: 3 },
-                  1024: { slidesPerView: 4.2 },
+                onPointerLeave={(event) => {
+                  if (event.pointerType === "mouse") {
+                    startSectionAutoplay(section.id, reverseDirection);
+                  }
                 }}
-                navigation={false}
-                className="homePageSwiper"
               >
-                {products.map((product) => (
-                  <SwiperSlide key={product._id} className="no-swiping">
-                    <ProductCard
-                      product={product}
-                      isHovered={hoveredProductId[section.id] === product._id}
-                      onProductHover={() =>
-                        handleProductHover(product._id, section.id)
+                <Swiper
+                  modules={[Autoplay, FreeMode, Navigation]}
+                  spaceBetween={15}
+                  speed={6500}
+                  freeMode={{
+                    enabled: true,
+                    momentum: false,
+                  }}
+                  loop={enableLoop}
+                  autoplay={
+                    enableLoop
+                      ? {
+                        delay: 0,
+                        disableOnInteraction: false,
+                        pauseOnMouseEnter: false,
+                        reverseDirection,
                       }
-                      onProductHoverEnd={() =>
-                        handleProductHoverEnd(section.id)
-                      }
-                      onOpenDetails={() => {
-                        setSelectedProduct(product);
-
-                        fetch(`${API_BASE}/api/products/${product._id}`)
-                          .then((res) => res.json())
-                          .then((data) => {
-                            if (data.success) {
-                              setSelectedProduct(data.product);
-                            }
-                          });
-                      }}
-                    />
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+                      : false
+                  }
+                  onInit={(swiper) => {
+                    swiperRefs.current[section.id] = swiper;
+                    keepSwiperMotionSmooth(swiper);
+                  }}
+                  onSlideChangeTransitionStart={keepSwiperMotionSmooth}
+                  breakpoints={{
+                    320: { slidesPerView: 2.1 },
+                    480: { slidesPerView: 2.6 },
+                    640: { slidesPerView: 3 },
+                    1024: { slidesPerView: 4.2 },
+                  }}
+                  navigation={false}
+                  className="homePageSwiper"
+                >
+                  {products.map((product) => (
+                    <SwiperSlide key={product._id} className="no-swiping">
+                      <ProductCard
+                        product={product}
+                        isHovered={hoveredProductId[section.id] === product._id}
+                        onProductHover={() =>
+                          handleProductHover(product._id, section.id)
+                        }
+                        onProductHoverEnd={() =>
+                          handleProductHoverEnd(section.id)
+                        }
+                        onOpenDetails={() => openProductInNewTab(product)}
+                      />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </div>
             </div>
 
             {/* 🔵 Banner AFTER slider */}
@@ -264,15 +321,13 @@ export default function AutoSliceSlider({
           </Fragment>
         );
       })}
-
-      {selectedProduct && (
-        <ProductDetailsModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
     </div>
   );
+}
+
+function openProductInNewTab(product) {
+  if (!product?.slug) return;
+  window.open(`/product/${product.slug}`, "_blank", "noopener,noreferrer");
 }
 
 function ProductCard({
@@ -320,7 +375,7 @@ function ProductCard({
   return (
     <div className="product-card-imkaa">
       <div
-        className="relative aspect-[3/4] overflow-hidden cursor-pointer no-swiping"
+        className="relative aspect-[8/9] overflow-hidden cursor-pointer no-swiping"
         style={{ background: "var(--color-bg-alt)" }}
         onMouseEnter={onProductHover}
         onMouseLeave={onProductHoverEnd}
@@ -388,7 +443,7 @@ function ProductCard({
               ? removeFromWishlist(product._id)
               : toggleWishlist(product);
           }}
-          className="absolute top-2 right-2 z-20 rounded-full w-[32px] h-[32px] flex items-center justify-center hover:scale-110 transition-transform"
+          className="absolute top-2 right-2 z-20 rounded-full w-[28px] h-[28px] flex items-center justify-center hover:scale-110 transition-transform"
           style={{
             background: "rgba(255,255,255,0.92)",
             border: "1px solid var(--color-border)",
@@ -419,7 +474,7 @@ function ProductCard({
         )}
       </div>
 
-      <div className="p-4 flex flex-col flex-grow">
+      <div className="px-3 py-2.5 flex flex-col flex-grow">
         <h3 className="product-card-title truncate mb-1">{product.name}</h3>
 
         <div className="flex items-center gap-1 mb-1">
