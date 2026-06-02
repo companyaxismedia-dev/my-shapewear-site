@@ -50,7 +50,7 @@ export default function AutoSliceSlider({
         const requests = dynamicSections.map(async (section) => {
           const res = await fetch(
             `${API_BASE}/api/products?category=${section.categorySlug}&limit=10`,
-            { cache: "force-cache" }
+            { cache: "no-store" }
           );
           const result = await res.json();
 

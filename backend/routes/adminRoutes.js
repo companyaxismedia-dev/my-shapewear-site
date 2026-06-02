@@ -34,9 +34,9 @@ router.post("/products/delete-many", protect, admin, adminController.deleteManyP
 
 //category section Routes
 router.get("/categories", protect, admin, categoryController.getAdminCategories);
-router.post("/categories", protect, admin, categoryController.createCategory);
+router.post("/categories", protect, admin, upload.single("image"), categoryController.createCategory);
 router.post("/categories/delete-many", protect, admin, categoryController.deleteManyCategories);
-router.put("/categories/:id", protect, admin, categoryController.updateCategory);
+router.put("/categories/:id", protect, admin, upload.single("image"), categoryController.updateCategory);
 router.delete("/categories/:id", protect, admin, categoryController.deleteCategory);
 
 // blog management routes

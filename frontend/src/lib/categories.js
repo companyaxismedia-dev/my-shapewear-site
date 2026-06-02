@@ -64,6 +64,14 @@ export const filterNavbarCategories = (nodes = []) =>
       subCategories: filterNavbarCategories(node.subCategories || []),
     }));
 
+export const filterShopCategories = (nodes = []) =>
+  nodes
+    .filter((node) => node?.showInCategorySlider !== false)
+    .map((node) => ({
+      ...node,
+      subCategories: filterShopCategories(node.subCategories || []),
+    }));
+
 export const fetchCategoryTree = async () => {
   if (categoryTreeCache && Date.now() - categoryTreeFetchedAt < CATEGORY_TREE_TTL) {
     return categoryTreeCache;
@@ -73,7 +81,9 @@ export const fetchCategoryTree = async () => {
     return categoryTreePromise;
   }
 
-  categoryTreePromise = fetch(`${API_BASE}/api/categories`, { cache: "force-cache" })
+  const endpoint = typeof window === "undefined" ? `${API_BASE}/api/categories` : "/api/categories";
+
+  categoryTreePromise = fetch(endpoint, { cache: "no-store" })
     .then(async (res) => {
       const data = await res.json();
 
@@ -90,4 +100,10 @@ export const fetchCategoryTree = async () => {
     });
 
   return categoryTreePromise;
+};
+
+export const invalidateCategoryCache = () => {
+  categoryTreeCache = null;
+  categoryTreeFetchedAt = 0;
+  categoryTreePromise = null;
 };

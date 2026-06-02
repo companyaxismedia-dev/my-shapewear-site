@@ -12,12 +12,14 @@ const ensureDir = (dirPath) => {
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let uploadPath;
-    // Check if this is a banner/block upload (admin routes with blocks or banner endpoint)
+    const isCategoryUpload = req.baseUrl.includes("admin") && req.path.includes("/categories");
     const isBannerUpload = req.baseUrl.includes('banner') || 
                           req.path.includes('blocks') || 
                           req.path.includes('sections');
     
-    if (isBannerUpload) {
+    if (isCategoryUpload) {
+      uploadPath = "uploads/categories/images/";
+    } else if (isBannerUpload) {
       uploadPath = "uploads/banner/";
     } else {
       uploadPath = "uploads/products/";

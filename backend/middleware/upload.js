@@ -11,9 +11,15 @@ const ensureDir = (dirPath) => {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let dest = "uploads/products/images";
-    if (file.mimetype.startsWith("video/")) {
+
+    if (req.originalUrl.includes("/categories")) {
+      dest = "uploads/categories/images";
+    } else if (req.originalUrl.includes("/upload")) {
+      dest = "uploads";
+    } else if (file.mimetype.startsWith("video/")) {
       dest = "uploads/products/videos";
     }
+
     ensureDir(dest);
     cb(null, dest);
   },

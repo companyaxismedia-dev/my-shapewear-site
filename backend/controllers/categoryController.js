@@ -2,6 +2,28 @@ const mongoose = require("mongoose");
 const Category = require("../models/category");
 const Product = require("../models/Product");
 
+const normalizeBaseUrl = (value = "") =>
+  String(value || "").trim().replace(/\/+$/, "");
+
+const getServerBaseUrl = () =>
+  normalizeBaseUrl(
+    process.env.APP_URL ||
+      process.env.API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://localhost:5000"
+  );
+
+const getImageUrl = (filePath = "") => {
+  const normalizedPath = String(filePath || "").trim();
+  if (!normalizedPath) return "";
+  if (normalizedPath.startsWith("http://") || normalizedPath.startsWith("https://")) {
+    return normalizedPath;
+  }
+  const base = getServerBaseUrl();
+  const prefix = normalizedPath.startsWith("/") ? "" : "/";
+  return `${base}${prefix}${normalizedPath}`;
+};
+
 const toSlug = (value = "") =>
   String(value)
     .toLowerCase()
@@ -23,6 +45,17 @@ const normalizeKeywords = (value) => {
     .map((item) => item.trim())
     .filter(Boolean);
 };
+
+const normalizeImageValue = (value) => {
+  const image = String(value || "").trim();
+  return image ? getImageUrl(image) : "";
+};
+
+const parseBoolean = (value) =>
+  value === true ||
+  value === "true" ||
+  value === "1" ||
+  value === 1;
 
 const ensureUniqueCategoryNameInParent = async ({ name, parentId = null, categoryId = null }) => {
   const query = {
@@ -80,6 +113,16 @@ const buildCategoryPayload = async (body, existingCategory = null) => {
       body.description !== undefined
         ? String(body.description || "").trim()
         : existingCategory?.description || "",
+    image:
+      body.image !== undefined
+        ? normalizeImageValue(body.image)
+        : existingCategory?.image
+          ? getImageUrl(existingCategory.image)
+          : "",
+    showInCategorySlider:
+      body.showInCategorySlider !== undefined
+        ? parseBoolean(body.showInCategorySlider)
+        : existingCategory?.showInCategorySlider ?? true,
     metaTitle:
       body.metaTitle !== undefined
         ? String(body.metaTitle || "").trim()
@@ -92,10 +135,13 @@ const buildCategoryPayload = async (body, existingCategory = null) => {
       body.metaKeywords !== undefined
         ? normalizeKeywords(body.metaKeywords)
         : existingCategory?.metaKeywords || [],
-    isActive: body.isActive !== undefined ? Boolean(body.isActive) : existingCategory?.isActive ?? true,
+    isActive:
+      body.isActive !== undefined
+        ? parseBoolean(body.isActive)
+        : existingCategory?.isActive ?? true,
     showInNavbar:
       body.showInNavbar !== undefined
-        ? Boolean(body.showInNavbar)
+        ? parseBoolean(body.showInNavbar)
         : existingCategory?.showInNavbar ?? true,
     sortOrder:
       body.sortOrder !== undefined && body.sortOrder !== ""
@@ -282,6 +328,9 @@ exports.getPublicCategories = async (req, res) => {
 exports.createCategory = async (req, res) => {
   try {
     const payload = await buildCategoryPayload(req.body);
+    if (req.file) {
+      payload.image = getImageUrl(`/uploads/categories/images/${req.file.filename}`);
+    }
     let parentCategory = null;
 
     if (payload.parent) {
@@ -352,6 +401,9 @@ exports.updateCategory = async (req, res) => {
     }
 
     const payload = await buildCategoryPayload(req.body, category);
+    if (req.file) {
+      payload.image = getImageUrl(`/uploads/categories/images/${req.file.filename}`);
+    }
     const previousParentId = category.parent ? String(category.parent) : null;
     let parentCategory = null;
 
@@ -406,6 +458,13 @@ exports.updateCategory = async (req, res) => {
     category.name = payload.name;
     category.slug = payload.slug;
     category.description = payload.description;
+    // Apply image and shop-slider visibility updates
+    if (payload.image !== undefined) {
+      category.image = payload.image;
+    }
+    if (payload.showInCategorySlider !== undefined) {
+      category.showInCategorySlider = payload.showInCategorySlider;
+    }
     category.metaTitle = payload.metaTitle;
     category.metaDescription = payload.metaDescription;
     category.metaKeywords = payload.metaKeywords;
