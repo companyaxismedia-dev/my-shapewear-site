@@ -1,23 +1,25 @@
 "use client";
 
-import { useEffect, useEffectEvent, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, Layers3, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import PaginationComponent from "@/components/admin/common/PaginationComponent";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { invalidateCategoryCache } from "@/lib/categories";
 
 const emptyForm = {
   name: "",
   parent: "",
   description: "",
+  image: "",
+  imageFile: null,
   metaTitle: "",
   metaDescription: "",
   metaKeywords: "",
   isActive: true,
   showInNavbar: true,
+  showInCategorySlider: true,
   sortOrder: 0,
 };
 
@@ -91,9 +93,24 @@ function CategoryFormModal({
 }) {
   if (!open) return null;
 
+  const imagePreviewUrl = useMemo(() => {
+    if (form.imageFile) {
+      return URL.createObjectURL(form.imageFile);
+    }
+    return form.image || "";
+  }, [form.imageFile, form.image]);
+
+  useEffect(() => {
+    return () => {
+      if (form.imageFile && imagePreviewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(imagePreviewUrl);
+      }
+    };
+  }, [form.imageFile, imagePreviewUrl]);
+
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 p-4">
-      <div className="admin-card w-full max-w-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[999] flex items-start md:items-center justify-center bg-black/40 p-4">
+      <div className="admin-card w-full max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl flex flex-col overflow-hidden max-h-[calc(100vh-4rem)]">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
             <h2 className="text-lg font-semibold">
@@ -110,7 +127,8 @@ function CategoryFormModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="grid gap-4 p-5 md:grid-cols-2">
+        <div className="overflow-auto p-5">
+          <form id="categoryForm" onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Category Name
@@ -153,6 +171,30 @@ function CategoryFormModal({
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
               placeholder="Short category description"
             />
+          </div>
+
+            <div className="md:col-span-2">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Category Image
+            </label>
+            <input
+              className={inputClass}
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  imageFile: e.target.files?.[0] || null,
+                }))
+              }
+            />
+            {imagePreviewUrl ? (
+              <img
+                src={imagePreviewUrl}
+                alt="Category preview"
+                className="mt-3 h-24 w-full max-w-full sm:max-w-xs rounded-xl border border-border object-cover"
+              />
+            ) : null}
           </div>
 
           <div>
@@ -234,19 +276,34 @@ function CategoryFormModal({
             />
           </div>
 
-          <div className="md:col-span-2 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="btn-muted px-4 py-2">
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary px-4 py-2" disabled={submitting}>
-              {submitting
-                ? "Saving..."
-                : mode === "edit"
-                  ? "Update Category"
-                  : "Save Category"}
-            </button>
+          <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-3">
+            <div>
+              <p className="text-sm font-medium">Show In Shop By Category</p>
+              <p className="text-xs text-muted-foreground">
+                Include this category in the front-end Shop By Category slider.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-primary"
+              checked={form.showInCategorySlider}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, showInCategorySlider: e.target.checked }))
+              }
+            />
           </div>
-        </form>
+
+          </form>
+        </div>
+
+        <div className="sticky bottom-0 bg-background/90 backdrop-blur-sm border-t border-border px-5 py-3 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="btn-muted px-4 py-2">
+            Cancel
+          </button>
+          <button type="submit" form="categoryForm" className="btn-primary px-4 py-2" disabled={submitting}>
+            {submitting ? "Saving..." : mode === "edit" ? "Update Category" : "Save Category"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -268,7 +325,7 @@ export default function CategoriesPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
 
-  const fetchCategories = useEffectEvent(async (searchValue = "") => {
+  const fetchCategories = async (searchValue = "") => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
@@ -278,7 +335,7 @@ export default function CategoriesPage() {
         params.set("search", searchValue.trim());
       }
 
-      const res = await fetch(`${API_BASE}/api/admin/categories?${params.toString()}`, {
+      const res = await fetch(`/api/admin/categories?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -297,7 +354,7 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false);
     }
-  });
+  };
 
   useEffect(() => {
     fetchCategories(search);
@@ -321,16 +378,33 @@ export default function CategoriesPage() {
       const token = localStorage.getItem("adminToken");
       const isEdit = Boolean(editingCategory?._id);
       const endpoint = isEdit
-        ? `${API_BASE}/api/admin/categories/${editingCategory._id}`
-        : `${API_BASE}/api/admin/categories`;
+        ? `/api/admin/categories/${editingCategory._id}`
+        : `/api/admin/categories`;
+
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("parent", form.parent || "");
+      formData.append("description", form.description || "");
+      formData.append("metaTitle", form.metaTitle || "");
+      formData.append("metaDescription", form.metaDescription || "");
+      formData.append("metaKeywords", form.metaKeywords || "");
+      formData.append("isActive", String(form.isActive));
+      formData.append("showInNavbar", String(form.showInNavbar));
+      formData.append("showInCategorySlider", String(form.showInCategorySlider));
+      formData.append("sortOrder", String(form.sortOrder ?? 0));
+
+      if (form.imageFile) {
+        formData.append("image", form.imageFile);
+      } else {
+        formData.append("image", form.image || "");
+      }
 
       const res = await fetch(endpoint, {
         method: isEdit ? "PUT" : "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: formData,
       });
 
       const data = await res.json();
@@ -342,7 +416,14 @@ export default function CategoriesPage() {
 
       toast.success(isEdit ? "Category updated successfully" : "Category created successfully");
       resetForm();
+      // refresh admin list and frontend category cache
       fetchCategories(search);
+      try {
+        invalidateCategoryCache();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("categories:updated"));
+        }
+      } catch (e) {}
     } catch (error) {
       toast.error(error.message || "Failed to save category");
     } finally {
@@ -367,6 +448,8 @@ export default function CategoriesPage() {
       name: category.name || "",
       parent: safeParent,
       description: category.description || "",
+      image: category.image || "",
+      imageFile: null,
       metaTitle: category.metaTitle || "",
       metaDescription: category.metaDescription || "",
       metaKeywords: Array.isArray(category.metaKeywords)
@@ -374,6 +457,7 @@ export default function CategoriesPage() {
         : category.metaKeywords || "",
       isActive: category.isActive !== false,
       showInNavbar: category.showInNavbar !== false,
+      showInCategorySlider: category.showInCategorySlider !== false,
       sortOrder: category.sortOrder ?? 0,
     });
     setFormOpen(true);
@@ -394,8 +478,8 @@ export default function CategoriesPage() {
       const isBulkDelete = !deleteTarget && selectedIds.length > 0;
       const res = await fetch(
         isBulkDelete
-          ? `${API_BASE}/api/admin/categories/delete-many`
-          : `${API_BASE}/api/admin/categories/${deleteTarget._id}`,
+          ? "/api/admin/categories/delete-many"
+          : `/api/admin/categories/${deleteTarget._id}`,
         {
           method: isBulkDelete ? "POST" : "DELETE",
           headers: {
@@ -580,19 +664,20 @@ export default function CategoriesPage() {
                     <th className="px-4 py-4 font-semibold">Products</th>
                     <th className="px-4 py-4 font-semibold">Created</th>
                     <th className="px-4 py-4 font-semibold">Navbar</th>
+                    <th className="px-4 py-4 font-semibold">Shop</th>
                     <th className="px-4 py-4 text-right font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
                         Loading categories...
                       </td>
                     </tr>
                   ) : categories.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={11} className="px-4 py-8 text-center text-muted-foreground">
                         No categories available.
                       </td>
                     </tr>
@@ -612,8 +697,24 @@ export default function CategoriesPage() {
                             />
                           </td>
                           <td className="px-4 py-5">
-                            <div className="flex items-center font-semibold text-foreground">
-                              {category.name}
+                            <div className="flex items-start gap-3">
+                              {category.image ? (
+                                <img
+                                  src={category.image}
+                                  alt={category.name}
+                                  className="h-12 w-12 rounded-lg object-cover"
+                                />
+                              ) : null}
+                              <div className="min-w-0">
+                                <p className="text-base font-semibold text-foreground">
+                                  {category.name}
+                                </p>
+                                {category.description ? (
+                                  <p className="mt-1 text-xs text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap max-w-[16rem]">
+                                    {category.description}
+                                  </p>
+                                ) : null}
+                              </div>
                             </div>
                           </td>
                           <td className="px-4 py-5 text-muted-foreground">{category.slug}</td>
@@ -633,6 +734,17 @@ export default function CategoriesPage() {
                               }`}
                             >
                               {category.showInNavbar !== false ? "Shown" : "Hidden"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-5">
+                            <span
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                category.showInCategorySlider !== false
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {category.showInCategorySlider !== false ? "Shown" : "Hidden"}
                             </span>
                           </td>
                           <td className="px-4 py-5">

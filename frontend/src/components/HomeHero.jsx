@@ -13,7 +13,7 @@ export default function HomeHero() {
           "linear-gradient(180deg, rgba(255,249,250,0.9) 0%, rgba(252,241,244,0.96) 100%)",
       }}
     >
-      <div className="container-imkaa">
+      {/* <div className="container-imkaa">
         <div
           className="relative overflow-hidden rounded-[28px] border border-[#f1dde3] px-5 py-8 shadow-[0_18px_50px_rgba(116,73,85,0.08)] sm:px-7 sm:py-10 lg:px-12 lg:py-14 xl:px-14 xl:py-16"
           style={{
@@ -74,7 +74,7 @@ export default function HomeHero() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </section>
   );
 }

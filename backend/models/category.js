@@ -19,6 +19,16 @@ const categorySchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    image: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    showInCategorySlider: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
     parent: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",

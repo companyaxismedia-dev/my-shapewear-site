@@ -4,8 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
-import Image from "next/image";
-import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
+import { fetchCategoryTree, filterShopCategories } from "@/lib/categories";
+import { API_BASE } from "@/lib/api";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -14,7 +14,7 @@ import "swiper/css/pagination";
 const categoryVisuals = {
   bra: {
     img: "/image/CategorySlider/bra.png",
-    desc: "Everyday support with premium comfort.",
+    desc: " support with premium comfort.",
   },
   panties: {
     img: "/image/CategorySlider/panties.png",
@@ -42,27 +42,52 @@ export default function CategorySlider() {
   React.useEffect(() => {
     let active = true;
 
-    fetchCategoryTree()
-      .then((tree) => {
-        if (!active) return;
-        const navbarCategories = filterNavbarCategories(tree);
+    const fetchAndSet = () => {
+      fetchCategoryTree()
+        .then((tree) => {
+          if (!active) return;
+          const sliderCategories = filterShopCategories(tree);
 
-        const banners = navbarCategories.slice(0, 6).map((category) => ({
-          img: categoryVisuals[category.slug]?.img || "/image/CategorySlider/shapewear.png",
-          path: `/${category.slug}`,
-          alt: category.name,
-          title: category.name,
-          desc:
-            categoryVisuals[category.slug]?.desc ||
-            "Explore bestselling styles in this collection.",
-        }));
+          const banners = sliderCategories.slice(0, 6).map((category) => {
+            const rawImage = String(category.image || "").trim();
+            const imageUrl = rawImage
+              ? rawImage.startsWith("http")
+                ? rawImage
+                : `${API_BASE}${rawImage.startsWith("/") ? rawImage : `/${rawImage}`}`
+              : categoryVisuals[category.slug]?.img;
 
-        setCategoryBanners(banners);
-      })
-      .catch(() => {});
+            return {
+              img: imageUrl || "/image/CategorySlider/shapewear.png",
+              path: `/${category.slug}`,
+              alt: category.name,
+              title: category.name,
+              desc:
+                category.description ||
+                categoryVisuals[category.slug]?.desc ||
+                "Explore bestselling styles in this collection.",
+            };
+          });
+
+          setCategoryBanners(banners);
+        })
+        .catch(() => {});
+    };
+
+    fetchAndSet();
+
+    const handler = () => {
+      fetchAndSet();
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("categories:updated", handler);
+    }
 
     return () => {
       active = false;
+      if (typeof window !== "undefined") {
+        window.removeEventListener("categories:updated", handler);
+      }
     };
   }, []);
 
@@ -107,12 +132,10 @@ export default function CategorySlider() {
                         aspectRatio: "4 / 5",
                       }}
                     >
-                      <Image
+                      <img
                         src={item.img}
                         alt={item.alt}
-                        fill
-                        sizes="(max-width:768px) 80vw, 280px"
-                        className="object-cover"
+                        className="absolute inset-0 h-full w-full object-cover"
                         loading="lazy"
                       />
                     </div>

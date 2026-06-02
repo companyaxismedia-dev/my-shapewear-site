@@ -1,4 +1,7 @@
-const FALLBACK_API_BASE = "https://my-shapewear-site.onrender.com";
+const FALLBACK_API_BASE =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:5000"
+    : "https://my-shapewear-site.onrender.com";
 
 const normalizeBaseUrl = (value) =>
   String(value || "")

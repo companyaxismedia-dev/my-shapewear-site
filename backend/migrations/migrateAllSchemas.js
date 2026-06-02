@@ -251,6 +251,9 @@ async function migrateAllSchemas() {
       if (category.showInNavbar === null || category.showInNavbar === undefined) {
         updates.showInNavbar = true;
       }
+      if (category.showInCategorySlider === null || category.showInCategorySlider === undefined) {
+        updates.showInCategorySlider = true;
+      }
       if (!category.metaTitle) updates.metaTitle = category.name || "";
       if (!category.metaDescription) updates.metaDescription = "";
       if (!category.metaKeywords) {
@@ -269,7 +272,6 @@ async function migrateAllSchemas() {
       if (category.level === null || category.level === undefined) updates.level = 0;
       if (category.sortOrder === null || category.sortOrder === undefined) updates.sortOrder = 0;
       if (category.parent === undefined) updates.parent = null;
-      if (Object.prototype.hasOwnProperty.call(category, "image")) unset.image = "";
       if (Object.prototype.hasOwnProperty.call(category, "mataKeywords")) unset.mataKeywords = "";
 
       if (Object.keys(updates).length > 0 || Object.keys(unset).length > 0) {
