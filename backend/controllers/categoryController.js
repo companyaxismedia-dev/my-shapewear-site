@@ -5,13 +5,17 @@ const Product = require("../models/Product");
 const normalizeBaseUrl = (value = "") =>
   String(value || "").trim().replace(/\/+$/, "");
 
-const getServerBaseUrl = () =>
-  normalizeBaseUrl(
-    process.env.APP_URL ||
+const getServerBaseUrl = () => {
+  return normalizeBaseUrl(
+    process.env.API_URL ||
       process.env.API_BASE_URL ||
+      process.env.APP_URL ||
+      process.env.SERVER_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
       process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:5000"
+      ""
   );
+};
 
 const getImageUrl = (filePath = "") => {
   const normalizedPath = String(filePath || "").trim();
@@ -21,7 +25,16 @@ const getImageUrl = (filePath = "") => {
   }
   const base = getServerBaseUrl();
   const prefix = normalizedPath.startsWith("/") ? "" : "/";
-  return `${base}${prefix}${normalizedPath}`;
+  return base ? `${base}${prefix}${normalizedPath}` : `${prefix}${normalizedPath}`;
+};
+
+const normalizeImageValue = (value) => {
+  const image = String(value || "").trim();
+  if (!image) return "";
+  if (image.startsWith("http://") || image.startsWith("https://")) {
+    return image;
+  }
+  return image.startsWith("/") ? image : `/${image}`;
 };
 
 const toSlug = (value = "") =>
@@ -44,11 +57,6 @@ const normalizeKeywords = (value) => {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-};
-
-const normalizeImageValue = (value) => {
-  const image = String(value || "").trim();
-  return image ? getImageUrl(image) : "";
 };
 
 const parseBoolean = (value) =>
@@ -116,9 +124,7 @@ const buildCategoryPayload = async (body, existingCategory = null) => {
     image:
       body.image !== undefined
         ? normalizeImageValue(body.image)
-        : existingCategory?.image
-          ? getImageUrl(existingCategory.image)
-          : "",
+        : existingCategory?.image || "",
     showInCategorySlider:
       body.showInCategorySlider !== undefined
         ? parseBoolean(body.showInCategorySlider)
@@ -329,7 +335,7 @@ exports.createCategory = async (req, res) => {
   try {
     const payload = await buildCategoryPayload(req.body);
     if (req.file) {
-      payload.image = getImageUrl(`/uploads/categories/images/${req.file.filename}`);
+      payload.image = `/uploads/categories/images/${req.file.filename}`;
     }
     let parentCategory = null;
 
@@ -402,7 +408,7 @@ exports.updateCategory = async (req, res) => {
 
     const payload = await buildCategoryPayload(req.body, category);
     if (req.file) {
-      payload.image = getImageUrl(`/uploads/categories/images/${req.file.filename}`);
+      payload.image = `/uploads/categories/images/${req.file.filename}`;
     }
     const previousParentId = category.parent ? String(category.parent) : null;
     let parentCategory = null;

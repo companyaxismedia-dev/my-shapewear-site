@@ -7,6 +7,7 @@ import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import PaginationComponent from "@/components/admin/common/PaginationComponent";
 import DeleteConfirmModal from "@/components/admin/modals/DeleteConfirmModal";
 import { invalidateCategoryCache } from "@/lib/categories";
+import { API_BASE } from "@/lib/api";
 
 const emptyForm = {
   name: "",
@@ -97,7 +98,11 @@ function CategoryFormModal({
     if (form.imageFile) {
       return URL.createObjectURL(form.imageFile);
     }
-    return form.image || "";
+    if (!form.image) return "";
+    if (form.image.startsWith("blob:") || form.image.startsWith("http")) {
+      return form.image;
+    }
+    return `${API_BASE}${form.image.startsWith("/") ? "" : "/"}${form.image}`;
   }, [form.imageFile, form.image]);
 
   useEffect(() => {
@@ -700,7 +705,7 @@ export default function CategoriesPage() {
                             <div className="flex items-start gap-3">
                               {category.image ? (
                                 <img
-                                  src={category.image}
+                                  src={category.image.startsWith("http") ? category.image : `${API_BASE}${category.image}`}
                                   alt={category.name}
                                   className="h-12 w-12 rounded-lg object-cover"
                                 />
