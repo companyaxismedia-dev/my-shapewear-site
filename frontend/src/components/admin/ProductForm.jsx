@@ -891,15 +891,29 @@ export const ProductForm = forwardRef(function ProductForm({
 
   const vImgSetPrimary = (id, i) => {
     const currentVariants = getValues("variants");
-    const updatedVariants = currentVariants.map(v =>
-      v.id === id
-        ? {
-          ...v,
-          images: v.images.map((img, j) => ({ ...img, isPrimary: j === i })),
-        }
-        : v
-    );
+    const updatedVariants = currentVariants.map(v => {
+      if (v.id !== id) return v;
+
+      const imgs = Array.isArray(v.images) ? [...v.images] : [];
+
+      // Move the selected image to the front
+      if (i >= 0 && i < imgs.length) {
+        const [sel] = imgs.splice(i, 1);
+        imgs.unshift(sel);
+      }
+
+      // Ensure only the first image is marked as primary
+      const normalized = imgs.map((img, j) => ({ ...img, isPrimary: j === 0 }));
+
+      return { ...v, images: normalized };
+    });
+
     setValue("variants", updatedVariants);
+
+    // Update thumbnail preview immediately
+    const variant = updatedVariants.find(v => v.id === id);
+    const selImg = variant?.images?.[0];
+    if (selImg && selImg.url) setValue("thumbnail", selImg.url);
   };
 
   // Helper functions for arrays
