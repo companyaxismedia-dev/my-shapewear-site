@@ -14,14 +14,13 @@ const storage = multer.diskStorage({
 
     if (req.originalUrl.includes("/categories")) {
       dest = "uploads/categories/images";
-    } else if (req.originalUrl.includes("/upload")) {
-      dest = "uploads";
     } else if (file.mimetype.startsWith("video/")) {
       dest = "uploads/products/videos";
     }
 
-    ensureDir(dest);
-    cb(null, dest);
+    const destPath = path.join(__dirname, "..", dest);
+    ensureDir(destPath);
+    cb(null, destPath);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname) || "";
