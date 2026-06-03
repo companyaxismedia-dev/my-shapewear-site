@@ -53,13 +53,6 @@ const toBoolean = (value, fallback = true) => {
   return fallback;
 };
 
-const getUploadedUrl = (file) => {
-  if (!file || !file.path) return "";
-  const uploadRoot = path.join(__dirname, "..");
-  const relativePath = path.relative(uploadRoot, file.path).replace(/\\/g, "/");
-  return `/${relativePath.replace(/^\/*/, "")}`;
-};
-
 const normalizeServiceablePincodes = (value) => {
   const parsed = parseJsonField(value, []);
   const rows = Array.isArray(parsed) ? parsed : [];
@@ -341,7 +334,7 @@ exports.createProduct = async (req, res) => {
             }
 
             data.variants[variantIndex].images.push({
-              url: getUploadedUrl(file),
+              url: `/${file.path.replace(/\\/g, "/")}`,
               altText: data.name,
               isPrimary: data.variants[variantIndex].images.length === 0,
               order: data.variants[variantIndex].images.length,
@@ -349,13 +342,41 @@ exports.createProduct = async (req, res) => {
           }
 
           if (type === "video") {
-            data.variants[variantIndex].video = getUploadedUrl(file);
+            data.variants[variantIndex].video = `/${file.path.replace(/\\/g, "/")}`;
           }
         } else if (fieldName === "thumbnailFile") {
           // Handle thumbnail file upload
-          data.thumbnail = getUploadedUrl(file);
+          data.thumbnail = `/${file.path.replace(/\\/g, "/")}`;
         }
       });
+    }
+    // Ensure primary images are moved to first position within each variant
+    // and derive product thumbnail from the first primary image found.
+    if (Array.isArray(data.variants)) {
+      let firstPrimaryUrl = null;
+      for (let vi = 0; vi < data.variants.length; vi++) {
+        const v = data.variants[vi];
+        if (!v || !Array.isArray(v.images) || v.images.length === 0) continue;
+
+        // Normalize isPrimary to boolean and ensure only one primary per variant
+        v.images = v.images.map(img => ({ ...img, isPrimary: (img.isPrimary === true || img.isPrimary === 'true') }));
+
+        const primaryIndex = v.images.findIndex(img => img.isPrimary === true);
+        if (primaryIndex > 0) {
+          const [prim] = v.images.splice(primaryIndex, 1);
+          v.images.unshift(prim);
+        }
+
+        // Track first primary across variants for thumbnail fallback
+        if (!firstPrimaryUrl) {
+          const p = v.images.find(img => img.isPrimary === true) || v.images[0];
+          if (p && p.url) firstPrimaryUrl = p.url;
+        }
+      }
+
+      if ((!data.thumbnail || data.thumbnail === "") && firstPrimaryUrl) {
+        data.thumbnail = firstPrimaryUrl;
+      }
     }
 
     // For drafts, skip Mongoose validation; for published products, validate
@@ -394,11 +415,15 @@ exports.uploadFile = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false });
 
     // Multer saves file to uploads/products/images or uploads/products/videos
-    const url = getUploadedUrl(req.file);
+    const isVideo = req.file.mimetype.startsWith("video/");
+    const basePath = isVideo
+      ? "/uploads/products/videos/"
+      : "/uploads/products/images/";
+    const url = basePath + req.file.filename;
 
     res.json({
       success: true,
-      url,
+      url: url,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -564,7 +589,7 @@ exports.updateProduct = async (req, res) => {
             }
 
             data.variants[variantIndex].images.push({
-              url: getUploadedUrl(file),
+              url: `/${file.path.replace(/\\/g, "/")}`,
               altText: data.name || product.name,
               isPrimary: data.variants[variantIndex].images.length === 0,
               order: data.variants[variantIndex].images.length,
@@ -574,11 +599,11 @@ exports.updateProduct = async (req, res) => {
           if (type === "video") {
             data.variants[
               variantIndex
-            ].video = getUploadedUrl(file);
+            ].video = `/${file.path.replace(/\\/g, "/")}`;
           }
         } else if (fieldName === "thumbnailFile") {
           // Handle thumbnail file upload
-          data.thumbnail = getUploadedUrl(file);
+          data.thumbnail = `/${file.path.replace(/\\/g, "/")}`;
         }
       });
     }
@@ -589,6 +614,33 @@ exports.updateProduct = async (req, res) => {
 
     // Don't allow overwriting createdBy
     delete data.createdBy;
+
+    // Ensure primary images are moved to first position within each variant
+    // and derive product thumbnail from the first primary image found.
+    if (Array.isArray(data.variants)) {
+      let firstPrimaryUrl = null;
+      for (let vi = 0; vi < data.variants.length; vi++) {
+        const v = data.variants[vi];
+        if (!v || !Array.isArray(v.images) || v.images.length === 0) continue;
+
+        v.images = v.images.map(img => ({ ...img, isPrimary: (img.isPrimary === true || img.isPrimary === 'true') }));
+
+        const primaryIndex = v.images.findIndex(img => img.isPrimary === true);
+        if (primaryIndex > 0) {
+          const [prim] = v.images.splice(primaryIndex, 1);
+          v.images.unshift(prim);
+        }
+
+        if (!firstPrimaryUrl) {
+          const p = v.images.find(img => img.isPrimary === true) || v.images[0];
+          if (p && p.url) firstPrimaryUrl = p.url;
+        }
+      }
+
+      if ((!data.thumbnail || data.thumbnail === "") && firstPrimaryUrl) {
+        data.thumbnail = firstPrimaryUrl;
+      }
+    }
 
     Object.keys(data).forEach((key) => {
       product[key] = data[key];
