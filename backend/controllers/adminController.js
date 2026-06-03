@@ -53,6 +53,13 @@ const toBoolean = (value, fallback = true) => {
   return fallback;
 };
 
+const getUploadedUrl = (file) => {
+  if (!file || !file.path) return "";
+  const uploadRoot = path.join(__dirname, "..");
+  const relativePath = path.relative(uploadRoot, file.path).replace(/\\/g, "/");
+  return `/${relativePath.replace(/^\/*/, "")}`;
+};
+
 const normalizeServiceablePincodes = (value) => {
   const parsed = parseJsonField(value, []);
   const rows = Array.isArray(parsed) ? parsed : [];
@@ -334,7 +341,7 @@ exports.createProduct = async (req, res) => {
             }
 
             data.variants[variantIndex].images.push({
-              url: `/${file.path.replace(/\\/g, "/")}`,
+              url: getUploadedUrl(file),
               altText: data.name,
               isPrimary: data.variants[variantIndex].images.length === 0,
               order: data.variants[variantIndex].images.length,
@@ -342,11 +349,11 @@ exports.createProduct = async (req, res) => {
           }
 
           if (type === "video") {
-            data.variants[variantIndex].video = `/${file.path.replace(/\\/g, "/")}`;
+            data.variants[variantIndex].video = getUploadedUrl(file);
           }
         } else if (fieldName === "thumbnailFile") {
           // Handle thumbnail file upload
-          data.thumbnail = `/${file.path.replace(/\\/g, "/")}`;
+          data.thumbnail = getUploadedUrl(file);
         }
       });
     }
@@ -387,15 +394,11 @@ exports.uploadFile = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false });
 
     // Multer saves file to uploads/products/images or uploads/products/videos
-    const isVideo = req.file.mimetype.startsWith("video/");
-    const basePath = isVideo
-      ? "/uploads/products/videos/"
-      : "/uploads/products/images/";
-    const url = basePath + req.file.filename;
+    const url = getUploadedUrl(req.file);
 
     res.json({
       success: true,
-      url: url,
+      url,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -561,7 +564,7 @@ exports.updateProduct = async (req, res) => {
             }
 
             data.variants[variantIndex].images.push({
-              url: `/${file.path.replace(/\\/g, "/")}`,
+              url: getUploadedUrl(file),
               altText: data.name || product.name,
               isPrimary: data.variants[variantIndex].images.length === 0,
               order: data.variants[variantIndex].images.length,
@@ -571,11 +574,11 @@ exports.updateProduct = async (req, res) => {
           if (type === "video") {
             data.variants[
               variantIndex
-            ].video = `/${file.path.replace(/\\/g, "/")}`;
+            ].video = getUploadedUrl(file);
           }
         } else if (fieldName === "thumbnailFile") {
           // Handle thumbnail file upload
-          data.thumbnail = `/${file.path.replace(/\\/g, "/")}`;
+          data.thumbnail = getUploadedUrl(file);
         }
       });
     }
