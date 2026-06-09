@@ -39,7 +39,7 @@ export const metadata = {
   creator: "Imkaa",
   publisher: "Imkaa",
 
-  metadataBase: new URL("www.imkaa.com"),
+  metadataBase: new URL("https://www.imkaa.com"),
 
   alternates: {
     canonical: "/",
@@ -49,7 +49,7 @@ export const metadata = {
     title: "Ladies Ethnic Wear Dwarka Delhi | Kurtis, Suits & Coord Sets",
     description:
       "Shop stylish ethnic wear in Dwarka Sector 7, New Delhi. Short kurtis, long kurtis, suits, party wear and coord sets.",
-    url: "www.imkaa.com",
+    url: "https://www.imkaa.com",
     siteName: "Imkaa",
     locale: "en_IN",
     type: "website",
