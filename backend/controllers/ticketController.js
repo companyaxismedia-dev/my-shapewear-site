@@ -10,7 +10,7 @@ exports.createTicket = async (req, res) => {
     try {
 
         const { subject, message, orderId, category, priority } = req.body
-        const image = req.file ? req.file.filename : null
+        const image = req.file ? req.file.path : null
 
         /* ================= VALIDATION ================= */
 

@@ -335,7 +335,7 @@ exports.createCategory = async (req, res) => {
   try {
     const payload = await buildCategoryPayload(req.body);
     if (req.file) {
-      payload.image = `/uploads/categories/images/${req.file.filename}`;
+      payload.image = req.file.path;
     }
     let parentCategory = null;
 
@@ -408,7 +408,7 @@ exports.updateCategory = async (req, res) => {
 
     const payload = await buildCategoryPayload(req.body, category);
     if (req.file) {
-      payload.image = `/uploads/categories/images/${req.file.filename}`;
+      payload.image = req.file.path;
     }
     const previousParentId = category.parent ? String(category.parent) : null;
     let parentCategory = null;

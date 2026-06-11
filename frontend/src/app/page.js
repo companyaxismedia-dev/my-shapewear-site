@@ -12,7 +12,6 @@ const getHomePageData = async () => {
     if (!res.ok) {
       return { sections: [], heroSlides: [] };
     }
-
     const data = await res.json();
     const sections = Array.isArray(data?.sections) ? data.sections : [];
     const heroSlides = Array.isArray(data?.heroSlides) ? data.heroSlides : [];
