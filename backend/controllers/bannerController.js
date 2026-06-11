@@ -98,8 +98,8 @@ exports.addBanner = async (req, res) => {
       section = await getHomeHeroSection();
     }
 
-    const desktopUrl = `/uploads/banner/${req.files.desktop[0].filename}`;
-    const mobileUrl = req.files.mobile ? `/uploads/banner/${req.files.mobile[0].filename}` : null;
+    const desktopUrl = req.files.desktop[0].path;
+    const mobileUrl = req.files.mobile ? req.files.mobile[0].path : null;
 
     const newBlock = await SectionBlock.create({
       section: section._id,
@@ -141,10 +141,10 @@ exports.editBanner = async (req, res) => {
 
     if (req.files) {
       if (req.files.desktop && req.files.desktop[0]) {
-        block.data.desktopUrl = `/uploads/banner/${req.files.desktop[0].filename}`;
+        block.data.desktopUrl = req.files.desktop[0].path;
       }
       if (req.files.mobile && req.files.mobile[0]) {
-        block.data.mobileUrl = `/uploads/banner/${req.files.mobile[0].filename}`;
+        block.data.mobileUrl = req.files.mobile[0].path;
       }
     }
 
@@ -158,6 +158,7 @@ exports.editBanner = async (req, res) => {
       block.data.active = req.body.active === 'true' || req.body.active === true;
     }
 
+    block.markModified('data');
     await block.save();
 
     res.json({
@@ -203,6 +204,7 @@ exports.toggleBannerActive = async (req, res) => {
     const block = await SectionBlock.findById(id);
     if (!block) return res.status(404).json({ message: 'Slide not found' });
     block.data.active = !block.data.active;
+    block.markModified('data');
     await block.save();
     res.json({ active: block.data.active });
   } catch (err) {
@@ -437,11 +439,11 @@ exports.addBlock = async (req, res) => {
     // Handle file uploads - these take precedence
     if (req.files) {
       if (req.files.desktop && req.files.desktop[0]) {
-        blockData.desktopUrl = `/uploads/banner/${req.files.desktop[0].filename}`;
+        blockData.desktopUrl = req.files.desktop[0].path;
         console.log('✓ Desktop file saved:', blockData.desktopUrl);
       }
       if (req.files.mobile && req.files.mobile[0]) {
-        blockData.mobileUrl = `/uploads/banner/${req.files.mobile[0].filename}`;
+        blockData.mobileUrl = req.files.mobile[0].path;
         console.log('✓ Mobile file saved:', blockData.mobileUrl);
       }
     }
@@ -498,14 +500,15 @@ exports.updateBlock = async (req, res) => {
     // Handle file uploads (these take precedence over JSON data)
     if (req.files) {
       if (req.files.desktop && req.files.desktop[0]) {
-        newData.desktopUrl = `/uploads/banner/${req.files.desktop[0].filename}`;
+        newData.desktopUrl = req.files.desktop[0].path;
       }
       if (req.files.mobile && req.files.mobile[0]) {
-        newData.mobileUrl = `/uploads/banner/${req.files.mobile[0].filename}`;
+        newData.mobileUrl = req.files.mobile[0].path;
       }
     }
 
     block.data = newData;
+    block.markModified('data');
     await block.save();
 
     console.log('✓ Block updated:', {

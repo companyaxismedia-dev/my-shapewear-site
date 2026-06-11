@@ -334,7 +334,7 @@ exports.createProduct = async (req, res) => {
             }
 
             data.variants[variantIndex].images.push({
-              url: `/${file.path.replace(/\\/g, "/")}`,
+              url: file.path,
               altText: data.name,
               isPrimary: data.variants[variantIndex].images.length === 0,
               order: data.variants[variantIndex].images.length,
@@ -342,11 +342,11 @@ exports.createProduct = async (req, res) => {
           }
 
           if (type === "video") {
-            data.variants[variantIndex].video = `/${file.path.replace(/\\/g, "/")}`;
+            data.variants[variantIndex].video = file.path;
           }
         } else if (fieldName === "thumbnailFile") {
           // Handle thumbnail file upload
-          data.thumbnail = `/${file.path.replace(/\\/g, "/")}`;
+          data.thumbnail = file.path;
         }
       });
     }
@@ -414,12 +414,8 @@ exports.uploadFile = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false });
 
-    // Multer saves file to uploads/products/images or uploads/products/videos
-    const isVideo = req.file.mimetype.startsWith("video/");
-    const basePath = isVideo
-      ? "/uploads/products/videos/"
-      : "/uploads/products/images/";
-    const url = basePath + req.file.filename;
+    // Cloudinary returns the full URL in req.file.path
+    const url = req.file.path;
 
     res.json({
       success: true,
@@ -589,7 +585,7 @@ exports.updateProduct = async (req, res) => {
             }
 
             data.variants[variantIndex].images.push({
-              url: `/${file.path.replace(/\\/g, "/")}`,
+              url: file.path,
               altText: data.name || product.name,
               isPrimary: data.variants[variantIndex].images.length === 0,
               order: data.variants[variantIndex].images.length,
@@ -599,11 +595,11 @@ exports.updateProduct = async (req, res) => {
           if (type === "video") {
             data.variants[
               variantIndex
-            ].video = `/${file.path.replace(/\\/g, "/")}`;
+            ].video = file.path;
           }
         } else if (fieldName === "thumbnailFile") {
           // Handle thumbnail file upload
-          data.thumbnail = `/${file.path.replace(/\\/g, "/")}`;
+          data.thumbnail = file.path;
         }
       });
     }

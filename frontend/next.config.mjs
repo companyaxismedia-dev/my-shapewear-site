@@ -62,6 +62,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
     dangerouslyAllowLocalIP: true,
   },
@@ -84,7 +88,7 @@ const nextConfig = {
       {
         key: "Content-Security-Policy",
         value:
-          `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:5000 http://127.0.0.1:5000 ${API_ORIGIN} https://images.unsplash.com https://rzp.io https://*.razorpay.com; font-src 'self' data:; connect-src 'self' http://localhost:5000 http://127.0.0.1:5000 ${API_ORIGIN} https://accounts.google.com https://checkout.razorpay.com; frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';`,
+          `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:5000 http://127.0.0.1:5000 ${API_ORIGIN} https://images.unsplash.com https://rzp.io https://*.razorpay.com https://res.cloudinary.com; media-src 'self' data: blob: https://res.cloudinary.com; font-src 'self' data:; connect-src 'self' http://localhost:5000 http://127.0.0.1:5000 ${API_ORIGIN} https://accounts.google.com https://checkout.razorpay.com; frame-src https://accounts.google.com https://api.razorpay.com https://checkout.razorpay.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self';`,
       },
     ];
 

@@ -27,18 +27,7 @@ const ticketLimiter = rateLimit({
    POST /api/support/ticket
 ===================================================== */
 
-const multer = require("multer")
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "uploads/")
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname)
-    }
-})
-
-const upload = multer({ storage })
+const upload = require("../config/multer");
 
 router.post(
     "/ticket",

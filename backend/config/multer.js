@@ -1,49 +1,37 @@
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("./cloudinary");
 
-// Ensure folder exists
-const ensureDir = (dirPath) => {
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-};
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    let uploadPath;
-    const isCategoryUpload = req.baseUrl.includes("admin") && req.path.includes("/categories");
-    const isBannerUpload = req.baseUrl.includes('banner') || 
-                          req.path.includes('blocks') || 
-                          req.path.includes('sections');
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    let folderName;
+    const isCategoryUpload = req.baseUrl?.includes("admin") && req.path?.includes("/categories");
+    const isBannerUpload = req.baseUrl?.includes('banner') || 
+                          req.path?.includes('blocks') || 
+                          req.path?.includes('sections');
     
     if (isCategoryUpload) {
-      uploadPath = "uploads/categories/images/";
+      folderName = "imkaa/categories/images";
     } else if (isBannerUpload) {
-      uploadPath = "uploads/banner/";
+      folderName = "imkaa/banner";
     } else {
-      uploadPath = "uploads/products/";
       if (file.mimetype.startsWith("image/")) {
-        uploadPath += "images/";
+        folderName = "imkaa/products/images";
       } else if (file.mimetype.startsWith("video/")) {
-        uploadPath += "videos/";
+        folderName = "imkaa/products/videos";
       } else {
-        return cb(new Error("Only images and videos are allowed"));
+        folderName = "imkaa/others";
       }
     }
-    console.log(`📁 Upload path for ${file.originalname}: ${uploadPath}`);
-    ensureDir(uploadPath);
-    cb(null, uploadPath);
-  },
 
-  filename: function (req, file, cb) {
-    const uniqueName =
-      Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueName = Date.now() + "-" + Math.round(Math.random() * 1e9);
 
-    cb(
-      null,
-      uniqueName + path.extname(file.originalname)
-    );
+    return {
+      folder: folderName,
+      public_id: uniqueName,
+      resource_type: file.mimetype.startsWith("video/") ? "video" : "auto",
+    };
   },
 });
 

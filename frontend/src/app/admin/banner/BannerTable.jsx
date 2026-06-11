@@ -3,6 +3,7 @@
 import { Check, X, Pencil, Trash2 } from "lucide-react";
 
 export default function BannerTable({ banners, selectedIds, onSelect, onSelectAll, onDeselectAll, onEdit, onDelete, onToggle }) {
+
   return (
     <div className="admin-card">
       <table className="w-full min-w-0 text-sm">
