@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FALLBACK_PRODUCT_IMAGE } from "@/lib/images";
 
 export function SkeletonBlock({ className = "", style = {} }) {
@@ -334,11 +334,23 @@ export function AsyncImage({
     setCurrentSrc(src || fallbackSrc);
   }, [src, fallbackSrc]);
 
+  // Handle already-cached images: the browser won't fire onLoad for
+  // images that are already complete when the element mounts.
+  const imgRef = useCallback(
+    (node) => {
+      if (node && node.complete) {
+        setLoaded(true);
+      }
+    },
+    [currentSrc] // re-run when src changes so a newly-cached src is caught
+  );
+
   return (
     <div className={`relative overflow-hidden ${className}`.trim()}>
       {!loaded ? <SkeletonBlock className={`absolute inset-0 ${skeletonClassName}`.trim()} /> : null}
       <img
         {...props}
+        ref={imgRef}
         src={currentSrc}
         alt={alt}
         onLoad={() => setLoaded(true)}
