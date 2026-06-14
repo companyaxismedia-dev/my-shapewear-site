@@ -20,8 +20,8 @@ const categoryVisuals = {
     img: "/image/CategorySlider/panties.png",
     desc: "Soft essentials designed for all-day ease.",
   },
-  shapewear: {
-    img: "/image/CategorySlider/shapewear.png",
+  Imkaa: {
+    img: "/image/CategorySlider/Imkaa.png",
     desc: "Smooth, sculpt, and move with confidence.",
   },
   curvy: {
@@ -57,7 +57,7 @@ export default function CategorySlider() {
               : categoryVisuals[category.slug]?.img;
 
             return {
-              img: imageUrl || "/image/CategorySlider/shapewear.png",
+              img: imageUrl || "/image/CategorySlider/Imkaa.png",
               path: `/${category.slug}`,
               alt: category.name,
               title: category.name,
@@ -70,7 +70,7 @@ export default function CategorySlider() {
 
           setCategoryBanners(banners);
         })
-        .catch(() => {});
+        .catch(() => { });
     };
 
     fetchAndSet();

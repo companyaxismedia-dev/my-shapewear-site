@@ -1,18 +1,42 @@
 [
   {
     "name": "Comfort Lift Bra",
-    "brand": "ShapeWearCo",
+    "brand": "ImkaaCo",
     "category": "bra",
     "subCategory": "non-padded",
     "shortDescription": "Light lift for everyday",
     "thumbnail": "/image/bra/comfort.jpg",
     "productDetails": "Soft microfiber fabric; breathable",
-    "features": ["Adjustable straps", "Light padding"],
-    "materialCare": ["Hand wash", "Do not bleach"],
-    "sizeAndFits": [{"size":"S","fit":true}],
-    "specifications": [{"key":"Material","value":"Microfiber"}],
-    "variants": [{"color":"Black","price":499}],
-    "pincodes": [560001,560002],
+    "features": [
+      "Adjustable straps",
+      "Light padding"
+    ],
+    "materialCare": [
+      "Hand wash",
+      "Do not bleach"
+    ],
+    "sizeAndFits": [
+      {
+        "size": "S",
+        "fit": true
+      }
+    ],
+    "specifications": [
+      {
+        "key": "Material",
+        "value": "Microfiber"
+      }
+    ],
+    "variants": [
+      {
+        "color": "Black",
+        "price": 499
+      }
+    ],
+    "pincodes": [
+      560001,
+      560002
+    ],
     "isFeatured": true,
     "isBestSeller": false,
     "isNewArrival": false,
@@ -25,19 +49,37 @@
     "metaKeywords": "bra,comfort,lift"
   },
   {
-    "name": "Seamless Shapewear",
+    "name": "Seamless Imkaa",
     "brand": "CurveEase",
-    "category": "shapewear",
+    "category": "Imkaa",
     "subCategory": "tummy-control",
     "shortDescription": "Smooth silhouette under clothes",
-    "thumbnail": "/image/shapewear/seamless.jpg",
+    "thumbnail": "/image/Imkaa/seamless.jpg",
     "productDetails": "Firm control with soft lining",
-    "features": ["No-seam design","Breathable"],
-    "materialCare": ["Machine wash cold"],
+    "features": [
+      "No-seam design",
+      "Breathable"
+    ],
+    "materialCare": [
+      "Machine wash cold"
+    ],
     "sizeAndFits": [],
-    "specifications": [{"key":"Control","value":"Firm"}],
-    "variants": [{"size":"M","color":"Nude","price":999}],
-    "pincodes": [560003],
+    "specifications": [
+      {
+        "key": "Control",
+        "value": "Firm"
+      }
+    ],
+    "variants": [
+      {
+        "size": "M",
+        "color": "Nude",
+        "price": 999
+      }
+    ],
+    "pincodes": [
+      560003
+    ],
     "isFeatured": false,
     "isBestSeller": true,
     "isNewArrival": true,
@@ -54,12 +96,31 @@
     "shortDescription": "Comfortable daily panty",
     "thumbnail": "/image/panty/everyday.jpg",
     "productDetails": "Breathable cotton; soft waistband",
-    "features": ["Breathable fabric","Tagless"],
-    "materialCare": ["Machine wash"],
+    "features": [
+      "Breathable fabric",
+      "Tagless"
+    ],
+    "materialCare": [
+      "Machine wash"
+    ],
     "sizeAndFits": [],
-    "specifications": [{"key":"Fabric","value":"Cotton"}],
-    "variants": [{"size":"L","color":"White","price":199}],
-    "pincodes": [560001,560004],
+    "specifications": [
+      {
+        "key": "Fabric",
+        "value": "Cotton"
+      }
+    ],
+    "variants": [
+      {
+        "size": "L",
+        "color": "White",
+        "price": 199
+      }
+    ],
+    "pincodes": [
+      560001,
+      560004
+    ],
     "isFeatured": false,
     "isBestSeller": false,
     "isNewArrival": false,
@@ -76,12 +137,34 @@
     "shortDescription": "Enhanced cleavage push-up",
     "thumbnail": "/image/bra/pushup.jpg",
     "productDetails": "Pocketed cups with removable pads",
-    "features": ["Push-up padding","Underwire"],
-    "materialCare": ["Hand wash only"],
-    "sizeAndFits": [{"size":"34B","fit":true}],
-    "specifications": [{"key":"Padding","value":"Removable"}],
-    "variants": [{"color":"Red","price":799}],
-    "pincodes": [560005],
+    "features": [
+      "Push-up padding",
+      "Underwire"
+    ],
+    "materialCare": [
+      "Hand wash only"
+    ],
+    "sizeAndFits": [
+      {
+        "size": "34B",
+        "fit": true
+      }
+    ],
+    "specifications": [
+      {
+        "key": "Padding",
+        "value": "Removable"
+      }
+    ],
+    "variants": [
+      {
+        "color": "Red",
+        "price": 799
+      }
+    ],
+    "pincodes": [
+      560005
+    ],
     "isFeatured": true,
     "isBestSeller": true,
     "isNewArrival": false,
@@ -98,12 +181,30 @@
     "shortDescription": "Matching lace bra and panty",
     "thumbnail": "/image/lingerie/lace-set.jpg",
     "productDetails": "Delicate lace with lining",
-    "features": ["Lace detailing"],
-    "materialCare": ["Hand wash"],
+    "features": [
+      "Lace detailing"
+    ],
+    "materialCare": [
+      "Hand wash"
+    ],
     "sizeAndFits": [],
-    "specifications": [{"key":"Material","value":"Lace"}],
-    "variants": [{"size":"S","color":"Black","price":1599}],
-    "pincodes": [560002,560006],
+    "specifications": [
+      {
+        "key": "Material",
+        "value": "Lace"
+      }
+    ],
+    "variants": [
+      {
+        "size": "S",
+        "color": "Black",
+        "price": 1599
+      }
+    ],
+    "pincodes": [
+      560002,
+      560006
+    ],
     "isFeatured": false,
     "isBestSeller": false,
     "isNewArrival": true,

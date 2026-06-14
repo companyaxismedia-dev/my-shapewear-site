@@ -15,7 +15,7 @@ async function getBlogPageData() {
 export const metadata = {
   title: "Blog | Imkaa",
   description:
-    "Explore lingerie tips, bra guides, shapewear ideas, buying guides and fashion stories from Imkaa.",
+    "Explore lingerie tips, bra guides, Imkaa ideas, buying guides and fashion stories from Imkaa.",
 };
 
 export default async function BlogPage() {
@@ -58,9 +58,9 @@ export default async function BlogPage() {
         ))}
 
         {!page.heroPosts?.length &&
-        !page.recentPosts?.length &&
-        !page.popularPosts?.length &&
-        !editorialSections.length ? (
+          !page.recentPosts?.length &&
+          !page.popularPosts?.length &&
+          !editorialSections.length ? (
           <div className="mx-auto max-w-[1540px] px-4 py-16 lg:px-6">
             <div className="rounded-[12px] border border-[#ead9de] bg-white p-10 text-center">
               <h2 className="font-[Playfair_Display] text-[28px] text-[#3b2228]">

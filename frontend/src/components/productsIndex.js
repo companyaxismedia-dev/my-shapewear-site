@@ -2,13 +2,13 @@
 import { curvyProduct } from "@/app/curvy/page";
 import { lingierieProducts } from "@/app/lingerie/page";
 import { pantyProducts } from "@/app/panties/page";
-import { shapeProducts } from "@/app/shapewear/page";
+import { shapeProducts } from "@/app/Imkaa/page";
 import { tummyProduct } from "@/app/tummy-control/page";
 
 
 /* ================= API BASE ================= */
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /* ================= FETCH CATEGORY PRODUCTS ================= */
 
@@ -59,8 +59,8 @@ export const getCategoryPrice = async (category) => {
     off:
       cheapest.mrp && cheapest.price
         ? `${Math.round(
-            ((cheapest.mrp - cheapest.price) / cheapest.mrp) * 100
-          )}%`
+          ((cheapest.mrp - cheapest.price) / cheapest.mrp) * 100
+        )}%`
         : "0%",
   };
 };

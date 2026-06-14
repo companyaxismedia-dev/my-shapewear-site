@@ -19,7 +19,7 @@ const FALLBACK_NAV_CATEGORIES = [
   { name: "Bras", href: "/bra", subCategories: [] },
   { name: "Panties", href: "/panties", subCategories: [] },
   { name: "Lingerie", href: "/lingerie", subCategories: [] },
-  { name: "Shapewear", href: "/shapewear", subCategories: [] },
+  { name: "Imkaa", href: "/Imkaa", subCategories: [] },
   { name: "Curvy", href: "/curvy", subCategories: [] },
   { name: "Tummy Control", href: "/tummy-control", subCategories: [] },
 ];
@@ -645,10 +645,10 @@ function HomeNavbar({ onLoginToggle, pathname }) {
                       {link.name}
                     </LinkNav>
                   ))}
-                                  <LinkNav href="/blog"
-                  className="px-4 py-1.5 rounded-full text-md font-semibold transition">
-                  Blogs
-                </LinkNav>
+                  <LinkNav href="/blog"
+                    className="px-4 py-1.5 rounded-full text-md font-semibold transition">
+                    Blogs
+                  </LinkNav>
 
                 </nav>
 

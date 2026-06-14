@@ -23,7 +23,7 @@ export default function Footer() {
     { label: "Bras", link: "/bra" },
     { label: "Panties", link: "/panties" },
     { label: "Lingerie", link: "/lingerie" },
-    { label: "Shapewear", link: "/shapewear" },
+    { label: "Imkaa", link: "/Imkaa" },
     { label: "Curvy Collection", link: "/curvy" },
     { label: "Tummy Control", link: "/tummy-control" },
     { label: "Sale", link: "/exclusive" },
@@ -46,7 +46,7 @@ export default function Footer() {
           { label: "Sale", link: "/exclusive" },
         ]);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       active = false;

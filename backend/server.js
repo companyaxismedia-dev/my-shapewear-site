@@ -24,7 +24,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
-  "https://my-shapewear-site.vercel.app",
+  "https://my-Imkaa-site.vercel.app",
   "https://www.imkaa.com"
 ];
 

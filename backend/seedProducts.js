@@ -15,8 +15,8 @@ const imageBasePath = path.join(__dirname, "../frontend/public/image");
 const categories = {
   bra: "bra",
   panty: "panties",
-  shapewear: "shapewear",
-  "tummy-control": "shapewear",
+  Imkaa: "Imkaa",
+  "tummy-control": "Imkaa",
   "lingerie-set-gum": "lingerie"
 };
 
@@ -27,7 +27,7 @@ async function seedProducts() {
 
     // Get or create an admin user for seeding
     let adminUser = await User.findOne({ role: "admin" });
-    
+
     if (!adminUser) {
       console.log("No admin user found. Please create an admin user first.");
       process.exit(1);

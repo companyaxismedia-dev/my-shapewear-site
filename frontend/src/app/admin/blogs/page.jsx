@@ -168,7 +168,7 @@ function BlogFormModal({
                       className={getFieldClass(Boolean(errors.title))}
                       value={form.title}
                       onChange={(e) => setFormField("title", e.target.value)}
-                      placeholder="e.g. Best shapewear for lehenga season"
+                      placeholder="e.g. Best Imkaa for lehenga season"
                     />
                     {errors.title ? (
                       <p className="mt-1 text-xs font-medium text-red-600">{errors.title}</p>
@@ -225,9 +225,8 @@ function BlogFormModal({
                 </div>
 
                 <div
-                  className={`rounded-xl border bg-muted/20 p-4 ${
-                    errors.image ? "border-red-500" : "border-border/70"
-                  }`}
+                  className={`rounded-xl border bg-muted/20 p-4 ${errors.image ? "border-red-500" : "border-border/70"
+                    }`}
                 >
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div>
@@ -385,7 +384,7 @@ function BlogFormModal({
                         className={getFieldClass(Boolean(errors.categoryLabel))}
                         value={form.categoryLabel}
                         onChange={(e) => onCategoryLabelChange(e.target.value)}
-                        placeholder="e.g. Shapewear Tips"
+                        placeholder="e.g. Imkaa Tips"
                       />
                       {errors.categoryLabel ? (
                         <p className="mt-1 text-xs font-medium text-red-600">
@@ -402,7 +401,7 @@ function BlogFormModal({
                         className={inputClass}
                         value={form.category}
                         onChange={(e) => setFormField("category", e.target.value)}
-                        placeholder="e.g. shapewear-tips"
+                        placeholder="e.g. Imkaa-tips"
                       />
                     </div>
 
@@ -484,7 +483,7 @@ function BlogFormModal({
                         className={`${inputClass} min-h-24 resize-y`}
                         value={form.tagsText}
                         onChange={(e) => setFormField("tagsText", e.target.value)}
-                        placeholder={"bridal shapewear\nsize guide"}
+                        placeholder={"bridal Imkaa\nsize guide"}
                       />
                     </div>
 
@@ -1211,11 +1210,10 @@ export default function AdminBlogsPage() {
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                            blog.isPublished
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${blog.isPublished
                               ? "bg-emerald-100 text-emerald-700"
                               : "bg-amber-100 text-amber-700"
-                          }`}
+                            }`}
                         >
                           {blog.isPublished ? "Published" : "Draft"}
                         </span>
@@ -1262,153 +1260,152 @@ export default function AdminBlogsPage() {
           <div className="admin-card min-w-0 overflow-hidden">
             <div className="p-4">
               <table className="w-full table-fixed text-xs xl:text-sm">
-            <thead>
-              <tr className="bg-muted/30 text-left text-foreground">
-                <th className="w-12 px-4 py-4">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 accent-primary"
-                    checked={allVisibleSelected}
-                    onChange={toggleSelectAllVisible}
-                    aria-label="Select all visible blogs"
-                  />
-                </th>
-                <th className="w-[28%] px-4 py-4 font-semibold">Blog</th>
-                <th className="w-[14%] px-4 py-4 font-semibold">Section</th>
-                <th className="w-[12%] px-4 py-4 font-semibold">Category</th>
-                <th className="w-[12%] px-4 py-4 font-semibold">Status</th>
-                <th className="hidden w-[12%] px-4 py-4 font-semibold xl:table-cell">Order</th>
-                <th className="w-[12%] px-4 py-4 font-semibold">Published</th>
-                <th className="hidden w-[10%] px-4 py-4 font-semibold 2xl:table-cell">Updated</th>
-                <th className="w-[12%] px-4 py-4 text-right font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
-                    Loading blogs...
-                  </td>
-                </tr>
-              ) : blogs.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
-                    {emptyStateLabel}
-                  </td>
-                </tr>
-              ) : (
-                blogs.map((blog) => {
-                  const isSelected = selectedIds.includes(blog._id);
-
-                  return (
-                    <tr key={blog._id} className="border-b border-border/60 last:border-b-0">
-                      <td className="px-4 py-4">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 accent-primary"
-                          checked={isSelected}
-                          onChange={() => toggleBlogSelection(blog._id)}
-                          aria-label={`Select ${blog.title}`}
-                        />
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="h-14 w-14 overflow-hidden rounded-lg border border-border bg-muted">
-                            {blog.image ? (
-                              <img
-                                src={resolveMediaUrl(blog.image)}
-                                alt={blog.title}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : null}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="line-clamp-1 font-semibold text-foreground">
-                              {blog.title}
-                            </p>
-                            <p className="line-clamp-1 text-xs text-muted-foreground">
-                              /{blog.slug}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div>
-                          <p className="font-medium text-foreground">{blog.sectionLabel}</p>
-                          <p className="text-xs text-muted-foreground xl:hidden">
-                            Order {blog.cardOrder ?? 0}
-                          </p>
-                          <p className="hidden text-xs text-muted-foreground xl:block">
-                            {blog.section}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div>
-                          <p className="font-medium text-foreground">{blog.categoryLabel}</p>
-                          <p className="text-xs text-muted-foreground">{blog.category}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-col gap-1">
-                          <span
-                            className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
-                              blog.isPublished
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {blog.isPublished ? "Published" : "Draft"}
-                          </span>
-                          {blog.isFeatured ? (
-                            <span className="inline-flex w-fit rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
-                              Featured
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="hidden px-4 py-4 text-muted-foreground xl:table-cell">
-                        <div className="space-y-1">
-                          <p>Hero: {blog.heroRank ?? 0}</p>
-                          <p>Section: {blog.sectionOrder ?? 0}</p>
-                          <p>Card: {blog.cardOrder ?? 0}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <CalendarDays className="h-4 w-4" />
-                          <span>{formatDate(blog.publishedAt)}</span>
-                        </div>
-                      </td>
-                      <td className="hidden px-4 py-4 text-muted-foreground 2xl:table-cell">
-                        {formatDate(blog.updatedAt)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(blog)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-blue-700 xl:px-4 xl:text-sm"
-                          >
-                            <Pencil size={14} /> Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget(blog);
-                              setDeleteOpen(true);
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-red-600 xl:px-4 xl:text-sm"
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
-                        </div>
+                <thead>
+                  <tr className="bg-muted/30 text-left text-foreground">
+                    <th className="w-12 px-4 py-4">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary"
+                        checked={allVisibleSelected}
+                        onChange={toggleSelectAllVisible}
+                        aria-label="Select all visible blogs"
+                      />
+                    </th>
+                    <th className="w-[28%] px-4 py-4 font-semibold">Blog</th>
+                    <th className="w-[14%] px-4 py-4 font-semibold">Section</th>
+                    <th className="w-[12%] px-4 py-4 font-semibold">Category</th>
+                    <th className="w-[12%] px-4 py-4 font-semibold">Status</th>
+                    <th className="hidden w-[12%] px-4 py-4 font-semibold xl:table-cell">Order</th>
+                    <th className="w-[12%] px-4 py-4 font-semibold">Published</th>
+                    <th className="hidden w-[10%] px-4 py-4 font-semibold 2xl:table-cell">Updated</th>
+                    <th className="w-[12%] px-4 py-4 text-right font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                        Loading blogs...
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
+                  ) : blogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                        {emptyStateLabel}
+                      </td>
+                    </tr>
+                  ) : (
+                    blogs.map((blog) => {
+                      const isSelected = selectedIds.includes(blog._id);
+
+                      return (
+                        <tr key={blog._id} className="border-b border-border/60 last:border-b-0">
+                          <td className="px-4 py-4">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 accent-primary"
+                              checked={isSelected}
+                              onChange={() => toggleBlogSelection(blog._id)}
+                              aria-label={`Select ${blog.title}`}
+                            />
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="h-14 w-14 overflow-hidden rounded-lg border border-border bg-muted">
+                                {blog.image ? (
+                                  <img
+                                    src={resolveMediaUrl(blog.image)}
+                                    alt={blog.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : null}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="line-clamp-1 font-semibold text-foreground">
+                                  {blog.title}
+                                </p>
+                                <p className="line-clamp-1 text-xs text-muted-foreground">
+                                  /{blog.slug}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div>
+                              <p className="font-medium text-foreground">{blog.sectionLabel}</p>
+                              <p className="text-xs text-muted-foreground xl:hidden">
+                                Order {blog.cardOrder ?? 0}
+                              </p>
+                              <p className="hidden text-xs text-muted-foreground xl:block">
+                                {blog.section}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div>
+                              <p className="font-medium text-foreground">{blog.categoryLabel}</p>
+                              <p className="text-xs text-muted-foreground">{blog.category}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex flex-col gap-1">
+                              <span
+                                className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-medium ${blog.isPublished
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-amber-100 text-amber-700"
+                                  }`}
+                              >
+                                {blog.isPublished ? "Published" : "Draft"}
+                              </span>
+                              {blog.isFeatured ? (
+                                <span className="inline-flex w-fit rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
+                                  Featured
+                                </span>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="hidden px-4 py-4 text-muted-foreground xl:table-cell">
+                            <div className="space-y-1">
+                              <p>Hero: {blog.heroRank ?? 0}</p>
+                              <p>Section: {blog.sectionOrder ?? 0}</p>
+                              <p>Card: {blog.cardOrder ?? 0}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <CalendarDays className="h-4 w-4" />
+                              <span>{formatDate(blog.publishedAt)}</span>
+                            </div>
+                          </td>
+                          <td className="hidden px-4 py-4 text-muted-foreground 2xl:table-cell">
+                            {formatDate(blog.updatedAt)}
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(blog)}
+                                className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-blue-700 xl:px-4 xl:text-sm"
+                              >
+                                <Pencil size={14} /> Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeleteTarget(blog);
+                                  setDeleteOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white transition hover:bg-red-600 xl:px-4 xl:text-sm"
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
               </table>
             </div>
           </div>

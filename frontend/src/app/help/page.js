@@ -33,7 +33,7 @@ export default function HelpCenterPage() {
       ],
       size: [
         { q: "How do I choose the right size?", a: "Use the product size chart and compare with your measurements. If you’re between sizes, we generally recommend sizing up for comfort." },
-        { q: "Will it feel too tight?", a: "Shapewear offers gentle compression. It may feel snug at first, but should not feel restrictive." },
+        { q: "Will it feel too tight?", a: "Imkaa offers gentle compression. It may feel snug at first, but should not feel restrictive." },
         { q: "What if I ordered the wrong size?", a: "You can request an exchange within 7 days of delivery if the item is unused, unwashed, and in original packaging." },
       ],
       quality: [

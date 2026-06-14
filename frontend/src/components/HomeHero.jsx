@@ -65,7 +65,7 @@ export default function HomeHero() {
               >
                 <Image
                   src="/hero-image/home-122.jpeg"
-                  alt="Premium shapewear collection"
+                  alt="Premium Imkaa collection"
                   fill
                   sizes="(max-width: 1024px) 100vw, (max-width: 1536px) 50vw, 50vw"
                   className="object-cover"

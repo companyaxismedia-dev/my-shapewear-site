@@ -6,7 +6,7 @@ import Link from "next/link";
 const navItems = [
   { label: "LINGERIE", href: "/lingerie" },
   { label: "WOMEN'S WEAR", href: "/new-arrivals" },
-  { label: "SHAPEWEAR", href: "/shapewear" },
+  { label: "Imkaa", href: "/Imkaa" },
   { label: "GIFTS", href: "/gift-card" },
 ];
 
@@ -60,14 +60,14 @@ export default function NotFoundPage({ isAdminPage = false }) {
           <div className="flex items-start gap-4">
             <div className="w-[43%] shrink-0 pt-1">
               <div className="] bg-[linear-gradient(180deg,#fff7f4_0%,#fffaf8_42%,#fff7f3_100%)]">
-              <Image
-                src="/image/notfound.png"
-                alt="404 not found"
-                width={320}
-                height={320}
-                className="h-auto w-full max-w-[180px] object-contain mix-blend-multiply"
-                priority
-              />
+                <Image
+                  src="/image/notfound.png"
+                  alt="404 not found"
+                  width={320}
+                  height={320}
+                  className="h-auto w-full max-w-[180px] object-contain mix-blend-multiply"
+                  priority
+                />
               </div>
             </div>
 

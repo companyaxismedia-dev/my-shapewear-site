@@ -7,30 +7,30 @@ const normalizeBaseUrl = (value) =>
 const API_BASE =
   normalizeBaseUrl(process.env.API_BASE_URL) ||
   normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL) ||
-  "https://my-shapewear-site.onrender.com";
+  "https://my-Imkaa-site.onrender.com";
 
 const apiUrl = new URL(API_BASE);
 const API_ORIGIN = apiUrl.origin;
 
 const nextConfig = {
-    poweredByHeader: false,
-    // Allow opening dev server from LAN/mobile
-    allowedDevOrigins: [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://127.0.0.1:3000",
-      "http://127.0.0.1:3001",
-      "http://192.168.1.6:3000",
-      "http://192.168.1.5:3001",
-    ],
-    async rewrites() {
-      return [
-        {
-          source: '/api/:path*',
-          destination: `${API_BASE}/api/:path*`,
-        },
-      ];
-    },
+  poweredByHeader: false,
+  // Allow opening dev server from LAN/mobile
+  allowedDevOrigins: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://192.168.1.6:3000",
+    "http://192.168.1.5:3001",
+  ],
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${API_BASE}/api/:path*`,
+      },
+    ];
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

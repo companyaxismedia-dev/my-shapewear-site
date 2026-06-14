@@ -226,7 +226,7 @@ export default function HomeReviewsSection() {
               fontFamily: "var(--font-body)",
             }}
           >
-            Real reviews from bra, panty, tummy control, shapewear, curvy and
+            Real reviews from bra, panty, tummy control, Imkaa, curvy and
             lingerie customers.
           </p>
         </div>
@@ -361,9 +361,8 @@ export default function HomeReviewsSection() {
 
                     <div className="review-content">
                       <p
-                        className={`text-[13px] md:text-[14px] leading-7 ${
-                          isExpanded ? "review-text-expanded" : "review-text-3"
-                        }`}
+                        className={`text-[13px] md:text-[14px] leading-7 ${isExpanded ? "review-text-expanded" : "review-text-3"
+                          }`}
                         style={{
                           color: "var(--color-text)",
                           fontFamily: "Inter, sans-serif",
@@ -405,7 +404,7 @@ export default function HomeReviewsSection() {
                               fontWeight: 700,
                             }}
                           >
-                            {review.productCategory || "Shapewear"}
+                            {review.productCategory || "Imkaa"}
                           </p>
 
                           <p

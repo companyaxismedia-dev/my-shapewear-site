@@ -134,169 +134,169 @@ function CategoryFormModal({
 
         <div className="overflow-auto p-5">
           <form id="categoryForm" onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Category Name
-            </label>
-            <input
-              className={inputClass}
-              value={form.name}
-              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g. Shapewear"
-              required
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Category Name
+              </label>
+              <input
+                className={inputClass}
+                value={form.name}
+                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g. Imkaa"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Parent Category
-            </label>
-            <select
-              className={inputClass}
-              value={form.parent}
-              onChange={(e) => setForm((prev) => ({ ...prev, parent: e.target.value }))}
-            >
-              <option value="">None (Main Category)</option>
-              {categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {"- ".repeat(category.depth)}
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Description
-            </label>
-            <textarea
-              className={`${inputClass} min-h-24 resize-y`}
-              value={form.description}
-              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-              placeholder="Short category description"
-            />
-          </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Parent Category
+              </label>
+              <select
+                className={inputClass}
+                value={form.parent}
+                onChange={(e) => setForm((prev) => ({ ...prev, parent: e.target.value }))}
+              >
+                <option value="">None (Main Category)</option>
+                {categories.map((category) => (
+                  <option key={category._id} value={category._id}>
+                    {"- ".repeat(category.depth)}
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Category Image
-            </label>
-            <input
-              className={inputClass}
-              type="file"
-              accept="image/*"
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  imageFile: e.target.files?.[0] || null,
-                }))
-              }
-            />
-            {imagePreviewUrl ? (
-              <img
-                src={imagePreviewUrl}
-                alt="Category preview"
-                className="mt-3 h-24 w-full max-w-full sm:max-w-xs rounded-xl border border-border object-cover"
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Description
+              </label>
+              <textarea
+                className={`${inputClass} min-h-24 resize-y`}
+                value={form.description}
+                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                placeholder="Short category description"
               />
-            ) : null}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Meta Title
-            </label>
-            <input
-              className={inputClass}
-              value={form.metaTitle}
-              onChange={(e) => setForm((prev) => ({ ...prev, metaTitle: e.target.value }))}
-              placeholder="SEO title"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Sort Order
-            </label>
-            <input
-              className={inputClass}
-              type="number"
-              value={form.sortOrder}
-              onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
-              placeholder="0"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Meta Description
-            </label>
-            <textarea
-              className={`${inputClass} min-h-20 resize-y`}
-              value={form.metaDescription}
-              onChange={(e) => setForm((prev) => ({ ...prev, metaDescription: e.target.value }))}
-              placeholder="SEO description"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Meta Keywords
-            </label>
-            <input
-              className={inputClass}
-              value={form.metaKeywords}
-              onChange={(e) => setForm((prev) => ({ ...prev, metaKeywords: e.target.value }))}
-              placeholder="shapewear, body shaper, tummy control"
-            />
-          </div>
-
-          <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-3">
-            <div>
-              <p className="text-sm font-medium">Active Category</p>
-              <p className="text-xs text-muted-foreground">
-                Active categories stay available for assignment.
-              </p>
             </div>
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-primary"
-              checked={form.isActive}
-              onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
-            />
-          </div>
 
-          <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-3">
-            <div>
-              <p className="text-sm font-medium">Show In Navbar</p>
-              <p className="text-xs text-muted-foreground">
-                Show this category in navbar and home navigation sections.
-              </p>
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Category Image
+              </label>
+              <input
+                className={inputClass}
+                type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    imageFile: e.target.files?.[0] || null,
+                  }))
+                }
+              />
+              {imagePreviewUrl ? (
+                <img
+                  src={imagePreviewUrl}
+                  alt="Category preview"
+                  className="mt-3 h-24 w-full max-w-full sm:max-w-xs rounded-xl border border-border object-cover"
+                />
+              ) : null}
             </div>
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-primary"
-              checked={form.showInNavbar}
-              onChange={(e) => setForm((prev) => ({ ...prev, showInNavbar: e.target.checked }))}
-            />
-          </div>
 
-          <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-3">
             <div>
-              <p className="text-sm font-medium">Show In Shop By Category</p>
-              <p className="text-xs text-muted-foreground">
-                Include this category in the front-end Shop By Category slider.
-              </p>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Meta Title
+              </label>
+              <input
+                className={inputClass}
+                value={form.metaTitle}
+                onChange={(e) => setForm((prev) => ({ ...prev, metaTitle: e.target.value }))}
+                placeholder="SEO title"
+              />
             </div>
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-primary"
-              checked={form.showInCategorySlider}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, showInCategorySlider: e.target.checked }))
-              }
-            />
-          </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Sort Order
+              </label>
+              <input
+                className={inputClass}
+                type="number"
+                value={form.sortOrder}
+                onChange={(e) => setForm((prev) => ({ ...prev, sortOrder: e.target.value }))}
+                placeholder="0"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Meta Description
+              </label>
+              <textarea
+                className={`${inputClass} min-h-20 resize-y`}
+                value={form.metaDescription}
+                onChange={(e) => setForm((prev) => ({ ...prev, metaDescription: e.target.value }))}
+                placeholder="SEO description"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Meta Keywords
+              </label>
+              <input
+                className={inputClass}
+                value={form.metaKeywords}
+                onChange={(e) => setForm((prev) => ({ ...prev, metaKeywords: e.target.value }))}
+                placeholder="Imkaa, body shaper, tummy control"
+              />
+            </div>
+
+            <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-3">
+              <div>
+                <p className="text-sm font-medium">Active Category</p>
+                <p className="text-xs text-muted-foreground">
+                  Active categories stay available for assignment.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={form.isActive}
+                onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+              />
+            </div>
+
+            <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-3">
+              <div>
+                <p className="text-sm font-medium">Show In Navbar</p>
+                <p className="text-xs text-muted-foreground">
+                  Show this category in navbar and home navigation sections.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={form.showInNavbar}
+                onChange={(e) => setForm((prev) => ({ ...prev, showInNavbar: e.target.checked }))}
+              />
+            </div>
+
+            <div className="md:col-span-2 flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-3">
+              <div>
+                <p className="text-sm font-medium">Show In Shop By Category</p>
+                <p className="text-xs text-muted-foreground">
+                  Include this category in the front-end Shop By Category slider.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={form.showInCategorySlider}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, showInCategorySlider: e.target.checked }))
+                }
+              />
+            </div>
 
           </form>
         </div>
@@ -428,7 +428,7 @@ export default function CategoriesPage() {
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("categories:updated"));
         }
-      } catch (e) {}
+      } catch (e) { }
     } catch (error) {
       toast.error(error.message || "Failed to save category");
     } finally {
@@ -470,9 +470,9 @@ export default function CategoriesPage() {
 
   const selectableParentCategories = editingCategory
     ? categories.filter((category) => {
-        if (category._id === editingCategory._id) return false;
-        return !hasAncestor(category, editingCategory._id);
-      })
+      if (category._id === editingCategory._id) return false;
+      return !hasAncestor(category, editingCategory._id);
+    })
     : categories;
 
   const handleDelete = async () => {
@@ -732,22 +732,20 @@ export default function CategoriesPage() {
                           </td>
                           <td className="px-4 py-5">
                             <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                                category.showInNavbar !== false
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${category.showInNavbar !== false
                                   ? "bg-emerald-100 text-emerald-700"
                                   : "bg-slate-100 text-slate-600"
-                              }`}
+                                }`}
                             >
                               {category.showInNavbar !== false ? "Shown" : "Hidden"}
                             </span>
                           </td>
                           <td className="px-4 py-5">
                             <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                                category.showInCategorySlider !== false
+                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${category.showInCategorySlider !== false
                                   ? "bg-emerald-100 text-emerald-700"
                                   : "bg-slate-100 text-slate-600"
-                              }`}
+                                }`}
                             >
                               {category.showInCategorySlider !== false ? "Shown" : "Hidden"}
                             </span>

@@ -15,12 +15,12 @@ const PLAYFAIR = "'Playfair Display', serif";
 export default function AboutPage() {
   const reviews = [
     { name: "Ananya Sharma", city: "Delhi", text: "The fabric feels incredibly soft and breathable while giving perfect body support. My outfits look so much more polished." },
-    { name: "Priya Kapoor", city: "Mumbai", text: "Unlike other shapewear brands, this never feels tight. It gives a smooth shape and I can wear it all day comfortably." },
+    { name: "Priya Kapoor", city: "Mumbai", text: "Unlike other Imkaa brands, this never feels tight. It gives a smooth shape and I can wear it all day comfortably." },
     { name: "Neha Verma", city: "Bangalore", text: "Premium quality that fits perfectly. A natural shape without feeling restrictive — exactly what I was looking for." },
     { name: "Riya Mehta", city: "Pune", text: "Perfect for everyday outfits. The fabric feels light, breathable, and gives me confidence in everything I wear." },
     { name: "Simran Kaur", city: "Chandigarh", text: "I've tried many brands but IMKAA is by far the most comfortable. It fits beautifully and stays in place all day." },
-    { name: "Kritika Jain", city: "Jaipur", text: "The shaping effect is completely natural. IMKAA really understands what women need from everyday shapewear." },
-    { name: "Pooja Arora", city: "Lucknow", text: "My dresses look so smooth wearing IMKAA shapewear. The material is premium and the design is thoughtfully done." },
+    { name: "Kritika Jain", city: "Jaipur", text: "The shaping effect is completely natural. IMKAA really understands what women need from everyday Imkaa." },
+    { name: "Pooja Arora", city: "Lucknow", text: "My dresses look so smooth wearing IMKAA Imkaa. The material is premium and the design is thoughtfully done." },
     { name: "Megha Gupta", city: "Hyderabad", text: "Both comfort and confidence in one product. Excellent fabric quality that works perfectly under any outfit." },
   ];
 
@@ -37,7 +37,7 @@ export default function AboutPage() {
             About IMKAA
           </h1>
           <p style={{ fontFamily: INTER, fontSize: '16px', color: '#6F5560', lineHeight: 1.7, maxWidth: '680px', margin: '0 auto' }}>
-            IMKAA is a modern fashion and lifestyle brand created to bring confidence, comfort, and elegance to every woman. We design shapewear and fashion essentials that celebrate real body shapes and real lifestyles.
+            IMKAA is a modern fashion and lifestyle brand created to bring confidence, comfort, and elegance to every woman. We design Imkaa and fashion essentials that celebrate real body shapes and real lifestyles.
           </p>
         </div>
       </section>
@@ -54,7 +54,7 @@ export default function AboutPage() {
                 A Brand Built on Confidence
               </h2>
               <p style={{ fontFamily: INTER, fontSize: '15px', color: '#6F5560', lineHeight: 1.75, marginBottom: '16px' }}>
-                IMKAA was founded with a simple vision — to create shapewear that supports the natural body while enhancing comfort, style, and confidence. We believe fashion should never compromise comfort, and every woman deserves clothing that fits beautifully and feels effortless throughout the day.
+                IMKAA was founded with a simple vision — to create Imkaa that supports the natural body while enhancing comfort, style, and confidence. We believe fashion should never compromise comfort, and every woman deserves clothing that fits beautifully and feels effortless throughout the day.
               </p>
               <p style={{ fontFamily: INTER, fontSize: '15px', color: '#6F5560', lineHeight: 1.75, marginBottom: '16px' }}>
                 Inspired by the evolving needs of modern women, our collections are built using carefully selected fabrics, innovative shaping technology, and modern silhouettes that complement different body types.
@@ -129,7 +129,7 @@ export default function AboutPage() {
               Our Mission
             </h2>
             <p style={{ fontFamily: INTER, fontSize: '15px', color: '#6F5560', lineHeight: 1.75, marginBottom: '14px' }}>
-              To create shapewear and fashion essentials that empower women to feel confident and comfortable in their own skin. We focus on designs that enhance natural body shapes while providing maximum comfort for everyday wear.
+              To create Imkaa and fashion essentials that empower women to feel confident and comfortable in their own skin. We focus on designs that enhance natural body shapes while providing maximum comfort for everyday wear.
             </p>
             <p style={{ fontFamily: INTER, fontSize: '15px', color: '#6F5560', lineHeight: 1.75 }}>
               By combining innovative fabrics, thoughtful design, and real customer feedback, IMKAA celebrates body positivity and encourages every woman to embrace her individuality.
@@ -144,7 +144,7 @@ export default function AboutPage() {
               Our Vision
             </h2>
             <p style={{ fontFamily: INTER, fontSize: '15px', color: '#6F5560', lineHeight: 1.75, marginBottom: '14px' }}>
-              To become a trusted shapewear and lifestyle brand that supports women across the world — delivering high-quality products that combine elegance, innovation, and comfort.
+              To become a trusted Imkaa and lifestyle brand that supports women across the world — delivering high-quality products that combine elegance, innovation, and comfort.
             </p>
             <p style={{ fontFamily: INTER, fontSize: '15px', color: '#6F5560', lineHeight: 1.75 }}>
               Through continuous improvement and community feedback, IMKAA strives to create fashion solutions that make everyday life more comfortable, stylish, and empowering.
