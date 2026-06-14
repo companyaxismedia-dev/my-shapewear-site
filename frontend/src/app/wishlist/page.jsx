@@ -65,7 +65,7 @@ export default function WishlistPage() {
           </p>
 
           <div className="mt-6 bg-gray-100 px-6 py-3 rounded text-sm text-gray-600">
-            Bras &nbsp;|&nbsp; Panties &nbsp;|&nbsp; Nightwear &nbsp;|&nbsp;
+            Suits &nbsp;|&nbsp; Kurtis &nbsp;|&nbsp; Nightwear &nbsp;|&nbsp;
             <span className="text-pink-600 font-semibold">Offers</span>
           </div>
         </div>

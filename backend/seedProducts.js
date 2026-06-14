@@ -13,11 +13,11 @@ mongoose.connect(process.env.MONGO_URI)
 const imageBasePath = path.join(__dirname, "../frontend/public/image");
 
 const categories = {
-  bra: "bra",
-  panty: "panties",
+  bra: "suits",
+  panty: "Kurtis",
   Imkaa: "Imkaa",
   "tummy-control": "Imkaa",
-  "lingerie-set-gum": "lingerie"
+  "lingerie-set-gum": "kurta-sets"
 };
 
 async function seedProducts() {

@@ -46,7 +46,7 @@ export default function HomeHero() {
                 <Link href="/exclusive" className="btn-primary-imkaa text-center">
                   Shop Exclusive
                 </Link>
-                <Link href="/bra" className="btn-secondary-imkaa text-center">
+                <Link href="/suits" className="btn-secondary-imkaa text-center">
                   View Products
                 </Link>
               </div>

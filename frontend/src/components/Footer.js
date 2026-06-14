@@ -20,9 +20,9 @@ const PLAYFAIR = "'Playfair Display', serif";
 
 export default function Footer() {
   const [shopLinks, setShopLinks] = React.useState([
-    { label: "Bras", link: "/bra" },
-    { label: "Panties", link: "/panties" },
-    { label: "Lingerie", link: "/lingerie" },
+    { label: "Suits", link: "/suits" },
+    { label: "Kurtis", link: "/Kurtis" },
+    { label: "Kurta Sets", link: "/kurta-sets" },
     { label: "Imkaa", link: "/Imkaa" },
     { label: "Curvy Collection", link: "/curvy" },
     { label: "Tummy Control", link: "/tummy-control" },
@@ -60,7 +60,7 @@ export default function Footer() {
     { label: "FAQs", link: "/faq" },
     { label: "Help Centre", link: "/help" },
     { label: "Contact Us", link: "/faq#contact-us" },
-    { label: "Bra Size Calculator", link: "/bra-size-calculator" },
+    { label: "Size Calculator", link: "/size-calculator" },
   ];
 
   const companyLinks = [

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 const navItems = [
-  { label: "LINGERIE", href: "/lingerie" },
+  { label: "KURTA SETS", href: "/kurta-sets" },
   { label: "WOMEN'S WEAR", href: "/new-arrivals" },
   { label: "Imkaa", href: "/Imkaa" },
   { label: "GIFTS", href: "/gift-card" },

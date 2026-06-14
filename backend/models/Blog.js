@@ -70,10 +70,10 @@ const blogSchema = new mongoose.Schema(
       // recent-posts
       // most-popular
       // how-tos
-      // lingerie-101
+      // ethnic-wear-101
       // buying-guide
-      // clovia-buzz
-      // clovia-connect
+      // imkaa-buzz
+      // imkaa-connect
     },
 
     sectionLabel: {

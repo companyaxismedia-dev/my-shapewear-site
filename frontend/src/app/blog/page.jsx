@@ -15,7 +15,7 @@ async function getBlogPageData() {
 export const metadata = {
   title: "Blog | Imkaa",
   description:
-    "Explore lingerie tips, bra guides, Imkaa ideas, buying guides and fashion stories from Imkaa.",
+    "Explore ethnic wear tips, styling guides, Imkaa ideas, buying guides and fashion stories from Imkaa.",
 };
 
 export default async function BlogPage() {

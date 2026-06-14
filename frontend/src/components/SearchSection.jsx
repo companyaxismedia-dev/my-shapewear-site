@@ -202,7 +202,7 @@ const SearchSection = ({
         <form onSubmit={handleSearchSubmit} className="relative">
           <input
             type="text"
-            placeholder="Search for bras, panties..."
+            placeholder="Search for Ethnic Wears..."
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);

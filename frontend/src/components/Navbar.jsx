@@ -16,9 +16,9 @@ import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
 import { SkeletonBlock } from "@/components/loaders/Loaders";
 
 const FALLBACK_NAV_CATEGORIES = [
-  { name: "Bras", href: "/bra", subCategories: [] },
-  { name: "Panties", href: "/panties", subCategories: [] },
-  { name: "Lingerie", href: "/lingerie", subCategories: [] },
+  { name: "Suits", href: "/suits", subCategories: [] },
+  { name: "Kurtis", href: "/Kurtis", subCategories: [] },
+  { name: "Kurta Sets", href: "/kurta-sets", subCategories: [] },
   { name: "Imkaa", href: "/Imkaa", subCategories: [] },
   { name: "Curvy", href: "/curvy", subCategories: [] },
   { name: "Tummy Control", href: "/tummy-control", subCategories: [] },

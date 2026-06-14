@@ -1554,7 +1554,7 @@ export const ProductForm = forwardRef(function ProductForm({
                                       </span>
                                     </td>
                                     <td className="px-3 py-2">
-                                      <input className={cn(inp, "min-w-[110px] uppercase")} placeholder="BRA-BLK-32B"
+                                      <input className={cn(inp, "min-w-[110px] uppercase")} placeholder="SUIT-BLK-32"
                                         value={d.sku} onChange={e => updateSizeDetail(variant.id, size, "sku", e.target.value)} />
                                     </td>
                                     <td className="px-3 py-2">
@@ -2031,7 +2031,7 @@ export const ProductForm = forwardRef(function ProductForm({
             <Field label="Meta Title">
               <input
                 className={inp}
-                placeholder="e.g. Buy Comfort Bra Online | Imkaa"
+                placeholder="e.g. Buy Comfort Suit Online | Imkaa"
                 {...register("metaTitle")}
               />
               <p className="text-xs text-muted-foreground mt-1">{watch("metaTitle")?.length || 0}/60 chars</p>
@@ -2047,7 +2047,7 @@ export const ProductForm = forwardRef(function ProductForm({
             <Field label="Meta Keywords" hint="Comma separated">
               <input
                 className={inp}
-                placeholder="bra, comfort bra, padded bra"
+                placeholder="suit, embroidered kurta, anarkali"
                 {...register("metaKeywords")}
               />
             </Field>

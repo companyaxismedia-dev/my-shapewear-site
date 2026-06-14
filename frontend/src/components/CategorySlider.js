@@ -12,12 +12,12 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 const categoryVisuals = {
-  bra: {
-    img: "/image/CategorySlider/bra.png",
-    desc: " support with premium comfort.",
+  suits: {
+    img: "/image/CategorySlider/suits.png",
+    desc: "Elegant designs with premium comfort.",
   },
-  panties: {
-    img: "/image/CategorySlider/panties.png",
+  Kurtis: {
+    img: "/image/CategorySlider/Kurtis.png",
     desc: "Soft essentials designed for all-day ease.",
   },
   Imkaa: {

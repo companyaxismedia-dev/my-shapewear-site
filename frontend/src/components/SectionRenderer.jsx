@@ -13,7 +13,7 @@ export default function SectionRenderer({ section, compact = false }) {
     const presets = [
       { match: "shop by category", subtitle: "Find your perfect fit, thoughtfully curated for you." },
       { match: "our exclusive collections", subtitle: "Curated for comfort, confidence, and everyday elegance." },
-      { match: "trending bras", subtitle: "Bestselling silhouettes and fresh new favorites." },
+      { match: "trending Suits", subtitle: "Bestselling silhouettes and fresh new favorites." },
       { match: "best sellers", subtitle: "Loved by customers for fit, feel, and finish." },
       { match: "why choose us", subtitle: "Premium quality, privacy, and service you can trust." },
     ];
@@ -264,12 +264,12 @@ export default function SectionRenderer({ section, compact = false }) {
             const linkProps = hasLink ? { target: "_blank", rel: "noreferrer" } : { onClick: handleClick };
 
             return (
-                <a
-                  key={block._id}
-                  href={hasLink ? data.link : "#"}
-                  className={`block w-full card-imkaa banner-block-card ${hasLink ? "cursor-pointer" : "cursor-default"}`}
-                  {...linkProps}
-                >
+              <a
+                key={block._id}
+                href={hasLink ? data.link : "#"}
+                className={`block w-full card-imkaa banner-block-card ${hasLink ? "cursor-pointer" : "cursor-default"}`}
+                {...linkProps}
+              >
                 <div className="w-full" style={{ background: "var(--color-bg-alt)" }}>
                   <picture>
                     {mobileUrl ? (

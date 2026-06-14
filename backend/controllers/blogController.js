@@ -31,8 +31,8 @@ const DEFAULT_SECTION_CONFIG = [
     sort: { cardOrder: 1, publishedAt: -1 },
   },
   {
-    key: "lingerie-101",
-    label: "Lingerie 101",
+    key: "ethnic-wear-101",
+    label: "Ethnic Wear 101",
     sectionOrder: 4,
     limit: 8,
     sort: { cardOrder: 1, publishedAt: -1 },

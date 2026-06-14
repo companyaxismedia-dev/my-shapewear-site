@@ -226,8 +226,8 @@ export default function HomeReviewsSection() {
               fontFamily: "var(--font-body)",
             }}
           >
-            Real reviews from bra, panty, tummy control, Imkaa, curvy and
-            lingerie customers.
+            Real reviews from suits, kurta sets, palazzos, Imkaa, and
+            ethnic wear customers.
           </p>
         </div>
 
