@@ -64,7 +64,7 @@ export default function SizeCalculator() {
                 <div className="relative w-full h-[350px]">
 
                     <Image
-                        src="/image/CategorySlider/suits.png"
+                        src="/size-catculate/size-calculate.webp"
                         alt="Suit size measurement"
                         fill
                         className="object-cover rounded-xl"
@@ -73,7 +73,7 @@ export default function SizeCalculator() {
                 </div>
 
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-12 mb-16">
 
                 {/* BUST */}
@@ -120,7 +120,7 @@ export default function SizeCalculator() {
                     />
 
                 </div>
-                
+
                 {/* HIPS */}
 
                 <div className="space-y-4">
@@ -205,7 +205,7 @@ export default function SizeCalculator() {
                         <td className="border p-3">26</td>
                         <td className="border p-3">34</td>
                     </tr>
-                    
+
                     <tr>
                         <td className="border p-3 font-semibold">S</td>
                         <td className="border p-3">34</td>
@@ -226,7 +226,7 @@ export default function SizeCalculator() {
                         <td className="border p-3">32</td>
                         <td className="border p-3">40</td>
                     </tr>
-                    
+
                     <tr>
                         <td className="border p-3 font-semibold">XL</td>
                         <td className="border p-3">40</td>

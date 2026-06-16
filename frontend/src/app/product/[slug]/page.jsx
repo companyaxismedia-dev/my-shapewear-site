@@ -66,7 +66,7 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [hoveredColor, setHoveredColor] = useState(null);
   const [showSizeChart, setShowSizeChart] = useState(false);
-  const [showCalcSize, setShowCalcSize] = useState(false);
+  // const [showCalcSize, setShowCalcSize] = useState(false);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
   const [addingToCart, setAddingToCart] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null);
@@ -433,8 +433,8 @@ export default function ProductPage() {
                     <p className="text-[14px] font-bold uppercase tracking-[0.04em] text-[#282c3f]">Select Size</p>
                     <div className="flex items-center gap-2 text-[12px] font-semibold uppercase text-[#c56f7f]">
                       <button type="button" onClick={() => setShowSizeChart(true)}>Size Chart</button>
-                      <span className="text-[#c5a7b1]">|</span>
-                      <button type="button" onClick={() => setShowCalcSize(true)}>Calculate Size</button>
+                      {/* <span className="text-[#c5a7b1]">|</span> */}
+                      {/* <button type="button" onClick={() => setShowCalcSize(true)}>Calculate Size</button> */}
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-3">
@@ -878,9 +878,6 @@ export default function ProductPage() {
           onClose={() => setShowSizeChart(false)}
           category={selectedVariant?.category || product?.category || product?.mainCategory}
         />
-      ) : null}
-      {product?.category === "bra" && showCalcSize ? (
-        <CalculateSizeModal onClose={() => setShowCalcSize(false)} />
       ) : null}
       <Footer />
     </div>
