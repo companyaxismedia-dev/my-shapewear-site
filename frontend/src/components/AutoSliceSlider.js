@@ -229,17 +229,11 @@ export default function AutoSliceSlider({
 
             {/* 🟢 Slider */}
             <div className="w-full">
-              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 lg:mb-3 mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 lg:mb-5 mb-3 lg:px-4">
                 <div>
-                  {/* <h3
-                    className="heading-section"
-                    style={{
-                      textAlign: "left",
-                      fontSize: "clamp(24px, 2.6vw, 34px)",
-                    }}
-                  >
+                  <h3 className="heading-section">
                     {section.title}
-                  </h3> */}
+                  </h3>
                 </div>
 
                 <a href={section.path} className="btn-secondary-imkaa w-fit">

@@ -92,6 +92,9 @@ export default function HomeContent({
               )}
             </div>
 
+            {/* Space / line break */}
+  <div className="h-1 mb-5 bg-black"></div>
+
             <div className="section-full-bleed">
               <AutoSliceSlider
                 bannerSections={bannerSections}
