@@ -93,7 +93,7 @@ router.get("/new-arrivals", async (req, res) => {
 router.get("/category/:category", async (req, res) => {
   try {
     const products = await Product.find({
-      category: req.params.category,
+      category: { $in: [req.params.category] },
       isActive: true,
     }).sort({ createdAt: -1 });
 
@@ -166,7 +166,7 @@ router.get("/subcategories", async (req, res) => {
     }
 
     const products = await Product.find({
-      category: category,
+      category: { $in: [category] },
       isActive: true,
     });
 

@@ -161,7 +161,11 @@ const getCategoryLevelLabel = (level) => {
 export const productSchema = yup.object().shape({
   name: yup.string().required("Product name is required"),
   brand: yup.string().required("Brand name is required"),
-  category: yup.string().required("Product category is required"),
+  category: yup
+    .array()
+    .of(yup.string())
+    .min(1, "At least one product category is required")
+    .required("Product category is required"),
   subCategory: yup.string(),
   shortDescription: yup.string(),
   thumbnail: yup.string(),
@@ -588,6 +592,7 @@ export const ProductForm = forwardRef(function ProductForm({
   const [flatCategories, setFlatCategories] = useState([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [addingCategory, setAddingCategory] = useState(false);
 
   // Initialize form with React Hook Form and Yup validation
   const {
@@ -605,7 +610,7 @@ export const ProductForm = forwardRef(function ProductForm({
     defaultValues: {
       name: "",
       brand: "",
-      category: "",
+      category: [],
       subCategory: "",
       shortDescription: "",
       thumbnail: "",
@@ -638,13 +643,47 @@ export const ProductForm = forwardRef(function ProductForm({
   const watchedCategory = watch("category");
   const watchedSubCategory = watch("subCategory");
 
+  const initializedProductIdRef = useRef(null);
+
   // Initialize form data when editing
   useEffect(() => {
     if (mode === "edit" && initialData) {
+      if (initializedProductIdRef.current === initialData._id) {
+        return;
+      }
+      initializedProductIdRef.current = initialData._id;
+
       const formData = {
         name: initialData.name || "",
         brand: initialData.brand || "",
-        category: initialData.category || "",
+        // normalise – DB may return a string (old), array (new), or stringified JSON
+        category: (() => {
+          const cat = initialData.category;
+          if (!cat) return [];
+          if (Array.isArray(cat)) {
+            return cat.flatMap(c => {
+              if (typeof c === "string" && c.startsWith("[")) {
+                try {
+                  return JSON.parse(c);
+                } catch (e) {
+                  return [c];
+                }
+              }
+              return [c];
+            });
+          }
+          if (typeof cat === "string") {
+            if (cat.startsWith("[")) {
+              try {
+                return JSON.parse(cat);
+              } catch (e) {
+                return [cat];
+              }
+            }
+            return [cat];
+          }
+          return [];
+        })(),
         subCategory: initialData.subCategory || "",
         shortDescription: initialData.shortDescription || "",
         thumbnail: initialData.thumbnail || "",
@@ -706,6 +745,33 @@ export const ProductForm = forwardRef(function ProductForm({
           : (initialData.metaKeywords || ""),
       };
       reset(formData);
+    } else if (mode === "add") {
+      if (initializedProductIdRef.current !== null) {
+        initializedProductIdRef.current = null;
+        reset({
+          name: "",
+          brand: "",
+          category: [],
+          subCategory: "",
+          shortDescription: "",
+          thumbnail: "",
+          productDetails: "",
+          features: [""],
+          materialCare: [""],
+          sizeAndFits: [{ key: "", value: "" }],
+          specifications: [{ key: "", value: "" }],
+          variants: [makeVariant()],
+          offers: [],
+          pincodes: [],
+          isFeatured: false,
+          isBestSeller: false,
+          isNewArrival: false,
+          isActive: true,
+          metaTitle: "",
+          metaDescription: "",
+          metaKeywords: "",
+        });
+      }
     }
   }, [mode, initialData, reset]);
 
@@ -743,10 +809,17 @@ export const ProductForm = forwardRef(function ProductForm({
   useEffect(() => {
     if (!categoryTree.length) return;
 
-    const activeCategorySlug = watchedCategory || initialData?.category || "";
+    // Use the first slug in the array to initialise the cascade display
+    const currentCats = Array.isArray(watchedCategory) ? watchedCategory : [];
+    const primarySlug =
+      currentCats[0] ||
+      (Array.isArray(initialData?.category)
+        ? initialData.category[0]
+        : initialData?.category) ||
+      "";
     const activeSubCategorySlug = watchedSubCategory || initialData?.subCategory || "";
 
-    const rootPath = findCategoryPathBySlug(categoryTree, activeCategorySlug);
+    const rootPath = findCategoryPathBySlug(categoryTree, primarySlug);
     const deepestPath = findCategoryPathBySlug(categoryTree, activeSubCategorySlug);
 
     let selectedPath = rootPath;
@@ -764,13 +837,13 @@ export const ProductForm = forwardRef(function ProductForm({
     }
 
     setSelectedCategoryIds(selectedPath.map((item) => item._id));
-    setValue("category", selectedPath[0]?.slug || "", { shouldValidate: true });
     setValue(
       "subCategory",
       selectedPath.length > 1 ? selectedPath[selectedPath.length - 1]?.slug || "" : "",
       { shouldValidate: true }
     );
-  }, [categoryTree, initialData, watchedCategory, watchedSubCategory, setValue]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryTree, initialData?._id]);
 
   useImperativeHandle(ref, () => ({
     save: async () => {
@@ -798,24 +871,45 @@ export const ProductForm = forwardRef(function ProductForm({
 
     setSelectedCategoryIds(nextSelectedIds);
 
+    // No longer set form "category" here — that happens when user clicks Confirm
     const selectedNodes = nextSelectedIds
-      .map((id) => flatCategories.find((category) => category._id === id))
+      .map((id) => flatCategories.find((cat) => cat._id === id))
       .filter(Boolean);
-
-    const rootCategory = selectedNodes[0];
     const deepestCategory = selectedNodes[selectedNodes.length - 1];
-
-    setValue("category", rootCategory?.slug || "", {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
     setValue(
       "subCategory",
       selectedNodes.length > 1 ? deepestCategory?.slug || "" : "",
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      }
+      { shouldDirty: true, shouldValidate: true }
+    );
+  };
+
+  // Commit the currently cascade-selected root slug into the category array
+  const handleAddCurrentCategory = () => {
+    const selectedNodes = selectedCategoryIds
+      .map((id) => flatCategories.find((cat) => cat._id === id))
+      .filter(Boolean);
+    const rootCategory = selectedNodes[0];
+    if (!rootCategory?.slug) return;
+
+    const currentCats = getValues("category") || [];
+    if (!currentCats.includes(rootCategory.slug)) {
+      setValue(
+        "category",
+        [...currentCats, rootCategory.slug].filter(Boolean),
+        { shouldDirty: true, shouldValidate: true }
+      );
+    }
+    setAddingCategory(false);
+    setSelectedCategoryIds([]);
+  };
+
+  // Remove a slug from the category array
+  const handleRemoveCategory = (slug) => {
+    const currentCats = getValues("category") || [];
+    setValue(
+      "category",
+      currentCats.filter((c) => c !== slug),
+      { shouldDirty: true, shouldValidate: true }
     );
   };
 
@@ -1026,8 +1120,13 @@ export const ProductForm = forwardRef(function ProductForm({
         setIsPublishSubmitting(false);
         return;
       }
-      if (!formData.category?.trim()) {
-        toast.error("Product category is required");
+      const cats = Array.isArray(formData.category)
+        ? formData.category.filter(Boolean)
+        : formData.category
+        ? [formData.category]
+        : [];
+      if (!cats.length) {
+        toast.error("At least one product category is required");
         setIsPublishSubmitting(false);
         return;
       }
@@ -1061,7 +1160,11 @@ export const ProductForm = forwardRef(function ProductForm({
       const payload = {
         name: formData.name,
         brand: formData.brand,
-        category: formData.category,
+        category: Array.isArray(formData.category)
+          ? formData.category.filter(Boolean)
+          : formData.category
+          ? [formData.category]
+          : [],
         subCategory: formData.subCategory || "",
         shortDescription: formData.shortDescription || "",
         // Filter out blob URLs from thumbnail
@@ -1276,52 +1379,110 @@ export const ProductForm = forwardRef(function ProductForm({
         </Card>
 
         {/* Category */}
-        <Card title="Category">
-          <input type="hidden" {...register("category")} />
+        <Card title="Category" subtitle="A product can belong to multiple categories">
           <input type="hidden" {...register("subCategory")} />
 
-          {categoryLoading ? (
-            <p className="text-sm text-muted-foreground">Loading categories...</p>
-          ) : categoryLevels.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No categories found. Add categories first in the categories page.
-            </p>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {categoryLevels.map((levelConfig) => (
-                <Field
-                  key={levelConfig.level}
-                  label={getCategoryLevelLabel(levelConfig.level)}
-                  required={levelConfig.level === 0}
-                  error={levelConfig.level === 0 ? errors.category?.message : undefined}
-                  hint={
-                    levelConfig.level > 0 && levelConfig.level === categoryLevels.length - 1
-                      ? "Only shown when the selected parent has children"
-                      : undefined
-                  }
-                  half
-                >
-                  <select
-                    className={getInputClass(levelConfig.level === 0 && !!errors.category)}
-                    value={levelConfig.selectedId}
-                    onChange={(e) =>
-                      handleCategoryLevelChange(levelConfig.level, e.target.value)
-                    }
+          {/* Selected category tags */}
+          {Array.isArray(watchedCategory) && watchedCategory.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {watchedCategory.map((slug) => {
+                const cat = flatCategories.find((c) => c.slug === slug);
+                return (
+                  <span
+                    key={slug}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20"
                   >
-                    <option value="">
-                      {levelConfig.level === 0
-                        ? "Select category..."
-                        : `Select ${getCategoryLevelLabel(levelConfig.level).toLowerCase()}...`}
-                    </option>
-                    {levelConfig.options.map((categoryOption) => (
-                      <option key={categoryOption._id} value={categoryOption._id}>
-                        {categoryOption.name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              ))}
+                    {cat?.name || slug}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCategory(slug)}
+                      className="hover:text-primary/70 transition-colors ml-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                );
+              })}
             </div>
+          )}
+
+          {/* Validation error */}
+          {errors.category && (
+            <p className="text-xs text-red-600 font-medium mb-3">
+              {errors.category.message}
+            </p>
+          )}
+
+          {/* Cascade picker (shown when adding) */}
+          {addingCategory ? (
+            <div className="space-y-4 p-4 rounded-xl border border-dashed border-primary/30 bg-primary/5">
+              {categoryLoading ? (
+                <p className="text-sm text-muted-foreground">Loading categories...</p>
+              ) : categoryLevels.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No categories found. Add categories first in the categories page.
+                </p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {categoryLevels.map((levelConfig) => (
+                    <Field
+                      key={levelConfig.level}
+                      label={getCategoryLevelLabel(levelConfig.level)}
+                      required={levelConfig.level === 0}
+                      half
+                    >
+                      <select
+                        className={getInputClass(false)}
+                        value={levelConfig.selectedId}
+                        onChange={(e) =>
+                          handleCategoryLevelChange(levelConfig.level, e.target.value)
+                        }
+                      >
+                        <option value="">
+                          {levelConfig.level === 0
+                            ? "Select category..."
+                            : `Select ${getCategoryLevelLabel(levelConfig.level).toLowerCase()}...`}
+                        </option>
+                        {levelConfig.options.map((categoryOption) => (
+                          <option key={categoryOption._id} value={categoryOption._id}>
+                            {categoryOption.name}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddCurrentCategory}
+                  disabled={!selectedCategoryIds.length}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Confirm Category
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAddingCategory(false); setSelectedCategoryIds([]); }}
+                  className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setAddingCategory(true); setSelectedCategoryIds([]); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-primary/50 text-primary text-xs font-medium hover:bg-primary/5 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {Array.isArray(watchedCategory) && watchedCategory.length > 0
+                ? "Add Another Category"
+                : "Add Category"}
+            </button>
           )}
         </Card>
 

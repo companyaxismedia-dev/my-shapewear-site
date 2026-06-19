@@ -152,7 +152,9 @@ export const CartProvider = ({ children }) => {
             slug: product.slug,
             name: product.name,
             brand: product.brand || "Imkaa",
-            category: product.category || "",
+            category: Array.isArray(product.category)
+              ? product.category.join(" · ")
+              : product.category || "",
             subCategory: product.subCategory || "",
             price,
             mrp,

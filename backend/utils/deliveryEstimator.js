@@ -103,7 +103,10 @@ const estimateTransitDays = (pincode) => {
 };
 
 const getProductLeadDays = (product) => {
-  const category = String(product?.category || "").toLowerCase();
+  const rawCategory = product?.category;
+  const category = (
+    Array.isArray(rawCategory) ? rawCategory.join(" ") : String(rawCategory || "")
+  ).toLowerCase();
   if (category.includes("custom") || category.includes("made")) return 2;
   return 1;
 };

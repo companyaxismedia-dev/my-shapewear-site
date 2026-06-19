@@ -217,6 +217,7 @@ exports.createProduct = async (req, res) => {
     let data = req.body;
 
     const jsonFields = [
+      "category",
       "variants",
       "features",
       "materialCare",
@@ -486,6 +487,7 @@ exports.updateProduct = async (req, res) => {
       });
     }
     const jsonFields = [
+      "category",
       "variants",
       "features",
       "materialCare",

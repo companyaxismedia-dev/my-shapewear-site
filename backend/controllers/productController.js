@@ -12,7 +12,11 @@ const buildProductFilter = (query = {}) => {
   const filter = { isActive: true, status: "published" };
 
   if (query.category) {
-    filter.category = query.category;
+    // support comma-separated multi-category filter e.g. ?category=bra,shapewear
+    const cats = String(query.category).split(",").map((c) => c.trim()).filter(Boolean);
+    if (cats.length) {
+      filter.category = { $in: cats };
+    }
   }
 
   if (query.subCategory) {
@@ -433,10 +437,16 @@ exports.createProduct = async (req, res) => {
   try {
     const data = req.body;
 
-    if (!data.name || !data.category || !data.variants?.length) {
+    const categories = Array.isArray(data.category)
+      ? data.category.filter(Boolean)
+      : data.category
+      ? [data.category]
+      : [];
+
+    if (!data.name || !categories.length || !data.variants?.length) {
       return res.status(400).json({
         success: false,
-        message: "Name, category and variants required",
+        message: "Name, at least one category, and variants are required",
       });
     }
 
@@ -634,7 +644,10 @@ exports.getSimilarProducts = async (req, res) => {
     let scored = candidates.map((p) => {
       let score = 0;
 
-      if (p.category === current.category) {
+      // score +6 if any category overlaps between current product and candidate
+      const currentCats = Array.isArray(current.category) ? current.category : [current.category];
+      const pCats = Array.isArray(p.category) ? p.category : [p.category];
+      if (currentCats.some((c) => pCats.includes(c))) {
         score += 6;
       }
       const pTokens = tokenize(p.name);

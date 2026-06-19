@@ -122,11 +122,14 @@ const productSchema = new mongoose.Schema(
     slug: { type: String, unique: true, index: true },
     brand: { type: String, index: true },
 
+    /* Multiple categories support */
     category: {
-      type: String,
+      type: [String],
       required: true,
-      trim: true,
-      lowercase: true,
+      validate: {
+        validator: (v) => Array.isArray(v) && v.length > 0,
+        message: "At least one category is required",
+      },
       index: true,
     },
 

@@ -309,7 +309,9 @@ export default function Dashboard() {
                                 {product.name}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {product.category}
+                                {Array.isArray(product.category)
+                                  ? product.category.join(" · ")
+                                  : product.category}
                               </p>
                             </div>
                           </div>
