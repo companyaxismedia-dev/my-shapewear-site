@@ -148,7 +148,6 @@ const blogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-blogSchema.index({ slug: 1 });
 blogSchema.index({ section: 1, cardOrder: 1, publishedAt: -1 });
 blogSchema.index({ isPublished: 1, publishedAt: -1 });
 blogSchema.index({ isFeatured: 1, heroRank: 1 });

@@ -118,8 +118,6 @@ offerSchema.pre("save", function () {
 /* ======================================================
    📊 INDEXING (FAST QUERY)
 ====================================================== */
-offerSchema.index({ code: 1 });
-offerSchema.index({ isActive: 1 });
 offerSchema.index({ endDate: 1 });
 offerSchema.index({ isActive: 1, startDate: 1, endDate: 1 });
 

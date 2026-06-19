@@ -98,7 +98,6 @@ const OrderSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      index: true,
       trim: true,
     },
 
@@ -189,7 +188,6 @@ const OrderSchema = new mongoose.Schema(
           type: String,
           enum: ITEM_STATUS,
           default: "Order Placed",
-          index: true,
         },
 
         estimatedDelivery: {
@@ -418,7 +416,6 @@ const OrderSchema = new mongoose.Schema(
         type: String,
         default: "",
         trim: true,
-        index: true,
       },
       courier: {
         type: String,
@@ -554,7 +551,6 @@ const OrderSchema = new mongoose.Schema(
 /* ======================================================
    INDEXES
 ====================================================== */
-OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ "userInfo.phone": 1, createdAt: -1 });
 OrderSchema.index({ userId: 1, createdAt: -1 });
 OrderSchema.index({ createdAt: -1 });
