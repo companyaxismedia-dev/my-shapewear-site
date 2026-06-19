@@ -206,6 +206,11 @@ const buildTree = (categories) => {
   const roots = [];
 
   const sortedCategories = [...categories].sort((a, b) => {
+    const orderA = a.sortOrder ?? 0;
+    const orderB = b.sortOrder ?? 0;
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
     return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
   });
 
@@ -280,7 +285,7 @@ exports.getAdminCategories = async (req, res) => {
     }
 
     const categories = await Category.find(filter)
-      .sort({ createdAt: 1 })
+      .sort({ sortOrder: 1, createdAt: 1 })
       .populate("parent", "_id name slug")
       .lean();
 
@@ -307,7 +312,7 @@ exports.getAdminCategories = async (req, res) => {
 exports.getPublicCategories = async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true })
-      .sort({ createdAt: 1 })
+      .sort({ sortOrder: 1, createdAt: 1 })
       .lean();
 
     const countsBySlug = await getProductCountsBySlug(categories.map((category) => category.slug));
