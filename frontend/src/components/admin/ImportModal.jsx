@@ -125,6 +125,30 @@ export default function ImportModal({ open, onClose }) {
       copy.thumbnail = "";
     }
 
+    // Normalize category to array of strings
+    if (copy.category) {
+      if (typeof copy.category === 'string') {
+        if (copy.category.startsWith('[')) {
+          try {
+            copy.category = JSON.parse(copy.category);
+          } catch (e) {
+            copy.category = [copy.category];
+          }
+        } else {
+          copy.category = copy.category.split(',').map(c => c.trim()).filter(Boolean);
+        }
+      } else if (!Array.isArray(copy.category)) {
+        copy.category = [String(copy.category)];
+      }
+    } else {
+      copy.category = [];
+    }
+
+    // Normalize subcategory/subCategory
+    const subCatValue = copy.subCategory || copy.subcategory || "";
+    copy.subCategory = typeof subCatValue === 'string' ? subCatValue.trim() : String(subCatValue);
+    copy.subcategory = copy.subCategory;
+
     // Normalize delivery rules into objects expected by ProductForm / productSchema
     copy.pincodes = normalizePincodeRows(
       Array.isArray(copy.serviceablePincodes) && copy.serviceablePincodes.length

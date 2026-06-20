@@ -241,6 +241,30 @@ export default function MultipleImportPage() {
     const transformImportRow = (row) => {
       const copy = { ...row };
 
+      // Normalize category
+      if (copy.category) {
+        if (typeof copy.category === 'string') {
+          if (copy.category.startsWith('[')) {
+            try {
+              copy.category = JSON.parse(copy.category);
+            } catch (e) {
+              copy.category = [copy.category];
+            }
+          } else {
+            copy.category = copy.category.split(',').map(c => c.trim()).filter(Boolean);
+          }
+        } else if (!Array.isArray(copy.category)) {
+          copy.category = [String(copy.category)];
+        }
+      } else {
+        copy.category = [];
+      }
+
+      // Normalize subcategory
+      const subCatValue = copy.subCategory || copy.subcategory || "";
+      copy.subCategory = typeof subCatValue === 'string' ? subCatValue.trim() : String(subCatValue);
+      copy.subcategory = copy.subCategory;
+
       // Normalize delivery rules into the shape ProductForm expects while editing
       if (Array.isArray(copy.serviceablePincodes) && copy.serviceablePincodes.length) {
         copy.serviceablePincodes = normalizePincodeRows(copy.serviceablePincodes);
@@ -303,6 +327,11 @@ export default function MultipleImportPage() {
   const denormalizeFormData = (formData) => {
     // Convert ProductForm format back to import format
     const result = { ...formData };
+
+    // Ensure both subCategory and subcategory are set
+    const subCatValue = formData.subCategory || formData.subcategory || "";
+    result.subCategory = typeof subCatValue === 'string' ? subCatValue.trim() : String(subCatValue);
+    result.subcategory = result.subCategory;
 
     // Ensure thumbnail is preserved
     result.thumbnail = formData.thumbnail || "";

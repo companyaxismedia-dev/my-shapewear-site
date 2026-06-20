@@ -863,6 +863,27 @@ export const ProductForm = forwardRef(function ProductForm({
       return String(currentParentId || "") === String(parentId || "");
     });
 
+  const syncSubCategory = (updatedCategories = [], currentSubCategory = "") => {
+    if (!currentSubCategory || !updatedCategories.length) {
+      return "";
+    }
+
+    const subCatNode = flatCategories.find((c) => c.slug === currentSubCategory);
+    if (!subCatNode) return "";
+
+    const isValid = updatedCategories.some((parentSlug) => {
+      const parentCat = flatCategories.find((c) => c.slug === parentSlug);
+      if (!parentCat) return false;
+      return (
+        subCatNode.ancestors?.some(
+          (ancId) => String(ancId?._id || ancId) === String(parentCat._id)
+        ) || String(subCatNode.parent?._id || subCatNode.parent) === String(parentCat._id)
+      );
+    });
+
+    return isValid ? currentSubCategory : "";
+  };
+
   const handleCategoryLevelChange = (levelIndex, selectedId) => {
     const nextSelectedIds = [
       ...selectedCategoryIds.slice(0, levelIndex),
@@ -870,17 +891,6 @@ export const ProductForm = forwardRef(function ProductForm({
     ].filter(Boolean);
 
     setSelectedCategoryIds(nextSelectedIds);
-
-    // No longer set form "category" here — that happens when user clicks Confirm
-    const selectedNodes = nextSelectedIds
-      .map((id) => flatCategories.find((cat) => cat._id === id))
-      .filter(Boolean);
-    const deepestCategory = selectedNodes[selectedNodes.length - 1];
-    setValue(
-      "subCategory",
-      selectedNodes.length > 1 ? deepestCategory?.slug || "" : "",
-      { shouldDirty: true, shouldValidate: true }
-    );
   };
 
   // Commit the currently cascade-selected root slug into the category array
@@ -892,13 +902,27 @@ export const ProductForm = forwardRef(function ProductForm({
     if (!rootCategory?.slug) return;
 
     const currentCats = getValues("category") || [];
+    let updatedCats = currentCats;
     if (!currentCats.includes(rootCategory.slug)) {
+      updatedCats = [...currentCats, rootCategory.slug].filter(Boolean);
       setValue(
         "category",
-        [...currentCats, rootCategory.slug].filter(Boolean),
+        updatedCats,
         { shouldDirty: true, shouldValidate: true }
       );
     }
+
+    // Determine the new subCategory from this selection (if deeper than root)
+    const deepestCategory = selectedNodes[selectedNodes.length - 1];
+    let newSubCat = getValues("subCategory") || "";
+    if (selectedNodes.length > 1 && deepestCategory?.slug) {
+      newSubCat = deepestCategory.slug;
+    }
+
+    // Sync subcategory against the updated parent categories list
+    const syncedSubCat = syncSubCategory(updatedCats, newSubCat);
+    setValue("subCategory", syncedSubCat, { shouldDirty: true, shouldValidate: true });
+
     setAddingCategory(false);
     setSelectedCategoryIds([]);
   };
@@ -906,11 +930,16 @@ export const ProductForm = forwardRef(function ProductForm({
   // Remove a slug from the category array
   const handleRemoveCategory = (slug) => {
     const currentCats = getValues("category") || [];
+    const updatedCats = currentCats.filter((c) => c !== slug);
     setValue(
       "category",
-      currentCats.filter((c) => c !== slug),
+      updatedCats,
       { shouldDirty: true, shouldValidate: true }
     );
+
+    const currentSubCat = getValues("subCategory") || "";
+    const syncedSubCat = syncSubCategory(updatedCats, currentSubCat);
+    setValue("subCategory", syncedSubCat, { shouldDirty: true, shouldValidate: true });
   };
 
   const categoryLevels = [];
@@ -1392,7 +1421,16 @@ export const ProductForm = forwardRef(function ProductForm({
                     key={slug}
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium border border-primary/20"
                   >
-                    {cat?.name || slug}
+                    {(() => {
+                      const rootName = cat?.name || slug;
+                      if (watchedSubCategory) {
+                        const path = findCategoryPathBySlug(categoryTree, watchedSubCategory);
+                        if (path.length > 0 && path[0].slug === slug) {
+                          return path.map(node => node.name).join(" > ");
+                        }
+                      }
+                      return rootName;
+                    })()}
                     <button
                       type="button"
                       onClick={() => handleRemoveCategory(slug)}

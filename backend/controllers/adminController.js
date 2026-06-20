@@ -1774,8 +1774,21 @@ exports.submitImport = async (req, res) => {
       const payload = {
         name: d.name,
         brand: d.brand,
-        category: d.category,
-        subCategory: d.subCategory || '',
+        category: typeof d.category === 'string'
+          ? (() => {
+              if (d.category.startsWith('[')) {
+                try {
+                  return JSON.parse(d.category);
+                } catch (e) {
+                  return [d.category];
+                }
+              }
+              return d.category.split(',').map(c => c.trim()).filter(Boolean);
+            })()
+          : Array.isArray(d.category)
+          ? d.category
+          : [],
+        subCategory: d.subCategory || d.subcategory || '',
         shortDescription: d.shortDescription || '',
         thumbnail: d.thumbnail || '',
         productDetails: d.productDetails || '',
