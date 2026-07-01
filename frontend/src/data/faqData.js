@@ -155,12 +155,12 @@ export const faqData = {
     title: "Contact & Support",
     description: "We’re here to help with orders, sizing, and support.",
     items: [
-      {
-        id: "cu1",
-        question: "How can I contact support?",
-        answer:
-          "Email: support@imkaa.com\nPhone: +91 9811 180 043\nHours: Mon–Sun, 9:30 AM to 7:30 PM",
-      },
+      // {
+      //   id: "cu1",
+      //   question: "How can I contact support?",
+      //   answer:
+      //     "Email: support@imkaa.com\nPhone: +91 9811 180 043\nHours: Mon–Sun, 9:30 AM to 7:30 PM",
+      // },
       {
         id: "cu2",
         question: "What details should I share for faster help?",

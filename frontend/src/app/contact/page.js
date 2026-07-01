@@ -41,9 +41,9 @@ export default function ContactUs() {
                 <MessageSquare size={20} />
               </div>
               <h3 className="title-product" style={{ fontSize: 18, marginBottom: 6 }}>WhatsApp</h3>
-              <a className="footer-link" href="https://wa.me/919811180043" target="_blank" rel="noreferrer">
+              {/* <a className="footer-link" href="https://wa.me/919811180043" target="_blank" rel="noreferrer">
                 +91 9811 180 043
-              </a>
+              </a> */}
             </div>
 
             <div className="card-imkaa" style={{ padding: 22, textAlign: "center" }}>
@@ -61,15 +61,15 @@ export default function ContactUs() {
                 <MapPin size={18} />
                 <h3 className="title-product" style={{ fontSize: 18 }}>Registered Office</h3>
               </div>
-              <p className="text-body">
+              {/* <p className="text-body">
                 Shop No‑21, DDA CSC Market, Sector‑10, Dwarka,
                 <br />
                 New Delhi – 110075, India
-              </p>
-              <div className="mt-4 flex items-center gap-3" style={{ color: "var(--color-primary)" }}>
+              </p> */}
+              {/* <div className="mt-4 flex items-center gap-3" style={{ color: "var(--color-primary)" }}>
                 <Phone size={18} />
                 <a className="footer-link" href="tel:+919811180043">+91 9811 180 043</a>
-              </div>
+              </div> */}
             </div>
 
             <div className="card-imkaa" style={{ padding: 22 }}>

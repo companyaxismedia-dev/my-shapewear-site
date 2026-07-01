@@ -251,14 +251,14 @@ export default function Footer() {
               Contact
             </h4>
             <div className="space-y-2">
-              <a
+              {/* <a
                 href="tel:+919811180043"
                 className="flex items-center gap-2"
                 style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}
               >
                 <Phone size={13} style={{ color: '#C56F7F', flexShrink: 0 }} />
                 +91 9811 180 043
-              </a>
+              </a> */}
               <a
                 href="mailto:support@imkaa.com"
                 className="flex items-center gap-2"
@@ -280,7 +280,7 @@ export default function Footer() {
             © {new Date().getFullYear()} IMKAA. All rights reserved. Made with ♥ in India.
           </p>
           <div className="flex items-center gap-1" style={{ fontSize: '12px', color: '#A06C7B', fontFamily: INTER }}>
-            <span>Janak Puri, New Delhi – 110075</span>
+            {/* <span>Ramphal Chowk, Dwarka Sec-7, New Delhi – 110077</span> */}
           </div>
           <div className="flex gap-4">
             {[
