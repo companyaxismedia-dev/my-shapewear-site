@@ -35,12 +35,12 @@ const SECTIONS = [
     content:
       "We respect your privacy. We never ask for your password, OTP, CVV, or banking PIN. Please reach out through official support channels if you receive any suspicious communication.",
   },
-  {
-    id: "contact",
-    title: "Contact",
-    content:
-      "For support, please email support@imkaa.com or call +91 9811 180 043 (Mon–Sun, 9:30 AM to 7:30 PM).",
-  },
+  // {
+  //   id: "contact",
+  //   title: "Contact",
+  //   content:
+  //     "For support, please email support@imkaa.com or call +91 9811 180 043 (Mon–Sun, 9:30 AM to 7:30 PM).",
+  // },
 ];
 
 export default function TermsAndConditionsPage() {

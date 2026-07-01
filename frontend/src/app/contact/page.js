@@ -28,13 +28,13 @@ export default function ContactUs() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <div className="card-imkaa" style={{ padding: 22, textAlign: "center" }}>
+            {/* <div className="card-imkaa" style={{ padding: 22, textAlign: "center" }}>
               <div className="mx-auto mb-10" style={{ width: 46, height: 46, borderRadius: 9999, background: "rgba(232,183,194,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)" }}>
                 <Mail size={20} />
               </div>
               <h3 className="title-product" style={{ fontSize: 18, marginBottom: 6 }}>Email</h3>
               <a className="footer-link" href="mailto:support@imkaa.com">support@imkaa.com</a>
-            </div>
+            </div> */}
 
             <div className="card-imkaa" style={{ padding: 22, textAlign: "center" }}>
               <div className="mx-auto mb-10" style={{ width: 46, height: 46, borderRadius: 9999, background: "rgba(232,183,194,0.22)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)" }}>

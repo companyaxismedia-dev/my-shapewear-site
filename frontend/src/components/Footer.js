@@ -259,14 +259,14 @@ export default function Footer() {
                 <Phone size={13} style={{ color: '#C56F7F', flexShrink: 0 }} />
                 +91 9811 180 043
               </a> */}
-              <a
+              {/* <a
                 href="mailto:support@imkaa.com"
                 className="flex items-center gap-2"
                 style={{ fontFamily: INTER, fontSize: '13px', color: '#A06C7B', textDecoration: 'none' }}
               >
                 <Mail size={13} style={{ color: '#C56F7F', flexShrink: 0 }} />
                 support@imkaa.com
-              </a>
+              </a> */}
             </div>
           </div>
 
