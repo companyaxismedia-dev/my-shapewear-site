@@ -42,7 +42,7 @@ export default function Footer() {
             label: category.name,
             link: `/${category.slug}`,
           })),
-          { label: "Sale", link: "/exclusive" },
+          { label: "Sale", link: "/offers" },
         ]);
       })
       .catch(() => { });
