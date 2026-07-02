@@ -1,18 +1,32 @@
+# Host
+Host: https://www.imkaa.com
+
+# For all search engines
 User-agent: *
-
-Allow: /
-
-Disallow: /_next/
-Disallow: /api/
+Disallow: /admin
 Disallow: /admin/
-Disallow: /dashboard/
+Disallow: /account
 Disallow: /account/
-Disallow: /login/
-Disallow: /register/
+Disallow: /checkout
 Disallow: /checkout/
-Disallow: /cart/
+Disallow: /authPage
+Disallow: /authPage/
+Disallow: /order
+Disallow: /order/
+Disallow: /order-success
+Disallow: /order-success/
+Disallow: /payment-failed
+Disallow: /payment-failed/
+Disallow: /success
+Disallow: /success/
+Disallow: /wishlist
 Disallow: /wishlist/
+Disallow: /chat
+Disallow: /chat/
 Disallow: /search
+Disallow: /search/
+Disallow: /api
+Disallow: /api/
 
-Sitemap: https://imkaa.com/sitemap.xml
-Host: https://imkaa.com
+# Sitemap
+Sitemap: https://www.imkaa.com/sitemap.xml
