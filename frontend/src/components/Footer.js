@@ -20,13 +20,12 @@ const PLAYFAIR = "'Playfair Display', serif";
 
 export default function Footer() {
   const [shopLinks, setShopLinks] = React.useState([
+    { label: "New Arrivals", link: "/new-arrivals" },
+    { label: "Best Seller", link: "/best-seller" },
+    { label: "Offer", link: "/offers" },
+    { label: "Festive Collection", link: "/festive-collection" },
     { label: "Suits", link: "/suits" },
-    { label: "Kurtis", link: "/Kurtis" },
-    { label: "Kurta Sets", link: "/kurta-sets" },
-    { label: "Imkaa", link: "/Imkaa" },
-    { label: "Curvy Collection", link: "/curvy" },
-    { label: "Tummy Control", link: "/tummy-control" },
-    { label: "Sale", link: "/exclusive" },
+    { label: "Co-ord Sets", link: "/co-ords-sets" }
   ]);
 
   React.useEffect(() => {
@@ -54,7 +53,7 @@ export default function Footer() {
   }, []);
 
   const supportLinks = [
-    { label: "Track Your Order", link: "/order" },
+    { label: "Track Your Order", link: "/track" },
     { label: "Shipping Policy", link: "/faq#shipping" },
     { label: "Returns & Exchange", link: "/faq#returns" },
     { label: "FAQs", link: "/faq" },

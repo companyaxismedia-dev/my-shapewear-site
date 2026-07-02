@@ -206,7 +206,7 @@ export default function AboutPage() {
           <p style={{ fontFamily: INTER, fontSize: '15px', color: 'rgba(255,249,250,0.85)', marginBottom: '32px', lineHeight: 1.6 }}>
             Explore our latest collections and experience the perfect blend of style, comfort, and confidence.
           </p>
-          <a href="/bra"
+          <a href="/new-arrivals"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px',
               background: '#FFF4F6', color: '#C56F7F',

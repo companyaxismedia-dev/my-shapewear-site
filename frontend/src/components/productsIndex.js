@@ -1,10 +1,3 @@
-// import { braProducts } from "@/app/bra/page";
-import { curvyProduct } from "@/app/curvy/page";
-import { lingierieProducts } from "@/app/lingerie/page";
-import { pantyProducts } from "@/app/Kurtis/page";
-import { shapeProducts } from "@/app/Imkaa/page";
-import { tummyProduct } from "@/app/tummy-control/page";
-
 
 /* ================= API BASE ================= */
 

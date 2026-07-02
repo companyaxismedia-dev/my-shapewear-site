@@ -60,7 +60,7 @@ export default function CategoryBreadcrumb({ currentLabel, totalItems = 0, mobil
                 ))}
             </nav>
             <div className="category-page-heading-block">
-                <h1>{activeLabel}</h1>
+                <h2>{activeLabel}</h2>
                 <span>({productText})</span>
             </div>
         </div>

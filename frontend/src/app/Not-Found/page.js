@@ -3,18 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const navItems = [
-  { label: "KURTA SETS", href: "/kurta-sets" },
-  { label: "WOMEN'S WEAR", href: "/new-arrivals" },
-  { label: "Imkaa", href: "/Imkaa" },
-  { label: "GIFTS", href: "/gift-card" },
-];
-
-const quickActions = [
-  { label: "RETURN HOME", href: "/" },
-  { label: "SHOP NEW ARRIVALS", href: "/new-arrivals" },
-];
-
 export default function NotFoundPage({ isAdminPage = false }) {
   const primaryHref = isAdminPage ? "/admin" : "/";
 

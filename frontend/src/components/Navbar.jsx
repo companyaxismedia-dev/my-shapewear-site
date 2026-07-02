@@ -16,12 +16,12 @@ import { fetchCategoryTree, filterNavbarCategories } from "@/lib/categories";
 import { SkeletonBlock } from "@/components/loaders/Loaders";
 
 const FALLBACK_NAV_CATEGORIES = [
+  { name: "New Arrivals", href: "/new-arrivals", subCategories: [] },
+  { name: "Best Seller", href: "/best-seller", subCategories: [] },
+  { name: "Offer", href: "/offers", subCategories: [] },
+  { name: "Festive Collection", href: "/festive-collection", subCategories: [] },
   { name: "Suits", href: "/suits", subCategories: [] },
-  { name: "Kurtis", href: "/Kurtis", subCategories: [] },
-  { name: "Kurta Sets", href: "/kurta-sets", subCategories: [] },
-  { name: "Imkaa", href: "/Imkaa", subCategories: [] },
-  { name: "Curvy", href: "/curvy", subCategories: [] },
-  { name: "Tummy Control", href: "/tummy-control", subCategories: [] },
+  { name: "Co-ord Sets", href: "/co-ords-sets", subCategories: [] },
 ];
 
 const normalizeNavCategories = (nodes = [], path = []) =>
