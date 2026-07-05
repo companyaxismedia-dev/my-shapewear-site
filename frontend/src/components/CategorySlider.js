@@ -97,7 +97,7 @@ export default function CategorySlider() {
     <section className="section-padding lg:!py-10 w-full" style={{ background: "var(--color-bg-alt)" }}>
       <div className="container-imkaa">
         <div className="section-heading-block">
-          <h2 className="heading-section">Shop By Category</h2>
+          <h1 className="heading-section">Shop By Category</h1>
           <p className="section-subtitle">Find your perfect fit, from everyday essentials to elevated silhouettes.</p>
         </div>
 
