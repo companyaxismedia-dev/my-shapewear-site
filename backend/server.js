@@ -8,7 +8,7 @@ const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 const { default: connectDB } = require("./config/db");
 
-// const cache  = new NodeCache();  
+// const cache  = new NodeCache();
 dotenv.config();
 
 const app = express();
@@ -18,7 +18,7 @@ const app = express();
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
+  }),
 );
 
 app.use(compression());
@@ -35,9 +35,8 @@ const limiter = rateLimit({
 });
 
 app.use("/api", limiter);
-app.use(express.json({limit: "15mb"}));
+app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true }));
-
 
 const allowedOrigins = [
   "http://localhost:3000",
@@ -51,10 +50,7 @@ app.use(
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
 
-      if (
-        allowedOrigins.includes(origin) ||
-        origin.includes("vercel.app")
-      ) {
+      if (allowedOrigins.includes(origin) || origin.includes("vercel.app")) {
         return callback(null, true);
       }
 
@@ -62,13 +58,11 @@ app.use(
       callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
 app.use((req, res, next) => {
-  console.log(
-    `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`
-  );
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
 
@@ -91,13 +85,10 @@ connectDB();
 
 app.use(
   "/image",
-  express.static(path.join(__dirname, "../frontend/public/image"))
+  express.static(path.join(__dirname, "../frontend/public/image")),
 );
 
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "uploads"))
-);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -112,6 +103,7 @@ app.get("/health", (req, res) => {
 
 app.use("/api/otp", require("./routes/otpRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/categories", require("./routes/categoryRoutes"));
 
 app.use("/api/products", require("./routes/productRoutes"));
 app.use("/api/cart", require("./routes/cartRoutes"));
@@ -121,7 +113,6 @@ app.use("/api/admin/orders", require("./routes/adminOrderRoutes"));
 app.use("/api/users", require("./routes/userAddressRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/offers", require("./routes/offerRoutes"));
-
 
 app.use((req, res) => {
   res.status(404).json({
