@@ -597,7 +597,7 @@ function HomeNavbar({ onLoginToggle, pathname }) {
                   );
                 })}
 
-                <LinkNav href="/exclusive"
+                <LinkNav href="/offers"
                   className="px-4 py-1.5 rounded-full text-sm font-semibold transition"
                   style={{ background: "var(--color-primary)", color: "#FFF9FA", fontFamily: "var(--font-body)" }}>
                   Sale
