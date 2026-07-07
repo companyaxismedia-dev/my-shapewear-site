@@ -13,7 +13,7 @@ async function getBlogPageData() {
 }
 
 export const metadata = {
-  title: "Ethnic Wear Fashion Blog | Styling Tips, Trends & Guides | IMKAA",
+  title: "Ethnic Wear Tips & Trends | IMKAA",
 
   description:
     "Explore IMKAA's fashion blog for ethnic wear styling tips, designer suit trends, festive outfit ideas, fabric guides, shopping advice, and women's fashion inspiration.",
