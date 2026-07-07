@@ -2,7 +2,7 @@ import React from 'react'
 import SizeCalculator from './SizeCalculatorWrapper'
 
 export const metadata = {
-  title: "Women's Size Calculator | Find Your Perfect Ethnic Wear Size | IMKAA",
+  title: "Find Your Perfect Ethnic Wear Size | IMKAA",
 
   description:
     "Use IMKAA's Women's Size Calculator to find your perfect kurti, suit, salwar suit, and ethnic wear size. Get accurate measurements for a comfortable and elegant fit.",
