@@ -27,7 +27,7 @@ export const metadata = {
   },
 
   openGraph: {
-    title: "Women's Size Calculator | IMKAA",
+    title: "Women's Size Calculator",
     description:
       "Find your perfect ethnic wear size with IMKAA's Size Calculator. Measure accurately before shopping for kurtis, suits, and festive wear.",
     url: "https://www.imkaa.com/size-calculator",
@@ -60,7 +60,7 @@ export const metadata = {
 
 const page = () => {
   return (
-    <SizeCalculator/>
+    <SizeCalculator />
   )
 }
 
