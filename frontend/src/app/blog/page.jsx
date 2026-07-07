@@ -13,10 +13,63 @@ async function getBlogPageData() {
 }
 
 export const metadata = {
-  title: "Blog | Imkaa",
+  title: "Ethnic Wear Fashion Blog | Styling Tips, Trends & Guides | IMKAA",
+
   description:
-    "Explore ethnic wear tips, styling guides, Imkaa ideas, buying guides and fashion stories from Imkaa.",
+    "Explore IMKAA's fashion blog for ethnic wear styling tips, designer suit trends, festive outfit ideas, fabric guides, shopping advice, and women's fashion inspiration.",
+
+  keywords: [
+    "ethnic wear blog",
+    "women fashion blog",
+    "designer suit blog",
+    "kurti styling tips",
+    "salwar suit trends",
+    "ethnic fashion guide",
+    "festive outfit ideas",
+    "fashion tips for women",
+    "designer ethnic wear",
+    "traditional wear blog",
+    "wedding outfit ideas",
+    "Indian fashion blog",
+    "IMKAA blog",
+  ],
+
+  alternates: {
+    canonical: "https://www.imkaa.com/blog",
+  },
+
+  openGraph: {
+    title: "IMKAA Fashion Blog | Ethnic Wear Styling Tips & Trends",
+    description:
+      "Discover ethnic wear styling guides, festive fashion inspiration, buying guides, fabric care tips, and the latest designer suit trends from IMKAA.",
+    url: "https://www.imkaa.com/blog",
+    siteName: "IMKAA",
+    type: "website",
+    locale: "en_IN",
+    images: [
+      {
+        url: "https://www.imkaa.com/og-image.jpg", // Replace with your actual OG image
+        width: 1200,
+        height: 630,
+        alt: "IMKAA Fashion Blog",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "IMKAA Fashion Blog",
+    description:
+      "Ethnic wear styling tips, fashion trends, festive outfit ideas, and buying guides.",
+    images: ["https://www.imkaa.com/og-image.jpg"], // Replace with your actual image
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
+
 
 export default async function BlogPage() {
   const data = await getBlogPageData();
