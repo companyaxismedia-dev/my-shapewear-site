@@ -20,17 +20,17 @@ export const metadata = {
     "Indian Women's Fashion",
   ],
   alternates: {
-    canonical: "https://imkaa.in/about",
+    canonical: "https://www.imkaa.com/about",
   },
   openGraph: {
     title: "About Imkaa | Premium Ethnic Wear for Women",
     description:
       "Discover the story behind Imkaa and our passion for creating elegant, premium ethnic wear for women with exceptional craftsmanship and timeless designs.",
-    url: "https://imkaa.in/about",
+    url: "https://www.imkaa.com/about",
     siteName: "Imkaa",
     images: [
       {
-        url: "https://imkaa.in/og-image.jpg", // Replace with your actual OG image
+        url: "https://www.imkaa.com/og-image.jpg", // Replace with your actual OG image
         width: 1200,
         height: 630,
         alt: "About Imkaa",
@@ -44,7 +44,7 @@ export const metadata = {
     title: "About Imkaa | Premium Ethnic Wear for Women",
     description:
       "Discover Imkaa's journey, values, and commitment to premium ethnic fashion for women.",
-    images: ["https://imkaa.in/og-image.jpg"], // Replace with your actual image
+    images: ["https://www.imkaa.com/og-image.jpg"], // Replace with your actual image
   },
   robots: {
     index: true,
