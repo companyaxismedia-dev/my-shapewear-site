@@ -28,7 +28,7 @@ export default function FaqWrapper() {
     return (
 
         <FAQLayout>
-
+            <h1 className="hidden">Hello</h1>
             {categories.map(([key, section]) => (
 
                 <section key={key} id={key} className="mb-20 scroll-mt-40">

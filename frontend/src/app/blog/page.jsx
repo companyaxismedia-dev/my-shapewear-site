@@ -116,9 +116,9 @@ export default async function BlogPage() {
           !editorialSections.length ? (
           <div className="mx-auto max-w-[1540px] px-4 py-16 lg:px-6">
             <div className="rounded-[12px] border border-[#ead9de] bg-white p-10 text-center">
-              <h2 className="font-[Playfair_Display] text-[28px] text-[#3b2228]">
+              <h1 className="font-[Playfair_Display] text-[28px] text-[#3b2228]">
                 No blog posts found
-              </h2>
+              </h1>
               <p className="mt-3 text-[#6c4e53]">
                 Blog data abhi available nahi hai. Backend API ya database posts
                 check karo.

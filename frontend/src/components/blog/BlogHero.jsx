@@ -82,9 +82,9 @@ export default function BlogHero({ posts = [] }) {
                             </div>
 
                             <div className="pt-3">
-                                <h3 className="line-clamp-2 font-[Playfair_Display] text-[18px] leading-snug text-[#2f2226] sm:text-[20px] lg:text-[22px]">
+                                <h1 className="line-clamp-2 font-[Playfair_Display] text-[18px] leading-snug text-[#2f2226] sm:text-[20px] lg:text-[22px]">
                                     {post.title}
-                                </h3>
+                                </h1>
 
                                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] sm:text-[14px]">
                                     <span className="text-[#e56b8a]">
